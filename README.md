@@ -1,10 +1,15 @@
-# CustomTrial
+# KernelExtensions
 
 ---
 
 ## 中文版本
 
-**CustomTrial** 是一个使用 **Pathfinder API** 的 Hacknet 模组，用于创建自定义试炼程序（像KaguyaTrial那样的）。
+**KernelExtensions** 是一个使用 **Pathfinder API** 的 Hacknet 模组，旨在扩展游戏中硬编码的机制，例如：
+
+- 自定义试炼程序（类似原版的 KaguyaTrial）
+- 自定义 Porthack 心脏节点
+
+未来还将支持更多需要动态配置的硬编码功能。
 
 > ⚠️ 目前本项目仅是一个空壳，尚未实现具体功能。
 
@@ -12,7 +17,12 @@
 
 ## English Version
 
-**CustomTrial** is a Hacknet mod using the **Pathfinder API**, designed to create custom trial programs (like KaguyaTrial.exe).
+**KernelExtensions** is a Hacknet mod using the **Pathfinder API**, designed to extend hardcoded mechanics in the game, such as:
+
+- Custom trial programs (like the original KaguyaTrial)
+- Custom Porthack heart nodes
+
+More hardcoded features that require dynamic configuration will be supported in the future.
 
 > ⚠️ Currently this project is just an empty shell; no actual features have been implemented yet.
 
