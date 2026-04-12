@@ -1,13 +1,23 @@
 # KernelExtensions
 
+> **快速导航**： [中文版本](#中文版本) | [English Version](#english-version)
+
+---
+
+## 前置条件 / Prerequisites
+
+在开始使用本模组前，请确保已安装：
+- Hacknet 的 DLC **Labyrinths**
+- **Pathfinder** 框架（5.3.2 或更高版本）
+
 ---
 
 ## 中文版本
 
 **KernelExtensions** 是一个使用 **Pathfinder API** 的 Hacknet 模组，旨在扩展游戏中硬编码的机制，例如：
 
-- 自定义试炼程序（类似原版的 KaguyaTrial）
-- 自定义 Porthack 心脏节点
+- 自定义试炼程序（类似原版的 KaguyaTrial.exe）参数，包括运行时执行的Action、播放的音乐等
+- 自定义 Porthack 心脏 daemon
 
 未来还将支持更多需要动态配置的硬编码功能。
 
@@ -19,8 +29,8 @@
 
 **KernelExtensions** is a Hacknet mod using the **Pathfinder API**, designed to extend hardcoded mechanics in the game, such as:
 
-- Custom trial programs (like the original KaguyaTrial)
-- Custom Porthack heart nodes
+- Parameters for custom trial programs (like the original KaguyaTrial.exe), including actions to execute at runtime, music to play, etc.
+- Custom Porthack heart daemon
 
 More hardcoded features that require dynamic configuration will be supported in the future.
 
