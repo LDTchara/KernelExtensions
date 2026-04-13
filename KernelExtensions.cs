@@ -1,17 +1,25 @@
 ﻿using BepInEx;
 using BepInEx.Hacknet;
+using Hacknet;
+using Microsoft.Xna.Framework.Graphics;
+using Pathfinder.Executable;
+using KernelExtensions.Executables;
 
-namespace CustomTrial;
-
-[BepInPlugin(ModGUID, ModName, ModVer)]
-public class KernelExtensions : HacknetPlugin
+namespace KernelExtensions
 {
-    public const string ModGUID = "com.LDTchara.KernelExtensions";
-    public const string ModName = "KernelExtensions";
-    public const string ModVer = "0.0.0";
-
-    public override bool Load()
+    [BepInPlugin(ModGUID, ModName, ModVer)]
+    public class KernelExtensions : HacknetPlugin
     {
-        return true;
+        public const string ModGUID = "com.LDTchara.KernelExtensions";
+        public const string ModName = "KernelExtensions";
+        public const string ModVer = "0.3.0";
+
+        public override bool Load()
+        {
+            ExecutableManager.RegisterExecutable<CustomTrialExe>("CustomTrial");
+            Console.WriteLine("[KernelExtensions] CustomTrial registered.");
+            Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
+            return true;
+        }
     }
 }

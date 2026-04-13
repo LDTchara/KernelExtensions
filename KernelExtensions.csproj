@@ -8,6 +8,7 @@
     <NoWarn>CS8500</NoWarn>
     <AnalysisMode>Recommended</AnalysisMode>
     <PlatformTarget>x86</PlatformTarget>
+    <BaseOutputPath>D:\Game\Hacknet+DLC+Pathfinder\BepInEx\plugins</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
