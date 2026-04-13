@@ -67,7 +67,7 @@
 <RunFunction FunctionName="addFlags" FunctionValue="CustomTrial_MyTrial" />
 ```
 
-这会将 `CustomTrial_MyTrial` Flag 添加到当前游戏进程。之后玩家运行 `run CustomTrial` 时，程序就会加载 `MyTrial.xml`。
+这会将 `CustomTrial_MyTrial` Flag 添加到当前存档。之后玩家运行 `CustomTrial` 时，程序就会加载 `MyTrial.xml`。
 
 如果需要移除 Flag（例如试炼完成后），可以使用：
 ```xml
