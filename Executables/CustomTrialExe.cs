@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using Hacknet;
 using Hacknet.Effects;
+using Hacknet.Extensions;
 using Hacknet.Gui;
 using KernelExtensions.Config;
 using Microsoft.Xna.Framework;
@@ -110,13 +111,33 @@ namespace KernelExtensions.Executables
         private void LoadConfig(string[] args)
         {
             string configName = (args != null && args.Length > 0) ? args[0] : "Default";
-            string configPath = Path.Combine(Paths.GameRootPath, "Mods", "KernelExtensions", "Trials", configName + ".xml");
+
+            // 获取当前扩展的根目录
+            string extRoot = null;
+            if (ExtensionLoader.ActiveExtensionInfo != null)
+                extRoot = ExtensionLoader.ActiveExtensionInfo.FolderPath.Replace('\\', '/');
+
+            string configPath = null;
+
+            // 优先尝试扩展目录下的 Trial 文件夹
+            if (!string.IsNullOrEmpty(extRoot))
+            {
+                configPath = Path.Combine(extRoot, "Trial", configName + ".xml").Replace('\\', '/');
+                if (File.Exists(configPath))
+                    goto load;
+            }
+
+            // 后备路径：游戏根目录下的 Mods/KernelExtensions/Trials/
+            configPath = Path.Combine(Paths.GameRootPath, "Mods", "KernelExtensions", "Trials", configName + ".xml").Replace('\\', '/');
+
+        load:
             if (!File.Exists(configPath))
             {
-                os.write($"Error: Trial config '{configName}.xml' not found.");
+                os.write($"Error: Trial config '{configName}.xml' not found. (Tried: {configPath})");
                 isExiting = true;
                 return;
             }
+
             try
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(TrialConfig));
