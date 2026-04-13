@@ -36,7 +36,7 @@
 - **可自定义的 Porthack 心脏 Daemon**
   - 包括 Porthack 后执行的 Action 配置
 - **DLC 中可自定义的飞机 Daemon**（`AircraftDaemon` 扩展）
-  - 允许任务制作者配置飞机的飞行路径、事件触发条件等
+  - 计划还原DLC中的飞机Daemon，允许配置坠毁时长等
 - 失败/完成时执行外部 Action 文件（需要 Pathfinder 提供相关 API 或自行实现）
 
 > ⚠️ 当前版本仅实现了自定义试炼程序的核心逻辑，且未经过完整测试。Porthack 心脏和飞机 Daemon 尚在计划阶段。
@@ -65,7 +65,7 @@
 - **Customizable Porthack heart daemon**
   - Including actions to execute after Porthacking
 - **Customizable Aircraft Daemon from DLC** (extension of `AircraftDaemon`)
-  - Allow mission authors to configure flight paths, event triggers, etc.
+  - Plan to restore the aircraft daemon from the DLC, allowing configuration of crash duration, etc.
 - Execute external action files on failure/completion (requires proper Pathfinder API or custom implementation)
 
 > ⚠️ Only the custom trial program core logic is implemented in the current version, and it is not fully tested. Porthack heart and aircraft daemon are still in the planning stage.
