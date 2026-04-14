@@ -12,7 +12,7 @@ namespace KernelExtensions
     {
         public const string ModGUID = "com.LDTchara.KernelExtensions";
         public const string ModName = "KernelExtensions";
-        public const string ModVer = "0.3.2";
+        public const string ModVer = "0.3.3";
 
         public override bool Load()
         {
