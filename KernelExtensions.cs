@@ -12,12 +12,13 @@ namespace KernelExtensions
     {
         public const string ModGUID = "com.LDTchara.KernelExtensions";
         public const string ModName = "KernelExtensions";
-        public const string ModVer = "0.3.0";
+        public const string ModVer = "0.3.2";
 
         public override bool Load()
         {
             ExecutableManager.RegisterExecutable<CustomTrialExe>("CustomTrial");
             Console.WriteLine("[KernelExtensions] CustomTrial registered.");
+
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
             return true;
         }

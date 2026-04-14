@@ -1,50 +1,42 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<TrialConfig>
+﻿<TrialConfig>
 	<!-- 全局配置 -->
 	<SpinUpDuration>5.0</SpinUpDuration>
 	<!-- 旋转动画时长（秒） -->
 	<EnableFlickering>false</EnableFlickering>
 	<!-- 是否启用 UI 闪烁+节点消失特效 -->
 	<EnableMailIconDestroy>false</EnableMailIconDestroy>
-	<!-- 是否启用邮件图标爆炸特效 -->
+	<!-- 是否启用邮件图标爆炸 -->
+	<FlickeringDuration>8.0</FlickeringDuration>
+	<!-- 闪烁特效持续时间 -->
+	<MailIconDestroyDuration>4.5</MailIconDestroyDuration>
+	<!-- 邮件爆炸持续时间 -->
 	<StartMusic>Music/Ambient/dark_drone_008</StartMusic>
-	<!-- 程序启动到点击按钮前的背景音乐 -->
+	<!-- 程序启动音乐 -->
 	<TrialStartMusic>DLC/Music/snidelyWhiplash</TrialStartMusic>
-	<!-- 点击“开始试炼”后播放的音乐 -->
+	<!-- 点击开始后音乐 -->
+	<EnableNodeDestruction>true</EnableNodeDestruction>
+	<!-- 是否摧毁节点，默认 true -->
 
-	<!-- 阶段列表（按顺序执行） -->
 	<Phases>
-		<!-- 第一阶段 -->
 		<Phase id="0">
-			<Title>First Mission</Title>
-			<Subtitle>Hack the Gibson</Subtitle>
-			<!-- 描述文本：可以是文件路径（相对于游戏根目录）或直接写文本 -->
-			<DescriptionText>Content/DLC/Docs/KaguyaTrial1.txt</DescriptionText>
-			<!-- 任务文件路径（相对于游戏根目录） -->
-			<MissionFile>Missions/ExampleMission1.xml</MissionFile>
-			<!-- 超时时间（秒），0 表示无超时 -->
+			<Title>第一阶段标题</Title>
+			<Subtitle>副标题</Subtitle>
+			<DescriptionText>Docs/MyTrialDesc.txt</DescriptionText>
+			<!-- 相对于扩展根目录的文本文件，或直接写文本，支持 % 和 %% 停顿 -->
+			<MissionFile>Missions/MyMission.xml</MissionFile>
+			<!-- 任务文件路径（相对于扩展根目录） -->
 			<Timeout>120</Timeout>
-			<!-- 本阶段专用的背景音乐（可选） -->
+			<!-- 超时秒数，0=无 -->
 			<Music>Music/Ambient/AmbientDrone_Clipped</Music>
-			<!-- 阶段完成时执行的动作（当前版本简化，仅输出文本；计划支持外部 Action 文件） -->
+			<!-- 本阶段音乐 -->
 			<OnComplete file="Actions/Phase0Complete.xml" />
-			<!-- 阶段失败时执行的动作 -->
+			<!-- 完成时执行的动作文件 -->
 			<OnFail file="Actions/Phase0Fail.xml" />
+			<!-- 失败时执行的动作文件 -->
 		</Phase>
-
-		<!-- 第二阶段 -->
-		<Phase id="1">
-			<Title>Second Mission</Title>
-			<Subtitle>Delete the logs</Subtitle>
-			<DescriptionText>Content/DLC/Docs/KaguyaTrial2.txt</DescriptionText>
-			<MissionFile>Missions/ExampleMission2.xml</MissionFile>
-			<Timeout>90</Timeout>
-			<Music>Music/Ambient/dark_drone_008</Music>
-			<OnComplete file="Actions/Phase1Complete.xml" />
-			<OnFail file="Actions/Phase1Fail.xml" />
-		</Phase>
+		<!-- 可以添加更多 Phase -->
 	</Phases>
 
-	<!-- 所有阶段完成后的最终动作 -->
 	<OnComplete file="Actions/AllComplete.xml" />
+	<!-- 全部阶段完成后的动作 -->
 </TrialConfig>
