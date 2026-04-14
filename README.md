@@ -64,14 +64,14 @@
 试炼由原版的 Flag 系统控制。你需要在任务或 Action 中使用 `RunFunction` 来添加 Flag。示例：
 
 ```xml
-<RunFunction FunctionName="addFlags" FunctionValue="CustomTrial_MyTrial" />
+<RunFunction FunctionName="addflags:CustomTrial_TEST"/>
 ```
 
 这会将 `CustomTrial_MyTrial` Flag 添加到当前存档。之后玩家运行 `CustomTrial` 时，程序就会加载 `MyTrial.xml`。
 
 如果需要移除 Flag（例如试炼完成后），可以使用：
 ```xml
-<RunFunction FunctionName="removeFlags" FunctionValue="CustomTrial_MyTrial" />
+<RunFunction FunctionName="removeflags:CustomTrial_TEST"/>
 ```
 
 #### 二、编写动作文件（用于阶段完成/失败时执行）
@@ -81,7 +81,7 @@
 ```xml
 <Instantly>
   <!-- 运行函数：添加 Flag -->
-  <RunFunction FunctionName="addFlags" FunctionValue="Trial_Phase1Done" />
+  <RunFunction FunctionName="addflags:TESTTrialDone"/>
 </Instantly>
 ```
 
@@ -212,12 +212,12 @@ Before using this mod, please ensure you have installed:
 The trial is controlled by the vanilla Flag system. Use `RunFunction` in your actions to add the Flag:
 
 ```xml
-<RunFunction FunctionName="addFlags" FunctionValue="CustomTrial_MyTrial" />
+<RunFunction FunctionName="addflags:CustomTrial_TEST"/>
 ```
 
 To remove the Flag (e.g., after trial completion):
 ```xml
-<RunFunction FunctionName="removeFlags" FunctionValue="CustomTrial_MyTrial" />
+<RunFunction FunctionName="removeflags:CustomTrial_TEST"/>
 ```
 
 #### 2. Writing Action Files (for phase completion/failure)
@@ -226,7 +226,7 @@ In your trial config's `<OnComplete file="..."/>` or `<OnFail file="..."/>`, spe
 
 ```xml
 <Instantly>
-  <RunFunction FunctionName="addFlags" FunctionValue="Trial_Phase1Done" />
+  <RunFunction FunctionName="addflags:TESTTrialDone"/>
 </Instantly>
 ```
 
