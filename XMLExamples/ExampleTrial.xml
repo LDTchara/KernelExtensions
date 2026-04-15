@@ -1,42 +1,195 @@
-﻿<TrialConfig>
-	<!-- 全局配置 -->
-	<SpinUpDuration>5.0</SpinUpDuration>
-	<!-- 旋转动画时长（秒） -->
-	<EnableFlickering>false</EnableFlickering>
-	<!-- 是否启用 UI 闪烁+节点消失特效 -->
-	<EnableMailIconDestroy>false</EnableMailIconDestroy>
-	<!-- 是否启用邮件图标爆炸 -->
-	<FlickeringDuration>8.0</FlickeringDuration>
-	<!-- 闪烁特效持续时间 -->
-	<MailIconDestroyDuration>4.5</MailIconDestroyDuration>
-	<!-- 邮件爆炸持续时间 -->
-	<StartMusic>Music/Ambient/dark_drone_008</StartMusic>
-	<!-- 程序启动音乐 -->
-	<TrialStartMusic>DLC/Music/snidelyWhiplash</TrialStartMusic>
-	<!-- 点击开始后音乐 -->
-	<EnableNodeDestruction>true</EnableNodeDestruction>
-	<!-- 是否摧毁节点，默认 true -->
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 试炼配置文件示例
+    文件名：ExampleTrial.xml
+    放置位置：扩展根目录/Trial/ExampleTrial.xml
+    使用方法：通过添加 Flag "CustomTrial_ExampleTrial" 来加载此配置
 
+    == 可选项默认行为 / Default behavior for optional fields ==
+    - 如果不希望使用某个功能，通常直接省略对应的 XML 元素即可。
+      If you do not want to use a feature, simply omit the corresponding XML element.
+    - 对于数值型：省略或设为 0 表示禁用（如 <Timeout>0</Timeout>）。
+      For numeric values: omit or set to 0 to disable (e.g., <Timeout>0</Timeout>).
+    - 对于布尔型：省略或设为 false 表示禁用（如 <EnableFlickering>false</EnableFlickering>）。
+      For boolean values: omit or set to false to disable (e.g., <EnableFlickering>false</EnableFlickering>).
+    - 对于音乐/文件路径：省略或留空表示不播放/不执行。
+      For music/file paths: omit or leave empty to mean no music / no action.
+    - 对于动作文件引用（如 OnStart, OnComplete, OnFail, OnPhaseStart）：省略即不执行任何动作。
+      For action file references (e.g., OnStart, OnComplete, OnFail, OnPhaseStart): omit to execute no action.
+    - 对于颜色配置：省略或留空则使用当前游戏主题的对应颜色（如高亮色）。
+      For color settings: omit or leave empty to use the current theme's highlight color.
+-->
+
+<TrialConfig>
+	<!-- ==================== 全局配置 ==================== -->
+	<!-- ==================== Global Settings ==================== -->
+
+	<!-- 旋转动画时长（秒），必须为正数。如果省略，默认 13.8 -->
+	<!-- Spin animation duration (seconds). Must be positive. If omitted, defaults to 13.8. -->
+	<SpinUpDuration>5.0</SpinUpDuration>
+
+	<!-- 是否启用 UI 闪烁+节点消失特效（可选，默认 true） -->
+	<!-- Enable UI flickering + node disappearance effect (optional, defaults to true). -->
+	<EnableFlickering>true</EnableFlickering>
+
+	<!-- 是否启用邮件图标爆炸特效（可选，默认 true） -->
+	<!-- Enable mail icon explosion effect (optional, defaults to true). -->
+	<EnableMailIconDestroy>false</EnableMailIconDestroy>
+
+	<!-- 闪烁特效持续时间（秒），仅当 EnableFlickering=true 时生效，默认 10 -->
+	<!-- Duration of flickering effect (seconds). Only applies when EnableFlickering=true. Defaults to 10. -->
+	<FlickeringDuration>8.0</FlickeringDuration>
+
+	<!-- 邮件爆炸持续时间（秒），仅当 EnableMailIconDestroy=true 时生效，默认 3.82 -->
+	<!-- Duration of mail explosion effect (seconds). Only applies when EnableMailIconDestroy=true. Defaults to 3.82. -->
+	<MailIconDestroyDuration>4.5</MailIconDestroyDuration>
+
+	<!-- 是否允许摧毁节点（仅在 EnableFlickering=true 且 EnableNodeDestruction=true 时生效），默认 true -->
+	<!-- Whether to allow node destruction (only applies when EnableFlickering=true and EnableNodeDestruction=true). Defaults to true. -->
+	<EnableNodeDestruction>true</EnableNodeDestruction>
+
+	<!-- 程序启动后、点击“开始试炼”前的背景音乐（可选，路径相对于游戏根目录或扩展根目录） -->
+	<!-- Background music after program start but before clicking "Start Trial" (optional, path relative to game root or extension root). -->
+	<StartMusic>Music/Ambient/dark_drone_008</StartMusic>
+
+	<!-- 点击“开始试炼”后播放的音乐（可选） -->
+	<!-- Music played after clicking "Start Trial" (optional). -->
+	<TrialStartMusic>DLC/Music/snidelyWhiplash</TrialStartMusic>
+
+	<!-- ==================== 自定义颜色（可选，不设置则使用当前主题色） ==================== -->
+	<!-- ==================== Custom Colors (optional, uses theme color if omitted) ==================== -->
+	<!-- 程序窗口背景颜色（支持名称如 "Red", "#FF0000", 或者填作者名字？） -->
+	<!-- Background color of the program window (supports names like "Red", "#FF0000", or LDTchara?). -->
+	<BackgroundColor>#1a1a2e</BackgroundColor>
+	<!-- 全局进度条颜色 -->
+	<!-- Global timer bar color -->
+	<GlobalTimerColor>LDTchara</GlobalTimerColor>
+	<!-- 阶段进度条颜色 -->
+	<!-- Phase timer bar color -->
+	<PhaseTimerColor>#00ffcc</PhaseTimerColor>
+	<!-- 旋转动画颜色 -->
+	<!-- Spin animation color -->
+	<SpinUpColor>#ffaa44</SpinUpColor>
+
+	<!-- ==================== 全局计时器 ==================== -->
+	<!-- ==================== Global Timer ==================== -->
+
+	<!-- 整个试炼的总时限（秒），0 表示无限制。如果不写或写 0，则无全局超时 -->
+	<!-- Total time limit for the entire trial (seconds). 0 means no limit. Omit or set to 0 to disable global timeout. -->
+	<GlobalTimeout>300</GlobalTimeout>
+
+	<!-- 是否显示全局倒计时条（仅在 GlobalTimeout > 0 时有效），默认 false -->
+	<!-- Whether to show the global countdown bar (only effective when GlobalTimeout > 0). Defaults to false. -->
+	<EnableGlobalTimer>true</EnableGlobalTimer>
+
+	<!-- 全局超时失败时执行的动作文件（可选，路径相对于扩展根目录） -->
+	<!-- Action file to execute on global timeout failure (optional, path relative to extension root). -->
+	<OnGlobalFail file="Actions/GlobalFail.xml" />
+
+	<!-- ==================== 阶段计时器显示开关 ==================== -->
+	<!-- ==================== Phase Timer Display Switch ==================== -->
+
+	<!-- 是否显示阶段倒计时条（默认 true），仅当阶段配置了 Timeout > 0 时才显示 -->
+	<!-- Whether to show the phase countdown bar (defaults to true). Only shown if phase Timeout > 0. -->
+	<EnablePhaseTimer>true</EnablePhaseTimer>
+
+	<!-- ==================== 试炼开始时执行的动作 ==================== -->
+	<!-- ==================== Actions Executed at Trial Start ==================== -->
+
+	<!-- 点击“开始试炼”按钮后立即执行的动作文件（可选） -->
+	<!-- Action file to execute immediately after clicking the "Start Trial" button (optional). -->
+	<!-- 注意：如果需要延迟执行（例如在旋转动画完成后），请在动作内部设置 Delay 属性 -->
+	<!-- Note: If you need delayed execution (e.g., after the spin animation finishes), set the Delay attribute inside the actions. -->
+	<OnStart file="Actions/TrialStart.xml" />
+
+	<!-- ==================== 阶段列表 ==================== -->
+	<!-- ==================== Phases ==================== -->
 	<Phases>
+		<!-- 第一阶段 -->
+		<!-- Phase 0 -->
 		<Phase id="0">
-			<Title>第一阶段标题</Title>
-			<Subtitle>副标题</Subtitle>
+			<!-- 阶段标题（显示在程序窗口中央，必填） -->
+			<!-- Phase title (displayed in the center of the program window, required). -->
+			<Title>第一阶段：入侵 Gibson</Title>
+			<!-- 阶段副标题（显示在标题下方，可选） -->
+			<!-- Phase subtitle (displayed below the title, optional). -->
+			<Subtitle>获取 root 权限并删除日志</Subtitle>
+
+			<!-- 
+                描述文本：可以是文件路径（相对于扩展根目录），也可以是直接内嵌的文本。
+                支持 % 表示短停顿（约 0.5 秒），%% 表示长停顿（约 2 秒）。
+                如果文件不存在，则当作纯文本显示。
+                例如：<DescriptionText>Docs/MyTrialDesc.txt</DescriptionText>
+            -->
+			<!--
+                Description text: can be a file path (relative to extension root) or inline text.
+                Supports % for short pause (~0.5 seconds) and %% for long pause (~2 seconds).
+                If the file does not exist, it is treated as plain text.
+                Example: <DescriptionText>Docs/MyTrialDesc.txt</DescriptionText>
+            -->
 			<DescriptionText>Docs/MyTrialDesc.txt</DescriptionText>
-			<!-- 相对于扩展根目录的文本文件，或直接写文本，支持 % 和 %% 停顿 -->
-			<MissionFile>Missions/MyMission.xml</MissionFile>
-			<!-- 任务文件路径（相对于扩展根目录） -->
+
+			<!-- 任务文件路径（相对于扩展根目录），必填 -->
+			<!-- Mission file path (relative to extension root), required. -->
+			<MissionFile>Missions/ExampleMission1.xml</MissionFile>
+
+			<!-- 
+                阶段超时秒数（0 表示无超时）。如果大于 0，则在该阶段会启动阶段计时器。
+                超时后根据 EnableResetOnFail 决定是重置阶段还是直接退出。
+            -->
+			<!--
+                Phase timeout in seconds (0 means no timeout). If >0, the phase timer starts.
+                After timeout, the behavior depends on EnableResetOnFail: reset phase or exit.
+            -->
 			<Timeout>120</Timeout>
-			<!-- 超时秒数，0=无 -->
+
+			<!-- 本阶段专用的背景音乐（可选，覆盖全局音乐） -->
+			<!-- Phase-specific background music (optional, overrides global music). -->
 			<Music>Music/Ambient/AmbientDrone_Clipped</Music>
-			<!-- 本阶段音乐 -->
+
+			<!-- 阶段开始时执行的动作文件（可选，新增） -->
+			<!-- Action file to execute when the phase starts (optional, new). -->
+			<OnPhaseStart file="Actions/Phase0Start.xml" />
+
+			<!-- 阶段完成时执行的动作文件（可选） -->
+			<!-- Action file to execute on phase completion (optional). -->
 			<OnComplete file="Actions/Phase0Complete.xml" />
-			<!-- 完成时执行的动作文件 -->
+
+			<!-- 阶段失败时执行的动作文件（可选，超时或追踪超时触发） -->
+			<!-- Action file to execute on phase failure (optional, triggered by timeout or trace timeout). -->
 			<OnFail file="Actions/Phase0Fail.xml" />
-			<!-- 失败时执行的动作文件 -->
+
+			<!-- 
+                失败后是否重置当前阶段（重新开始本阶段，而不是退出）。
+                可选值 true/false，默认 false。
+                如果设为 true，则超时或追踪超时后会重新输出描述文本、重新加载任务、重置阶段计时器（全局计时器不受影响）。
+            -->
+			<!--
+                Whether to reset the current phase on failure (restart the phase instead of exiting).
+                Values: true/false, defaults to false.
+                If true, on timeout or trace timeout it will re-print the description, reload the mission, and reset the phase timer (global timer unaffected).
+            -->
+			<EnableResetOnFail>true</EnableResetOnFail>
 		</Phase>
-		<!-- 可以添加更多 Phase -->
+
+		<!-- 第二阶段 -->
+		<!-- Phase 1 -->
+		<Phase id="1">
+			<Title>第二阶段：清除痕迹</Title>
+			<Subtitle>删除所有操作记录</Subtitle>
+			<DescriptionText>Docs/MyTrialDesc2.txt</DescriptionText>
+			<MissionFile>Missions/ExampleMission2.xml</MissionFile>
+			<Timeout>90</Timeout>
+			<Music>Music/Ambient/dark_drone_008</Music>
+			<OnPhaseStart file="Actions/Phase1Start.xml" />
+			<OnComplete file="Actions/Phase1Complete.xml" />
+			<OnFail file="Actions/Phase1Fail.xml" />
+			<!-- 此阶段不重置（默认 false），超时后直接退出 -->
+			<!-- This phase does not reset (default false), exits on timeout. -->
+		</Phase>
 	</Phases>
 
+	<!-- 所有阶段完成后的最终动作（可选） -->
+	<!-- Final action after all phases are completed (optional). -->
 	<OnComplete file="Actions/AllComplete.xml" />
-	<!-- 全部阶段完成后的动作 -->
 </TrialConfig>
