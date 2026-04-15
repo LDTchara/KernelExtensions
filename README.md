@@ -34,9 +34,11 @@
   - 超时或失败后重置当前阶段，并支持执行自定义动作文件（**失败时不再自动输出额外提示**）
   - 可选特效：UI 闪烁（含节点随机消失，消失间隔根据节点数动态调整）、邮件图标爆炸
   - 屏幕正上方独立倒计时条（**支持自定义颜色**）
-  - 多语言按钮（根据游戏语言自动切换）
+  - 多语言支持（根据游戏语言自动切换）
   - 若未设置任何 `CustomTrial_` Flag，程序窗口显示“试炼已锁定”文字，不显示开始按钮
   - **支持自定义程序背景、全局/阶段进度条、旋转动画颜色**（支持颜色名称、十六进制或神秘彩蛋）
+  - **新增：动态内存缩减**  
+    进入破解阶段后，可配置延迟与持续时间，平滑降低 `ramCost`（190 → 88），同时 UI 元素按比例缩放，模拟资源释放过程。
 
 #### 🚧 计划中
 - 可自定义的 Porthack 心脏 Daemon（包括 Porthack 后执行的 Action 配置）
@@ -126,7 +128,11 @@
   <BackgroundColor>#1a1a2e</BackgroundColor>           <!-- 程序窗口背景色 -->
   <GlobalTimerColor>#ffaa44</GlobalTimerColor>         <!-- 全局进度条颜色 -->
   <PhaseTimerColor>#00ffcc</PhaseTimerColor>           <!-- 阶段进度条颜色 -->
-  <SpinUpColor>#ffaa44</SpinUpColor>                 <!-- 旋转动画颜色 -->
+  <SpinUpColor>#ffaa44</SpinUpColor>                   <!-- 旋转动画颜色 -->
+
+  <!-- 内存缩减配置（0.3.5 新增） -->
+  <RamReductionDelay>5.0</RamReductionDelay>           <!-- 进入破解阶段后延迟秒数开始缩减 -->
+  <RamReductionDuration>3.0</RamReductionDuration>     <!-- 缩减过程持续时间（秒），设为 0 禁用 -->
 
   <!-- 全局计时器（可选） -->
   <GlobalTimeout>300</GlobalTimeout>                   <!-- 整个试炼总时限（秒），0=无限制 -->
@@ -166,6 +172,7 @@
 - `Timeout` > 0 时，该阶段必须在指定秒数内完成，否则触发失败（可配置重置）。
 - `EnableNodeDestruction`：开启闪烁特效时，节点摧毁间隔根据初始可见节点数动态计算（与原版一致）。
 - 自定义颜色支持：颜色名称（如 `Red`）、十六进制（如 `#FF0000`）或者填一个人的名字之类的。若省略或留空则使用当前主题的高亮色。
+- **内存缩减**：`RamReductionDuration` 设为 0 或省略可完全禁用此功能。
 
 #### 四、注意事项
 
@@ -225,9 +232,11 @@ Before using this mod, please ensure you have installed:
   - Timeout or failure resets the current phase and supports custom action files (**no automatic failure messages**)
   - Optional effects: UI flickering (with random node removal, interval dynamically adjusted based on visible node count), mail icon explosion
   - Independent countdown bar at the top of the screen (**supports custom colors**)
-  - Multi‑language button (auto‑detects game language)
+  - Multi‑language Support (auto‑detects game language)
   - If no `CustomTrial_` flag is set, the program window displays "Trial Locked" text and no start button
-  - **Customizable colors** for background, global/phase timer bars, 和 spin animation (supports color names, hex, or secret easter egg)
+  - **Customizable colors** for background, global/phase timer bars, and spin animation (supports color names, hex, or secret easter egg)
+  - **New: Dynamic RAM reduction**  
+    After entering the cracking phase, you can configure a delay and duration to smoothly reduce `ramCost` (190 → 88) while UI elements scale proportionally, simulating resource release.
 
 #### 🚧 Planned
 - Customizable Porthack heart daemon (including actions after Porthacking)
@@ -317,7 +326,11 @@ For more available actions (e.g., `SwitchToTheme`, `LoadMission`), refer to the 
   <BackgroundColor>#1a1a2e</BackgroundColor>           <!-- Program window background -->
   <GlobalTimerColor>#ffaa44</GlobalTimerColor>         <!-- Global timer bar color -->
   <PhaseTimerColor>#00ffcc</PhaseTimerColor>           <!-- Phase timer bar color -->
-  <SpinUpColor>#ffaa44</SpinUpColor>                 <!-- Spin animation color -->
+  <SpinUpColor>#ffaa44</SpinUpColor>                   <!-- Spin animation color -->
+
+  <!-- RAM reduction settings (new in 0.3.5) -->
+  <RamReductionDelay>5.0</RamReductionDelay>           <!-- Delay before starting RAM reduction after cracking phase -->
+  <RamReductionDuration>3.0</RamReductionDuration>     <!-- Duration of RAM reduction (seconds); set 0 to disable -->
 
   <!-- Global timer (optional) -->
   <GlobalTimeout>300</GlobalTimeout>                   <!-- Total trial time limit (seconds), 0 = no limit -->
@@ -357,6 +370,7 @@ For more available actions (e.g., `SwitchToTheme`, `LoadMission`), refer to the 
 - `Timeout` > 0 forces the mission to be completed within that many seconds; otherwise, failure is triggered (reset configurable).
 - `EnableNodeDestruction`: When flickering is enabled, node removal interval is dynamically calculated based on the initial visible node count (same as vanilla).
 - Custom colors support: color names (e.g., `Red`), hex (e.g., `#FF0000`), or someone's name, idk. Omit or leave empty to use current theme's highlight color.
+- **RAM reduction**: Set `RamReductionDuration` to 0 or omit to disable this feature.
 
 #### 4. Important Notes
 
