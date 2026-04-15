@@ -25,6 +25,16 @@ namespace KernelExtensions.Config
         [XmlElement("PhaseTimerColor")] public string PhaseTimerColor = null;        // 阶段进度条颜色
         [XmlElement("SpinUpColor")] public string SpinUpColor = null;                // 旋转动画颜色
 
+        // ==================== 内存缩减配置（进入破解阶段后动态降低 RAM 占用） ====================
+        /// <summary>
+        /// 进入破解阶段（即所有动画结束后）延迟多少秒开始缩减内存，默认 5 秒。
+        /// </summary>
+        [XmlElement("RamReductionDelay")] public float RamReductionDelay = 5f;
+        /// <summary>
+        /// 缩减内存所需的总秒数，默认 3 秒。在此时间内，ramCost 从初始值线性减少到目标值 88。
+        /// </summary>
+        [XmlElement("RamReductionDuration")] public float RamReductionDuration = 3f;
+
         // ==================== 全局计时器 ====================
         [XmlElement("GlobalTimeout")] public float GlobalTimeout = 0f;               // 全局超时秒数，0=无限制
         [XmlElement("EnableGlobalTimer")] public bool EnableGlobalTimer = false;     // 是否显示全局倒计时条
@@ -38,7 +48,7 @@ namespace KernelExtensions.Config
 
         // ==================== 阶段列表 ====================
         [XmlArray("Phases"), XmlArrayItem("Phase")]
-        public List<PhaseConfig> Phases = new List<PhaseConfig>();
+        public List<PhaseConfig> Phases = new();
 
         // ==================== 最终完成动作 ====================
         [XmlElement("OnComplete")] public ActionFileRef OnComplete = null;           // 所有阶段完成后执行的动作

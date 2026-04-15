@@ -18,6 +18,8 @@
       For action file references (e.g., OnStart, OnComplete, OnFail, OnPhaseStart): omit to execute no action.
     - 对于颜色配置：省略或留空则使用当前游戏主题的对应颜色（如高亮色）。
       For color settings: omit or leave empty to use the current theme's highlight color.
+    - 对于内存缩减配置：省略则使用默认值（延迟5秒，持续时间3秒）。
+      For RAM reduction settings: omit to use defaults (delay 5s, duration 3s).
 -->
 
 <TrialConfig>
@@ -70,6 +72,15 @@
 	<!-- 旋转动画颜色 -->
 	<!-- Spin animation color -->
 	<SpinUpColor>#ffaa44</SpinUpColor>
+
+	<!-- ==================== 内存缩减配置 ==================== -->
+	<!-- ==================== RAM Reduction Settings ==================== -->
+	<!-- 进入破解阶段（所有动画结束后）延迟多少秒开始缩减内存，默认 5 秒 -->
+	<!-- Delay (seconds) after entering the cracking phase before starting RAM reduction. Default 5. -->
+	<RamReductionDelay>5.0</RamReductionDelay>
+	<!-- 缩减内存所需的总秒数，默认 3 秒。在此时间内 ramCost 从初始值线性减少到目标值 88 -->
+	<!-- Duration (seconds) of the RAM reduction process. Default 3. ramCost decreases linearly from initial to target 88. -->
+	<RamReductionDuration>3.0</RamReductionDuration>
 
 	<!-- ==================== 全局计时器 ==================== -->
 	<!-- ==================== Global Timer ==================== -->

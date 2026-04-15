@@ -20,7 +20,7 @@ namespace KernelExtensions.Executables
 {
     /// <summary>
     /// 自定义试炼程序，基于 Pathfinder 的 GameExecutable。
-    /// 功能：旋转动画、可选特效、多阶段任务、逐字打印（支持%停顿）、全局/阶段计时器、失败重置（可配置）、颜色自定义等。
+    /// 功能：旋转动画、可选特效、多阶段任务、逐字打印（支持%停顿）、全局/阶段计时器、失败重置（可配置）、颜色自定义、内存缩减等。
     /// 所有文件路径均相对于当前扩展根目录（Extension 文件夹）。
     /// </summary>
     public class CustomTrialExe : GameExecutable
@@ -45,7 +45,7 @@ namespace KernelExtensions.Executables
         private TrialConfig config;                            // 加载的配置对象
 
         // 辅助属性：获取当前阶段配置（索引有效时）
-        private PhaseConfig currentPhase => (currentPhaseIdx >= 0 && currentPhaseIdx < config.Phases.Count) ? config.Phases[currentPhaseIdx] : null;
+        private PhaseConfig CurrentPhase => (currentPhaseIdx >= 0 && currentPhaseIdx < config.Phases.Count) ? config.Phases[currentPhaseIdx] : null;
 
         // ---------- 逐字打印相关 ----------
         private string currentDisplayText = "";                // 当前需要打印的描述文本
@@ -64,13 +64,22 @@ namespace KernelExtensions.Executables
         private float phaseTimerRemaining = 0f;                // 阶段剩余时间（秒）
         private bool phaseTimerActive = false;                 // 阶段计时器是否激活
 
+        // ---------- 内存缩减相关 ----------
+        private float ramReductionDelayTimer = 0f;             // 缩减延迟计时器
+        private bool ramReductionDelaying = false;             // 是否正在延迟等待
+        private bool ramReductionActive = false;               // 是否正在缩减内存
+        private float ramReductionProgress = 0f;               // 缩减进度（0~1）
+        private float currentRamCost = 190f;                   // 当前实际 ramCost（浮点，用于平滑）
+        private const float TARGET_RAM_COST = 88f;             // 目标内存占用（固定不可配置）
+        private float ramReductionStartValue = 190f;           // 缩减开始时的 ramCost
+
         // ---------- 特效相关 ----------
-        private List<TraceKillExe.PointImpactEffect> impactEffects = new List<TraceKillExe.PointImpactEffect>(); // 冲击波特效列表
+        private List<TraceKillExe.PointImpactEffect> impactEffects = new(); // 冲击波特效列表
         private float nodeRemovalTimer = 0f;                   // 节点移除计时器
         private float nodeRemovalInterval = 0f;                // 动态计算的节点摧毁间隔
         private Color originalTopBarIconsColor;                // 保存原始顶部栏图标颜色（用于特效恢复）
         private HexGridBackground backgroundEffect;            // 六边形网格背景
-        private ExplodingUIElementEffect explosion = new ExplodingUIElementEffect(); // 爆炸特效
+        private ExplodingUIElementEffect explosion = new(); // 爆炸特效
         private SoundEffect breakSound;                        // 破碎音效
         private Texture2D circle;                              // 圆形纹理
         private Texture2D circleOutline;                       // 圆形轮廓纹理
@@ -107,13 +116,12 @@ namespace KernelExtensions.Executables
                 extensionRoot = ExtensionLoader.ActiveExtensionInfo.FolderPath.Replace('\\', '/');
 
             // ---- 检测所有 CustomTrial_ 开头的 Flag ----
-            List<string> trialFlags = new List<string>();
+            List<string> trialFlags = new();
             // 使用反射获取 ProgressionFlags 的私有字段 Flags（因为未公开）
             var flagsField = typeof(ProgressionFlags).GetField("Flags", BindingFlags.NonPublic | BindingFlags.Instance);
             if (flagsField != null)
             {
-                var flagsList = flagsField.GetValue(os.Flags) as List<string>;
-                if (flagsList != null)
+                if (flagsField.GetValue(os.Flags) is List<string> flagsList)
                 {
                     foreach (var f in flagsList)
                         if (f.StartsWith("CustomTrial_"))
@@ -218,9 +226,9 @@ namespace KernelExtensions.Executables
             // 反序列化 XML 为 TrialConfig 对象
             try
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(TrialConfig));
-                using (FileStream fs = new FileStream(configPath, FileMode.Open))
-                    config = (TrialConfig)serializer.Deserialize(fs);
+                XmlSerializer serializer = new(typeof(TrialConfig));
+                using FileStream fs = new(configPath, FileMode.Open);
+                config = (TrialConfig)serializer.Deserialize(fs);
             }
             catch (Exception e)
             {
@@ -240,10 +248,9 @@ namespace KernelExtensions.Executables
         {
             if (string.IsNullOrEmpty(colorStr)) return Color.Transparent;
 
-            // 这什么，怎么还有LDT的名
+            // 这什么，怎么还有我的名，我不知道哦owo
             if (colorStr.Equals("LDTchara", StringComparison.OrdinalIgnoreCase))
             {
-                // 使用 HSV 转换，色调随时间变化
                 float hue = (float)(OS.currentElapsedTime * 0.1) % 1.0f;
                 return HSVToColor(hue, 1.0f, 1.0f);
             }
@@ -262,11 +269,10 @@ namespace KernelExtensions.Executables
         }
 
         /// <summary>
-        /// HSV 转 RGB 辅助方法（用于别的什么用途或者彩蛋，请勿删除）。
+        /// HSV 转 RGB 辅助方法（应该和彩虹色有关）。
         /// </summary>
         private Color HSVToColor(float hue, float saturation, float value)
         {
-            // hue: 0-1, saturation: 0-1, value: 0-1
             int hi = (int)(hue * 6) % 6;
             float f = hue * 6 - hi;
             float p = value * (1 - saturation);
@@ -302,12 +308,36 @@ namespace KernelExtensions.Executables
                 }
             }
 
+            // 内存缩减逻辑
+            if (ramReductionDelaying)
+            {
+                ramReductionDelayTimer -= t;
+                if (ramReductionDelayTimer <= 0f)
+                {
+                    ramReductionDelaying = false;
+                    ramReductionActive = true;
+                    ramReductionProgress = 0f;
+                    ramReductionStartValue = currentRamCost;
+                }
+            }
+            if (ramReductionActive && ramReductionProgress < 1f)
+            {
+                ramReductionProgress += t / config.RamReductionDuration;
+                if (ramReductionProgress >= 1f)
+                {
+                    ramReductionProgress = 1f;
+                    ramReductionActive = false;
+                }
+                // 线性插值计算当前 ramCost
+                currentRamCost = MathHelper.Lerp(ramReductionStartValue, TARGET_RAM_COST, ramReductionProgress);
+                this.ramCost = (int)currentRamCost;
+            }
+
             stateTimer += t; // 当前状态计时器累加
 
             switch (currentState)
             {
                 case RunState.NotStarted:
-                    // 等待玩家点击按钮，无更新逻辑
                     break;
                 case RunState.SpinningUp:
                     if (stateTimer >= config.SpinUpDuration)
@@ -327,7 +357,6 @@ namespace KernelExtensions.Executables
                     UpdateAssignMission(t);
                     break;
                 case RunState.OnMission:
-                    // 阶段计时器更新（仅在 OnMission 状态且任务未完成时递减）
                     if (phaseTimerActive && !missionCompleted)
                     {
                         phaseTimerRemaining -= t;
@@ -349,7 +378,6 @@ namespace KernelExtensions.Executables
                     break;
             }
 
-            // 更新特效
             explosion.Update(t);
             UpdateImpactEffects(t);
         }
@@ -361,7 +389,6 @@ namespace KernelExtensions.Executables
             switch (currentState)
             {
                 case RunState.NotStarted:
-                    // 点击开始按钮后：禁止 kill，切换音乐，启动全局计时器
                     this.CanBeKilled = false;
                     if (!string.IsNullOrEmpty(config.TrialStartMusic))
                         MusicManager.transitionToSong(config.TrialStartMusic);
@@ -370,19 +397,17 @@ namespace KernelExtensions.Executables
                         globalTimerRemaining = config.GlobalTimeout;
                         globalTimerActive = true;
                     }
-                    // 执行试炼开始时的动作（如果配置了）
                     ExecuteActionFile(config.OnStart?.FilePath);
                     currentState = RunState.SpinningUp;
                     break;
 
                 case RunState.SpinningUp:
-                    // 根据配置决定是否进入特效状态
                     if (config.EnableFlickering)
                         currentState = RunState.Flickering;
                     else if (config.EnableMailIconDestroy)
                         currentState = RunState.MailIconDestroy;
                     else
-                        StartNextPhase(); // 无特效则直接开始第一阶段
+                        StartNextPhase();
                     break;
 
                 case RunState.Flickering:
@@ -397,22 +422,18 @@ namespace KernelExtensions.Executables
                     break;
 
                 case RunState.AssignMission:
-                    // 描述文本输出完毕，进入任务执行阶段
                     currentState = RunState.OnMission;
-                    LoadCurrentMission();           // 加载当前阶段的任务
+                    LoadCurrentMission();
                     missionCompleted = false;
-                    // 启动阶段计时器（如果配置了超时）
-                    if (currentPhase.Timeout > 0)
+                    if (CurrentPhase.Timeout > 0)
                     {
-                        phaseTimerRemaining = currentPhase.Timeout;
+                        phaseTimerRemaining = CurrentPhase.Timeout;
                         phaseTimerActive = true;
                     }
                     else phaseTimerActive = false;
-                    // 播放阶段音乐（如果有配置）
-                    if (!string.IsNullOrEmpty(currentPhase.Music))
-                        MusicManager.transitionToSong(currentPhase.Music);
-                    // 注册追踪超时回调（用于失败处理）
-                    if (currentPhase.Timeout > 0 && !traceOverrideActive)
+                    if (!string.IsNullOrEmpty(CurrentPhase.Music))
+                        MusicManager.transitionToSong(CurrentPhase.Music);
+                    if (CurrentPhase.Timeout > 0 && !traceOverrideActive)
                     {
                         os.traceCompleteOverrideAction += OnTraceTimeout;
                         traceOverrideActive = true;
@@ -420,18 +441,15 @@ namespace KernelExtensions.Executables
                     break;
 
                 case RunState.OnMission:
-                    // 任务完成，执行阶段完成动作，然后进入下一阶段
-                    ExecuteActionFile(currentPhase?.OnComplete?.FilePath);
+                    ExecuteActionFile(CurrentPhase?.OnComplete?.FilePath);
                     currentPhaseIdx++;
                     if (currentPhaseIdx >= config.Phases.Count)
                     {
-                        // 所有阶段完成，进入结束动画
                         currentState = RunState.Outro;
                         stateTimer = 0f;
                     }
                     else
                     {
-                        // 切换到下一个阶段的 AssignMission
                         currentState = RunState.AssignMission;
                         PrepareAssignMission();
                     }
@@ -441,12 +459,20 @@ namespace KernelExtensions.Executables
 
         /// <summary>
         /// 开始执行第一个阶段（从 AssignMission 开始）。
+        /// 同时启动内存缩减延迟计时器（仅在第一次进入时）。
         /// </summary>
         private void StartNextPhase()
         {
             currentPhaseIdx = 0;
             currentState = RunState.AssignMission;
             PrepareAssignMission();
+
+            // 启动内存缩减延迟（仅一次）
+            if (!ramReductionDelaying && !ramReductionActive && config.RamReductionDuration > 0)
+            {
+                ramReductionDelayTimer = config.RamReductionDelay;
+                ramReductionDelaying = true;
+            }
         }
 
         /// <summary>
@@ -456,47 +482,41 @@ namespace KernelExtensions.Executables
         {
             stateTimer = 0f;
             charsRenderedSoFar = 0;
-            string rawText = currentPhase.DescriptionText;
-            // 尝试作为文件路径解析（相对于扩展根目录）
+            string rawText = CurrentPhase.DescriptionText;
             string resolvedPath = ResolvePath(rawText);
             if (resolvedPath != null && File.Exists(resolvedPath))
                 currentDisplayText = Utils.readEntireFile(resolvedPath);
             else
-                currentDisplayText = rawText ?? ""; // 当作直接文本
-            // 不再输出标题和副标题到终端，仅通过 DrawPhaseTitle 绘制
-            // 执行阶段开始时的动作（新增功能）
-            ExecuteActionFile(currentPhase.OnPhaseStart?.FilePath);
+                currentDisplayText = rawText ?? "";
+            // 执行阶段开始时的动作
+            ExecuteActionFile(CurrentPhase.OnPhaseStart?.FilePath);
         }
 
         /// <summary>
         /// 逐字打印任务描述文本，支持 % 和 %% 停顿。
         /// </summary>
-        private void UpdateAssignMission(float t)
+        private void UpdateAssignMission(float _)
         {
             if (string.IsNullOrEmpty(currentDisplayText))
             {
-                TransitionToNextState(); // 没有文本则直接进入下一状态
+                TransitionToNextState();
                 return;
             }
 
-            // 调用原版方法逐字输出，自动支持 % 和 %% 停顿
             charsRenderedSoFar = TextWriterTimed.WriteTextToTerminal(
                 currentDisplayText, os, 0.04f, 1f, 20f, stateTimer, charsRenderedSoFar);
             if (charsRenderedSoFar >= currentDisplayText.Length)
-                TransitionToNextState(); // 全部输出完毕
+                TransitionToNextState();
         }
 
-        /// <summary>
-        /// 加载当前阶段的任务 XML。
-        /// </summary>
         private void LoadCurrentMission()
         {
-            if (!string.IsNullOrEmpty(currentPhase.MissionFile))
+            if (!string.IsNullOrEmpty(CurrentPhase.MissionFile))
             {
-                string missionPath = ResolvePath(currentPhase.MissionFile);
+                string missionPath = ResolvePath(CurrentPhase.MissionFile);
                 if (missionPath == null || !File.Exists(missionPath))
                 {
-                    os.write($"Error: Mission file not found: {currentPhase.MissionFile}");
+                    os.write($"Error: Mission file not found: {CurrentPhase.MissionFile}");
                     currentMission = null;
                 }
                 else
@@ -507,73 +527,55 @@ namespace KernelExtensions.Executables
             else currentMission = null;
         }
 
-        /// <summary>
-        /// 任务执行阶段的更新：检测任务是否完成。
-        /// </summary>
-        private void UpdateOnMission(float t)
+        private void UpdateOnMission(float _)
         {
             if (missionCompleted) return;
             if (currentMission != null && currentMission.isComplete(null))
             {
                 missionCompleted = true;
-                TransitionToNextState(); // 任务完成，进入下一阶段
+                TransitionToNextState();
             }
         }
 
         // ---------- 失败处理（不再输出失败信息到终端） ----------
         private void OnPhaseTimeout()
         {
-            // 执行阶段失败动作（如果配置了）
-            ExecuteActionFile(currentPhase?.OnFail?.FilePath);
-            // 不再输出 os.write("Trial failed due to phase timeout.");
-            if (currentPhase.EnableResetOnFail)
-                ResetCurrentPhase();      // 重置当前阶段，重新开始
-            else
-                isExiting = true;         // 直接退出
-        }
-
-        private void OnGlobalTimeout()
-        {
-            ExecuteActionFile(config.OnGlobalFail?.FilePath);
-            // 不再输出 os.write("Trial failed due to global timeout.");
-            isExiting = true;
-        }
-
-        private void OnTraceTimeout()
-        {
-            ExecuteActionFile(currentPhase?.OnFail?.FilePath);
-            // 不再输出 os.write("Trial failed due to trace timeout.");
-            if (currentPhase.EnableResetOnFail)
+            ExecuteActionFile(CurrentPhase?.OnFail?.FilePath);
+            if (CurrentPhase.EnableResetOnFail)
                 ResetCurrentPhase();
             else
                 isExiting = true;
         }
 
-        /// <summary>
-        /// 重置当前阶段：重新输出描述文本、重新加载任务、重置阶段计时器。
-        /// </summary>
+        private void OnGlobalTimeout()
+        {
+            ExecuteActionFile(config.OnGlobalFail?.FilePath);
+            isExiting = true;
+        }
+
+        private void OnTraceTimeout()
+        {
+            ExecuteActionFile(CurrentPhase?.OnFail?.FilePath);
+            if (CurrentPhase.EnableResetOnFail)
+                ResetCurrentPhase();
+            else
+                isExiting = true;
+        }
+
         private void ResetCurrentPhase()
         {
-            // 重置状态到 AssignMission，保持 currentPhaseIdx 不变
             currentState = RunState.AssignMission;
-            PrepareAssignMission();       // 重新准备描述文本
-            // 重置阶段计时器（如果超时时间 > 0）
-            if (currentPhase.Timeout > 0)
+            PrepareAssignMission();
+            if (CurrentPhase.Timeout > 0)
             {
-                phaseTimerRemaining = currentPhase.Timeout;
+                phaseTimerRemaining = CurrentPhase.Timeout;
                 phaseTimerActive = true;
             }
             else phaseTimerActive = false;
-            // 重置任务完成标志
             missionCompleted = false;
-            // 重新加载任务
             LoadCurrentMission();
-            // 注意：不重置全局计时器，全局计时器继续倒计时
         }
 
-        /// <summary>
-        /// 删除当前试炼对应的 CustomTrial_ Flag，防止下次启动时自动加载同一配置。
-        /// </summary>
         private void DeleteCurrentTrialFlag()
         {
             string currentFlag = os.Flags.GetFlagStartingWith("CustomTrial_");
@@ -585,10 +587,6 @@ namespace KernelExtensions.Executables
         }
 
         // ---------- 动作执行 ----------
-        /// <summary>
-        /// 执行外部动作 XML 文件（使用 Hacknet 原生的 SerializableAction）。
-        /// 支持 <Actions> 包裹或多个动作平铺两种格式。
-        /// </summary>
         private void ExecuteActionFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath)) return;
@@ -601,35 +599,31 @@ namespace KernelExtensions.Executables
 
             try
             {
-                using (FileStream fs = new FileStream(fullPath, FileMode.Open))
-                using (XmlReader reader = XmlReader.Create(fs))
+                using FileStream fs = new(fullPath, FileMode.Open);
+                using XmlReader reader = XmlReader.Create(fs);
+                reader.MoveToContent();
+                if (reader.Name == "Actions" && reader.IsStartElement())
                 {
-                    reader.MoveToContent();
-                    // 格式1：根元素为 <Actions>
-                    if (reader.Name == "Actions" && reader.IsStartElement())
+                    reader.ReadStartElement("Actions");
+                    while (reader.NodeType != XmlNodeType.EndElement)
                     {
-                        reader.ReadStartElement("Actions");
-                        while (reader.NodeType != XmlNodeType.EndElement)
+                        if (reader.NodeType == XmlNodeType.Element)
                         {
-                            if (reader.NodeType == XmlNodeType.Element)
-                            {
-                                SerializableAction action = SerializableAction.Deserialize(reader);
-                                action.Trigger(os);
-                            }
-                            else reader.Read();
+                            SerializableAction action = SerializableAction.Deserialize(reader);
+                            action.Trigger(os);
                         }
-                        reader.ReadEndElement();
+                        else reader.Read();
                     }
-                    // 格式2：根元素直接是动作元素（或多个平铺）
-                    else
+                    reader.ReadEndElement();
+                }
+                else
+                {
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        if (reader.NodeType == XmlNodeType.Element)
                         {
-                            if (reader.NodeType == XmlNodeType.Element)
-                            {
-                                SerializableAction action = SerializableAction.Deserialize(reader);
-                                action.Trigger(os);
-                            }
+                            SerializableAction action = SerializableAction.Deserialize(reader);
+                            action.Trigger(os);
                         }
                     }
                 }
@@ -645,7 +639,6 @@ namespace KernelExtensions.Executables
         {
             if (!config.EnableFlickering) return;
 
-            // 第一次进入时计算动态摧毁间隔（与原版一致：总时长 / 2 / 节点数）
             if (!hasStartedNodeDestruction && config.EnableNodeDestruction && os.netMap.visibleNodes.Count > 1)
             {
                 int nodeCount = os.netMap.visibleNodes.Count;
@@ -653,8 +646,8 @@ namespace KernelExtensions.Executables
                 hasStartedNodeDestruction = true;
             }
 
-            if (!config.EnableNodeDestruction) return; // 未启用节点摧毁
-            if (os.netMap.visibleNodes.Count <= 1) return; // 只剩玩家节点，不再摧毁
+            if (!config.EnableNodeDestruction) return;
+            if (os.netMap.visibleNodes.Count <= 1) return;
 
             nodeRemovalTimer += t;
             if (nodeRemovalTimer >= nodeRemovalInterval)
@@ -664,16 +657,12 @@ namespace KernelExtensions.Executables
             }
         }
 
-        /// <summary>
-        /// 随机删除一个非玩家节点。
-        /// </summary>
         private void RemoveRandomNode()
         {
-            var visible = os.netMap.visibleNodes; // List<int> 节点索引
+            var visible = os.netMap.visibleNodes;
             if (visible.Count <= 1) return;
 
-            // 收集非玩家节点的索引
-            List<int> nonPlayerIndices = new List<int>();
+            List<int> nonPlayerIndices = new();
             foreach (int idx in visible)
                 if (os.netMap.nodes[idx] != os.thisComputer)
                     nonPlayerIndices.Add(idx);
@@ -683,7 +672,6 @@ namespace KernelExtensions.Executables
             int nodeIdx = nonPlayerIndices[randomIdx];
             var comp = os.netMap.nodes[nodeIdx];
             Vector2 screenPos = comp.getScreenSpacePosition();
-            // 添加冲击波特效
             impactEffects.Add(new TraceKillExe.PointImpactEffect
             {
                 location = screenPos,
@@ -699,32 +687,24 @@ namespace KernelExtensions.Executables
         private void UpdateMailIconDestroy(float t)
         {
             float progress = Math.Min(1f, stateTimer / config.MailIconDestroyDuration);
-            // 定期添加红色圆圈特效
             if (progress > 0.2f && stateTimer % 0.6f <= t)
                 SFX.addCircle(os.mailicon.pos + new Vector2(20f, 6f), Utils.AddativeRed, 100f + 200f * progress);
-            // 顶部栏图标随机闪烁红色
             os.topBarIconsColor = (Utils.randm(1f) < progress) ? Color.Red : originalTopBarIconsColor;
-            // 爆炸完成
             if (progress >= 0.99f)
             {
                 os.DisableEmailIcon = true;
                 breakSound.Play();
                 explosion.Explode(1500, new Vector2(-0.1f, 3.1415926f), os.mailicon.pos + new Vector2(20f, 6f), 1f, 8f, 100f, 1600f, 1000f, 1200f, 3f, 7f);
-                // 注意：这里没有显式恢复顶部栏颜色，因为爆炸后程序会进入 AssignMission 状态，
-                // 该状态下顶部栏颜色会被系统重新设定，且原版 DLC 也未恢复，因此保留原逻辑。
             }
         }
 
-        /// <summary>
-        /// 更新冲击波特效列表，移除过时的特效。
-        /// </summary>
         private void UpdateImpactEffects(float t)
         {
             for (int i = 0; i < impactEffects.Count; i++)
             {
                 var effect = impactEffects[i];
                 effect.timeEnabled += t;
-                if (effect.timeEnabled > 5f) // 特效存活超过5秒则移除
+                if (effect.timeEnabled > 5f)
                     impactEffects.RemoveAt(i--);
                 else
                     impactEffects[i] = effect;
@@ -735,13 +715,11 @@ namespace KernelExtensions.Executables
         public override void Draw(float t)
         {
             base.Draw(t);
-            drawTarget();    // 绘制目标指示
-            drawOutline();   // 绘制边框
+            drawTarget();
+            drawOutline();
 
-            // 程序窗口内的可用内容区域（减去顶部面板）
-            Rectangle contentRect = new Rectangle(bounds.X + 2, bounds.Y + Module.PANEL_HEIGHT + 2, bounds.Width - 4, bounds.Height - Module.PANEL_HEIGHT - 4);
+            Rectangle contentRect = new(bounds.X + 2, bounds.Y + Module.PANEL_HEIGHT + 2, bounds.Width - 4, bounds.Height - Module.PANEL_HEIGHT - 4);
 
-            // 如果试炼被锁定，显示锁定消息
             if (trialLocked || config == null)
             {
                 DrawLockedMessage(contentRect);
@@ -754,11 +732,21 @@ namespace KernelExtensions.Executables
                 RenderedRectangle.doRectangle(contentRect.X, contentRect.Y, contentRect.Width, contentRect.Height, cachedBackgroundColor);
             }
 
-            // 根据当前状态绘制不同内容
+            // 计算内存缩减缩放因子（仅当缩减过程中，且不为最终状态时缩放）
+            float scale = 1f;
+            if (ramReductionActive || (ramReductionDelaying && ramReductionDelayTimer > 0))
+            {
+                // 在延迟期间不缩放，仅在活跃缩减时根据当前 ramCost 计算缩放
+                if (ramReductionActive)
+                    scale = currentRamCost / 190f;
+                else
+                    scale = 1f;
+            }
+
             switch (currentState)
             {
                 case RunState.NotStarted:
-                    DrawStartScreen(contentRect);
+                    DrawStartScreen(contentRect, scale);
                     break;
                 case RunState.SpinningUp:
                     DrawSpinningUp(contentRect);
@@ -767,84 +755,68 @@ namespace KernelExtensions.Executables
                 case RunState.MailIconDestroy:
                 case RunState.AssignMission:
                 case RunState.OnMission:
-                    DrawPhaseTitle(contentRect);
+                    DrawPhaseTitle(contentRect, scale);
                     break;
             }
 
             DrawImpactEffects();
             explosion.Render(spriteBatch);
 
-            // 绘制计时器（放在程序窗口底部，避免遮挡标题）
-            int timerY = bounds.Y + bounds.Height - 70; // 底部偏移
+            // 绘制计时器（全局和阶段），这些元素不受缩放影响，保持全宽
+            int timerY = bounds.Y + bounds.Height - 70;
             if (globalTimerActive && config.EnableGlobalTimer && globalTimerRemaining > 0)
             {
-                Rectangle globalRect = new Rectangle(bounds.X + 10, timerY, bounds.Width - 20, 25);
+                Rectangle globalRect = new(bounds.X + 10, timerY, bounds.Width - 20, 25);
                 DrawTimerBar(globalRect, globalTimerRemaining / config.GlobalTimeout, globalTimerRemaining, cachedGlobalTimerColor);
-                timerY -= 30; // 为阶段计时器留出空间
+                timerY -= 30;
             }
             if (phaseTimerActive && config.EnablePhaseTimer && phaseTimerRemaining > 0)
             {
-                Rectangle phaseRect = new Rectangle(bounds.X + 10, timerY, bounds.Width - 20, 25);
-                DrawTimerBar(phaseRect, phaseTimerRemaining / currentPhase.Timeout, phaseTimerRemaining, cachedPhaseTimerColor);
+                Rectangle phaseRect = new(bounds.X + 10, timerY, bounds.Width - 20, 25);
+                DrawTimerBar(phaseRect, phaseTimerRemaining / CurrentPhase.Timeout, phaseTimerRemaining, cachedPhaseTimerColor);
             }
         }
 
         /// <summary>
         /// 绘制一个计时条（背景、进度填充、边框、右侧文字）。
         /// </summary>
-        /// <param name="rect">计时条区域</param>
-        /// <param name="percent">完成百分比 0-1</param>
-        /// <param name="remaining">剩余秒数</param>
-        /// <param name="customColor">自定义颜色（若为透明则使用主题高亮色）</param>
         private void DrawTimerBar(Rectangle rect, float percent, float remaining, Color customColor)
         {
             Color useColor = (customColor != Color.Transparent) ? customColor : os.highlightColor;
 
-            // 背景
             RenderedRectangle.doRectangle(rect.X, rect.Y, rect.Width, rect.Height, Color.Black * 0.7f);
-            // 进度填充
             int fillWidth = (int)(rect.Width * Math.Max(0, Math.Min(1, percent)));
             RenderedRectangle.doRectangle(rect.X, rect.Y, fillWidth, rect.Height, useColor);
-            // 边框
             RenderedRectangle.doRectangleOutline(rect.X, rect.Y, rect.Width, rect.Height, 1, Color.White);
-            // 右侧显示剩余秒数
             string timerText = $"{(int)remaining}s";
             Vector2 textSize = GuiData.font.MeasureString(timerText);
-            Vector2 textPos = new Vector2(rect.X + rect.Width - textSize.X - 5, rect.Y + (rect.Height - textSize.Y) / 2);
+            Vector2 textPos = new(rect.X + rect.Width - textSize.X - 5, rect.Y + (rect.Height - textSize.Y) / 2);
             spriteBatch.DrawString(GuiData.font, timerText, textPos, Color.White);
         }
 
-        /// <summary>
-        /// 绘制锁定消息（在原本开始按钮的位置显示文字）。
-        /// </summary>
         private void DrawLockedMessage(Rectangle rect)
         {
             backgroundEffect.Update(0f);
             backgroundEffect.Draw(rect, spriteBatch, Color.Black, os.highlightColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
             string lockText = GetLocalizedLockedText();
             int btnHeight = 30;
-            Rectangle textRect = new Rectangle(rect.X + 10, rect.Y + rect.Height / 2 - btnHeight / 2, rect.Width - 20, btnHeight);
+            Rectangle textRect = new(rect.X + 10, rect.Y + rect.Height / 2 - btnHeight / 2, rect.Width - 20, btnHeight);
             spriteBatch.Draw(Utils.white, textRect, Color.Black * 0.6f);
             TextItem.doCenteredFontLabel(textRect, lockText, GuiData.font, Color.Red, false);
         }
 
-        /// <summary>
-        /// 绘制开始屏幕（背景 + 按钮）。
-        /// </summary>
-        private void DrawStartScreen(Rectangle rect)
+        private void DrawStartScreen(Rectangle rect, float scale)
         {
             backgroundEffect.Update(0f);
             backgroundEffect.Draw(rect, spriteBatch, Color.Black, os.highlightColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
-            int btnHeight = 30;
-            Rectangle btnRect = new Rectangle(rect.X + 10, rect.Y + rect.Height / 2 - btnHeight / 2, rect.Width - 20, btnHeight);
+            int btnHeight = (int)(30 * scale);
+            Rectangle btnRect = new(rect.X + 10, rect.Y + rect.Height / 2 - btnHeight / 2, (int)((rect.Width - 20) * scale), btnHeight);
             string buttonText = GetLocalizedBeginButton();
+            // 缩放字体
             if (Button.doButton(8310101 + PID, btnRect.X, btnRect.Y, btnRect.Width, btnRect.Height, buttonText, new Color?(os.highlightColor)))
                 TransitionToNextState();
         }
 
-        /// <summary>
-        /// 多语言按钮文本（硬编码，根据游戏当前语言返回）。
-        /// </summary>
         private string GetLocalizedBeginButton()
         {
             string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
@@ -860,9 +832,6 @@ namespace KernelExtensions.Executables
             return "BEGIN TRIAL";
         }
 
-        /// <summary>
-        /// 多语言锁定文字。
-        /// </summary>
         private string GetLocalizedLockedText()
         {
             string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
@@ -878,9 +847,6 @@ namespace KernelExtensions.Executables
             return "TRIAL LOCKED";
         }
 
-        /// <summary>
-        /// 绘制旋转进度条（逐行扫描），支持自定义颜色。
-        /// </summary>
         private void DrawSpinningUp(Rectangle rect)
         {
             Color spinColor = (cachedSpinUpColor != Color.Transparent) ? cachedSpinUpColor : os.highlightColor;
@@ -896,30 +862,26 @@ namespace KernelExtensions.Executables
         }
 
         /// <summary>
-        /// 绘制阶段标题（在窗口中央），标题和副标题仅在此处显示，不再输出到终端。
+        /// 绘制阶段标题（在窗口中央），支持内存缩减时的缩放。
         /// </summary>
-        private void DrawPhaseTitle(Rectangle rect)
+        private void DrawPhaseTitle(Rectangle rect, float scale)
         {
             backgroundEffect.Update(0f);
             backgroundEffect.Draw(rect, spriteBatch, Color.Black, os.highlightColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
-            int titleHeight = 40;
-            // 标题垂直居中于内容区域的上半部分
-            Rectangle titleRect = new Rectangle(rect.X, rect.Y + rect.Height / 3 - titleHeight / 2, rect.Width, titleHeight);
+            int titleHeight = (int)(40 * scale);
+            Rectangle titleRect = new(rect.X, rect.Y + rect.Height / 3 - titleHeight / 2, (int)(rect.Width * scale), titleHeight);
             spriteBatch.Draw(Utils.white, titleRect, Color.Black * 0.6f);
-            TextItem.doFontLabelToSize(titleRect, currentPhase?.Title ?? "", GuiData.font, Color.White, true, false);
-            // 如果有副标题，在标题下方绘制
-            if (!string.IsNullOrEmpty(currentPhase?.Subtitle))
+            // 缩放字体
+            TextItem.doFontLabelToSize(titleRect, CurrentPhase?.Title ?? "", GuiData.font, Color.White, true, false);
+            if (!string.IsNullOrEmpty(CurrentPhase?.Subtitle))
             {
-                int subtitleHeight = 22;
-                Rectangle subtitleRect = new Rectangle(rect.X, titleRect.Y + titleRect.Height + 5, rect.Width, subtitleHeight);
+                int subtitleHeight = (int)(22 * scale);
+                Rectangle subtitleRect = new(rect.X, titleRect.Y + titleRect.Height + 5, (int)(rect.Width * scale), subtitleHeight);
                 spriteBatch.Draw(Utils.white, subtitleRect, Color.Black * 0.4f);
-                TextItem.doFontLabelToSize(subtitleRect, currentPhase.Subtitle, GuiData.font, Utils.AddativeWhite * 0.9f, true, false);
+                TextItem.doFontLabelToSize(subtitleRect, CurrentPhase.Subtitle, GuiData.font, Utils.AddativeWhite * 0.9f, true, false);
             }
         }
 
-        /// <summary>
-        /// 绘制节点消失冲击波特效。
-        /// </summary>
         private void DrawImpactEffects()
         {
             foreach (var effect in impactEffects)
