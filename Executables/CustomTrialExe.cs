@@ -15,6 +15,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
 using Pathfinder.Util;
 using KernelExtensions.Config;
+using KernelExtensions.Storage;   // 用于节点存储
 
 namespace KernelExtensions.Executables
 {
@@ -25,12 +26,16 @@ namespace KernelExtensions.Executables
     /// </summary>
     public class CustomTrialExe : GameExecutable
     {
+        // ---------- 静态实例（用于存档保存事件）----------
+        public static CustomTrialExe CurrentInstance { get; private set; }
+
         // ---------- 状态机枚举 ----------
         private enum RunState
         {
             NotStarted,      // 显示开始按钮
             SpinningUp,      // 旋转进度条动画
             Flickering,      // UI 闪烁+节点消失（可选）
+            WaitAfterDestruction,   // 节点摧毁后等待状态
             MailIconDestroy, // 邮件图标爆炸（可选）
             AssignMission,   // 逐字打印任务描述
             OnMission,       // 等待玩家完成任务
@@ -43,6 +48,9 @@ namespace KernelExtensions.Executables
         private int currentPhaseIdx = -1;                      // 当前阶段索引（-1 表示未开始）
         private float stateTimer = 0f;                         // 当前状态计时器（秒）
         private TrialConfig config;                            // 加载的配置对象
+
+        // 音乐恢复相关
+        private string originalMusicName = null;   // 进入试炼前的音乐名
 
         // 辅助属性：获取当前阶段配置（索引有效时）
         private PhaseConfig CurrentPhase => (currentPhaseIdx >= 0 && currentPhaseIdx < config.Phases.Count) ? config.Phases[currentPhaseIdx] : null;
@@ -72,6 +80,10 @@ namespace KernelExtensions.Executables
         private float currentRamCost = 190f;                   // 当前实际 ramCost（浮点，用于平滑）
         private const float TARGET_RAM_COST = 88f;             // 目标内存占用（固定不可配置）
         private float ramReductionStartValue = 190f;           // 缩减开始时的 ramCost
+
+        // ---------- 节点删除持久化相关 ----------
+        public string CurrentConfigName { get; private set; }                      // 当前试炼配置名称（用于存储标识）
+        private List<int> deletedNodeIndices = new();          // 本次试炼中已删除的节点索引列表
 
         // ---------- 特效相关 ----------
         private List<TraceKillExe.PointImpactEffect> impactEffects = new(); // 冲击波特效列表
@@ -104,6 +116,7 @@ namespace KernelExtensions.Executables
             this.IdentifierName = "CustomTrial";               // 程序内部标识
             this.name = "CustomTrial";                         // 程序显示名称
             this.CanBeKilled = true;                           // 初始允许被 kill 命令关闭
+            CurrentInstance = this;                            // 设置静态实例
         }
 
         // ---------- 初始化（类似 LoadContent） ----------
@@ -133,14 +146,14 @@ namespace KernelExtensions.Executables
             if (trialFlags.Count == 0)
             {
                 trialLocked = true;
-                Console.WriteLine("[KernelExtensions] No CustomTrial_ flag found. Trial locked.");
+                Console.WriteLine("[KernelExtensions]CustomTrialExe: No CustomTrial_ flag found. Trial locked.");
                 config = null;
                 return;
             }
             // 多个 Flag 时警告，取第一个作为有效配置
             else if (trialFlags.Count > 1)
             {
-                Console.WriteLine($"[KernelExtensions] Warning: Multiple CustomTrial_ flags found: {string.Join(", ", trialFlags)}. Using the first one: {trialFlags[0]}.");
+                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Warning: Multiple CustomTrial_ flags found: {string.Join(", ", trialFlags)}. Using the first one: {trialFlags[0]}.");
             }
             string flag = trialFlags[0];
 
@@ -150,7 +163,7 @@ namespace KernelExtensions.Executables
             if (config == null)
             {
                 trialLocked = true;
-                Console.WriteLine("[KernelExtensions] Failed to load trial config. Check that the config file exists and is valid.");
+                Console.WriteLine("[KernelExtensions]CustomTrialExe: Failed to load trial config. Check that the config file exists and is valid.");
                 return;
             }
 
@@ -172,9 +185,15 @@ namespace KernelExtensions.Executables
             circle = os.content.Load<Texture2D>("Circle");
             circleOutline = os.content.Load<Texture2D>("CircleOutlineLarge");
 
+            // 保存当前音乐名（用于未开始时退出恢复）
+            originalMusicName = MusicManager.currentSongName;
+
             // ---- 播放启动音乐 ----
             if (!string.IsNullOrEmpty(config.StartMusic))
                 MusicManager.transitionToSong(config.StartMusic);
+
+            // ---- 应用持久化删除的节点（从存档中恢复删除状态）----
+            ApplyPersistedDeletedNodes();
         }
 
         /// <summary>
@@ -188,7 +207,7 @@ namespace KernelExtensions.Executables
 
             if (string.IsNullOrEmpty(extensionRoot))
             {
-                Console.WriteLine("[KernelExtensions] Error: No extension root found. This mod must be run as part of an extension.");
+                Console.WriteLine("[KernelExtensions]CustomTrialExe: Error: No extension root found. This mod must be run as part of an extension.");
                 return null;
             }
             return Path.Combine(extensionRoot, relativePath).Replace('\\', '/');
@@ -206,11 +225,12 @@ namespace KernelExtensions.Executables
                 configName = flag.Substring("CustomTrial_".Length);
                 if (string.IsNullOrEmpty(configName)) configName = "Default";
             }
+            CurrentConfigName = configName;  // 保存配置名
 
             // 配置文件必须位于扩展根目录下的 Trial 文件夹中
             if (string.IsNullOrEmpty(extensionRoot))
             {
-                Console.WriteLine("[KernelExtensions] Error: Cannot locate trial config because no extension root is available.");
+                Console.WriteLine("[KernelExtensions]CustomTrialExe: Error: Cannot locate trial config because no extension root is available.");
                 isExiting = true;
                 return;
             }
@@ -218,7 +238,7 @@ namespace KernelExtensions.Executables
             string configPath = Path.Combine(extensionRoot, "Trial", configName + ".xml").Replace('\\', '/');
             if (!File.Exists(configPath))
             {
-                Console.WriteLine($"[KernelExtensions] Error: Trial config '{configName}.xml' not found at '{configPath}'. Please ensure the file exists and the flag '{flag}' is correct.");
+                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error: Trial config '{configName}.xml' not found at '{configPath}'. Please ensure the file exists and the flag '{flag}' is correct.");
                 isExiting = true;
                 return;
             }
@@ -232,8 +252,28 @@ namespace KernelExtensions.Executables
             }
             catch (Exception e)
             {
-                Console.WriteLine($"[KernelExtensions] Error loading config: {e.Message}");
+                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error loading config: {e.Message}");
                 isExiting = true;
+            }
+        }
+
+        /// <summary>
+        /// 应用持久化存储的删除节点列表（从 CustomTrialNodeStorage 中读取），
+        /// 将这些节点从 visibleNodes 中移除，并同步到本地的 deletedNodeIndices。
+        /// </summary>
+        private void ApplyPersistedDeletedNodes()
+        {
+            if (string.IsNullOrEmpty(CurrentConfigName)) return;
+            var persistedNodes = CustomTrialNodeStorage.GetDeletedNodes(CurrentConfigName);
+            if (persistedNodes.Count == 0) return;
+
+            var visible = os.netMap.visibleNodes;
+            foreach (int idx in persistedNodes)
+            {
+                if (visible.Contains(idx))
+                    visible.Remove(idx);
+                if (!deletedNodeIndices.Contains(idx))
+                    deletedNodeIndices.Add(idx);
             }
         }
 
@@ -289,6 +329,29 @@ namespace KernelExtensions.Executables
                 default: r = value; g = p; b = q; break;
             }
             return new Color(r, g, b);
+        }
+
+        /// <summary>
+        /// 根据配置切换主题（使用 EffectsUpdater.StartThemeSwitch）
+        /// </summary>
+        private void ApplyThemeSwitch()
+        {
+            if (string.IsNullOrEmpty(config.ThemeToSwitch))
+                return;
+
+            // 尝试解析为主题枚举
+            if (Enum.TryParse<OSTheme>(config.ThemeToSwitch, true, out OSTheme themeEnum))
+            {
+                // 预设主题
+                os.EffectsUpdater.StartThemeSwitch(config.ThemeFlickerDuration, themeEnum, os, null);
+            }
+            else
+            {
+                // 自定义主题文件路径
+                os.EffectsUpdater.StartThemeSwitch(config.ThemeFlickerDuration, OSTheme.Custom, os, config.ThemeToSwitch);
+            }
+            // 主题切换后，重新保存顶部栏颜色（因为顶栏颜色可能已改变）
+            originalTopBarIconsColor = os.topBarIconsColor;
         }
 
         // ---------- 每帧更新 ----------
@@ -397,7 +460,9 @@ namespace KernelExtensions.Executables
                         globalTimerRemaining = config.GlobalTimeout;
                         globalTimerActive = true;
                     }
-                    ExecuteActionFile(config.OnStart?.FilePath);
+                    // 应用主题切换（在动画开始前）
+                    ApplyThemeSwitch();
+                    // 注意：原来执行 OnStart 的地方已移除，动画完成后将执行 OnAnimationComplete
                     currentState = RunState.SpinningUp;
                     break;
 
@@ -412,13 +477,25 @@ namespace KernelExtensions.Executables
 
                 case RunState.Flickering:
                     if (config.EnableMailIconDestroy)
-                        currentState = RunState.MailIconDestroy;
+                    {
+                        if (config.PostDestructionDelay > 0)
+                            currentState = RunState.WaitAfterDestruction;
+                        else
+                            currentState = RunState.MailIconDestroy;
+                    }
                     else
                         StartNextPhase();
                     break;
 
                 case RunState.MailIconDestroy:
+                    // 执行动画完成后的动作
+                    ExecuteActionFile(config.OnAnimationComplete?.FilePath);
                     StartNextPhase();
+                    break;
+
+                case RunState.WaitAfterDestruction:
+                    if (stateTimer >= config.PostDestructionDelay)
+                        TransitionToNextState();
                     break;
 
                 case RunState.AssignMission:
@@ -516,7 +593,7 @@ namespace KernelExtensions.Executables
                 string missionPath = ResolvePath(CurrentPhase.MissionFile);
                 if (missionPath == null || !File.Exists(missionPath))
                 {
-                    os.write($"Error: Mission file not found: {CurrentPhase.MissionFile}");
+                    Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error: Mission file not found: {CurrentPhase.MissionFile}");
                     currentMission = null;
                 }
                 else
@@ -582,7 +659,17 @@ namespace KernelExtensions.Executables
             if (!string.IsNullOrEmpty(currentFlag))
             {
                 os.Flags.RemoveFlag(currentFlag);
-                Console.WriteLine($"[KernelExtensions] Removed flag: {currentFlag}");
+                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Removed flag: {currentFlag}");
+            }
+        }
+
+        public override void OnComplete()
+        {
+            base.OnComplete();
+            // 如果是在未开始试炼的状态下退出（例如玩家 kill 了程序），恢复音乐
+            if (currentState == RunState.NotStarted && !trialLocked && !string.IsNullOrEmpty(originalMusicName))
+            {
+                MusicManager.transitionToSong(originalMusicName);
             }
         }
 
@@ -630,7 +717,7 @@ namespace KernelExtensions.Executables
             }
             catch (Exception e)
             {
-                os.write($"Error executing actions: {e.Message}");
+                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error executing actions: {e.Message}");
             }
         }
 
@@ -672,6 +759,12 @@ namespace KernelExtensions.Executables
             int nodeIdx = nonPlayerIndices[randomIdx];
             var comp = os.netMap.nodes[nodeIdx];
             Vector2 screenPos = comp.getScreenSpacePosition();
+
+            // 记录删除的节点索引（持久化）
+            if (!deletedNodeIndices.Contains(nodeIdx))
+                deletedNodeIndices.Add(nodeIdx);
+            CustomTrialNodeStorage.AddDeletedNode(CurrentConfigName, nodeIdx);
+
             impactEffects.Add(new TraceKillExe.PointImpactEffect
             {
                 location = screenPos,
@@ -753,6 +846,7 @@ namespace KernelExtensions.Executables
                     break;
                 case RunState.Flickering:
                 case RunState.MailIconDestroy:
+                case RunState.WaitAfterDestruction:
                 case RunState.AssignMission:
                 case RunState.OnMission:
                     DrawPhaseTitle(contentRect, scale);
@@ -803,6 +897,15 @@ namespace KernelExtensions.Executables
             Rectangle textRect = new(rect.X + 10, rect.Y + rect.Height / 2 - btnHeight / 2, rect.Width - 20, btnHeight);
             spriteBatch.Draw(Utils.white, textRect, Color.Black * 0.6f);
             TextItem.doCenteredFontLabel(textRect, lockText, GuiData.font, Color.Red, false);
+
+            // 添加退出按钮（右下角）
+            int exitBtnWidth = 60;
+            int exitBtnHeight = 22;
+            Rectangle exitBtnRect = new(rect.X + rect.Width - exitBtnWidth - 10, rect.Y + rect.Height - exitBtnHeight - 10, exitBtnWidth, exitBtnHeight);
+            if (Button.doButton(8310102 + PID, exitBtnRect.X, exitBtnRect.Y, exitBtnRect.Width, exitBtnRect.Height, "Exit", new Color?(os.lockedColor)))
+            {
+                isExiting = true;
+            }
         }
 
         private void DrawStartScreen(Rectangle rect, float scale)
@@ -893,5 +996,8 @@ namespace KernelExtensions.Executables
                 effect.cne.draw(spriteBatch, effect.location);
             }
         }
+
+        // ---------- 公共方法（供外部获取删除节点列表）----------
+        public List<int> GetDeletedNodeIndices() => new(deletedNodeIndices);
     }
 }

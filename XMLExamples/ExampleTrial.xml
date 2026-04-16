@@ -58,6 +58,24 @@
 	<!-- Music played after clicking "Start Trial" (optional). -->
 	<TrialStartMusic>DLC/Music/snidelyWhiplash</TrialStartMusic>
 
+	<!-- ==================== 主题切换配置 ==================== -->
+	<!-- ==================== Theme Switching Settings ==================== -->
+	<!-- 要切换的主题：可以是预设名称（如 "HacknetBlue", "HacknetMint" 等）或自定义主题文件路径（如 "Themes/MyTheme.xml"） -->
+	<!-- 如果不设置或留空，则不切换主题 -->
+	<!-- Theme to switch to: can be a preset name (e.g., "HacknetBlue", "HacknetMint") or a custom theme file path (e.g., "Themes/MyTheme.xml") -->
+	<!-- If omitted or left empty, no theme switching occurs -->
+	<ThemeToSwitch>HacknetMint</ThemeToSwitch>
+
+	<!-- 主题切换时的闪烁时长（秒），默认 2 -->
+	<!-- Flicker duration when switching theme (seconds), defaults to 2 -->
+	<ThemeFlickerDuration>2.0</ThemeFlickerDuration>
+
+	<!-- ==================== 节点摧毁后等待时间 ==================== -->
+	<!-- ==================== Post-Destruction Delay ==================== -->
+	<!-- 摧毁完成后、邮件爆炸前的等待秒数，默认 0（不等待） -->
+	<!-- Delay in seconds after node destruction before mail icon explosion. Default 0 (no wait) -->
+	<PostDestructionDelay>1.5</PostDestructionDelay>
+	
 	<!-- ==================== 自定义颜色（可选，不设置则使用当前主题色） ==================== -->
 	<!-- ==================== Custom Colors (optional, uses theme color if omitted) ==================== -->
 	<!-- 程序窗口背景颜色（支持名称如 "Red", "#FF0000", 或者填作者名字？） -->
@@ -104,14 +122,11 @@
 	<!-- Whether to show the phase countdown bar (defaults to true). Only shown if phase Timeout > 0. -->
 	<EnablePhaseTimer>true</EnablePhaseTimer>
 
-	<!-- ==================== 试炼开始时执行的动作 ==================== -->
-	<!-- ==================== Actions Executed at Trial Start ==================== -->
-
-	<!-- 点击“开始试炼”按钮后立即执行的动作文件（可选） -->
-	<!-- Action file to execute immediately after clicking the "Start Trial" button (optional). -->
-	<!-- 注意：如果需要延迟执行（例如在旋转动画完成后），请在动作内部设置 Delay 属性 -->
-	<!-- Note: If you need delayed execution (e.g., after the spin animation finishes), set the Delay attribute inside the actions. -->
-	<OnStart file="Actions/TrialStart.xml" />
+	<!-- ==================== 所有动画完成后执行的动作 ==================== -->
+	<!-- ==================== Action executed after all animations complete ==================== -->
+	<!-- 动画包括：SpinUp + 节点摧毁 + 等待（如果有） + 邮件爆炸 -->
+	<!-- Animations include: SpinUp + node destruction + wait (if any) + mail explosion -->
+	<OnAnimationComplete file="Actions/TrialStart.xml" />
 
 	<!-- ==================== 阶段列表 ==================== -->
 	<!-- ==================== Phases ==================== -->

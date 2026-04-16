@@ -40,11 +40,18 @@ namespace KernelExtensions.Config
         [XmlElement("EnableGlobalTimer")] public bool EnableGlobalTimer = false;     // 是否显示全局倒计时条
         [XmlElement("OnGlobalFail")] public ActionFileRef OnGlobalFail = null;       // 全局超时时执行的动作文件
 
+        // ==================== 主题切换配置 ====================
+        [XmlElement("ThemeToSwitch")] public string ThemeToSwitch = null;           // 要切换的主题（预设名或自定义主题文件路径）
+        [XmlElement("ThemeFlickerDuration")] public float ThemeFlickerDuration = 2f; // 主题切换时的闪烁时长
+
+        // ==================== 节点摧毁后等待时间 ====================
+        [XmlElement("PostDestructionDelay")] public float PostDestructionDelay = 0f; // 摧毁完成后、邮件爆炸前的等待秒数
+
         // ==================== 阶段计时器显示开关 ====================
         [XmlElement("EnablePhaseTimer")] public bool EnablePhaseTimer = true;        // 是否显示阶段倒计时条（默认 true）
 
-        // ==================== 试炼开始时执行的动作 ====================
-        [XmlElement("OnStart")] public ActionFileRef OnStart = null;                 // 点击“开始试炼”后立即执行的动作
+        // ==================== 所有动画完成后执行的动作 ====================
+        [XmlElement("OnAnimationComplete")] public ActionFileRef OnAnimationComplete = null; // 所有动画完成后执行的动作
 
         // ==================== 阶段列表 ====================
         [XmlArray("Phases"), XmlArrayItem("Phase")]
