@@ -33,7 +33,6 @@
   - 逐字打印并支持停顿效果
   - 超时或失败后重置当前阶段，并支持执行自定义动作文件（**失败时不再自动输出额外提示**）
   - 可选特效：UI 闪烁（含节点随机消失，消失间隔根据节点数动态调整）、邮件图标爆炸
-  - 屏幕正上方独立倒计时条（**支持自定义颜色**）
   - 多语言支持（根据游戏语言自动切换）
   - 若未设置任何 `CustomTrial_` Flag，程序窗口显示“试炼已锁定”文字，不显示开始按钮
   - **支持自定义程序背景、全局/阶段进度条、旋转动画颜色**（支持颜色名称、十六进制或神秘彩蛋）
@@ -108,7 +107,7 @@
 
 **重要**：只有支持 `Delay` 属性的动作（如 `AddIRCMessage`、`RunFunction`、`ChangeAlertIcon`、`AddConditionalActions` 等）才能延迟执行。不支持延迟的动作会立即执行，无法推迟。
 
-更多可用动作（如 `SwitchToTheme`、`LoadMission` 等）请参考 Hacknet 官方示例扩展 `IntroExtension`。
+更多可用动作（如 `SwitchToTheme`、`LoadMission` 等）请参考 Hacknet 官方示例扩展 `IntroExtension`或社区中文wiki（https://github.com/FBIKdot/Hacknet-Extension-Tutorial/blob/main/Content/Actions.md）。
 
 #### 三、配置文件结构（`TrialConfig.xml`）
 
@@ -168,7 +167,12 @@
 **说明**：
 - 所有 `file` 属性中的路径均为**相对于扩展根目录的相对路径**。例如 `Docs/MyTrialDesc.txt` 会被解析为 `Extensions/YourExtension/Docs/MyTrialDesc.txt`。
 - `DescriptionText` 可以是文件路径或内嵌文本。文件中可使用 `%`（短停顿 ~0.5秒）和 `%%`（长停顿 ~2秒）。
-- `MissionFile` 指向有效的 Hacknet 任务 XML。建议设置 `<nextMission IsSilent="true">` 以避免自动切换任务时的提示。
+- `MissionFile` 指向一个有效的 Hacknet 任务 XML 文件。建议编写任务时将 `IsSilent` 属性设置为 `true`。
+```xml
+<nextMission IsSilent="true">Missions/NextMission.xml</nextMission>
+<!-- Matt你为什么要把控制当前任务的IsSilent参数塞到加载下一个任务的元素里，这太TM反直觉了还很诡异 -->
+<!-- 此句吐槽是根据社区中文wiki的信息而写的，对于IsSilent参数实际控制哪个任务本人未测试，这一行会在本人测试后或收集到确认的相关信息后删除 -->
+```
 - `Timeout` > 0 时，该阶段必须在指定秒数内完成，否则触发失败（可配置重置）。
 - `EnableNodeDestruction`：开启闪烁特效时，节点摧毁间隔根据初始可见节点数动态计算（与原版一致）。
 - 自定义颜色支持：颜色名称（如 `Red`）、十六进制（如 `#FF0000`）或者填一个人的名字之类的。若省略或留空则使用当前主题的高亮色。
