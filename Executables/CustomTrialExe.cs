@@ -671,6 +671,11 @@ namespace KernelExtensions.Executables
             {
                 MusicManager.transitionToSong(originalMusicName);
             }
+            // 如果试炼成功或失败，停止当前音乐
+            if (Result == CompletionResult.Success || Result == CompletionResult.Failure || Result == CompletionResult.Error)
+            {
+                MusicManager.stop();
+            }
         }
 
         // ---------- 动作执行 ----------
