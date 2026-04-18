@@ -26,30 +26,26 @@
   - 基于 Flag 系统来配置使用的试炼
   - 可自定义 SpinUp 动画时长、启动音乐、试炼音乐
   - 每个阶段可独立配置：
-    - 标题、副标题（**仅显示于程序窗口中央**，不再输出到终端）
+    - 标题、副标题（显示于程序窗口中央）
     - 描述文本（支持文件或内嵌，支持 `%` 短停顿和 `%%` 长停顿）
     - 任务文件、超时时间、阶段音乐
     - **阶段开始时执行的动作** (`OnPhaseStart`)
   - 逐字打印并支持停顿效果
-  - 超时或失败后重置当前阶段，并支持执行自定义动作文件（**失败时不再自动输出额外提示**）
+  - 超时或失败后重置当前阶段，并支持执行自定义动作文件
   - 可选特效：UI 闪烁（含节点随机消失，消失间隔根据节点数动态调整）、邮件图标爆炸
   - 多语言支持（根据游戏语言自动切换）
   - 若未设置任何 `CustomTrial_` Flag，程序窗口显示“试炼已锁定”文字，不显示开始按钮
-  - **支持自定义程序背景、全局/阶段进度条、旋转动画颜色**（支持颜色名称、十六进制或神秘彩蛋）
-  - **动态内存缩减**（0.3.5）  
+  - 支持自定义程序背景、全局/阶段进度条、旋转动画颜色（支持颜色名称、十六进制或神秘彩蛋）
+  - 动态内存缩减（0.3.5）  
     进入破解阶段后，可配置延迟与持续时间，平滑降低 `ramCost`（190 → 88），同时 UI 元素按比例缩放，模拟资源释放过程。
-  - **节点删除持久化与恢复**（0.4.0）  
+  - 节点删除持久化与恢复（0.4.0）  
     试炼中摧毁的节点会被记录并存入存档。扩展作者可通过 `RestoreCustomTrialNodes` 动作在任意时机（如任务完成后）以动画特效逐个恢复节点。
-  - **主题切换配置**（0.4.0）  
+  - 主题切换配置（0.4.0）  
     支持在试炼开始时（旋转动画前）自动切换主题。可指定预设主题名称（如 `HacknetMint`）或自定义主题文件路径，并配置切换时的闪烁时长。
-  - **节点摧毁后等待时间**（0.4.0）  
+  - 节点摧毁后等待时间（0.4.0）  
     新增 `PostDestructionDelay` 配置项，可在节点摧毁完成后、邮件图标爆炸前插入可自定义的等待时间。
-  - **动画完成后执行动作**（0.4.0）  
+  - 动画完成后执行动作（0.4.0）  
     原 `OnStart` 更名为 `OnAnimationComplete`，执行时机移至所有动画（旋转 + 节点摧毁 + 等待 + 邮件爆炸）结束后。
-  - **锁定界面退出按钮**（0.4.0）  
-    当试炼因缺少 Flag 或配置文件而锁定时，窗口右下角会显示“Exit”按钮，方便不熟悉 `kill` 命令的玩家退出。
-  - **未开始时退出恢复音乐**（0.4.0）  
-    若玩家在未开始试炼（`NotStarted` 状态）时使用 `kill` 命令关闭程序，会自动恢复进入前的背景音乐。
 
 #### 🚧 计划中
 - 可自定义的 Porthack 心脏 Daemon（包括 Porthack 后执行的 Action 配置）
@@ -254,30 +250,26 @@ Before using this mod, please ensure you have installed:
   - Based on the Flag system to configure which trial is used.
   - Customizable SpinUp animation duration, start music, trial music
   - Per‑phase configuration:
-    - Title, subtitle (**displayed only in the program window center**, not printed to terminal)
+    - Title, subtitle (displayed only in the program window center)
     - Description text (file or inline, supports `%` short pause and `%%` long pause)
     - Mission file, timeout, phase music
     - **Action executed when the phase starts** (`OnPhaseStart`)
   - Character‑by‑character printing with pause support
-  - Timeout or failure resets the current phase and supports custom action files (**no automatic failure messages**)
+  - Timeout or failure resets the current phase and supports custom action files
   - Optional effects: UI flickering (with random node removal, interval dynamically adjusted based on visible node count), mail icon explosion
   - Multi‑language Support (auto‑detects game language)
   - If no `CustomTrial_` flag is set, the program window displays "Trial Locked" text and no start button
-  - **Customizable colors** for background, global/phase timer bars, and spin animation (supports color names, hex, or secret easter egg)
-  - **Dynamic RAM reduction** (0.3.5)  
+  - Customizable colors for background, global/phase timer bars, 和 spin animation (supports color names, hex, or secret easter egg)
+  - Dynamic RAM reduction (0.3.5)  
     After entering the cracking phase, you can configure a delay and duration to smoothly reduce `ramCost` (190 → 88) while UI elements scale proportionally, simulating resource release.
-  - **Persistent node deletion & restoration** (0.4.0)  
+  - Persistent node deletion & restoration (0.4.0)  
     Nodes destroyed during the trial are recorded and saved with the save file. Authors can use the `RestoreCustomTrialNodes` action to restore them with visual effects at any time.
-  - **Configurable theme switching** (0.4.0)  
+  - Configurable theme switching (0.4.0)  
     Automatically switch the game theme at trial start (before the spin animation). Supports preset theme names (e.g., `HacknetMint`) or custom theme file paths, plus a flicker duration.
-  - **Post‑destruction delay** (0.4.0)  
+  - Post‑destruction delay (0.4.0)  
     New `PostDestructionDelay` setting adds a configurable wait time between node destruction and the mail icon explosion.
-  - **Action after all animations** (0.4.0)  
+  - Action after all animations (0.4.0)  
     `OnStart` has been renamed to `OnAnimationComplete` and now executes after all animations (spin + node destruction + wait + mail explosion).
-  - **Exit button on locked screen** (0.4.0)  
-    When the trial is locked (missing flag or config), an “Exit” button appears at the bottom‑right corner to help players who don’t know the `kill` command.
-  - **Music restoration on early exit** (0.4.0)  
-    If the player kills the program while still in the `NotStarted` state, the original background music is automatically restored.
 
 #### 🚧 Planned
 - Customizable Porthack heart daemon (including actions after Porthacking)
