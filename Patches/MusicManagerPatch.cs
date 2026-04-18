@@ -67,10 +67,10 @@ namespace KernelExtensions.Patches
 
         /// <summary>
         /// 尝试将字符串解析为外部 .ogg 文件路径，并加载为 Song 对象。
-        /// 搜索顺序：
-        /// 1. 如果字符串本身是存在的文件路径（绝对或相对），直接使用。
-        /// 2. 如果字符串不含路径分隔符，尝试在扩展根目录下的 Music 文件夹中查找 文件名.ogg。
-        /// 3. 如果字符串是相对于游戏根目录的路径（如 "Music/my_song.ogg"），尝试从游戏根目录加载。
+        /// 检测顺序（优先级从高到低）：
+        /// 1. 将字符串作为相对于扩展根目录的路径（例如 "Music/1/2.ogg"），如果文件存在则加载。
+        /// 2. 如果字符串本身是存在的绝对路径或相对于游戏根目录的路径，则加载。
+        /// 3. 如果字符串是不含路径分隔符的纯文件名，则在扩展根目录下的 Music 文件夹中查找 文件名.ogg。
         /// </summary>
         private static Song LoadExternalSong(string songname)
         {
@@ -79,33 +79,45 @@ namespace KernelExtensions.Patches
 
             string fullPath = null;
 
-            // 1. 直接作为文件路径检查
-            if (File.Exists(songname))
-                fullPath = songname;
-            // 2. 相对于游戏根目录的路径
-            else if (songname.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
+            // 获取扩展根目录（如果当前在扩展模式下运行）
+            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
+
+            // 1. 优先尝试：将字符串作为相对于扩展根目录的路径
+            if (!string.IsNullOrEmpty(extRoot))
             {
-                string gamePath = Path.Combine(Paths.GameRootPath, songname);
-                if (File.Exists(gamePath))
-                    fullPath = gamePath;
+                // 支持带或不带 .ogg 扩展名
+                string candidate = Path.Combine(extRoot, songname);
+                if (File.Exists(candidate))
+                    fullPath = candidate;
+                else if (!songname.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) && File.Exists(candidate + ".ogg"))
+                    fullPath = candidate + ".ogg";
             }
-            // 3. 纯文件名（不含路径），尝试在扩展目录的 Music 子文件夹中查找
-            else if (!songname.Contains("/") && !songname.Contains("\\"))
+
+            // 2. 如果未找到，尝试作为绝对路径或相对于游戏根目录的路径
+            if (fullPath == null)
             {
-                var extInfo = ExtensionLoader.ActiveExtensionInfo;
-                if (extInfo != null && !string.IsNullOrEmpty(extInfo.FolderPath))
+                if (File.Exists(songname))
+                    fullPath = songname;
+                else if (songname.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
                 {
-                    string candidate = Path.Combine(extInfo.FolderPath, "Music", songname + ".ogg");
-                    if (File.Exists(candidate))
-                        fullPath = candidate;
+                    string gamePath = Path.Combine(Paths.GameRootPath, songname);
+                    if (File.Exists(gamePath))
+                        fullPath = gamePath;
                 }
+            }
+
+            // 3. 如果是纯文件名（不含路径分隔符），在扩展目录的 Music 子文件夹中查找
+            if (fullPath == null && !songname.Contains("/") && !songname.Contains("\\") && !string.IsNullOrEmpty(extRoot))
+            {
+                string candidate = Path.Combine(extRoot, "Music", songname + ".ogg");
+                if (File.Exists(candidate))
+                    fullPath = candidate;
             }
 
             if (fullPath != null)
             {
                 try
                 {
-                    // 使用 Song.FromUri 加载 .ogg 文件（XNA/FNA 支持）
                     return Song.FromUri(songname, new Uri(fullPath));
                 }
                 catch (Exception ex)
