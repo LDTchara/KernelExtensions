@@ -1,21 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;          // 用于反射获取私有字段
-using System.Xml;
-using System.Xml.Serialization;
+﻿using BepInEx;
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
-using Module = Hacknet.Module;   // 消除与 System.Reflection.Module 的歧义
+using KernelExtensions.Config;
+using KernelExtensions.Storage;   // 用于节点存储
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
 using Pathfinder.Util;
-using KernelExtensions.Config;
-using KernelExtensions.Storage;   // 用于节点存储
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;          // 用于反射获取私有字段
+using System.Xml;
+using System.Xml.Serialization;
+using Module = Hacknet.Module;   // 消除与 System.Reflection.Module 的歧义
 
 namespace KernelExtensions.Executables
 {
@@ -109,6 +110,55 @@ namespace KernelExtensions.Executables
         private Color cachedPhaseTimerColor = Color.Transparent;   // 阶段进度条颜色
         private Color cachedSpinUpColor = Color.Transparent;       // 旋转动画颜色
 
+        /// <summary>
+        /// 将配置中的音乐字符串转换为 MusicManager.transitionToSong 能识别的路径。
+        /// 规则：
+        /// 1. 如果字符串包含路径分隔符（/ 或 \），直接返回（认为用户已写完整路径）。
+        /// 2. 否则，检查是否为 DLC 音乐：通过检测 Content/DLC/Music/文件名.ogg 是否存在，若存在返回 "DLC/Music/文件名"。
+        /// 3. 检查是否为扩展内自定义音乐：通过检测 Extensions/当前扩展名/Music/文件名.ogg 是否存在，若存在返回 "../Extensions/扩展名/Music/文件名"。
+        /// 4. 否则，作为原版音乐返回原字符串（MusicManager 会从 Content/Music/ 加载）。
+        /// </summary>
+        private string ResolveMusicPath(string musicPath)
+        {
+            if (string.IsNullOrEmpty(musicPath))
+                return musicPath;
+
+            // 如果已经是绝对路径或已经以 "../Extensions/" 开头，直接返回
+            if (Path.IsPathRooted(musicPath) || musicPath.StartsWith("../Extensions/"))
+                return musicPath;
+
+            // 如果包含路径分隔符，则视为相对于扩展根目录的路径，转换为 "../Extensions/当前扩展名/..."
+            if (musicPath.Contains('/') || musicPath.Contains('\\'))
+            {
+                if (ExtensionLoader.ActiveExtensionInfo != null)
+                {
+                    string extFolder = ExtensionLoader.ActiveExtensionInfo.GetFoldersafeName();
+                    // 去除可能的 .ogg 扩展名
+                    string name = musicPath;
+                    if (name.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
+                        name = name.Substring(0, name.Length - 4);
+                    return "../Extensions/" + extFolder + "/" + name;
+                }
+                // 如果没有扩展信息，则原样返回（可能失败）
+                return musicPath;
+            }
+
+            // 纯文件名：按原逻辑处理 DLC 或扩展 Music 文件夹
+            string dlcOggPath = Path.Combine(Paths.GameRootPath, "Content", "DLC", "Music", musicPath + ".ogg");
+            if (File.Exists(dlcOggPath))
+                return "DLC/Music/" + musicPath;
+
+            if (ExtensionLoader.ActiveExtensionInfo != null)
+            {
+                string extFolder = ExtensionLoader.ActiveExtensionInfo.GetFoldersafeName();
+                string extOggPath = Path.Combine(Paths.GameRootPath, "Extensions", extFolder, "Music", musicPath + ".ogg");
+                if (File.Exists(extOggPath))
+                    return "../Extensions/" + extFolder + "/Music/" + musicPath;
+            }
+
+            return musicPath;
+        }
+
         // ---------- 构造函数 ----------
         public CustomTrialExe() : base()
         {
@@ -190,7 +240,7 @@ namespace KernelExtensions.Executables
 
             // ---- 播放启动音乐 ----
             if (!string.IsNullOrEmpty(config.StartMusic))
-                MusicManager.transitionToSong(config.StartMusic);
+                MusicManager.transitionToSong(ResolveMusicPath(config.StartMusic));
 
             // ---- 应用持久化删除的节点（从存档中恢复删除状态）----
             ApplyPersistedDeletedNodes();
@@ -454,7 +504,7 @@ namespace KernelExtensions.Executables
                 case RunState.NotStarted:
                     this.CanBeKilled = false;
                     if (!string.IsNullOrEmpty(config.TrialStartMusic))
-                        MusicManager.transitionToSong(config.TrialStartMusic);
+                        MusicManager.transitionToSong(ResolveMusicPath(config.TrialStartMusic));
                     if (config.GlobalTimeout > 0)
                     {
                         globalTimerRemaining = config.GlobalTimeout;
@@ -509,7 +559,7 @@ namespace KernelExtensions.Executables
                     }
                     else phaseTimerActive = false;
                     if (!string.IsNullOrEmpty(CurrentPhase.Music))
-                        MusicManager.transitionToSong(CurrentPhase.Music);
+                        MusicManager.transitionToSong(ResolveMusicPath(CurrentPhase.Music));
                     if (CurrentPhase.Timeout > 0 && !traceOverrideActive)
                     {
                         os.traceCompleteOverrideAction += OnTraceTimeout;
@@ -664,19 +714,19 @@ namespace KernelExtensions.Executables
         }
 
         public override void OnComplete()
-        {
-            base.OnComplete();
-            // 如果是在未开始试炼的状态下退出（例如玩家 kill 了程序），恢复音乐
-            if (currentState == RunState.NotStarted && !trialLocked && !string.IsNullOrEmpty(originalMusicName))
-            {
-                MusicManager.transitionToSong(originalMusicName);
-            }
-            // 如果试炼成功或失败，停止当前音乐
-            if (Result == CompletionResult.Success || Result == CompletionResult.Failure || Result == CompletionResult.Error)
-            {
-                MusicManager.stop();
-            }
-        }
+{
+    base.OnComplete();
+    // 如果是在未开始试炼的状态下退出（例如玩家 kill 了程序），恢复音乐
+    if (currentState == RunState.NotStarted && !trialLocked && !string.IsNullOrEmpty(originalMusicName))
+    {
+        MusicManager.transitionToSong(originalMusicName);
+    }
+    // 如果试炼成功或失败，停止当前音乐
+    if (Result == CompletionResult.Success || Result == CompletionResult.Failure || Result == CompletionResult.Error)
+    {
+        MusicManager.stop();
+    }
+}
 
         // ---------- 动作执行 ----------
         private void ExecuteActionFile(string filePath)
