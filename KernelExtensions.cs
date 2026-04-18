@@ -3,6 +3,7 @@ using BepInEx.Hacknet;
 using Hacknet;
 using KernelExtensions.Actions;
 using KernelExtensions.Executables;
+using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Action;
@@ -23,6 +24,10 @@ namespace KernelExtensions
 
         public override bool Load()
         {
+            // 应用 Harmony 补丁（确保只应用一次）
+            HarmonyInstance.PatchAll(typeof(MusicManagerPatch));
+            Console.WriteLine("[KernelExtensions] MusicManager patch applied.");
+
             // 1. 注册自定义试炼可执行程序
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
             Console.WriteLine("[KernelExtensions] CustomTrial registered.");
