@@ -19,7 +19,7 @@ namespace KernelExtensions
     {
         public const string ModGUID = "com.LDTchara.KernelExtensions";
         public const string ModName = "KernelExtensions";
-        public const string ModVer = "0.4.0";   // 版本升级，加入节点持久化功能
+        public const string ModVer = "0.4.1";
 
         public override bool Load()
         {
