@@ -79,11 +79,11 @@ namespace KernelExtensions.Executables
         private bool ramReductionActive = false;               // 是否正在缩减内存
         private float ramReductionProgress = 0f;               // 缩减进度（0~1）
         private float currentRamCost = 190f;                   // 当前实际 ramCost（浮点，用于平滑）
-        private const float TARGET_RAM_COST = 88f;             // 目标内存占用（固定不可配置）
+        private const float TARGET_RAM_COST = 96f;             // 目标内存占用（固定不可配置）
         private float ramReductionStartValue = 190f;           // 缩减开始时的 ramCost
 
         // ---------- 节点删除持久化相关 ----------
-        public string CurrentConfigName { get; private set; }                      // 当前试炼配置名称（用于存储标识）
+        public string CurrentConfigName { get; private set; }  // 当前试炼配置名称（用于存储标识）
         private List<int> deletedNodeIndices = new();          // 本次试炼中已删除的节点索引列表
 
         // ---------- 特效相关 ----------
@@ -92,11 +92,13 @@ namespace KernelExtensions.Executables
         private float nodeRemovalInterval = 0f;                // 动态计算的节点摧毁间隔
         private Color originalTopBarIconsColor;                // 保存原始顶部栏图标颜色（用于特效恢复）
         private HexGridBackground backgroundEffect;            // 六边形网格背景
-        private ExplodingUIElementEffect explosion = new(); // 爆炸特效
+        private float finalScale = 1f;                         // 缩放相关
+        private ExplodingUIElementEffect explosion = new();    // 爆炸特效
         private SoundEffect breakSound;                        // 破碎音效
         private Texture2D circle;                              // 圆形纹理
         private Texture2D circleOutline;                       // 圆形轮廓纹理
         private bool hasStartedNodeDestruction = false;        // 是否已开始节点摧毁（用于计算一次间隔）
+        private bool mailExploded = false;   // 防止邮件爆炸重复执行
 
         // ---------- 扩展根目录 ----------
         private string extensionRoot = null;                   // 当前扩展的根目录路径
@@ -178,37 +180,24 @@ namespace KernelExtensions.Executables
             if (ExtensionLoader.ActiveExtensionInfo != null)
                 extensionRoot = ExtensionLoader.ActiveExtensionInfo.FolderPath.Replace('\\', '/');
 
-            // ---- 检测所有 CustomTrial_ 开头的 Flag ----
-            List<string> trialFlags = new();
-            // 使用反射获取 ProgressionFlags 的私有字段 Flags（因为未公开）
-            var flagsField = typeof(ProgressionFlags).GetField("Flags", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (flagsField != null)
-            {
-                if (flagsField.GetValue(os.Flags) is List<string> flagsList)
-                {
-                    foreach (var f in flagsList)
-                        if (f.StartsWith("CustomTrial_"))
-                            trialFlags.Add(f);
-                }
-            }
-
-            // 没有找到任何试炼 Flag → 锁定试炼
-            if (trialFlags.Count == 0)
+            // ---- 检测 CustomTrial_ 开头的 Flag ----
+            string flag = os.Flags.GetFlagStartingWith("CustomTrial_");
+            if (string.IsNullOrEmpty(flag))
             {
                 trialLocked = true;
                 Console.WriteLine("[KernelExtensions]CustomTrialExe: No CustomTrial_ flag found. Trial locked.");
                 config = null;
                 return;
             }
-            // 多个 Flag 时警告，取第一个作为有效配置
-            else if (trialFlags.Count > 1)
-            {
-                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Warning: Multiple CustomTrial_ flags found: {string.Join(", ", trialFlags)}. Using the first one: {trialFlags[0]}.");
-            }
-            string flag = trialFlags[0];
+            Console.WriteLine($"[KernelExtensions]CustomTrialExe: Found flag '{flag}'");
 
-            // ---- 加载配置（根据 Flag 后缀读取对应的 XML）----
-            LoadConfig(flag);
+            // 从 flag 中提取配置名
+            string configName = flag.Substring("CustomTrial_".Length);
+            if (string.IsNullOrEmpty(configName)) configName = "Default";
+            CurrentConfigName = configName;
+
+            // 加载配置（LoadConfig 内部需要相应调整，可以传入 configName 或继续用 flag）
+            LoadConfig(flag); // 或者改为 LoadConfig(configName)
 
             if (config == null)
             {
@@ -338,7 +327,7 @@ namespace KernelExtensions.Executables
         {
             if (string.IsNullOrEmpty(colorStr)) return Color.Transparent;
 
-            // 这什么，怎么还有我的名，我不知道哦owo
+            // 彩蛋：LDTchara → 动态彩虹色
             if (colorStr.Equals("LDTchara", StringComparison.OrdinalIgnoreCase))
             {
                 float hue = (float)(OS.currentElapsedTime * 0.1) % 1.0f;
@@ -353,13 +342,36 @@ namespace KernelExtensions.Executables
             }
             catch
             {
-                // 解析失败返回透明
+                // 手动解析十六进制颜色（支持 #RRGGBB 和 #RGB）
+                if (colorStr.StartsWith("#"))
+                {
+                    try
+                    {
+                        string hex = colorStr.Substring(1);
+                        if (hex.Length == 6)
+                        {
+                            byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+                            byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+                            byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+                            return new Color(r, g, b);
+                        }
+                        else if (hex.Length == 3)
+                        {
+                            byte r = byte.Parse(hex[0].ToString() + hex[0], System.Globalization.NumberStyles.HexNumber);
+                            byte g = byte.Parse(hex[1].ToString() + hex[1], System.Globalization.NumberStyles.HexNumber);
+                            byte b = byte.Parse(hex[2].ToString() + hex[2], System.Globalization.NumberStyles.HexNumber);
+                            return new Color(r, g, b);
+                        }
+                    }
+                    catch { }
+                }
+                // 解析失败返回透明，后续会使用默认主题色
                 return Color.Transparent;
             }
         }
 
         /// <summary>
-        /// HSV 转 RGB 辅助方法（应该和彩虹色有关）。
+        /// HSV 转 RGB 辅助方法
         /// </summary>
         private Color HSVToColor(float hue, float saturation, float value)
         {
@@ -445,6 +457,10 @@ namespace KernelExtensions.Executables
                 currentRamCost = MathHelper.Lerp(ramReductionStartValue, TARGET_RAM_COST, ramReductionProgress);
                 this.ramCost = (int)currentRamCost;
             }
+            if (ramReductionProgress >= 1f && !ramReductionActive && finalScale != TARGET_RAM_COST / 190f)
+            {
+                finalScale = TARGET_RAM_COST / 190f;
+            }
 
             stateTimer += t; // 当前状态计时器累加
 
@@ -459,6 +475,10 @@ namespace KernelExtensions.Executables
                 case RunState.Flickering:
                     UpdateFlickering(t);
                     if (stateTimer >= config.FlickeringDuration)
+                        TransitionToNextState();
+                    break;
+                case RunState.WaitAfterDestruction:
+                    if (stateTimer >= config.PostDestructionDelay)
                         TransitionToNextState();
                     break;
                 case RunState.MailIconDestroy:
@@ -486,7 +506,8 @@ namespace KernelExtensions.Executables
                     {
                         ExecuteActionFile(config.OnComplete?.FilePath);
                         DeleteCurrentTrialFlag();   // 完成后删除 Flag
-                        isExiting = true;
+                        Result = CompletionResult.Success;   // 设置成功状态，会自动 isExiting = true
+                        currentState = RunState.Exiting;   // 防止重复执行
                     }
                     break;
             }
@@ -504,19 +525,16 @@ namespace KernelExtensions.Executables
                 case RunState.NotStarted:
                     this.CanBeKilled = false;
                     if (!string.IsNullOrEmpty(config.TrialStartMusic))
-                        MusicManager.transitionToSong(ResolveMusicPath(config.TrialStartMusic));
-                    if (config.GlobalTimeout > 0)
-                    {
-                        globalTimerRemaining = config.GlobalTimeout;
-                        globalTimerActive = true;
-                    }
-                    // 应用主题切换（在动画开始前）
-                    ApplyThemeSwitch();
+                        MusicManager.playSongImmediatley(ResolveMusicPath(config.TrialStartMusic));
                     // 注意：原来执行 OnStart 的地方已移除，动画完成后将执行 OnAnimationComplete
                     currentState = RunState.SpinningUp;
                     break;
 
                 case RunState.SpinningUp:
+                    // 清空终端
+                    os.execute("clear");
+                    // 切换主题
+                    ApplyThemeSwitch();
                     if (config.EnableFlickering)
                         currentState = RunState.Flickering;
                     else if (config.EnableMailIconDestroy)
@@ -537,15 +555,15 @@ namespace KernelExtensions.Executables
                         StartNextPhase();
                     break;
 
+                case RunState.WaitAfterDestruction:
+                    currentState = RunState.MailIconDestroy;
+                    break;
+
                 case RunState.MailIconDestroy:
                     // 执行动画完成后的动作
                     ExecuteActionFile(config.OnAnimationComplete?.FilePath);
                     StartNextPhase();
-                    break;
-
-                case RunState.WaitAfterDestruction:
-                    if (stateTimer >= config.PostDestructionDelay)
-                        TransitionToNextState();
+                    mailExploded = false;   // 重置，以便下次进入该状态时正常爆炸
                     break;
 
                 case RunState.AssignMission:
@@ -590,6 +608,12 @@ namespace KernelExtensions.Executables
         /// </summary>
         private void StartNextPhase()
         {
+            // 启动全局计时器（如果配置了且尚未激活）
+            if (!globalTimerActive && config.GlobalTimeout > 0)
+            {
+                globalTimerRemaining = config.GlobalTimeout;
+                globalTimerActive = true;
+            }
             currentPhaseIdx = 0;
             currentState = RunState.AssignMission;
             PrepareAssignMission();
@@ -607,6 +631,8 @@ namespace KernelExtensions.Executables
         /// </summary>
         private void PrepareAssignMission()
         {
+            // 清空终端
+            os.execute("clear");
             stateTimer = 0f;
             charsRenderedSoFar = 0;
             string rawText = CurrentPhase.DescriptionText;
@@ -671,13 +697,17 @@ namespace KernelExtensions.Executables
             if (CurrentPhase.EnableResetOnFail)
                 ResetCurrentPhase();
             else
-                isExiting = true;
+            {
+                Result = CompletionResult.Failure;   // 设置失败状态，不重置则退出
+                currentState = RunState.Exiting;   // 防止重复执行
+            }
         }
 
         private void OnGlobalTimeout()
         {
             ExecuteActionFile(config.OnGlobalFail?.FilePath);
-            isExiting = true;
+            Result = CompletionResult.Failure;   // 设置失败状态，不重置则退出
+            currentState = RunState.Exiting;   // 防止重复执行
         }
 
         private void OnTraceTimeout()
@@ -686,21 +716,39 @@ namespace KernelExtensions.Executables
             if (CurrentPhase.EnableResetOnFail)
                 ResetCurrentPhase();
             else
-                isExiting = true;
+            {
+                Result = CompletionResult.Failure;   // 设置失败状态，不重置则退出
+                currentState = RunState.Exiting;   // 防止重复执行
+            }
         }
 
         private void ResetCurrentPhase()
         {
+            // 重置状态到 AssignMission，保持 currentPhaseIdx 不变
             currentState = RunState.AssignMission;
-            PrepareAssignMission();
+            // 重置计时器
+            stateTimer = 0f;
+            charsRenderedSoFar = 0;
+            // 重新加载描述文本
+            string rawText = CurrentPhase.DescriptionText;
+            string resolvedPath = ResolvePath(rawText);
+            if (resolvedPath != null && File.Exists(resolvedPath))
+                currentDisplayText = Utils.readEntireFile(resolvedPath);
+            else
+                currentDisplayText = rawText ?? "";
+            // 执行阶段开始时的动作（可选，但可能不需要在重置时再次执行）
+            // ExecuteActionFile(CurrentPhase.OnPhaseStart?.FilePath);
+            // 重置任务相关
+            missionCompleted = false;
+            // 重新加载任务
+            LoadCurrentMission();
+            // 重置阶段计时器
             if (CurrentPhase.Timeout > 0)
             {
                 phaseTimerRemaining = CurrentPhase.Timeout;
                 phaseTimerActive = true;
             }
             else phaseTimerActive = false;
-            missionCompleted = false;
-            LoadCurrentMission();
         }
 
         private void DeleteCurrentTrialFlag()
@@ -837,12 +885,20 @@ namespace KernelExtensions.Executables
             float progress = Math.Min(1f, stateTimer / config.MailIconDestroyDuration);
             if (progress > 0.2f && stateTimer % 0.6f <= t)
                 SFX.addCircle(os.mailicon.pos + new Vector2(20f, 6f), Utils.AddativeRed, 100f + 200f * progress);
-            os.topBarIconsColor = (Utils.randm(1f) < progress) ? Color.Red : originalTopBarIconsColor;
-            if (progress >= 0.99f)
+
+            // 仅当尚未爆炸时才随机切换顶栏颜色，避免爆炸后继续变色
+            if (!mailExploded)
+                os.topBarIconsColor = (Utils.randm(1f) < progress) ? Color.Red : originalTopBarIconsColor;
+
+            // 爆炸触发（只执行一次）
+            if (progress >= 0.99f && !mailExploded)
             {
                 os.DisableEmailIcon = true;
                 breakSound.Play();
                 explosion.Explode(1500, new Vector2(-0.1f, 3.1415926f), os.mailicon.pos + new Vector2(20f, 6f), 1f, 8f, 100f, 1600f, 1000f, 1200f, 3f, 7f);
+                // 恢复顶栏颜色（使用切换主题后保存的颜色）
+                os.topBarIconsColor = originalTopBarIconsColor;
+                mailExploded = true;
             }
         }
 
@@ -859,6 +915,20 @@ namespace KernelExtensions.Executables
             }
         }
 
+        private Color GetDynamicColor(string colorStr, Color defaultColor)
+        {
+            if (string.IsNullOrEmpty(colorStr))
+                return defaultColor;
+            if (colorStr.Equals("LDTchara", StringComparison.OrdinalIgnoreCase))
+            {
+                float hue = (float)(OS.currentElapsedTime * 0.1) % 1.0f;
+                return HSVToColor(hue, 1.0f, 1.0f);
+            }
+            // 实时解析颜色字符串（支持颜色名称、十六进制等）
+            Color parsed = ParseColor(colorStr);
+            return parsed != Color.Transparent ? parsed : defaultColor;
+        }
+
         // ---------- 绘制 ----------
         public override void Draw(float t)
         {
@@ -866,35 +936,28 @@ namespace KernelExtensions.Executables
             drawTarget();
             drawOutline();
 
+            // 内容区域（用于标题、按钮等 UI 元素）
             Rectangle contentRect = new(bounds.X + 2, bounds.Y + Module.PANEL_HEIGHT + 2, bounds.Width - 4, bounds.Height - Module.PANEL_HEIGHT - 4);
+            // 背景区域（仿原版 DLCIntroExe 的 dest2）
+            Rectangle bgRect = new(bounds.X + 2, bounds.Y + Module.PANEL_HEIGHT + 10, bounds.Width - 4, bounds.Height - (Module.PANEL_HEIGHT + 6));
 
             if (trialLocked || config == null)
             {
-                DrawLockedMessage(contentRect);
+                DrawLockedMessage(bgRect);
                 return;
             }
 
-            // 绘制自定义背景（如果配置了背景色）
-            if (cachedBackgroundColor != Color.Transparent)
-            {
-                RenderedRectangle.doRectangle(contentRect.X, contentRect.Y, contentRect.Width, contentRect.Height, cachedBackgroundColor);
-            }
-
-            // 计算内存缩减缩放因子（仅当缩减过程中，且不为最终状态时缩放）
-            float scale = 1f;
-            if (ramReductionActive || (ramReductionDelaying && ramReductionDelayTimer > 0))
-            {
-                // 在延迟期间不缩放，仅在活跃缩减时根据当前 ramCost 计算缩放
-                if (ramReductionActive)
-                    scale = currentRamCost / 190f;
-                else
-                    scale = 1f;
-            }
+            // 计算内存缩减缩放因子（仅当缩减过程中）
+            float scale = finalScale;  // 默认使用最终缩放
+            if (ramReductionActive)
+                scale = currentRamCost / 190f;
+            else if (ramReductionDelaying)
+                scale = 1f;
 
             switch (currentState)
             {
                 case RunState.NotStarted:
-                    DrawStartScreen(contentRect, scale);
+                    DrawStartScreen(bgRect, contentRect, scale);  // 背景和按钮区域分开
                     break;
                 case RunState.SpinningUp:
                     DrawSpinningUp(contentRect);
@@ -904,32 +967,34 @@ namespace KernelExtensions.Executables
                 case RunState.WaitAfterDestruction:
                 case RunState.AssignMission:
                 case RunState.OnMission:
-                    DrawPhaseTitle(contentRect, scale);
+                    DrawPhaseTitle(bgRect, contentRect, scale);
                     break;
             }
 
             DrawImpactEffects();
             explosion.Render(spriteBatch);
 
-            // 绘制计时器（全局和阶段），这些元素不受缩放影响，保持全宽
-            int timerY = bounds.Y + bounds.Height - 70;
+            // 绘制计时器（全局和阶段），这些元素随 scale 缩放
+            int timerY = bounds.Y + bounds.Height - (int)(70 * scale);
             if (globalTimerActive && config.EnableGlobalTimer && globalTimerRemaining > 0)
             {
-                Rectangle globalRect = new(bounds.X + 10, timerY, bounds.Width - 20, 25);
-                DrawTimerBar(globalRect, globalTimerRemaining / config.GlobalTimeout, globalTimerRemaining, cachedGlobalTimerColor);
-                timerY -= 30;
+                Rectangle globalRect = new(bounds.X + 10, timerY, bounds.Width - 20, (int)(25 * scale));
+                Color globalColor = GetDynamicColor(config.GlobalTimerColor, os.highlightColor);
+                DrawTimerBar(globalRect, globalTimerRemaining / config.GlobalTimeout, globalTimerRemaining, globalColor, scale);
+                timerY += (int)(30 * scale);
             }
-            if (phaseTimerActive && config.EnablePhaseTimer && phaseTimerRemaining > 0)
+            if (phaseTimerActive && config.EnablePhaseTimer && phaseTimerRemaining > 0 && CurrentPhase != null)
             {
-                Rectangle phaseRect = new(bounds.X + 10, timerY, bounds.Width - 20, 25);
-                DrawTimerBar(phaseRect, phaseTimerRemaining / CurrentPhase.Timeout, phaseTimerRemaining, cachedPhaseTimerColor);
+                Rectangle phaseRect = new(bounds.X + 10, timerY, bounds.Width - 20, (int)(25 * scale));
+                Color phaseColor = GetDynamicColor(config.PhaseTimerColor, os.highlightColor);
+                DrawTimerBar(phaseRect, phaseTimerRemaining / CurrentPhase.Timeout, phaseTimerRemaining, phaseColor, scale);
             }
         }
 
         /// <summary>
         /// 绘制一个计时条（背景、进度填充、边框、右侧文字）。
         /// </summary>
-        private void DrawTimerBar(Rectangle rect, float percent, float remaining, Color customColor)
+        private void DrawTimerBar(Rectangle rect, float percent, float remaining, Color customColor, float scale)
         {
             Color useColor = (customColor != Color.Transparent) ? customColor : os.highlightColor;
 
@@ -939,38 +1004,53 @@ namespace KernelExtensions.Executables
             RenderedRectangle.doRectangleOutline(rect.X, rect.Y, rect.Width, rect.Height, 1, Color.White);
             string timerText = $"{(int)remaining}s";
             Vector2 textSize = GuiData.font.MeasureString(timerText);
-            Vector2 textPos = new(rect.X + rect.Width - textSize.X - 5, rect.Y + (rect.Height - textSize.Y) / 2);
-            spriteBatch.DrawString(GuiData.font, timerText, textPos, Color.White);
+            float scaledWidth = textSize.X * scale;
+            float scaledHeight = textSize.Y * scale;
+            Vector2 textPos = new(rect.X + rect.Width - scaledWidth - 5, rect.Y + (rect.Height - scaledHeight) / 2);
+            spriteBatch.DrawString(GuiData.font, timerText, textPos, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
         }
 
-        private void DrawLockedMessage(Rectangle rect)
+        private void DrawLockedMessage(Rectangle bgRect)
         {
-            backgroundEffect.Update(0f);
-            backgroundEffect.Draw(rect, spriteBatch, Color.Black, os.highlightColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
+            if (backgroundEffect == null)
+            {
+                RenderedRectangle.doRectangle(bgRect.X, bgRect.Y, bgRect.Width, bgRect.Height, Color.Black);
+            }
+            else
+            {
+                Color gridColor = GetDynamicColor(config.BackgroundColor, os.highlightColor);
+                backgroundEffect.Update(0f);
+                backgroundEffect.Draw(bgRect, spriteBatch, Color.Black, gridColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
+            }
+
             string lockText = GetLocalizedLockedText();
             int btnHeight = 30;
-            Rectangle textRect = new(rect.X + 10, rect.Y + rect.Height / 2 - btnHeight / 2, rect.Width - 20, btnHeight);
+            // 文字和按钮仍基于内容区域（或也可以基于 bgRect，但通常居中）
+            Rectangle textRect = new(bgRect.X + 10, bgRect.Y + bgRect.Height / 2 - btnHeight / 2, bgRect.Width - 20, btnHeight);
             spriteBatch.Draw(Utils.white, textRect, Color.Black * 0.6f);
             TextItem.doCenteredFontLabel(textRect, lockText, GuiData.font, Color.Red, false);
 
-            // 添加退出按钮（右下角）
+            // 退出按钮（右下角）
             int exitBtnWidth = 60;
             int exitBtnHeight = 22;
-            Rectangle exitBtnRect = new(rect.X + rect.Width - exitBtnWidth - 10, rect.Y + rect.Height - exitBtnHeight - 10, exitBtnWidth, exitBtnHeight);
+            Rectangle exitBtnRect = new(bgRect.X + bgRect.Width - exitBtnWidth - 10, bgRect.Y + bgRect.Height - exitBtnHeight - 10, exitBtnWidth, exitBtnHeight);
             if (Button.doButton(8310102 + PID, exitBtnRect.X, exitBtnRect.Y, exitBtnRect.Width, exitBtnRect.Height, "Exit", new Color?(os.lockedColor)))
             {
                 isExiting = true;
             }
         }
 
-        private void DrawStartScreen(Rectangle rect, float scale)
+        private void DrawStartScreen(Rectangle bgRect, Rectangle contentRect, float scale)
         {
+            // 绘制背景
+            Color gridColor = GetDynamicColor(config.BackgroundColor, os.highlightColor);
             backgroundEffect.Update(0f);
-            backgroundEffect.Draw(rect, spriteBatch, Color.Black, os.highlightColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
+            backgroundEffect.Draw(bgRect, spriteBatch, Color.Black, gridColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
+
+            // 绘制按钮（使用 contentRect 定位）
             int btnHeight = (int)(30 * scale);
-            Rectangle btnRect = new(rect.X + 10, rect.Y + rect.Height / 2 - btnHeight / 2, (int)((rect.Width - 20) * scale), btnHeight);
+            Rectangle btnRect = new(contentRect.X + 10, contentRect.Y + contentRect.Height / 2 - btnHeight / 2, (int)((contentRect.Width - 20) * scale), btnHeight);
             string buttonText = GetLocalizedBeginButton();
-            // 缩放字体
             if (Button.doButton(8310101 + PID, btnRect.X, btnRect.Y, btnRect.Width, btnRect.Height, buttonText, new Color?(os.highlightColor)))
                 TransitionToNextState();
         }
@@ -1005,36 +1085,44 @@ namespace KernelExtensions.Executables
             return "TRIAL LOCKED";
         }
 
-        private void DrawSpinningUp(Rectangle rect)
+        private void DrawSpinningUp(Rectangle contentRect)
         {
-            Color spinColor = (cachedSpinUpColor != Color.Transparent) ? cachedSpinUpColor : os.highlightColor;
+            // 绘制旋转进度条（使用 contentRect）
+            Color spinColor = GetDynamicColor(config.SpinUpColor, os.highlightColor);
             Utils.LCG.reSeed(PID);
-            for (int y = 0; y < rect.Height; y++)
+            for (int y = 0; y < contentRect.Height; y++)
             {
                 float noise = Utils.LCG.NextFloatScaled();
                 float lineProgress = Math.Min(1f, stateTimer / (config.SpinUpDuration * noise));
-                int width = (int)(lineProgress * rect.Width);
+                int width = (int)(lineProgress * contentRect.Width);
                 Color col = Color.Lerp(Utils.AddativeWhite * 0.1f, spinColor, Utils.LCG.NextFloatScaled());
-                spriteBatch.Draw(Utils.white, new Rectangle(rect.X, rect.Y + y, width, 1), col);
+                spriteBatch.Draw(Utils.white, new Rectangle(contentRect.X, contentRect.Y + y, width, 1), col);
             }
         }
 
         /// <summary>
         /// 绘制阶段标题（在窗口中央），支持内存缩减时的缩放。
         /// </summary>
-        private void DrawPhaseTitle(Rectangle rect, float scale)
+        private void DrawPhaseTitle(Rectangle bgRect, Rectangle contentRect, float scale)
         {
+            if (CurrentPhase == null) return;
+
+            // 绘制背景
+            Color gridColor = GetDynamicColor(config.BackgroundColor, os.highlightColor);
             backgroundEffect.Update(0f);
-            backgroundEffect.Draw(rect, spriteBatch, Color.Black, os.highlightColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
-            int titleHeight = (int)(40 * scale);
-            Rectangle titleRect = new(rect.X, rect.Y + rect.Height / 3 - titleHeight / 2, (int)(rect.Width * scale), titleHeight);
+            backgroundEffect.Draw(bgRect, spriteBatch, Color.Black, gridColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
+
+            // 标题矩形：宽度保持全宽（不缩放），高度随 scale 缩放
+            int titleHeight = Math.Max(28, (int)(40 * scale));
+            // 标题 Y 坐标：保持相对位置（向上缩放效果）
+            Rectangle titleRect = new(contentRect.X, contentRect.Y + contentRect.Height / 6 - titleHeight / 2, contentRect.Width, titleHeight);
             spriteBatch.Draw(Utils.white, titleRect, Color.Black * 0.6f);
-            // 缩放字体
-            TextItem.doFontLabelToSize(titleRect, CurrentPhase?.Title ?? "", GuiData.font, Color.White, true, false);
-            if (!string.IsNullOrEmpty(CurrentPhase?.Subtitle))
+            // 使用 doFontLabelToSize 自动适应矩形高度，文字居中
+            TextItem.doFontLabelToSize(titleRect, CurrentPhase.Title ?? "", GuiData.font, Color.White, true, false);
+            if (!string.IsNullOrEmpty(CurrentPhase.Subtitle))
             {
-                int subtitleHeight = (int)(22 * scale);
-                Rectangle subtitleRect = new(rect.X, titleRect.Y + titleRect.Height + 5, (int)(rect.Width * scale), subtitleHeight);
+                int subtitleHeight = Math.Max(16, (int)(22 * scale));
+                Rectangle subtitleRect = new(contentRect.X, titleRect.Y + titleRect.Height, contentRect.Width, subtitleHeight);
                 spriteBatch.Draw(Utils.white, subtitleRect, Color.Black * 0.4f);
                 TextItem.doFontLabelToSize(subtitleRect, CurrentPhase.Subtitle, GuiData.font, Utils.AddativeWhite * 0.9f, true, false);
             }
