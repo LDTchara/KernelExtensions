@@ -191,7 +191,6 @@
 ```xml
 <nextMission IsSilent="true">Missions/NextMission.xml</nextMission>
 <!-- Matt你为什么要把控制当前任务的IsSilent参数塞到加载下一个任务的元素里，这太TM反直觉了还很诡异 -->
-<!-- 此句吐槽是根据社区中文wiki的信息而写的，对于IsSilent参数实际控制哪个任务本人未测试，这一行会在本人测试后或收集到确认的相关信息后删除 -->
 ```
 - `Timeout` > 0 时，该阶段必须在指定秒数内完成，否则触发失败（可配置重置）。
 - `EnableNodeDestruction`：开启闪烁特效时，节点摧毁间隔根据初始可见节点数动态计算（与原版一致）。
@@ -415,7 +414,6 @@ For more available actions (e.g., `SwitchToTheme`, `LoadMission`), refer to the 
 ```xml
 <nextMission IsSilent="true">Missions/NextMission.xml</nextMission>
 <!-- Why does Matt put the IsSilent parameter that controls the current mission into the element that loads the next mission? It's fucking counterintuitive and weird. -->
-<!-- This complaint is based on information from the community Chinese wiki. Which mission the IsSilent parameter actually controls has not been tested by me. This line will be removed after I test it or receive confirmed information. -->
 ```
 - `Timeout` > 0 forces the mission to be completed within that many seconds; otherwise, failure is triggered (reset configurable).
 - `EnableNodeDestruction`: When flickering is enabled, node removal interval is dynamically calculated based on the initial visible node count (same as vanilla).
