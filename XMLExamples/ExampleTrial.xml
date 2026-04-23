@@ -23,110 +23,167 @@
 -->
 
 <TrialConfig>
-	<!-- ==================== 全局配置 ==================== -->
-	<!-- ==================== Global Settings ==================== -->
+	<!-- ==================== 基础信息 ==================== -->
+	<!-- ==================== Basic Info ==================== -->
 
-	<!-- 旋转动画时长（秒），必须为正数。如果省略，默认 13.8 -->
-	<!-- Spin animation duration (seconds). Must be positive. If omitted, defaults to 13.8. -->
+	<!-- 程序在 ps 命令中显示的名称（可选，默认 "CustomTrial"） -->
+	<!-- Name displayed in the 'ps' command output (optional, defaults to "CustomTrial"). -->
+	<ProgramName>CustomTrial</ProgramName>
+
+	<!-- ==================== 动作文件引用 ==================== -->
+	<!-- ==================== Action File References ==================== -->
+
+	<!-- 点击“开始试炼”后立即执行的动作文件（可选） -->
+	<!-- Action file executed immediately after clicking "Begin Trial" (optional). -->
+	<OnStart file="Actions/OnStart.xml" />
+
+	<!-- 所有动画完成后执行的动作文件（可选） -->
+	<!-- Action file executed after all animations complete (optional). -->
+	<OnAnimationComplete file="Actions/TrialStart.xml" />
+
+	<!-- 全局超时失败时执行的动作文件（可选） -->
+	<!-- Action file to execute on global timeout failure (optional). -->
+	<OnGlobalFail file="Actions/GlobalFail.xml" />
+
+	<!-- 所有阶段完成后的最终动作（可选） -->
+	<!-- Final action after all phases are completed (optional). -->
+	<OnComplete file="Actions/AllComplete.xml" />
+
+	<!-- ==================== 动画与特效配置 ==================== -->
+	<!-- ==================== Animation & Effects ==================== -->
+
+	<!-- 旋转动画时长（秒），默认 13.8 -->
+	<!-- Spin animation duration (seconds). Defaults to 13.8. -->
 	<SpinUpDuration>5.0</SpinUpDuration>
 
-	<!-- 是否启用 UI 闪烁+节点消失特效（可选，默认 true） -->
-	<!-- Enable UI flickering + node disappearance effect (optional, defaults to true). -->
+	<!-- 是否启用 UI 闪烁+节点消失特效，默认 true -->
+	<!-- Enable UI flickering + node disappearance effect. Defaults to true. -->
 	<EnableFlickering>true</EnableFlickering>
-
-	<!-- 是否启用邮件图标爆炸特效（可选，默认 true） -->
-	<!-- Enable mail icon explosion effect (optional, defaults to true). -->
-	<EnableMailIconDestroy>false</EnableMailIconDestroy>
 
 	<!-- 闪烁特效持续时间（秒），仅当 EnableFlickering=true 时生效，默认 10 -->
 	<!-- Duration of flickering effect (seconds). Only applies when EnableFlickering=true. Defaults to 10. -->
 	<FlickeringDuration>8.0</FlickeringDuration>
 
-	<!-- 邮件爆炸持续时间（秒），仅当 EnableMailIconDestroy=true 时生效，默认 3.82 -->
-	<!-- Duration of mail explosion effect (seconds). Only applies when EnableMailIconDestroy=true. Defaults to 3.82. -->
-	<MailIconDestroyDuration>4.5</MailIconDestroyDuration>
-
-	<!-- 是否允许摧毁节点（仅在 EnableFlickering=true 且 EnableNodeDestruction=true 时生效），默认 true -->
-	<!-- Whether to allow node destruction (only applies when EnableFlickering=true and EnableNodeDestruction=true). Defaults to true. -->
+	<!-- 是否允许摧毁节点，默认 true -->
+	<!-- Whether to allow node destruction. Defaults to true. -->
 	<EnableNodeDestruction>true</EnableNodeDestruction>
 
-	<!-- 程序启动后、点击“开始试炼”前的背景音乐（可选，路径相对于游戏根目录或扩展根目录） -->
-	<!-- Background music after program start but before clicking "Start Trial" (optional, path relative to game root or extension root). -->
+	<!-- 节点摧毁完成后、邮件爆炸前的等待秒数，默认 0 -->
+	<!-- Delay in seconds after node destruction before mail icon explosion. Default 0. -->
+	<PostDestructionDelay>1.5</PostDestructionDelay>
+
+	<!-- 是否启用邮件图标爆炸特效，默认 true -->
+	<!-- Enable mail icon explosion effect. Defaults to true. -->
+	<EnableMailIconDestroy>false</EnableMailIconDestroy>
+
+	<!-- 邮件爆炸持续时间（秒），默认 3.82 -->
+	<!-- Duration of mail explosion effect (seconds). Defaults to 3.82. -->
+	<MailIconDestroyDuration>4.5</MailIconDestroyDuration>
+
+	<!-- 邮件图标爆炸时是否将终端外区域变暗（聚焦效果） -->
+	<!-- Whether to darken the area outside the terminal during mail icon explosion. -->
+	<MailPhaseDarkenEnabled>true</MailPhaseDarkenEnabled>
+
+	<!-- ==================== 终端聚焦特效 ==================== -->
+	<!-- ==================== Terminal Focus Effects ==================== -->
+
+	<!-- 阶段开始时是否显示终端聚焦特效（全屏变暗 + 边框扩散） -->
+	<!-- Whether to show terminal focus effect (darken outside + expanding border) when a phase starts. -->
+	<EnablePhaseStartFocus>true</EnablePhaseStartFocus>
+
+	<!-- 试炼完成时是否显示终端聚焦特效 -->
+	<!-- Whether to show terminal focus effect when the trial completes. -->
+	<EnableTrialCompleteFocus>true</EnableTrialCompleteFocus>
+
+	<!-- ==================== 音乐配置 ==================== -->
+	<!-- ==================== Music Settings ==================== -->
+
+	<!-- 程序启动后、点击“开始试炼”前的背景音乐 -->
+	<!-- Background music after program start but before clicking "Start Trial". -->
 	<StartMusic>Music/Ambient/dark_drone_008</StartMusic>
 
-	<!-- 点击“开始试炼”后播放的音乐（可选） -->
-	<!-- Music played after clicking "Start Trial" (optional). -->
+	<!-- 点击“开始试炼”后播放的音乐 -->
+	<!-- Music played after clicking "Start Trial". -->
 	<TrialStartMusic>DLC/Music/snidelyWhiplash</TrialStartMusic>
 
 	<!-- ==================== 主题切换配置 ==================== -->
-	<!-- ==================== Theme Switching Settings ==================== -->
-	<!-- 要切换的主题：可以是预设名称（如 "HacknetBlue", "HacknetMint" 等）或自定义主题文件路径（如 "Themes/MyTheme.xml"） -->
-	<!-- 如果不设置或留空，则不切换主题 -->
-	<!-- Theme to switch to: can be a preset name (e.g., "HacknetBlue", "HacknetMint") or a custom theme file path (e.g., "Themes/MyTheme.xml") -->
-	<!-- If omitted or left empty, no theme switching occurs -->
+	<!-- ==================== Theme Switching ==================== -->
+
+	<!-- 要切换的主题：预设名称或自定义主题文件路径，留空则不切换 -->
+	<!-- Theme to switch to: preset name or custom theme file path. Omit to disable. -->
 	<ThemeToSwitch>HacknetMint</ThemeToSwitch>
 
 	<!-- 主题切换时的闪烁时长（秒），默认 2 -->
-	<!-- Flicker duration when switching theme (seconds), defaults to 2 -->
+	<!-- Flicker duration when switching theme (seconds). Defaults to 2. -->
 	<ThemeFlickerDuration>2.0</ThemeFlickerDuration>
 
-	<!-- ==================== 节点摧毁后等待时间 ==================== -->
-	<!-- ==================== Post-Destruction Delay ==================== -->
-	<!-- 摧毁完成后、邮件爆炸前的等待秒数，默认 0（不等待） -->
-	<!-- Delay in seconds after node destruction before mail icon explosion. Default 0 (no wait) -->
-	<PostDestructionDelay>1.5</PostDestructionDelay>
-	
-	<!-- ==================== 自定义颜色（可选，不设置则使用当前主题色） ==================== -->
-	<!-- ==================== Custom Colors (optional, uses theme color if omitted) ==================== -->
-	<!-- 程序窗口背景颜色（支持名称如 "Red", "#FF0000", 或者填作者名字？） -->
-	<!-- Background color of the program window (supports names like "Red", "#FF0000", or LDTchara?). -->
+	<!-- ==================== 自定义颜色 ==================== -->
+	<!-- ==================== Custom Colors ==================== -->
+
+	<!-- 程序窗口背景颜色（支持名称、#RRGGBB，或 LDTchara 彩虹色） -->
+	<!-- Background color of the program window (name, #RRGGBB, or LDTchara). -->
 	<BackgroundColor>#1a1a2e</BackgroundColor>
+
 	<!-- 全局进度条颜色 -->
-	<!-- Global timer bar color -->
+	<!-- Global timer bar color. -->
 	<GlobalTimerColor>LDTchara</GlobalTimerColor>
+
 	<!-- 阶段进度条颜色 -->
-	<!-- Phase timer bar color -->
+	<!-- Phase timer bar color. -->
 	<PhaseTimerColor>#00ffcc</PhaseTimerColor>
+
 	<!-- 旋转动画颜色 -->
-	<!-- Spin animation color -->
+	<!-- Spin animation color. -->
 	<SpinUpColor>#ffaa44</SpinUpColor>
 
 	<!-- ==================== 内存缩减配置 ==================== -->
-	<!-- ==================== RAM Reduction Settings ==================== -->
-	<!-- 进入破解阶段（所有动画结束后）延迟多少秒开始缩减内存，默认 5 秒 -->
+	<!-- ==================== RAM Reduction ==================== -->
+
+	<!-- 进入破解阶段后延迟多少秒开始缩减内存，默认 5 -->
 	<!-- Delay (seconds) after entering the cracking phase before starting RAM reduction. Default 5. -->
 	<RamReductionDelay>5.0</RamReductionDelay>
-	<!-- 缩减内存所需的总秒数，默认 3 秒。在此时间内 ramCost 从初始值线性减少到目标值 88 -->
-	<!-- Duration (seconds) of the RAM reduction process. Default 3. ramCost decreases linearly from initial to target 88. -->
+
+	<!-- 缩减内存所需的总秒数，默认 3 -->
+	<!-- Duration (seconds) of the RAM reduction process. Default 3. -->
 	<RamReductionDuration>3.0</RamReductionDuration>
+
+	<!-- 是否启用动态内存缩减：根据窗口内实际控件高度自动调整 ramCost，默认 false -->
+	<!-- Whether to enable dynamic RAM reduction. Defaults to false. -->
+	<DynamicRamReduction>true</DynamicRamReduction>
 
 	<!-- ==================== 全局计时器 ==================== -->
 	<!-- ==================== Global Timer ==================== -->
 
-	<!-- 整个试炼的总时限（秒），0 表示无限制。如果不写或写 0，则无全局超时 -->
-	<!-- Total time limit for the entire trial (seconds). 0 means no limit. Omit or set to 0 to disable global timeout. -->
+	<!-- 整个试炼的总时限（秒），0 表示无限制 -->
+	<!-- Total time limit for the entire trial (seconds). 0 means no limit. -->
 	<GlobalTimeout>300</GlobalTimeout>
 
-	<!-- 是否显示全局倒计时条（仅在 GlobalTimeout > 0 时有效），默认 false -->
-	<!-- Whether to show the global countdown bar (only effective when GlobalTimeout > 0). Defaults to false. -->
+	<!-- 是否显示全局倒计时条，默认 false -->
+	<!-- Whether to show the global countdown bar. Defaults to false. -->
 	<EnableGlobalTimer>true</EnableGlobalTimer>
 
-	<!-- 全局超时失败时执行的动作文件（可选，路径相对于扩展根目录） -->
-	<!-- Action file to execute on global timeout failure (optional, path relative to extension root). -->
-	<OnGlobalFail file="Actions/GlobalFail.xml" />
-
 	<!-- ==================== 阶段计时器显示开关 ==================== -->
-	<!-- ==================== Phase Timer Display Switch ==================== -->
+	<!-- ==================== Phase Timer Display ==================== -->
 
-	<!-- 是否显示阶段倒计时条（默认 true），仅当阶段配置了 Timeout > 0 时才显示 -->
-	<!-- Whether to show the phase countdown bar (defaults to true). Only shown if phase Timeout > 0. -->
+	<!-- 是否显示阶段倒计时条，默认 true -->
+	<!-- Whether to show the phase countdown bar. Defaults to true. -->
 	<EnablePhaseTimer>true</EnablePhaseTimer>
 
-	<!-- ==================== 所有动画完成后执行的动作 ==================== -->
-	<!-- ==================== Action executed after all animations complete ==================== -->
-	<!-- 动画包括：SpinUp + 节点摧毁 + 等待（如果有） + 邮件爆炸 -->
-	<!-- Animations include: SpinUp + node destruction + wait (if any) + mail explosion -->
-	<OnAnimationComplete file="Actions/TrialStart.xml" />
+	<!-- ==================== 完成描述文本 ==================== -->
+	<!-- ==================== Outro Text ==================== -->
+
+	<!-- 试炼完成时显示在终端的描述文本（文件路径或内嵌文本），支持 % 停顿 -->
+	<!-- Text displayed in terminal upon trial completion (file path or inline), supports % pause. -->
+	<OutroText>Docs/TrialComplete.txt</OutroText>
+
+	<!-- 试炼完成后自动连接的目标节点 ID（留空或省略则不转连） -->
+	<!-- Target node ID to connect after trial completion. Omit or leave empty to disable. -->
+	<ConnectTarget>dhs</ConnectTarget>
+
+	<!-- 转连前是否停止音乐，默认 true -->
+	<!-- Whether to stop music before connecting. Defaults to true. -->
+	<StopMusicOnConnect>true</StopMusicOnConnect>
+
 
 	<!-- ==================== 阶段列表 ==================== -->
 	<!-- ==================== Phases ==================== -->
@@ -173,8 +230,8 @@
 			<!-- Phase-specific background music (optional, overrides global music). -->
 			<Music>Music/Ambient/AmbientDrone_Clipped</Music>
 
-			<!-- 阶段开始时执行的动作文件（可选，新增） -->
-			<!-- Action file to execute when the phase starts (optional, new). -->
+			<!-- 阶段开始时执行的动作文件 -->
+			<!-- Action file to execute when the phase starts. -->
 			<OnPhaseStart file="Actions/Phase0Start.xml" />
 
 			<!-- 阶段完成时执行的动作文件（可选） -->
@@ -196,6 +253,14 @@
                 If true, on timeout or trace timeout it will re-print the description, reload the mission, and reset the phase timer (global timer unaffected).
             -->
 			<EnableResetOnFail>true</EnableResetOnFail>
+			
+			<!-- 阶段失败重置时额外显示的文本（文件路径或内嵌文本），可选，支持 % 停顿 -->
+			<!-- Extra text displayed when the phase is reset on failure (file path or inline), optional, supports % pauses. -->
+			<ResetText>Docs/Phase0Reset.txt</ResetText>
+
+			<!-- 阶段重置时是否再次执行 OnPhaseStart 动作，默认 false -->
+			<!-- Whether to execute OnPhaseStart action again when the phase is reset. Defaults to false. -->
+			<ExecuteOnPhaseStartOnReset>true</ExecuteOnPhaseStartOnReset>
 		</Phase>
 
 		<!-- 第二阶段 -->
