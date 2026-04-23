@@ -27,7 +27,13 @@ namespace KernelExtensions
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
             Console.WriteLine("[KernelExtensions] CustomTrial registered.");
 
-            // 2. 注册节点恢复 Action
+            // 2. 注册各 Action
+            ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
+            Console.WriteLine("[KernelExtensions] TerminalFocus action registered.");
+            ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
+            Console.WriteLine("[KernelExtensions] TerminalWrite action registered.");
+            ActionManager.RegisterAction<TerminalTypeAction>("TerminalType");
+            Console.WriteLine("[KernelExtensions] TerminalType action registered.");
             ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
             Console.WriteLine("[KernelExtensions] RestoreCustomTrialNodes action registered.");
 
