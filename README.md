@@ -201,10 +201,11 @@
 - 代码由 AI 辅助生成，可能包含错误或不符合最佳实践，请自行测试后使用。
 - 如果遇到 Bug，请提交 Issue 并附上日志文件（`BepInEx/LogOutput.log`）和你的配置文件。
 
-###❤️ 特别感谢（不分先后）
+### ❤️ 特别感谢（不分先后）
 
-- **April_Crystal**：在开发过程中提出了大量宝贵建议，如相对路径支持、动态内存调整、动作文件优化等，对模组的完善贡献巨大。
+- **April_Crystal**：在开发过程中提出了大量宝贵建议，如相对路径支持、动态内存调整等，对模组的完善贡献巨大。
 - **HN 扩展小屋的各位朋友**：积极测试、反馈问题，为模组的稳定性提供了重要帮助。
+
 ---
 
 ## English Version
@@ -403,7 +404,7 @@ For more available actions (e.g., `SwitchToTheme`, `LoadMission`), refer to the 
 - Code is AI‑assisted and may contain errors or not follow best practices. Please test thoroughly before using.
 - If you encounter bugs, please submit an issue with your log file (`BepInEx/LogOutput.log`) and your configuration files.
 
-###❤️ Special Thanks (in no particular order)
+### ❤️ Special Thanks (in no particular order)
 
 - **April_Crystal**: for invaluable suggestions, such as relative path support, dynamic RAM adjustments, and countless other design improvements.
 - **The members of the HN Extension Hub**: for testing and providing feedback throughout development.
