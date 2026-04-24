@@ -407,4 +407,4 @@ For more available actions (e.g., `SwitchToTheme`, `LoadMission`), refer to the 
 ### ❤️ Special Thanks (in no particular order)
 
 - **April_Crystal**: for invaluable suggestions, such as relative path support, dynamic RAM adjustments, and countless other design improvements.
-- **The members of the HN Extension Hub**: for testing and providing feedback throughout development.
+- **The members of the HN扩展小屋**: for testing and providing feedback throughout development.
