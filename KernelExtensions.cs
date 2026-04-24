@@ -19,7 +19,7 @@ namespace KernelExtensions
     {
         public const string ModGUID = "com.LDTchara.KernelExtensions";
         public const string ModName = "KernelExtensions";
-        public const string ModVer = "0.4.4";
+        public const string ModVer = "0.4.5";
 
         public override bool Load()
         {
@@ -28,6 +28,8 @@ namespace KernelExtensions
             Console.WriteLine("[KernelExtensions] CustomTrial registered.");
 
             // 2. 注册各 Action
+            ActionManager.RegisterAction<FailTrialAction>("FailTrial");
+            Console.WriteLine("[KernelExtensions] FailTrial action registered.");
             ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
             Console.WriteLine("[KernelExtensions] TerminalFocus action registered.");
             ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
