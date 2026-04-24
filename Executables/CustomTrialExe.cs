@@ -101,6 +101,8 @@ namespace KernelExtensions.Executables
         private HexGridBackground backgroundEffect;            // 六边形网格背景
         private float finalScale = 1f;                         // 缩放相关
         private ExplodingUIElementEffect explosion = new();    // 爆炸特效
+        private float mailLineTimer = 0f;                      
+        private const float MAIL_LINE_INTERVAL = 1f / 60f;     // 径向线条每秒最多生成60次
         private SoundEffect breakSound;                        // 破碎音效
         private SoundEffect glowSound;                         // 完成时的发光音效
         private Texture2D circle;                              // 圆形纹理
@@ -631,7 +633,9 @@ namespace KernelExtensions.Executables
                             else
                             {
                                 // 失败时已经执行过各自失败动作，直接设置 Result 退出
-                                Result = CompletionResult.Failure;
+                                // Result = CompletionResult.Failure;
+                                // 新：失败处理：直接将 Result 设为 Success 以抑制基类输出
+                                Result = CompletionResult.Success;
                             }
                             // 恢复邮件图标显示
                             os.DisableEmailIcon = false;
@@ -745,7 +749,9 @@ namespace KernelExtensions.Executables
                         trialSucceeded = true;
                         // 播放完成音效并切换音乐
                         globalTimerActive = false;  // 立即停用全局计时器
-                        glowSound?.Play();
+                        // 只有在启用完成聚焦特效时才播放完成音效，避免突兀
+                        if (config.EnableTrialCompleteFocus)
+                            glowSound?.Play();
                         MusicManager.transitionToSong("Music/Ambient/AmbientDrone_Clipped");
                         currentState = RunState.Outro;
                         stateTimer = 0f;
@@ -883,6 +889,7 @@ namespace KernelExtensions.Executables
                 // 进入 Outro 显示失败文字
                 globalTimerActive = false;  // 立即停用全局计时器
                 currentState = RunState.Outro;
+                currentPhaseIdx = -1;           // 清空阶段
                 stateTimer = 0f;
                 outroTextCompleted = true;   // 跳过描述文本
                 outroDisplayText = "";          // 清空描述文本
@@ -897,6 +904,7 @@ namespace KernelExtensions.Executables
             ExecuteActionFile(config.OnGlobalFail?.FilePath);
             trialSucceeded = false;
             currentState = RunState.Outro;
+            currentPhaseIdx = -1;           // 清空阶段
             stateTimer = 0f;
             outroTextCompleted = true;
             outroDisplayText = "";          // 清空描述文本
@@ -914,6 +922,7 @@ namespace KernelExtensions.Executables
                 trialSucceeded = false;
                 globalTimerActive = false;  // 立即停用全局计时器
                 currentState = RunState.Outro;
+                currentPhaseIdx = -1;           // 清空阶段
                 stateTimer = 0f;
                 outroTextCompleted = true;
                 outroDisplayText = "";          // 清空描述文本
@@ -982,7 +991,7 @@ namespace KernelExtensions.Executables
                 MusicManager.transitionToSong(originalMusicName);
             }
             // 如果试炼失败，停止当前音乐
-            if (Result == CompletionResult.Failure || Result == CompletionResult.Error)
+            if (!trialSucceeded && !trialLocked && config != null)
             {
                 MusicManager.stop();
             }
@@ -1148,13 +1157,18 @@ namespace KernelExtensions.Executables
             }
             PostProcessor.EndingSequenceFlashOutPercentageComplete = 1f - progress;
 
-            // 生成径向线条（与原版一致：每帧至少生成两条，进度超过20%时加倍）
-            AddRadialMailLine();
-            AddRadialMailLine();
-            if (progress > 0.2f)
+            // 生成径向线条（按时间频率，而非每帧，目前模拟60帧，生成一次会生成两条，进度超过20%时加倍）
+            mailLineTimer += t;
+            while (mailLineTimer >= MAIL_LINE_INTERVAL)
             {
+                mailLineTimer -= MAIL_LINE_INTERVAL;
                 AddRadialMailLine();
                 AddRadialMailLine();
+                if (progress > 0.2f)
+                {
+                    AddRadialMailLine();
+                    AddRadialMailLine();
+                }
             }
 
             if (progress > 0.2f && stateTimer % 0.6f <= t)
@@ -1613,14 +1627,49 @@ namespace KernelExtensions.Executables
 
         private void DrawSpinningUp(Rectangle contentRect)
         {
-            // 绘制旋转进度条（使用 contentRect）
+            // 旋转动画颜色（使用配置或主题高亮色）
             Color spinColor = GetDynamicColor(config.SpinUpColor, os.highlightColor);
+
+            // 重置随机数生成器，确保每帧画面稳定（与原版一致）
             Utils.LCG.reSeed(PID);
+
             for (int y = 0; y < contentRect.Height; y++)
             {
-                float noise = Utils.LCG.NextFloatScaled();
-                float lineProgress = Math.Min(1f, stateTimer / (config.SpinUpDuration * noise));
-                int width = (int)(lineProgress * contentRect.Width);
+                // 每条线都有一个随机的“完成时间阈值”，从 0 到 SpinUpDuration
+                float threshold = Utils.LCG.NextFloatScaled() * config.SpinUpDuration;
+
+                // 基础线性进度：当前时间 / 该线的时间阈值 (0~1)
+                float baseProgress = Math.Min(1f, stateTimer / threshold);
+                float finalProgress;
+
+                // 原版将线条分为两组，使用不同的缓动曲线
+                if (Utils.LCG.NextFloatScaled() > 0.5f)
+                {
+                    // 第一组：80% 进度以前是缓慢的线性，80% 以后加速完成（二次缓出）
+                    float inflectionPoint = 0.8f;
+                    float slowPart = baseProgress * (1f - inflectionPoint);
+                    if (baseProgress > inflectionPoint)
+                    {
+                        // 超出转折点后，将剩余部分 (baseProgress - inflectionPoint) 重新映射到 0~1，
+                        // 并使用 QuadraticOutCurve 产生先快后慢的加速效果
+                        float remaining = 1f - slowPart;
+                        float t = (baseProgress - inflectionPoint) / (1f - inflectionPoint);
+                        t = Utils.QuadraticOutCurve(t);
+                        finalProgress = slowPart + remaining * t;
+                    }
+                    else
+                    {
+                        finalProgress = slowPart;
+                    }
+                }
+                else
+                {
+                    // 第二组：直接使用二次缓出曲线
+                    finalProgress = Utils.QuadraticOutCurve(baseProgress);
+                }
+
+                int width = (int)(finalProgress * contentRect.Width);
+                // 颜色混合：白色到主题色，带随机变化
                 Color col = Color.Lerp(Utils.AddativeWhite * 0.1f, spinColor, Utils.LCG.NextFloatScaled());
                 spriteBatch.Draw(Utils.white, new Rectangle(contentRect.X, contentRect.Y + y, width, 1), col);
             }
@@ -1657,6 +1706,7 @@ namespace KernelExtensions.Executables
                         subtitleText = "---";
                         break;
                     case RunState.Outro:
+                    case RunState.Exiting:  // 退出时沿用 Outro 的显示逻辑
                         if (outroTextCompleted)
                         {
                             titleText = trialSucceeded ? GetLocalizedCompleteText() : GetLocalizedFailedText();
@@ -1779,5 +1829,32 @@ namespace KernelExtensions.Executables
 
         // ---------- 公共方法（供外部获取删除节点列表）----------
         public List<int> GetDeletedNodeIndices() => new(deletedNodeIndices);
+        /// <summary>
+        /// 强制当前试炼立即失败，进入 Outro 状态并跳过描述文本。
+        /// 如果试炼已经结束或未开始，则无操作。
+        /// </summary>
+        public void ForceFail()
+        {
+            // 如果已经退出或未开始，则忽略
+            if (isExiting || currentState == RunState.NotStarted || currentState == RunState.Exiting || config == null)
+                return;
+
+            // 停止所有计时器
+            globalTimerActive = false;
+            phaseTimerActive = false;
+
+            // 设置失败标志
+            trialSucceeded = false;
+
+            // 直接跳转到 Outro 状态，并跳过描述文本
+            currentState = RunState.Outro;
+            currentPhaseIdx = -1;           // 清空阶段
+            stateTimer = 0f;
+            outroTextCompleted = true;
+            outroDisplayText = "";
+
+            // 清空终端（可选，使失败提示更明显）
+            os.execute("clear");
+        }
     }
 }
