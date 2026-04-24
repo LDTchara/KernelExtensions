@@ -37,6 +37,11 @@
 - 所有路径基于扩展根目录，安全且灵活。
 
 ##### 📟 自定义 Action（0.4.4）
+- **`FailTrial`**：强制当前正在运行的 CustomTrialExe 试炼立即失败。
+用法：
+```xml
+<FailTrial />或<FailTrial Delay="3.0" DelayHost="delayhost" />
+```
 - **`TerminalWriteAction`**：向终端输出一行文本，支持 `text` 属性，可配合 `Delay` 与 `DelayHost` 延迟输出（可省略）。
 用法：
 ```xml
@@ -154,10 +159,11 @@
 </ConditionalActions>
 ```
 
-更多可用动作（如 `SwitchToTheme`、`LoadMission` 等）请参考 Hacknet 官方示例扩展 `IntroExtension` 或社区中文 wiki（https://github.com/FBIKdot/Hacknet-Extension-Tutorial/blob/main/Content/Actions.md）。
+更多可用动作（如 `SwitchToTheme`、`LoadMission` 等）请参考 Hacknet 官方示例扩展 `IntroExtension` 或社区中文 wiki https://github.com/FBIKdot/Hacknet-Extension-Tutorial/blob/main/Content/Actions.md
 
 #### 三、配置文件结构（`TrialConfig.xml`）
 *此部分已移除，详见仓库内`XMLExample/ExampleTrial.xml`*
+
 **说明**：
 - 所有 `file` 属性中的路径均为**相对于扩展根目录的相对路径**。例如 `Docs/MyTrialDesc.txt` 会被解析为 `Extensions/YourExtension/Docs/MyTrialDesc.txt`。
 - `DescriptionText` 可以是文件路径或内嵌文本。文件中可使用 `%`（短停顿 ~0.5秒）和 `%%`（长停顿 ~2秒）。
@@ -181,7 +187,7 @@
 #### 四、注意事项
 
 - **Flag 命名**：必须以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。例如 `CustomTrial_MyTrial` → 加载 `MyTrial.xml`。
-- **动作文件中的延迟**：大多数动作需要 `DelayHost` 才能延迟执行，`AddIRCMessage` 除外。`Delay <= 0` 时立即执行。负 `Delay` 仅对 `AddIRCMessage` 有意义（消息回溯）。
+- **动作文件中的延迟**：大多数动作需要 `DelayHost` 才能延迟执行。`Delay <= 0` 时立即执行。负 `Delay` 仅对 `AddIRCMessage` 有意义（消息回溯）。
 - **特效开关**：如果不希望使用 UI 闪烁或邮件爆炸，请在配置中将对应开关设为 `false`。
 - **多语言**：按钮文本和锁定提示会根据游戏语言自动显示，无需额外配置。（后续会增加语言文件支持）
 - **路径要求**：本模组**必须**作为扩展的一部分运行（即 `ExtensionLoader.ActiveExtensionInfo` 不为空），所有文件路径均基于扩展根目录。不支持将模组作为全局插件使用。
