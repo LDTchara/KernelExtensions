@@ -143,12 +143,23 @@ namespace KernelExtensions.Executables
             if (Path.IsPathRooted(musicPath) || musicPath.StartsWith("../Extensions/"))
                 return musicPath;
 
-            string extFolder = ExtensionLoader.ActiveExtensionInfo?.GetFoldersafeName();
-            if (string.IsNullOrEmpty(extFolder))
-                return musicPath;   // 无扩展信息时回退原版
+            // --- 获取真实的扩展文件夹名称，而非 ExtensionInfo.Name ---
+            string extFolderName;
+            if (!string.IsNullOrEmpty(extensionRoot))
+            {
+                // extensionRoot 示例: "C:/.../Extensions/123456789"
+                extFolderName = Path.GetFileName(extensionRoot.TrimEnd('/'));
+            }
+            else
+            {
+                // 降级：仍尝试用 ExtensionInfo 的名称（通常不会执行）
+                extFolderName = ExtensionLoader.ActiveExtensionInfo?.GetFoldersafeName();
+            }
 
-            string extRoot = Path.Combine(Paths.GameRootPath, "Extensions", extFolder).Replace('\\', '/');
+            if (string.IsNullOrEmpty(extFolderName))
+                return musicPath;
 
+            string extRoot = Path.Combine(Paths.GameRootPath, "Extensions", extFolderName).Replace('\\', '/');
             // 本地函数：检查文件是否存在（自动尝试补全 .ogg）
             bool Exists(string directory, string fileName)
             {
@@ -166,15 +177,15 @@ namespace KernelExtensions.Executables
             if (musicPath.Contains('/') || musicPath.Contains('\\'))
             {
                 string cleanPath = musicPath.Replace('\\', '/');
-                return $"../Extensions/{extFolder}/{StripOgg(cleanPath)}";
+                return $"../Extensions/{extFolderName}/{StripOgg(cleanPath)}";
             }
 
             // 纯文件名：按优先级查找
             if (Exists(extRoot, musicPath))
-                return $"../Extensions/{extFolder}/{StripOgg(musicPath)}";
+                return $"../Extensions/{extFolderName}/{StripOgg(musicPath)}";
 
             if (Exists(Path.Combine(extRoot, "Music"), musicPath))
-                return $"../Extensions/{extFolder}/Music/{StripOgg(musicPath)}";
+                return $"../Extensions/{extFolderName}/Music/{StripOgg(musicPath)}";
 
             string dlcMusicDir = Path.Combine(Paths.GameRootPath, "Content", "DLC", "Music");
             if (Exists(dlcMusicDir, musicPath))
