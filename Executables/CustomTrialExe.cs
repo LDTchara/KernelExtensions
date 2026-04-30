@@ -5,6 +5,7 @@ using Hacknet.Extensions;
 using Hacknet.Gui;
 using KernelExtensions.Config;
 using KernelExtensions.Storage;   // 用于节点存储
+using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
@@ -123,77 +124,7 @@ namespace KernelExtensions.Executables
         private Color cachedPhaseTimerColor = Color.Transparent;   // 阶段进度条颜色
         private Color cachedSpinUpColor = Color.Transparent;       // 旋转动画颜色
 
-        /// <summary>
-        /// 将配置中的音乐字符串转换为 MusicManager.transitionToSong 能识别的路径。
-        /// 规则：
-        /// 1. 如果字符串包含路径分隔符（/ 或 \），视为相对路径，基于扩展根目录解析并返回 "../Extensions/扩展名/路径"。
-        /// 2. 如果是纯文件名（无路径分隔符）：
-        ///    a. 首先检查扩展根目录下是否存在该文件（直接拼接），若存在则返回 "../Extensions/扩展名/文件名"。
-        ///    b. 检查扩展内 Music 文件夹：检测 Extensions/当前扩展名/Music/文件名.ogg 是否存在，若存在返回 "../Extensions/扩展名/Music/文件名"。
-        ///    c. 否则，检查是否为 DLC 音乐：检测 Content/DLC/Music/文件名.ogg 是否存在，若存在返回 "DLC/Music/文件名"。
-        ///    d. 以上都不存在，作为原版音乐返回原字符串（MusicManager 会从 Content/Music/ 加载）。
-        /// 就很...兜底。比起原版的逻辑多了个不用多填一个Music/的逻辑
-        /// </summary>
-        private string ResolveMusicPath(string musicPath)
-        {
-            if (string.IsNullOrEmpty(musicPath))
-                return musicPath;
-
-            // 已经是绝对路径或已带有扩展前缀，直接返回
-            if (Path.IsPathRooted(musicPath) || musicPath.StartsWith("../Extensions/"))
-                return musicPath;
-
-            // --- 获取真实的扩展文件夹名称，而非 ExtensionInfo.Name ---
-            string extFolderName;
-            if (!string.IsNullOrEmpty(extensionRoot))
-            {
-                // extensionRoot 示例: "C:/.../Extensions/123456789"
-                extFolderName = Path.GetFileName(extensionRoot.TrimEnd('/'));
-            }
-            else
-            {
-                // 降级：仍尝试用 ExtensionInfo 的名称（通常不会执行）
-                extFolderName = ExtensionLoader.ActiveExtensionInfo?.GetFoldersafeName();
-            }
-
-            if (string.IsNullOrEmpty(extFolderName))
-                return musicPath;
-
-            string extRoot = Path.Combine(Paths.GameRootPath, "Extensions", extFolderName).Replace('\\', '/');
-            // 本地函数：检查文件是否存在（自动尝试补全 .ogg）
-            bool Exists(string directory, string fileName)
-            {
-                string fullPath = Path.Combine(directory, fileName);
-                return File.Exists(fullPath) || File.Exists(fullPath + ".ogg");
-            }
-
-            // 去除 .ogg 扩展名（MusicManager 不需要）
-            string StripOgg(string name) =>
-                name.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase)
-                    ? name.Substring(0, name.Length - 4)
-                    : name;
-
-            // 若包含路径分隔符 → 视为相对扩展根目录的路径
-            if (musicPath.Contains('/') || musicPath.Contains('\\'))
-            {
-                string cleanPath = musicPath.Replace('\\', '/');
-                return $"../Extensions/{extFolderName}/{StripOgg(cleanPath)}";
-            }
-
-            // 纯文件名：按优先级查找
-            if (Exists(extRoot, musicPath))
-                return $"../Extensions/{extFolderName}/{StripOgg(musicPath)}";
-
-            if (Exists(Path.Combine(extRoot, "Music"), musicPath))
-                return $"../Extensions/{extFolderName}/Music/{StripOgg(musicPath)}";
-
-            string dlcMusicDir = Path.Combine(Paths.GameRootPath, "Content", "DLC", "Music");
-            if (Exists(dlcMusicDir, musicPath))
-                return $"DLC/Music/{StripOgg(musicPath)}";
-
-            // 回退原版音乐
-            return musicPath;
-        }
+        // 原先的ResolveMusicPath已变为Utility中的公共静态方法，现在直接调用 MusicPathResolver.ResolveMusicPath 来解析音乐路径，无需再定义一个新的 ResolvePath 方法。
 
         // ---------- 构造函数 ----------
         public CustomTrialExe() : base()
@@ -275,7 +206,7 @@ namespace KernelExtensions.Executables
 
             // 播放启动音乐
             if (!string.IsNullOrEmpty(config.StartMusic))
-                MusicManager.transitionToSong(ResolveMusicPath(config.StartMusic));
+                MusicManager.transitionToSong(MusicPathResolver.ResolveMusicPath(config.StartMusic, extensionRoot));
 
             // 应用持久化删除的节点
             ApplyPersistedDeletedNodes();
@@ -669,7 +600,7 @@ namespace KernelExtensions.Executables
                 case RunState.NotStarted:
                     this.CanBeKilled = false;
                     if (!string.IsNullOrEmpty(config.TrialStartMusic))
-                        MusicManager.playSongImmediatley(ResolveMusicPath(config.TrialStartMusic));
+                        MusicManager.playSongImmediatley(MusicPathResolver.ResolveMusicPath(config.TrialStartMusic, extensionRoot));
                     ExecuteActionFile(config.OnStart?.FilePath);
                     currentState = RunState.SpinningUp;
                     break;
@@ -744,7 +675,8 @@ namespace KernelExtensions.Executables
                     }
                     else phaseTimerActive = false;
                     if (!string.IsNullOrEmpty(CurrentPhase.Music))
-                        MusicManager.transitionToSong(ResolveMusicPath(CurrentPhase.Music));
+                        MusicManager.transitionToSong(MusicPathResolver.ResolveMusicPath(CurrentPhase.Music, extensionRoot));
+
                     if (CurrentPhase.Timeout > 0 && !traceOverrideActive)
                     {
                         os.traceCompleteOverrideAction += OnTraceTimeout;
@@ -1011,61 +943,8 @@ namespace KernelExtensions.Executables
         // ---------- 动作执行 ----------
         private void ExecuteActionFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return;
-            string fullPath = ResolvePath(filePath);
-            if (fullPath == null || !File.Exists(fullPath))
-            {
-                os.write($"Action file not found: {filePath}");
-                return;
-            }
-
-            try
-            {
-                // 使用 EventExecutor 解析 XML，它支持 ConditionalActions 等多种格式
-                var executor = new EventExecutor(fullPath, true);
-
-                // 注册 ConditionalActions 处理器
-                executor.RegisterExecutor("ConditionalActions", (exec, info) =>
-                {
-                    var sets = ActionsLoader.LoadActionSets(info);
-                    os.ConditionalActions.Actions.AddRange(sets.Actions);
-                    // 立即触发一次更新，让 Instantly 条件立刻执行
-                    if (!os.ConditionalActions.IsUpdating)
-                        os.ConditionalActions.Update(0f, os);
-                }, ParseOption.ParseInterior);
-
-                // 注册 Actions 处理器（标准的动作列表）
-                executor.RegisterExecutor("Actions", (exec, info) =>
-                {
-                    foreach (var child in info.Children)
-                    {
-                        var action = ActionsLoader.ReadAction(child);
-                        action?.Trigger(os);
-                    }
-                }, ParseOption.ParseInterior);
-
-                // 解析文件
-                if (!executor.TryParse(out var ex))
-                {
-                    // 如果解析失败，可能是旧格式（直接包含动作元素，无根包裹）
-                    // 回退到原有的简单解析逻辑
-                    using FileStream fs = new(fullPath, FileMode.Open);
-                    using XmlReader reader = XmlReader.Create(fs);
-                    reader.MoveToContent();
-                    while (reader.Read())
-                    {
-                        if (reader.NodeType == XmlNodeType.Element)
-                        {
-                            SerializableAction action = SerializableAction.Deserialize(reader);
-                            action?.Trigger(os);
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error executing actions: {e.Message}");
-            }
+            //现已变为公共方法
+            ActionHelper.ExecuteActionFile(os, filePath, extensionRoot);
         }
 
         // ---------- 节点摧毁特效 ----------
