@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ============================================================
+    KernelExtensions VM 攻击配置文件完整示例
+    VM Attack Configuration File Complete Example
+    ============================================================
+    放置位置：扩展根目录/VMATK/<ConfigName>.xml
+    Location: Extension Root/VMATK/<ConfigName>.xml
+    使用方法：通过 <LaunchVMAttack ConfigName="<ConfigName>" /> 触发
+    Usage: Trigger via <LaunchVMAttack ConfigName="<ConfigName>" />
+    ============================================================
+-->
+
+<VMAttackConfig>
+	<!-- ============================================================
+    1. 基础信息 / Basic Info
+    ============================================================ -->
+	<!-- 配置名称（必须与文件名一致，用于内部 Flag 和文件目录命名） -->
+	<!-- Config name (must match the file name, used for internal flags and directory naming) -->
+	<ConfigName>MyAttack</ConfigName>
+
+	<!-- ============================================================
+    2. 解除模式 / Recovery Mode
+    ============================================================ -->
+	<!--
+    可选值 / Options:
+      FileDeletion  - 玩家必须手动删除指定文件后才能恢复（会强制退出游戏）
+                      Player must manually delete the specified file to recover (forces game exit)
+      FileExists    - 玩家必须创建指定文件后才能恢复（可游戏内即时验证）
+                      Player must create the specified file to recover (can verify in-game)
+      Password      - 玩家必须输入正确密码才能恢复（游戏内输入框）
+                      Player must enter the correct password to recover (in-game input)
+    -->
+	<Mode>FileDeletion</Mode>
+
+	<!-- ============================================================
+    3. 自定义帮助文件 / Custom Help File
+    ============================================================ -->
+	<!--
+    当玩家点击按钮时，指定一个帮助文件，它会被复制到存档目录并用系统记事本打开。
+    路径相对于扩展根目录。若留空且为文件模式，则不额外打开帮助文件；
+    若留空且为密码模式且帮助按钮可见，则会复制并打开原版默认帮助文件。
+    When the player clicks the button, specifies a help file to be copied to the save directory and opened with the system notepad.
+    Path is relative to the extension root. If empty in file mode, no extra help file is opened;
+    if empty in password mode and the help button is visible, the original default help file is copied and opened.
+    -->
+	<HelpFile>Docs/VM修复指南.txt</HelpFile>
+
+	<!-- ============================================================
+    4. 系统日志文件列表 / System Log Files
+    ============================================================ -->
+	<!--
+    在恢复界面首先显示多个文本文件，每个文件逐行以等宽字体输出。
+    文件路径相对于扩展根目录。
+    Multiple text files displayed first in the recovery screen, each file echoed line by line in monospace font.
+    Paths are relative to the extension root.
+    -->
+	<SystemLogFiles>
+		<File>Docs/SystemLog1.txt</File>
+		<File>Docs/SystemLog2.txt</File>
+		<File>Docs/SystemLog3.txt</File>
+		<File>Docs/SystemLog4.txt</File>
+	</SystemLogFiles>
+
+	<!-- ============================================================
+    5. 系统日志文件间停顿时长 / Pause Between System Log Files
+    ============================================================ -->
+	<!--
+    两个系统日志文件之间停顿的秒数（默认 2.0 秒）。最后一个文件之后此值无效。
+    Pause duration in seconds between two system log files (default 2.0s). Has no effect after the last file.
+    -->
+	<SystemLogPauseBetween>2.0</SystemLogPauseBetween>
+
+	<!-- ============================================================
+    6. 密码模式专用 / Password Mode Only
+    ============================================================ -->
+	<!--
+    当 Mode=Password 时，玩家必须输入此密码才能解除攻击（大小写敏感）。
+    留空则表示不需要密码（但密码模式下通常应填写）。
+    When Mode=Password, the player must enter this password to remove the attack (case-sensitive).
+    Leave empty to require no password (though usually you should fill it in password mode).
+    -->
+	<Password></Password>
+
+	<!--
+    密码模式下是否显示“帮助”按钮。该按钮可打开终端和帮助文件。
+    Whether to show a "Help" button in password mode. This button opens a terminal and help file.
+    -->
+	<EnableHelpButton>false</EnableHelpButton>
+
+	<!-- ============================================================
+    7. 错误消息 / Error Message
+    ============================================================ -->
+	<!--
+    在崩溃错误注入阶段显示的自定义错误消息。
+    可以包含伪造的文件名或误导信息。
+    密码模式下若留空则显示默认 TPM 验证失败消息；若填写则显示自定义消息。
+    Custom error message displayed during the crash error injection phase.
+    Can contain fake filenames or misleading information.
+    In password mode, if empty, a default TPM failure message is shown; if filled, the custom message is used.
+    -->
+	<ErrorMessage>ERROR: Critical boot error loading "payload.dll"</ErrorMessage>
+
+	<!-- ============================================================
+    8. 已读标记开关 / Guide Read Flag Toggle
+    ============================================================ -->
+	<!--
+    若设为 true，引导文本完全显示后会自动添加一个已读标记。
+    下次进入恢复界面时，引导文本将直接一次性全部显示，无逐字动画。
+    If true, a read flag will be set after all guide text is displayed.
+    The next time the recovery screen is entered, the guide text will be displayed instantly without typing animation.
+    -->
+	<EnableGuideReadFlag>false</EnableGuideReadFlag>
+
+	<!-- ============================================================
+    9. 引导文本开始时的动作 / Action on Guide Text Start
+    ============================================================ -->
+	<!--
+    引导文本开始输出时同步执行的动作文件（相对于扩展根目录）。
+    每个恢复周期（从系统被感染到恢复）仅执行一次。用于在引导文本出现时同时播放提示音效等。
+    Action file executed synchronously when the guide text starts output (relative to the extension root).
+    Only runs once per infection cycle. Can be used to play a cue sound when the guide text appears.
+    -->
+	<ActionOnGuideTextStart></ActionOnGuideTextStart>
+
+	<!-- ============================================================
+    10. 引导文本 / Guide Text
+    ============================================================ -->
+	<!--
+    逐行显示在崩溃画面底部，每行自动添加 "> " 前缀。
+    支持特殊的行内控制标记（用 || 包裹）：
+      · ||Px.x||  ：停顿 x.x 秒（例如 ||P0.5|| 停顿半秒，||P2.0|| 停顿两秒）
+      · ||Sx.x||  ：将后续逐字输出速度改为 x.x 秒/字（例如 ||S0.05|| 加速，||S0.3|| 减速）
+      · ||SR||    ：将逐字速度恢复为全局默认值（0.12 秒/字）
+    标记可出现在行内任意位置，不会被显示。
+    每行开始时速度会自动重置为默认值。
+    Displayed line by line at the bottom of the crash screen, each line prefixed with "> ".
+    Supports special inline control markers (wrapped in ||):
+      · ||Px.x||  : Pause for x.x seconds (e.g., ||P0.5|| pauses half a second, ||P2.0|| pauses two seconds)
+      · ||Sx.x||  : Change subsequent character speed to x.x sec/char (e.g., ||S0.05|| speeds up, ||S0.3|| slows down)
+      · ||SR||    : Reset character speed to the global default (0.12 sec/char)
+    Markers can appear anywhere in a line and are never displayed.
+    Speed is automatically reset to default at the start of each line.
+    -->
+	<GuideText>
+		<Line>这里是LDTchara，发生了什么事？||P0.5||</Line>
+		<Line>你节点的追踪器开始到处发送警告。||P0.5||</Line>
+		<Line>我之前就见过这样的事情||P0.5||</Line>
+		<Line>稍等，我看看怎么个事...||P0.5||</Line>
+		<Line> ||P2.0||</Line>
+		<Line>CTMD。应该是虚拟机级别的攻击。||P0.5||</Line>
+		<Line>我有应对这类攻击的经验，我知道也许你自己慢慢琢磨也能解决。||P0.5||</Line>
+		<Line>但是我已急哭所以我决定上传一份快速指南给你用||P0.5||</Line>
+		<Line>无论你在什么系统上运行你的虚拟机，你都可以基于这个指南进行修复。||P0.5||</Line>
+		<Line>等我一下……</Line>
+		<Line> ||P2.0||</Line>
+		<Line>完事了。当你准备好以后，我会终止你的虚拟机程序并让你回到桌面。||P0.5||</Line>
+		<Line>我写了一个脚本，它将打开你的cmd或者终端，并为你准备了操作指南。||P0.5||</Line>
+		<Line>祝你好运 - 你完成修复后，我们在聊天频道见。我要开始干爆攻击者了。||P0.5||</Line>
+		<Line>||S0.3||准备好了就点击按钮||P0.5||</Line>
+		<Line>||S0.04||- LDTchara||P2.0||</Line>
+	</GuideText>
+
+	<!-- ============================================================
+    11. 按钮文本 / Button Text
+    ============================================================ -->
+	<!--
+    文件删除/存在模式：按钮通常为退出类文本，点击后退出游戏。
+    密码模式：按钮为提交验证类文本，点击后校验密码。
+    FileDeletion/FileExists mode: usually an exit button, clicking quits the game.
+    Password mode: a submit button, clicking verifies the password.
+    -->
+	<ButtonText>Exit VM</ButtonText>
+
+	<!-- ============================================================
+    12. 恢复成功音乐 / Success Music
+    ============================================================ -->
+	<!--
+    解除攻击并重启后播放的音乐（可选）。
+    支持原版音乐名（如 "Music/Ambient/AmbientDrone_Clipped"）、DLC 音乐、或扩展内的自定义音乐文件路径。
+    留空则不播放音乐。
+    Music played after the attack is removed and the system reboots (optional).
+    Supports vanilla music names (e.g., "Music/Ambient/AmbientDrone_Clipped"), DLC music, or a path to a custom music file inside the extension.
+    Leave empty to not play music.
+    -->
+	<SuccessMusic>Music/Ambient/AmbientDrone_Clipped</SuccessMusic>
+
+	<!-- ============================================================
+    13. 虚假文件列表 / Fake Files
+    ============================================================ -->
+	<!--
+    攻击触发时在存档基础目录（扩展名/HHBS/）下生成的虚假文件。
+    每个文件可指定：
+      · Path    ：相对于存档基础目录的路径（必填，例如 "payload.dll" 或 "Hidden/payload.sys"）
+      · Size    ：随机内容的字节数（若未指定 Source）
+      · Source  ：从扩展内复制的源文件路径（相对于扩展根目录，可选）
+    至少需要一个文件，因为文件检测模式依赖于此。
+    Fake files generated in the save base directory (ExtensionName/HHBS/) when the attack triggers.
+    Each file specifies:
+      · Path    : Path relative to the save base directory (required, e.g., "payload.dll" or "Hidden/payload.sys")
+      · Size    : Size in bytes of random content (if Source is not specified)
+      · Source  : Source file path inside the extension to copy (optional, relative to extension root)
+    At least one file is required as file‑check modes depend on them.
+    -->
+	<FakeFiles>
+		<File Path="payload.dll" Size="512" />
+		<!-- 可选示例：更深层目录 -->
+		<!-- Optional: deeper directory -->
+		<!-- <File Path="System32/drivers/bad.sys" Size="1024" /> -->
+		<!-- 可选示例：从扩展复制文件 -->
+		<!-- Optional: copy a file from the extension -->
+		<!-- <File Path="readme.txt" Source="Docs/RescueNote.txt" /> -->
+	</FakeFiles>
+
+	<!-- ============================================================
+    14. 检测文件路径 / Check File Path
+    ============================================================ -->
+	<!--
+    用于文件检测模式的相对路径（相对于存档基础目录 扩展名/HHBS/）。
+    文件删除模式：该文件存在时触发错误阻断，玩家必须删除它。
+    文件存在模式：该文件不存在时触发错误阻断，玩家必须创建它。
+    密码模式下此字段无效。
+    Relative path used in file‑check modes (relative to the save base directory ExtensionName/HHBS/).
+    FileDeletion mode: error blocks while this file exists; player must delete it.
+    FileExists mode: error blocks while this file is absent; player must create it.
+    This field is ignored in Password mode.
+    -->
+	<CheckFilePath>payload.dll</CheckFilePath>
+
+	<!-- ============================================================
+    15. 文件内容正则匹配（可选）/ File Content Regex (Optional)
+    ============================================================ -->
+	<!--
+    仅用于文件存在模式（FileExists）。
+    如果指定了正则表达式，则文件不仅必须存在，其内容（逐行）还必须匹配该正则才算解除。
+    留空则不检查内容。
+    Only for FileExists mode.
+    If a regex is specified, the file must not only exist but also match the regex (line‑by‑line) to consider the attack resolved.
+    Leave empty to skip content checking.
+    -->
+	<CheckFilePattern></CheckFilePattern>
+</VMAttackConfig>

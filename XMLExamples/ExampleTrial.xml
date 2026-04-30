@@ -147,8 +147,10 @@
 	<!-- Duration (seconds) of the RAM reduction process. Default 3. -->
 	<RamReductionDuration>3.0</RamReductionDuration>
 
-	<!-- 是否启用动态内存缩减：根据窗口内实际控件高度自动调整 ramCost，默认 false -->
-	<!-- Whether to enable dynamic RAM reduction. Defaults to false. -->
+	<!-- 是否启用动态内存缩减：根据窗口内实际控件高度自动调整 ramCost，默认 false 
+	启用时会忽略上面的两个属性，建议设为 true 以避免视觉上的错误。-->
+	<!-- Whether to enable dynamic RAM reduction. Defaults to false. 
+	When enabled, the above two properties will be ignored. It is recommended to set it to true to avoid visual errors.-->
 	<DynamicRamReduction>true</DynamicRamReduction>
 
 	<!-- ==================== 全局计时器 ==================== -->
