@@ -4,6 +4,8 @@ using Hacknet;
 using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Actions;
+using KernelExtensions.AirCraft.Actions;
+using KernelExtensions.AirCraft.Daemon;
 using KernelExtensions.Config;
 using KernelExtensions.Executables;
 using KernelExtensions.Modules;
@@ -63,6 +65,18 @@ namespace KernelExtensions
             // 4. 注册自定义存档加载器（用于从存档中读取删除节点）
             SaveLoader.RegisterExecutor<CustomTrialSaveExecutor>("CustomTrialData");
             Console.WriteLine("[KernelExtensions] CustomTrialSaveExecutor registered.");
+
+            // 4.5 飞机Daemon相关
+            ActionManager.RegisterAction<HideAircraftOverlay>("HideAircraftOverlay");
+            Console.WriteLine("[KernelExtensions] HideAircraftOverlay action registered.");
+            ActionManager.RegisterAction<ShowAircraftOverlay>("ShowAircraftOverlay");
+            Console.WriteLine("[KernelExtensions] ShowAircraftOverlay action registered.");
+            Pathfinder.Daemon.DaemonManager.RegisterDaemon<FlightDaemon>();
+            Console.WriteLine("[KernelExtensions] FlightDaemon registered.");
+            ActionManager.RegisterAction<UploadAircraftSysFile>("UploadAircraftSysFile");
+            Console.WriteLine("[KernelExtensions] UploadAircraftSysFile action registered.");
+            ActionManager.RegisterAction<AttackAircraft>("AttackAircraft");
+            Console.WriteLine("[KernelExtensions] AttackAircraft action registered.");
 
             // 5. 加载 Harmony 补丁
             var harmony = new Harmony("com.LDTchara.KernelExtensions.vmpatch");

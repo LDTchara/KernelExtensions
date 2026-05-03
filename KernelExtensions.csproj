@@ -9,6 +9,12 @@
     <AnalysisMode>Recommended</AnalysisMode>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="AirCraft\SoucreCodes\**" />
+    <EmbeddedResource Remove="AirCraft\SoucreCodes\**" />
+    <None Remove="AirCraft\SoucreCodes\**" />
+  </ItemGroup>
 	
   <ItemGroup>
     <Reference Include="0Harmony">
