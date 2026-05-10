@@ -2,13 +2,13 @@
 using Hacknet;
 using Hacknet.Daemons.Helpers;
 using Hacknet.Gui;
-using KernelExtensions.AirCraft.Actions;
+using KernelExtensions.Modules;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Meta.Load;
 using Pathfinder.Util;
 
-namespace KernelExtensions.AirCraft.Daemon
+namespace KernelExtensions.Daemons
 {
     public class FlightDaemon : Pathfinder.Daemon.BaseDaemon
     {
@@ -18,7 +18,6 @@ namespace KernelExtensions.AirCraft.Daemon
         // ====== 全局字典（静态，公开只读） ======
         public static Dictionary<string, Computer> FlightIdToComputer = new();
 
-
         // ====== 私有内部状态（不序列化） ======
         private const float FlightHoursPerLengthUnit = 0.06855416f;
         private const float ReloadFirmwareTime = 6f;
@@ -26,8 +25,6 @@ namespace KernelExtensions.AirCraft.Daemon
         private const float RoughTotalFallTimeSeconds = 135f;
         private const float StartingAltitude = 38000f;
         
-
-
         public double CurrentAltitude = 37900.0;
         private float currentAirspeed = 460f;
         private float rateOfClimb = 0.073f;
@@ -50,22 +47,17 @@ namespace KernelExtensions.AirCraft.Daemon
         private Texture2D Plane = OS.currentInstance.content.Load<Texture2D>("DLC/Sprites/Airplane");
         private Texture2D CircleOutline = OS.currentInstance.content.Load<Texture2D>("CircleOutlineLarge");
 
-        private Vector2 mapOrigin = new Vector2(0.4304f, 0.8339f);
-        private Vector2 mapDestV = new Vector2(0.6672f, 0.4264f);
+        private Vector2 mapOrigin = new(0.4304f, 0.8339f);
+        private Vector2 mapDestV = new(0.6672f, 0.4264f);
 
         private float FlightProgress=3f;
         
-
         // ★新增：拯救标志，防止重复触发 OnSaved
         private bool hasBeenRescued = false;
 
-        public static Dictionary<Computer, Daemon.FlightDaemon> CompToDamons = new Dictionary<Computer, Daemon.FlightDaemon>();
-
+        public static Dictionary<Computer, FlightDaemon> CompToDaemons = new();
 
         // ====== XML 序列化的公开属性（必须保留） ======
-
-
-
 
         [XMLStorage]
         public string OnFailed;
@@ -73,16 +65,8 @@ namespace KernelExtensions.AirCraft.Daemon
         [XMLStorage]
         public string OnSaved;
 
-
-
-
-
-
-
-
-
-
-
+        [XMLStorage]
+        public float FallDuration = 135f; // 默认坠落时长
 
         // ====== 文件系统初始化 ======
         public override void initFiles()
@@ -106,7 +90,6 @@ namespace KernelExtensions.AirCraft.Daemon
         {
             base.loadInit();
 
-
             OS os = OS.currentInstance;
             WorldMap = os.content.Load<Texture2D>("DLC/Sprites/SmallWorldMap");
             Circle = os.content.Load<Texture2D>("Circle");
@@ -122,8 +105,8 @@ namespace KernelExtensions.AirCraft.Daemon
             // 注册全局字典
             if (!FlightIdToComputer.ContainsKey(comp.idName))
                 FlightIdToComputer[comp.idName] = comp;
-            if (!CompToDamons.ContainsKey(comp))
-                CompToDamons[comp] = this;
+            if (!CompToDaemons.ContainsKey(comp))
+                CompToDaemons[comp] = this;
 
         }
 
@@ -230,7 +213,7 @@ namespace KernelExtensions.AirCraft.Daemon
         }
 
         // ★修改：CrashAircraft 中调用 OnFailed 条件动作
-        private void CrashAircraft()
+        internal void CrashAircraft()
         {
             // ★ 如果当前全局覆盖层显示的是本飞机的数据，立即关闭
             if (GlobalAircraftOverlayManager.CurrentFlightDaemon == this)
@@ -309,7 +292,7 @@ namespace KernelExtensions.AirCraft.Daemon
             }
             Rectangle dest = Utils.InsetRectangle(bounds, 1);
             DrawMap(dest, sb);
-            Rectangle bounds2 = new Rectangle(bounds.X, bounds.Y,
+            Rectangle bounds2 = new(bounds.X, bounds.Y,
                 (int)((double)bounds.Width * 0.666), (int)((double)bounds.Height * 0.666));
             DrawHeadings(bounds2, sb);
             // ★ 修改点：仅当全局覆盖层未激活或指向其他 daemon 时才绘制高度计
@@ -325,7 +308,7 @@ namespace KernelExtensions.AirCraft.Daemon
 
         private void DrawHeadings(Rectangle bounds, SpriteBatch sb)
         {
-            Rectangle rectangle = new Rectangle(bounds.X, bounds.Y + 4, bounds.Width, 40);
+            Rectangle rectangle = new(bounds.X, bounds.Y + 4, bounds.Width, 40);
             Rectangle dest = rectangle;
             dest.X += 8;
             dest.Width -= 8;
@@ -353,13 +336,13 @@ namespace KernelExtensions.AirCraft.Daemon
                 (IsInCriticalFirmwareFailure ? LocaleTerms.Loc("CRITICAL FIRMWARE FAILURE") :
                 (PilotAlerted ? LocaleTerms.Loc("PILOT ALERTED") : LocaleTerms.Loc("FLIGHT IN PROGRESS"))));
             TextItem.doCenteredFontLabel(dest2, text, GuiData.font, Color.White);
-            Rectangle rectangle2 = new Rectangle(dest2.X, dest2.Y + dest2.Height + 8, dest2.Width, 24);
+            Rectangle rectangle2 = new(dest2.X, dest2.Y + dest2.Height + 8, dest2.Width, 24);
             int num = 4;
             int num2 = (rectangle2.Width - num * 3) / 3;
             if (Button.doButton(632877701, rectangle2.X, rectangle2.Y, num2 - 20, rectangle2.Height,
-                LocaleTerms.Loc("Exit.."), os.lockedColor))
+            LocaleTerms.Loc("Disconnect"), os.lockedColor))
             {
-                os.runCommand($"connect {comp.ip}");
+                os.runCommand("disconnect");
             }
             if (Button.doButton(632877703, rectangle2.X + num + num2 - 20, rectangle2.Y, num2 + 10 + num,
                 rectangle2.Height, LocaleTerms.Loc("Pilot Alert"), ThemeColor))
@@ -373,7 +356,7 @@ namespace KernelExtensions.AirCraft.Daemon
                 StartReloadFirmware();
             }
 
-            Rectangle dest3 = new Rectangle(rectangle2.X + 6, rectangle2.Y + rectangle2.Height + 20,
+            Rectangle dest3 = new(rectangle2.X + 6, rectangle2.Y + rectangle2.Height + 20,
                 rectangle2.Width - 75, 70);
             byte status = (byte)((!(currentAirspeed <= 500f)) ? ((currentAirspeed < 600f) ? 1u : 2u) : 0u);
             DrawFieldDisplay(dest3, sb, LocaleTerms.Loc("Air Speed (kn)"), currentAirspeed.ToString("0.0"), status);
@@ -387,7 +370,7 @@ namespace KernelExtensions.AirCraft.Daemon
 
         private void DrawFieldDisplay(Rectangle dest, SpriteBatch sb, string title, string value, byte status)
         {
-            Rectangle rectangle = new Rectangle(dest.X, dest.Y, dest.Height, dest.Height);
+            Rectangle rectangle = new(dest.X, dest.Y, dest.Height, dest.Height);
             Texture2D texture = ((status == 0) ? StatusOKIcon : CautionIcon);
             Color color = status switch
             {
@@ -406,10 +389,10 @@ namespace KernelExtensions.AirCraft.Daemon
                 }
                 sb.Draw(texture, destinationRectangle, color);
             }
-            Rectangle dest2 = new Rectangle(rectangle.X + rectangle.Width + 6, dest.Y,
+            Rectangle dest2 = new(rectangle.X + rectangle.Width + 6, dest.Y,
                 dest.Width - rectangle.Width, dest.Height / 3 - 1);
             TextItem.doFontLabelToSize(dest2, title, GuiData.font, color, doNotOversize: true, offsetToTopLeft: true);
-            Rectangle destinationRectangle2 = new Rectangle(dest2.X - 8, dest2.Y + dest2.Height,
+            Rectangle destinationRectangle2 = new(dest2.X - 8, dest2.Y + dest2.Height,
                 dest2.Width + 8, 1);
             dest2.Y += dest2.Height + 1;
             sb.Draw(Utils.white, destinationRectangle2, color);
@@ -422,9 +405,9 @@ namespace KernelExtensions.AirCraft.Daemon
         {
             Rectangle rectangle = Utils.DrawSpriteAspectCorrect(dest, sb, WorldMap, Color.Gray, ForceToBottom: true);
             float num = 10f;
-            Vector2 vector = new Vector2((float)rectangle.X + (float)rectangle.Width * mapOrigin.X,
+            Vector2 vector = new((float)rectangle.X + (float)rectangle.Width * mapOrigin.X,
                 (float)rectangle.Y + (float)rectangle.Height * mapOrigin.Y);
-            Vector2 vector2 = new Vector2((float)rectangle.X + (float)rectangle.Width * mapDestV.X,
+            Vector2 vector2 = new((float)rectangle.X + (float)rectangle.Width * mapDestV.X,
                 (float)rectangle.Y + (float)rectangle.Height * mapDestV.Y);
             sb.Draw(Circle, vector, null, Color.Black, 0f, Circle.GetCentreOrigin(),
                 new Vector2((num + 3f) / (float)Circle.Width), SpriteEffects.None, 0.4f);
@@ -437,7 +420,7 @@ namespace KernelExtensions.AirCraft.Daemon
             Utils.drawLine(sb, vector, vector2, Vector2.Zero, ThemeColor * 0.5f, 0.3f);
             Vector2 vector3 = Vector2.Lerp(vector, vector2, FlightProgress / 6f);
             float num2 = 55f;
-            Vector2 scale = new Vector2(num2 / (float)Plane.Width);
+            Vector2 scale = new(num2 / (float)Plane.Width);
             Vector2 vector4 = vector2 - vector3;
             float rotation = (float)(Math.Atan2(vector4.Y, vector4.X) + Math.PI / 2.0);
             sb.Draw(Plane, vector3, null, Color.Black, rotation, Plane.GetCentreOrigin(),

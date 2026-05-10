@@ -1,6 +1,6 @@
 ﻿using Hacknet;
 
-namespace KernelExtensions.AirCraft.Actions
+namespace KernelExtensions.Modules
 {
     /// <summary>
     /// 管理全局飞机高度计覆盖层的激活状态和目标飞行守护进程。
@@ -11,6 +11,6 @@ namespace KernelExtensions.AirCraft.Actions
         public static bool IsOverlayActive = false;
 
         /// <summary>当前被观察的 FlightDaemon（提供高度、速度等数据）</summary>
-        public static Daemon.FlightDaemon CurrentFlightDaemon = null;
+        public static Daemons.FlightDaemon CurrentFlightDaemon = null;
     }
 }

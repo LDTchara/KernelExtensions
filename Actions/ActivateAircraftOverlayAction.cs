@@ -1,8 +1,10 @@
 ﻿using Hacknet;
+using KernelExtensions.Daemons;
+using KernelExtensions.Modules;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.AirCraft.Actions
+namespace KernelExtensions.Actions
 {
     /// <summary>
     /// 激活指定计算机（通过 idName）的全局高度计覆盖层。
@@ -39,7 +41,7 @@ namespace KernelExtensions.AirCraft.Actions
             }
 
             // 从 FlightDaemon.CompToDamons 字典获取对应的 FlightDaemon
-            if (Daemon.FlightDaemon.CompToDamons.TryGetValue(targetComp, out var fd))
+            if (FlightDaemon.CompToDaemons.TryGetValue(targetComp, out var fd))
             {
                 GlobalAircraftOverlayManager.CurrentFlightDaemon = fd;
                 GlobalAircraftOverlayManager.IsOverlayActive = true;

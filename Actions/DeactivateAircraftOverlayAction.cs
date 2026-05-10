@@ -1,7 +1,8 @@
 ﻿using Hacknet;
+using KernelExtensions.Modules;
 using Pathfinder.Action;
 
-namespace KernelExtensions.AirCraft.Actions
+namespace KernelExtensions.Actions
 {
     /// <summary>
     /// 关闭全局高度计覆盖层。

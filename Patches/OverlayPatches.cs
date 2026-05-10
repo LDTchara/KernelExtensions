@@ -5,9 +5,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using HarmonyLib;
 using Hacknet.Daemons.Helpers;
-using KernelExtensions.AirCraft.Actions;
+using KernelExtensions.Modules;
 
-namespace KernelExtensions.AirCraft.Patches
+namespace KernelExtensions.Patches
 {
     [HarmonyPatch]
     public static class OverlayPatches
@@ -26,7 +26,7 @@ namespace KernelExtensions.AirCraft.Patches
 
             // 计算出覆盖层矩形：从状态栏之下开始，到屏幕底部
             int topOffset = OS.TOP_BAR_HEIGHT + Module.PANEL_HEIGHT;
-            Rectangle dest = new Rectangle(
+            Rectangle dest = new(
                 __instance.fullscreen.X,
                 __instance.fullscreen.Y + topOffset,
                 __instance.fullscreen.Width,
