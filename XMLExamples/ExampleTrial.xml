@@ -120,7 +120,7 @@
 	<!-- ==================== 自定义颜色 ==================== -->
 	<!-- ==================== Custom Colors ==================== -->
 
-	<!-- 程序窗口背景颜色（支持名称、#RRGGBB，或 LDTchara 彩虹色） -->
+	<!-- 程序窗口背景颜色（支持名称、#RRGGBB，或我的名字） -->
 	<!-- Background color of the program window (name, #RRGGBB, or LDTchara). -->
 	<BackgroundColor>#1a1a2e</BackgroundColor>
 

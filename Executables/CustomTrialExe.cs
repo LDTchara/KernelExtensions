@@ -928,16 +928,18 @@ namespace KernelExtensions.Executables
             PostProcessor.EndingSequenceFlashOutActive = false;
             PostProcessor.EndingSequenceFlashOutPercentageComplete = 0f;
             base.OnComplete();
-            // 如果是在未开始试炼的状态下退出（例如玩家 kill 了程序），恢复音乐
+
+            // 情况1：试炼从未开始就被 kill —— 恢复原始音乐
             if (currentState == RunState.NotStarted && !trialLocked && !string.IsNullOrEmpty(originalMusicName))
             {
                 MusicManager.transitionToSong(originalMusicName);
             }
-            // 如果试炼失败，停止当前音乐
-            if (!trialSucceeded && !trialLocked && config != null)
+            // 情况2：试炼确实进行过，但失败了 —— 停止音乐
+            else if (!trialSucceeded && !trialLocked && config != null && currentState != RunState.NotStarted)
             {
                 MusicManager.stop();
             }
+            // 情况3：试炼成功 —— 音乐在 TransitionToNextState 中已经切到 AmbientDrone_Clipped，不需要额外操作
         }
 
         // ---------- 动作执行 ----------
