@@ -6,6 +6,8 @@ using Hacknet.Gui;
 using KernelExtensions.Config;
 using KernelExtensions.Storage;   // 用于节点存储
 using KernelExtensions.Utility;
+using KernelExtensions.Modules;
+using KernelExtensions.Patches;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
@@ -119,10 +121,11 @@ namespace KernelExtensions.Executables
         private bool trialLocked = false;                      // 是否因缺少 Flag 而锁定
 
         // ---------- 自定义颜色缓存 ----------
-        private Color cachedBackgroundColor = Color.Transparent;   // 程序背景颜色（透明表示使用主题）
-        private Color cachedGlobalTimerColor = Color.Transparent;  // 全局进度条颜色
-        private Color cachedPhaseTimerColor = Color.Transparent;   // 阶段进度条颜色
-        private Color cachedSpinUpColor = Color.Transparent;       // 旋转动画颜色
+        // 动态颜色缓存（静态解析值，但会通过 CustomColorPatch 实时刷新）
+        private Color _staticBgColor = Color.Transparent;
+        private Color _staticGlobalTimerColor = Color.Transparent;
+        private Color _staticPhaseTimerColor = Color.Transparent;
+        private Color _staticSpinUpColor = Color.Transparent;
 
         // 原先的ResolveMusicPath已变为Utility中的公共静态方法，现在直接调用 MusicPathResolver.ResolveMusicPath 来解析音乐路径，无需再定义一个新的 ResolvePath 方法。
 
@@ -196,10 +199,10 @@ namespace KernelExtensions.Executables
             }
 
             // 解析自定义颜色
-            cachedBackgroundColor = ParseColor(config.BackgroundColor);
-            cachedGlobalTimerColor = ParseColor(config.GlobalTimerColor);
-            cachedPhaseTimerColor = ParseColor(config.PhaseTimerColor);
-            cachedSpinUpColor = ParseColor(config.SpinUpColor);
+            _staticBgColor = ParseColor(config.BackgroundColor);
+            _staticGlobalTimerColor = ParseColor(config.GlobalTimerColor);
+            _staticPhaseTimerColor = ParseColor(config.PhaseTimerColor);
+            _staticSpinUpColor = ParseColor(config.SpinUpColor);
 
             // 保存原始顶部栏图标颜色
             originalTopBarIconsColor = os.topBarIconsColor;
@@ -308,7 +311,7 @@ namespace KernelExtensions.Executables
             if (colorStr.Equals("LDTchara", StringComparison.OrdinalIgnoreCase))
             {
                 float hue = (float)(OS.currentElapsedTime * 0.1) % 1.0f;
-                return HSVToColor(hue, 1.0f, 1.0f);
+                return ColorUtils.HSVToColor(hue, 1.0f, 1.0f);
             }
 
             // 尝试使用 XNA 的颜色转换器
@@ -361,29 +364,6 @@ namespace KernelExtensions.Executables
                 3f,
                 false
             );
-        }
-
-        /// <summary>
-        /// HSV 转 RGB 辅助方法
-        /// </summary>
-        private Color HSVToColor(float hue, float saturation, float value)
-        {
-            int hi = (int)(hue * 6) % 6;
-            float f = hue * 6 - hi;
-            float p = value * (1 - saturation);
-            float q = value * (1 - f * saturation);
-            float t = value * (1 - (1 - f) * saturation);
-            float r, g, b;
-            switch (hi)
-            {
-                case 0: r = value; g = t; b = p; break;
-                case 1: r = q; g = value; b = p; break;
-                case 2: r = p; g = value; b = t; break;
-                case 3: r = p; g = q; b = value; break;
-                case 4: r = t; g = p; b = value; break;
-                default: r = value; g = p; b = q; break;
-            }
-            return new Color(r, g, b);
         }
 
         /// <summary>
@@ -1122,12 +1102,13 @@ namespace KernelExtensions.Executables
         {
             if (string.IsNullOrEmpty(colorStr))
                 return defaultColor;
-            if (colorStr.Equals("LDTchara", StringComparison.OrdinalIgnoreCase))
-            {
-                float hue = (float)(OS.currentElapsedTime * 0.1) % 1.0f;
-                return HSVToColor(hue, 1.0f, 1.0f);
-            }
-            // 实时解析颜色字符串（支持颜色名称、十六进制等）
+
+            // 检查是否为动态色（预设/渐变/彩虹）
+            var dynConfig = CustomColorPatch.ParseColorString(colorStr);
+            if (dynConfig != null)
+                return CustomColorPatch.CalcColor(dynConfig, OS.currentElapsedTime);
+
+            // 静态色解析
             Color parsed = ParseColor(colorStr);
             return parsed != Color.Transparent ? parsed : defaultColor;
         }

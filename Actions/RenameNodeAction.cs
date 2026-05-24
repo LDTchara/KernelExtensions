@@ -22,6 +22,14 @@ namespace KernelExtensions.Actions
             if (string.IsNullOrEmpty(NodeID) || string.IsNullOrEmpty(NewName))
                 return;
 
+            // 替换特殊字段标记
+            string resolvedName = NewName
+                .Replace("#PLAYERNAME#", os.defaultUser.name)
+                .Replace("#PLAYER_IP#", os.thisComputer.ip)
+                .Replace("#RANDOM_IP#", NetworkMap.generateRandomIP())
+                .Replace("#BINARY#", Computer.generateBinaryString(2000))
+                .Replace("#BINARYSMALL#", Computer.generateBinaryString(800));
+
             // 使用 ComputerLookup 或 Programs.getComputer 查找
             var comp = ComputerLookup.Find(NodeID, SearchType.Id)
                        ?? Programs.getComputer(os, NodeID);
@@ -34,7 +42,7 @@ namespace KernelExtensions.Actions
 
             // 修改名称
             string oldName = comp.name;
-            comp.name = NewName;
+            comp.name = resolvedName;
 
             // 如果正好是当前连接的主机，立即刷新终端位置信息
             if (os.connectedComp == comp)

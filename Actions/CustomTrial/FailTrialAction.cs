@@ -2,7 +2,7 @@
 using Pathfinder.Action;
 using Pathfinder.Util.XML;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.CustomTrial
 {
     /// <summary>
     /// 强制当前正在运行的 CustomTrialExe 试炼立即失败。

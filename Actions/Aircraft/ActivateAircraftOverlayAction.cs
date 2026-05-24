@@ -4,19 +4,18 @@ using KernelExtensions.Modules;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Aircraft
 {
     /// <summary>
     /// 激活指定计算机（通过 idName）的全局高度计覆盖层。
     /// </summary>
-    public class ShowAircraftOverlay : PathfinderAction
+    public class ShowAircraftOverlay : DelayablePathfinderAction
     {
         [XMLStorage]
         public string NodeID;
 
-        public override void Trigger(object os_obj)
+        public override void Trigger(OS os)
         {
-            OS os = (OS)os_obj;
             if (string.IsNullOrEmpty(NodeID))
             {
                 os.write("ERROR: ActivateAircraftOverlayAction requires a ComputerID attribute.");

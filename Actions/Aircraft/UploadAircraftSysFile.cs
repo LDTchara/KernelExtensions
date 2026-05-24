@@ -4,7 +4,7 @@ using KernelExtensions.Daemons;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Aircraft
 {
     // 表示上传飞机系统文件到指定计算机或文件夹的可延迟路径查找动作
     public class UploadAircraftSysFile : DelayablePathfinderAction

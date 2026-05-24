@@ -7,7 +7,7 @@ using Pathfinder.Util;
 using Pathfinder.Util.XML;
 using System.IO;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.VMAttack
 {
     public class LaunchVMAttackAction : DelayablePathfinderAction
     {

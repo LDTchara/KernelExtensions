@@ -6,7 +6,7 @@ using Pathfinder.Util.XML;
 using System;
 using System.Linq;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Aircraft
 {
     public class AttackAircraft : PathfinderAction
     {
