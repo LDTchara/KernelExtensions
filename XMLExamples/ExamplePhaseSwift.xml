@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PhaseSwiftConfig>
+    <!-- 程序窗口中显示的名称 -->
+    <ProgramName>相位穿梭</ProgramName>
+    <!-- 背景颜色：支持颜色名 (Red)、十六进制 (#4488FF)、或我的名字 (LDTchara = 彩虹渐变) -->
+    <BackgroundColor>LDTchara</BackgroundColor>
+    <!-- 音乐交叉渐变的默认时长（秒） -->
+    <DefaultFadeDuration>1.5</DefaultFadeDuration>
+    <!-- 主题切换时的闪烁时长（秒），建议与 DefaultFadeDuration 相同 -->
+    <ThemeFlickerDuration>0.8</ThemeFlickerDuration>
+    <!-- 启动后默认激活的场景索引（从 0 开始） -->
+    <InitialScene>0</InitialScene>
+    <!--
+         PS 完成/退出后的节点处理模式（FinishMode）
+         三种模式：
+           none   — 完全清理：恢复原始链接，隐藏所有受控节点，恢复主题。默认。
+           full   — 全整合：恢复原始链接，但保留所有场景已发现的节点可见，恢复主题。
+           scene_0~N — 仅保留指定场景的节点可见（如 scene_2 保留场景 2），恢复主题+链接。
+
+         不论哪种模式，受控节点的原始链接都会恢复。
+         因为 PS 每个场景的 <Topology> 会覆盖节点原先的邻居关系，
+         不恢复的话节点间的连接会永久偏离初始配置。
+    -->
+    <FinishMode>none</FinishMode>
+    <!--
+         准备阶段（NotStarted）的"开始"按钮文字
+    -->
+    <StartButtonText>激活</StartButtonText>
+    <!--
+         运行阶段（Active）的"Shift"按钮文字
+         是否显示当前场景数 (X/X)
+    -->
+    <ShiftButtonText>穿梭</ShiftButtonText>
+    <ShowSceneNumber>true</ShowSceneNumber>
+    <!-- 切换主题时是否同时改变节点布局（默认 false，只变色不改位置） -->
+    <ChangeLayout>false</ChangeLayout>
+    <!--
+         双轨音乐开关（默认 true）
+         true  — DSEI 流式解码 + 交叉淡化 + 自制可视化（需要 MusicPhases）
+         false — 用 MusicManager 播放单曲，不使用 DSEI 和交叉淡化。
+                 此时 MusicPhases 留空，用 <SingleTrack> 指定音乐即可。
+    -->
+    <UseDualTrackMusic>true</UseDualTrackMusic>
+    <!--
+         单曲模式音乐（UseDualTrackMusic=false 时有效）
+         指定内容名或相对路径。不填则回退到 MusicPhases 第一个 Track。
+         例: Music/MySong 或 ../Extensions/扩展名/Music/MySong.ogg
+    -->
+    <SingleTrack></SingleTrack>
+    <!-- ============================================================
+         音乐组 (MusicPhases)
+         每个 Phase 定义一组音乐文件，数量应与场景数一致。
+         索引 i 的 Track 对应 Scenes 中索引 i 的场景。
+         不同 Phase 可在游戏过程中通过 PhaseSwitchMusicPhase Action 切换。
+         强烈建议扩展作者使同 Phase 内所有音乐长度完全一致，
+         否则切换时进度会逐渐错位。
+         ============================================================ -->
+    <MusicPhases>
+        <Phase id="0">
+            <Tracks>
+                <Track>Music/Rock1.wav</Track>
+                <Track>Music/EDM1.wav</Track>
+            </Tracks>
+        </Phase>
+        <Phase id="1">
+            <Tracks>
+                <Track>Music/Rock2.wav</Track>
+                <Track>Music/EDM2.wav</Track>
+            </Tracks>
+        </Phase>
+    </MusicPhases>
+    <!-- ============================================================
+         场景定义 (Scenes)
+         每个 Scene 描述一个"表/里世界"的配置。
+         数量不限（2~4 个均可），点击 Shift 按钮会按序号循环切换。
+
+         受控节点：所有在 StartNodes、VisibleNodes、Topology 和
+         BlockedNodes 中出现的节点都会由 PhaseSwift 全权管理。
+         非受控节点不受影响。
+         ============================================================ -->
+    <Scenes>
+        <!-- ======== 场景 0：表层世界 ======== -->
+        <Scene id="0">
+            <Theme>HacknetBlue</Theme>
+            <!-- 切换到此场景时执行的动作文件（可选） -->
+            <OnSwitch file="Actions/scene0_switch.xml" />
+            <!--
+                 起始节点：切换到此场景时默认可见的节点。
+                 只有这些节点会直接出现在网络地图中，
+                 其余节点需要通过扫描拓扑链路自然发现。
+             -->
+            <StartNodes>
+                <Node id="A" />
+            </StartNodes>
+            <!--
+                 场景所有节点：本场景用到的完整节点列表。
+                 用于连接拦截和受控管理，不影响初始可见性。
+             -->
+            <VisibleNodes>
+                <Node id="A" />
+                <Node id="C" />
+                <Node id="D" />
+                <Node id="E" />
+            </VisibleNodes>
+            <!--
+                 网络拓扑：描述本场景中受控节点之间的连接关系。
+                 PS 会先清除受控节点间的所有现有链接（无论 XML 中是否有 <dlink>），再按此配置添加链接。
+				 这意味着即使某个节点原本是孤立的，只要出现在拓扑中就会被强制连线。
+                 切换场景时会重新应用新场景的拓扑。
+             -->
+            <Topology>
+                <Link from="A" to="C" />
+                <Link from="C" to="D" />
+                <Link from="D" to="E" />
+            </Topology>
+            <!--
+                 黑名单：阻止玩家 direct connect 到这些节点。
+             -->
+            <BlockedNodes>
+                <Node>B</Node>
+                <Node>F</Node>
+            </BlockedNodes>
+        </Scene>
+        <!-- ======== 场景 1：里层世界 ======== -->
+        <Scene id="1">
+            <Theme>HacknetMint</Theme>
+            <OnSwitch file="Actions/scene1_switch.xml" />
+            <StartNodes>
+                <Node id="A" />
+            </StartNodes>
+            <VisibleNodes>
+                <Node id="A" />
+                <Node id="B" />
+                <Node id="D" />
+                <Node id="F" />
+            </VisibleNodes>
+            <Topology>
+                <Link from="A" to="B" />
+                <Link from="B" to="D" />
+                <Link from="D" to="F" />
+            </Topology>
+            <BlockedNodes>
+                <Node>C</Node>
+                <Node>E</Node>
+            </BlockedNodes>
+        </Scene>
+    </Scenes>
+</PhaseSwiftConfig>

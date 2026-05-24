@@ -4,6 +4,10 @@ using Hacknet;
 using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Actions;
+using KernelExtensions.Actions.Aircraft;
+using KernelExtensions.Actions.CustomTrial;
+using KernelExtensions.Actions.PhaseSwift;
+using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Config;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
@@ -32,7 +36,7 @@ namespace KernelExtensions
     {
         public const string ModGUID = "com.LDTchara.KernelExtensions";
         public const string ModName = "KernelExtensions";
-        public const string ModVer = "0.6.0";
+        public const string ModVer = "0.7.0";
         // 在类体顶部增加静态字段（与已有的 harmony 变量合并）
         private static Harmony _harmony;
         string KEArt = $@"
@@ -50,7 +54,7 @@ namespace KernelExtensions
 |⠀⠀⠀⠈⢿⣄⠀⠈⠻⣿⣿⣿⣿⣶⣶⣶⣿⣿⣿⡿⠋⠀⠀⣰⡟⠁⠀⠀ ██╔══╝   ██╔██╗    ██║   ██╔══╝  ██║╚██╗██║╚════██║██║██║   ██║██║╚██╗██║╚════██║ |
 |⠀⠀⠀⠀⠀⠙⢷⣄⡀⠀⠉⠛⠻⠿⠿⠿⠛⠋⠉⠀⢀⣠⡾⠋⠀⠀⠀⠀ ███████╗██╔╝ ██╗   ██║   ███████╗██║ ╚████║███████║██║╚██████╔╝██║ ╚████║███████║ |
 |⠀⠀⠀⠀⠀⠀⠀⠉⠻⢶⣦⣄⠀⠀⠀⠀⠀⠀⢠⡶⠛⠉⠀⠀⠀⠀⠀⠀ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝ |
-|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                  Version-0.6.0                                    |
+|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                  Version-0.7.0                                    |
 #===============================================================================================================#
 ";
 
@@ -58,9 +62,12 @@ namespace KernelExtensions
 
         public override bool Load()
         {
-            // 1. 注册自定义试炼可执行程序
+            // 1. 注册自定义可执行程序
+            Console.WriteLine("[KernelExtensions] Registering executables...");
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
-            Console.WriteLine("[KernelExtensions] CustomTrial registered.");
+            Log.LogDebug("[KernelExtensions] CustomTrial registered.");
+            ExecutableManager.RegisterExecutable<PhaseSwiftExe>("#PHASESWIFT#");
+            Log.LogDebug("[KernelExtensions] PhaseSwift registered.");
 
             // 2. 注册各 Action
             Console.WriteLine("[KernelExtensions] Registering actions...");
@@ -70,6 +77,19 @@ namespace KernelExtensions
             Log.LogDebug("[KernelExtensions] LaunchVMAttack action registered.");
             ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
             Log.LogDebug("[KernelExtensions] PlaySound action registered.");
+            ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
+            Log.LogDebug("[KernelExtensions] PhaseSwiftScene action registered.");
+            ActionManager.RegisterAction<PhaseSwiftInitAction>("PhaseSwiftInit");
+            Log.LogDebug("[KernelExtensions] PhaseSwiftInit action registered.");
+
+            ActionManager.RegisterAction<PhaseSwiftStopAction>("PhaseSwiftStop");
+            Log.LogDebug("[KernelExtensions] PhaseSwiftStop action registered.");
+            ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
+            Log.LogDebug("[KernelExtensions] PhaseSwiftFadeOut action registered.");
+            ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
+            Log.LogDebug("[KernelExtensions] PhaseSwiftMusic action registered.");
+            ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
+            Log.LogDebug("[KernelExtensions] SwitchToThemeKeepLayout action registered.");
             ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
             Log.LogDebug("[KernelExtensions] TerminalFocus action registered.");
             ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
@@ -123,6 +143,7 @@ namespace KernelExtensions
 
         public override bool Unload()
         {
+            PhaseSwiftExe.CleanupAll();
             _harmony?.UnpatchSelf();
             _harmony = null;
             return base.Unload();
