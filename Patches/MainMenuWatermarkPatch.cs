@@ -41,15 +41,19 @@ namespace KernelExtensions.Patches
             SpriteBatch sb = GuiData.spriteBatch;
             SpriteFont font = GuiData.smallfont;
             float currentX = x;
+            // 逐字上下晃动幅度（像素），与彩虹色同速率
+            const float bobAmplitude = 5f;
 
             for (int i = 0; i < text.Length; i++)
             {
                 float pos = text.Length <= 1 ? 0f : (float)i / (text.Length - 1);
                 Color color = FlowColorUtils.GetFlowingRainbowColor(pos, baseTime);
+                // 同时间源产生逐字相位偏移的垂直晃动
+                float bob = (float)Math.Sin(baseTime * 4 + pos * Math.PI * 4.0) * bobAmplitude;
 
                 string character = text[i].ToString();
                 float charWidth = font.MeasureString(character).X;
-                sb.DrawString(font, character, new Vector2(currentX, y), color);
+                sb.DrawString(font, character, new Vector2(currentX, y + bob), color);
                 currentX += charWidth;
             }
         }

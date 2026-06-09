@@ -49,6 +49,11 @@ namespace KernelExtensions.Modules
         public static float[] CurrentVisBands = Array.Empty<float>();
         public static float[] PreviousVisBands = Array.Empty<float>();
         public static DateTime LastBandUpdateTime = DateTime.UtcNow;
+        /// <summary>可视化滚动缓冲：~500ms mono PCM，初始化时按采样率自动计算大小</summary>
+        private static float[] _rollingBuf;
+        private static int _rollingBufPos = 0;
+        private static int _rollingBufCount = 0;
+        private static int _visOffset = 0;
 
         private static DynamicSoundEffectInstance[] _dseInstances = Array.Empty<DynamicSoundEffectInstance>();
         private static FileStream[] _trackStreams = Array.Empty<FileStream>();
@@ -129,6 +134,9 @@ namespace KernelExtensions.Modules
 
             if (UseDualTrack)
             {
+                // 停止 MusicManager 的正在播放，避免与 DSEI 叠加
+                if (MusicManager.isPlaying)
+                    MusicManager.stop();
                 if (Config.MusicPhases.Count > 0)
                     LoadMusicPhase(Config.MusicPhases[CurrentMusicPhase]);
             }
@@ -199,16 +207,24 @@ namespace KernelExtensions.Modules
                 HideAllControlledNodes();
             }
 
-            // 恢复主题
-            if (!string.IsNullOrEmpty(DefaultTheme))
+            // 恢复主题（可通过 RestoreThemeOnStop 关闭）
+            if (Config != null && !Config.RestoreThemeOnStop) { /* 不恢复 */ }
+            else if (!string.IsNullOrEmpty(DefaultTheme))
             {
                 if (Enum.TryParse<OSTheme>(DefaultTheme, true, out OSTheme t))
+                {
                     CurrentOS.EffectsUpdater.StartThemeSwitch(0.15f, t, CurrentOS, null);
+                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, t);
+                }
                 else if (CurrentOS.EffectsUpdater != null)
+                {
                     CurrentOS.EffectsUpdater.StartThemeSwitch(0.15f, OSTheme.Custom, CurrentOS, DefaultTheme);
+                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, DefaultTheme);
+                }
             }
 
             PhaseSwiftConnectionPatch.CurrentExe = null;
+            UseDualTrack = false;
             IsRunning = false;
             IsInitialized = false;
         }
@@ -298,8 +314,13 @@ namespace KernelExtensions.Modules
         {
             if (Config == null || targetScene < 0 || targetScene >= Config.Scenes.Count || targetScene == CurrentScene) return;
             SaveCurrentSceneDiscovery();
-            if (CurrentOS.terminal != null && CurrentOS.connectedComp != null && CurrentOS.connectedComp != CurrentOS.thisComputer)
-                CurrentOS.runCommand("dc");
+            if (CurrentOS.terminal != null && CurrentOS.connectedComp != null && CurrentOS.connectedComp != CurrentOS.thisComputer
+                && _controlledNodeIds.Contains(CurrentOS.connectedComp.idName))
+            {
+                CurrentOS.display.command = "dc";
+                CurrentOS.connectedComp = null;
+                CurrentOS.terminal.writeLine("Connection Lost: Network Changed");
+            }
 
             if (UseDualTrack && _dseInstances.Length > 0)
             {
@@ -320,13 +341,17 @@ namespace KernelExtensions.Modules
             {
                 if (!Config.ChangeLayout) PhaseSwiftLayoutPatch.SkipLayoutChange = true;
                 if (Enum.TryParse<OSTheme>(theme, true, out OSTheme themeEnum))
+                {
                     CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, themeEnum, CurrentOS, null);
+                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, themeEnum);
+                }
                 else
                 {
                     string fullPath = theme;
                     if (!string.IsNullOrEmpty(ExtensionRoot) && !Path.IsPathRooted(theme))
                         fullPath = ExtensionRoot + "/" + theme;
                     CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, OSTheme.Custom, CurrentOS, fullPath);
+                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, fullPath);
                 }
                 if (!Config.ChangeLayout)
                 {
@@ -351,9 +376,50 @@ namespace KernelExtensions.Modules
             if (phase == null && phaseId >= 0 && phaseId < Config.MusicPhases.Count)
                 phase = Config.MusicPhases[phaseId];
             if (phase == null) return;
+            // 切换前快速淡化，减少刺耳声
+            for (int i = 0; i < _dseInstances.Length; i++)
+            {
+                if (_dseInstances[i] != null)
+                    _dseInstances[i].Volume = 0f;
+            }
             CurrentMusicPhase = phaseId;
             LoadMusicPhase(phase);
         }
+
+        public static void UpdateVisualization()
+        {
+            // 每次 GetVisualizationData 调用时触发，~24fps
+            // 从滚动缓冲取 256 连续样本，偏移 +1 每帧，模拟播放头推进
+            if (_rollingBuf == null || _rollingBufCount < 256 || _visSampList == null)
+            {
+                if (_visSampList == null) _visSampList = new List<float>(new float[256]);
+                return;
+            }
+
+            int bufSize = _rollingBuf.Length;
+            int basePos = (_rollingBufPos - 256 - _visOffset + bufSize) % bufSize;
+            _visOffset = (_visOffset + 1) % 256;
+
+            // 写入 _visSampList 和 CurrentVisBands（供注入器读取）
+            // 获取当前场景音轨音量，FadeOut/交叉淡化时可视化同步衰减
+            float visVolume = 1f;
+            if (UseDualTrack && _dseInstances != null && CurrentScene >= 0 && CurrentScene < _dseInstances.Length)
+            {
+                var dsei = _dseInstances[CurrentScene];
+                if (dsei != null) visVolume = dsei.Volume;
+            }
+
+            // 写入 _visSampList 和 CurrentVisBands（供注入器读取）
+            if (CurrentVisBands.Length != 256) CurrentVisBands = new float[256];
+            for (int i = 0; i < 256; i++)
+            {
+                int srcIdx = (basePos + i + bufSize) % bufSize;
+                float val = Math.Abs(_rollingBuf[srcIdx]) * visVolume;
+                _visSampList[i] = Math.Min(1f, Math.Min(1f, val));
+                CurrentVisBands[i] = _visSampList[i];
+            }
+        }
+private static List<float> _visSampList;
 
         public static HashSet<string> GetControlledNodeIds() { return _controlledNodeIds; }
 
@@ -372,6 +438,7 @@ namespace KernelExtensions.Modules
         {
             CleanupAudio();
             if (phase.Tracks.Count == 0) return;
+
             _stopped = true;
             string root = ExtensionRoot ?? "";
             int trackCount = Math.Max(1, phase.Tracks.Count);
@@ -383,22 +450,50 @@ namespace KernelExtensions.Modules
             _targetVolumes = new float[trackCount];
             for (int i = 0; i < trackCount; i++)
             {
-                string path = Path.Combine(root, phase.Tracks[i]);
-                _trackStreams[i] = File.OpenRead(path);
-                _trackReaders[i] = new VorbisReader(_trackStreams[i], false);
-                int sr = _trackReaders[i].SampleRate;
-                int ch = _trackReaders[i].Channels;
-                _trackChannels[i] = ch;
-                AudioChannels audioCh = (ch >= 2) ? AudioChannels.Stereo : AudioChannels.Mono;
-                _dseInstances[i] = new DynamicSoundEffectInstance(sr, audioCh);
-                _dseInstances[i].BufferNeeded += OnBufferNeeded;
-                _dseInstances[i].Volume = (i == CurrentScene) ? 1f : 0f;
-                _dseInstances[i].Play();
-                _stopped = false;
-                for (int b = 0; b < 6; b++) SubmitNextChunk(i);
+                try
+                {
+                    // 解析文件路径：先按配置中的相对路径，再回退到文件名直接查找
+                    string relPath = phase.Tracks[i].Replace('\\', '/');
+                    string filePath = Path.Combine(root, relPath);
+                    if (!File.Exists(filePath))
+                    {
+                        // 回退：只取文件名，在 root/Music 下搜索
+                        string fileName = Path.GetFileName(relPath);
+                        string altPath = Path.Combine(root, "Music", fileName);
+                        if (File.Exists(altPath))
+                            filePath = altPath;
+                        else
+                        {
+                            Console.WriteLine($"[PhaseSwift] 找不到音轨 {i}: {filePath} (已尝试 {altPath})");
+                            continue;
+                        }
+                    }
+                    _trackStreams[i] = File.OpenRead(filePath);
+                    _trackReaders[i] = new VorbisReader(_trackStreams[i], false);
+                    int sr = _trackReaders[i].SampleRate;
+                    int ch = _trackReaders[i].Channels;
+                    _trackChannels[i] = ch;
+                    // 按首轨采样率初始化滚动缓冲 (~500ms mono)
+                    if (i == 0 && (_rollingBuf == null || _rollingBuf.Length != sr / 2))
+                        _rollingBuf = new float[sr / 2];
+                    AudioChannels audioCh = (ch >= 2) ? AudioChannels.Stereo : AudioChannels.Mono;
+                    _dseInstances[i] = new DynamicSoundEffectInstance(sr, audioCh);
+                    _dseInstances[i].BufferNeeded += OnBufferNeeded;
+                    _dseInstances[i].Volume = (i == CurrentScene) ? 1f : 0f;
+                    _dseInstances[i].Play();
+                    _stopped = false;
+                    for (int b = 0; b < 6; b++) SubmitNextChunk(i);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[PhaseSwift] 加载音轨 {i} 失败: {ex.Message}");
+                    if (_trackStreams[i] != null) { _trackStreams[i].Dispose(); _trackStreams[i] = null; }
+                }
             }
             _isFading = false;
+            _visOffset = 0;
         }
+
 
         private static void SubmitNextChunk(int trackIdx)
         {
@@ -406,7 +501,10 @@ namespace KernelExtensions.Modules
             if (trackIdx < 0 || trackIdx >= _trackReaders.Length) return;
             var reader = _trackReaders[trackIdx];
             if (reader == null) return;
-            int bufSamples = (reader.SampleRate * _trackChannels[trackIdx]) / 20;
+            int bufSamples = (reader.SampleRate * _trackChannels[trackIdx]) / 24;
+            // 确保帧对齐：立体声必须是偶数个样本
+            if (bufSamples % _trackChannels[trackIdx] != 0)
+                bufSamples -= bufSamples % _trackChannels[trackIdx];
             float[] floatBuf = new float[bufSamples];
             int read = reader.ReadSamples(floatBuf, 0, bufSamples);
             if (read < bufSamples)
@@ -416,20 +514,38 @@ namespace KernelExtensions.Modules
                 _trackReaders[trackIdx] = new VorbisReader(_trackStreams[trackIdx], false);
                 if (read > 0) _trackReaders[trackIdx].ReadSamples(floatBuf, read, bufSamples - read);
             }
-            PreviousVisBands = CurrentVisBands.Length > 0 ? CurrentVisBands : Array.Empty<float>();
-            int binCount = 256;
-            float[] rawSamples = new float[binCount];
-            int step = Math.Max(1, read / binCount);
-            for (int i = 0; i < binCount; i++)
+            // 写入滚动缓冲（取第 0 声道）
+            int ch = _trackChannels[trackIdx];
+            for (int j = 0; j < read; j += ch)
             {
-                int idx = i * step;
-                if (idx >= read) idx = read - 1;
-                rawSamples[i] = floatBuf[idx];
+                _rollingBuf[_rollingBufPos] = floatBuf[j];
+                _rollingBufPos = (_rollingBufPos + 1) % _rollingBuf.Length;
             }
-            CurrentVisBands = rawSamples;
+            _rollingBufCount = Math.Min(_rollingBuf.Length, _rollingBufCount + read / ch);
+
+                        // 取最近 256 个连续样本（~5.8ms @ 44.1kHz），还原原版波形
+                        // 从滚动缓冲的实时采样交给 UpdateVisualization (注入器触发)
+            // 这里只更新 LastBandUpdateTime 标记，用于检测是否有新数据
+            CurrentVisBands = Array.Empty<float>();
             LastBandUpdateTime = DateTime.UtcNow;
-            try { _dseInstances[trackIdx].SubmitFloatBufferEXT(floatBuf, 0, read); }
-            catch { }
+            // SubmitBuffer(byte[]) 是 XNA 标准方法，全采样率兼容
+            // 将 float PCM 转为 16-bit PCM 字节
+            try
+            {
+                byte[] pcm16 = new byte[read * 2];
+                for (int s = 0; s < read; s++)
+                {
+                    float clamped = Math.Max(-1f, Math.Min(1f, floatBuf[s]));
+                    short val = (short)(clamped * short.MaxValue);
+                    pcm16[s * 2] = (byte)(val & 0xFF);
+                    pcm16[s * 2 + 1] = (byte)((val >> 8) & 0xFF);
+                }
+                _dseInstances[trackIdx].SubmitBuffer(pcm16);
+            }
+            catch (Exception ex_)
+            {
+                Console.WriteLine($"[PhaseSwift] SubmitBuffer error: {ex_.Message}");
+            }
         }
 
         private static void OnBufferNeeded(object sender, EventArgs e)
@@ -447,8 +563,9 @@ namespace KernelExtensions.Modules
                 if (_dseInstances[i] != null)
                 {
                     _dseInstances[i].BufferNeeded -= OnBufferNeeded;
-                    _dseInstances[i].Stop();
-                    _dseInstances[i].Dispose();
+                    // 不调 Stop/Dispose，避免 OpenAL 驱动内部锁死
+                    // 仅静音 + 丢引用，旧 DSEI 缓冲耗尽后自然静默，GC 回收
+                    _dseInstances[i].Volume = 0f;
                     _dseInstances[i] = null;
                 }
                 if (i < _trackReaders.Length && _trackReaders[i] != null) { _trackReaders[i].Dispose(); _trackReaders[i] = null; }
@@ -461,7 +578,9 @@ namespace KernelExtensions.Modules
             _startVolumes = Array.Empty<float>();
             _targetVolumes = Array.Empty<float>();
             _isFading = false;
+            _visOffset = 0;
         }
+
 
         private static void ApplyScene(int sceneIdx, bool force = false)
         {

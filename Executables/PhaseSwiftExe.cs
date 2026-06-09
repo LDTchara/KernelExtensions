@@ -26,6 +26,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
 using System;
+using System.Linq;
 using System.IO;
 
 namespace KernelExtensions.Executables
@@ -49,6 +50,7 @@ namespace KernelExtensions.Executables
         private PhaseSwiftConfig config;
         private float completeTimer;
         private float lockTimer;
+        private bool _guardBlocked;
         private bool _cleanedUp;
 
         public PhaseSwiftExe() : base()
@@ -65,6 +67,23 @@ namespace KernelExtensions.Executables
         public override void OnInitialize()
         {
             base.OnInitialize();
+            // 互斥检查：已有正在运行的同名 EXE 时禁止启动
+            var other = activeInstances.FirstOrDefault(inst => inst != this && !inst.isExiting);
+            if (other != null)
+            {
+                // 恢复第一个实例的引用（构造函数已覆盖过）
+                CurrentInstance = (PhaseSwiftExe)other;
+                os.write("【" + other.IdentifierName + "】已经在运行中！");
+                isExiting = true;
+                _guardBlocked = true;
+                return;
+            }
+            PhaseSwift_onInit();
+        }
+
+        private void PhaseSwift_onInit()
+        {
+            // 注意：base.OnInitialize() 已在 OnInitialize() 中调用过
             string extRoot = "";
             if (ExtensionLoader.ActiveExtensionInfo != null)
                 extRoot = ExtensionLoader.ActiveExtensionInfo.FolderPath.Replace('\\', '/');
@@ -210,16 +229,32 @@ namespace KernelExtensions.Executables
 
         private void DrawCompleteText(Rectangle contentRect)
         {
-            string text = "COMPLETE";
+            string text = (config != null && !string.IsNullOrEmpty(config.CompleteText))
+                ? config.CompleteText : LocaleTerms.Loc("Complete");
             Vector2 size = GuiData.font.MeasureString(text);
             Vector2 pos = new(contentRect.X + (contentRect.Width - size.X) / 2,
                               contentRect.Y + (contentRect.Height - size.Y) / 2);
-            spriteBatch.DrawString(GuiData.font, text, pos, Color.LimeGreen);
+            spriteBatch.DrawString(GuiData.font, text, pos, Color.LimeGreen * this.fade);
+        }
+
+        private static string GetLocalizedLockedText()
+        {
+            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
+            if (lang.StartsWith("zh")) return "锁定";
+            if (lang.StartsWith("ja")) return "ロック";
+            if (lang.StartsWith("ko")) return "잠김";
+            if (lang.StartsWith("ru")) return "ЗАБЛОКИРОВАНО";
+            if (lang.StartsWith("de")) return "GESPERRT";
+            if (lang.StartsWith("fr")) return "VERROUILLÉ";
+            if (lang.StartsWith("es")) return "BLOQUEADO";
+            if (lang.StartsWith("tr")) return "KİLİTLİ";
+            if (lang.StartsWith("nl")) return "GEBLOKKEERD";
+            return "LOCKED";
         }
 
         private void DrawLocked(Rectangle bgRect)
         {
-            string lockText = (config != null) ? config.LockedText : "锁定";
+            string lockText = GetLocalizedLockedText();
             Vector2 textSize = GuiData.font.MeasureString(lockText);
             Vector2 textPos = new(
                 bgRect.X + (bgRect.Width - textSize.X) / 2,
@@ -244,7 +279,9 @@ namespace KernelExtensions.Executables
         private void DoCleanup()
         {
             _cleanedUp = true;
-            PhaseSwiftManager.Stop(config?.FinishMode ?? "none");
+            // 被拦截的重实例不调用 Stop（不影响原实例）
+            if (!_guardBlocked)
+                PhaseSwiftManager.Stop(config?.FinishMode ?? "none");
             activeInstances.Remove(this);
             if (CurrentInstance == this) CurrentInstance = null;
         }

@@ -16,6 +16,7 @@ using Pathfinder.Util;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;          // 用于反射获取私有字段
@@ -36,6 +37,8 @@ namespace KernelExtensions.Executables
         public override void OnCompleteError() { }
         // ---------- 静态实例（用于存档保存事件）----------
         public static CustomTrialExe CurrentInstance { get; private set; }
+        private static readonly List<CustomTrialExe> activeInstances = new();
+        // CleanupAll removed - CustomTrialExe doesn't have DoCleanup
 
         // ---------- 状态机枚举 ----------
         private enum RunState
@@ -124,6 +127,7 @@ namespace KernelExtensions.Executables
         // 动态颜色缓存（静态解析值，但会通过 CustomColorPatch 实时刷新）
         private Color _staticBgColor = Color.Transparent;
         private Color _staticGlobalTimerColor = Color.Transparent;
+        private bool _guardBlocked;
         private Color _staticPhaseTimerColor = Color.Transparent;
         private Color _staticSpinUpColor = Color.Transparent;
 
@@ -138,12 +142,24 @@ namespace KernelExtensions.Executables
             this.CanBeKilled = true;                           // 初始允许被 kill 命令关闭
             this.ErrorReturn = null;                             // 抑制默认失败输出
             CurrentInstance = this;                            // 设置静态实例
+            activeInstances.Add(this);
         }
 
         // ---------- 初始化（类似 LoadContent） ----------
         public override void OnInitialize()
         {
             base.OnInitialize();
+
+            // 互斥检查：已有正在运行的同名 EXE 时禁止启动
+            var other = activeInstances.FirstOrDefault(inst => inst != this && !inst.isExiting);
+            if (other != null)
+            {
+                os.write("【" + other.IdentifierName + "】已经在运行中！");
+                isExiting = true;
+                CurrentInstance = (CustomTrialExe)other;
+                _guardBlocked = true;
+                return;
+            }
 
             // 获取当前扩展的根目录
             if (ExtensionLoader.ActiveExtensionInfo != null)
@@ -1729,5 +1745,6 @@ namespace KernelExtensions.Executables
             // 清空终端（可选，使失败提示更明显）
             os.execute("clear");
         }
+    
     }
 }

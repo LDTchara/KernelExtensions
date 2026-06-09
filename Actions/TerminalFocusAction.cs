@@ -49,23 +49,18 @@ namespace KernelExtensions.Actions
                 float.TryParse(darkStr, out DarkenAlpha);
             if (info.Attributes.TryGetValue("ExpandAmount", out string expStr))
                 float.TryParse(expStr, out ExpandAmount);
-
-            if (info.Attributes.TryGetValue("Delay", out string delayStr))
-                Delay = delayStr;
-            if (info.Attributes.TryGetValue("DelayHost", out string delayHost))
-                DelayHost = delayHost;
         }
 
         private class TerminalFocusAnimation
         {
-            private readonly OS os;
-            private readonly float totalDuration;      // 遮罩总持续时长
-            private readonly float borderDuration;     // 边框动画时长
-            private readonly float fadeInDuration;     // 遮罩淡入时长
-            private readonly float darkenAlpha;
-            private readonly float expandAmount;
-            private float timer;
-            private bool active;
+            private OS os;
+            private float totalDuration;
+            private float borderDuration;
+            private float fadeInDuration;
+            private float darkenAlpha;
+            private float expandAmount;
+            private float timer = 0f;
+            private bool active = false;
 
             public TerminalFocusAnimation(OS os, float totalDuration, float borderDuration, float fadeInDuration, float darkenAlpha, float expandAmount)
             {

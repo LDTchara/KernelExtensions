@@ -18,24 +18,21 @@ namespace KernelExtensions.Patches
             typeof(MediaPlayer).GetField("INTERNAL_state",
                 BindingFlags.Static | BindingFlags.NonPublic);
 
-        private static MediaState _savedState;
+        //private static MediaState _savedState;
 
         [HarmonyPrefix]
         static void Prefix()
         {
             if (!PhaseSwiftManager.UseDualTrack) return;
-            _savedState = (MediaState)_stateField.GetValue(null);
-            if (_savedState != MediaState.Playing)
-                _stateField.SetValue(null, MediaState.Playing);
+            // 设 State = Playing 使 AudioVisualizer 调用 GetVisualizationData
+            // 不保存旧值、不恢复——MusicManager 自己的操作会正确管理 State
+            _stateField.SetValue(null, MediaState.Playing);
         }
 
         [HarmonyPostfix]
         static void Postfix()
         {
-            if (_savedState != MediaState.Playing)
-            {
-                _stateField.SetValue(null, _savedState);
-            }
+            // 不再恢复旧 State，避免覆盖 MusicManager 后续设的 Playing
         }
     }
 }

@@ -54,21 +54,19 @@ namespace KernelExtensions.Patches
             if (!PhaseSwiftManager.UseDualTrack) return true;
             Init(data);
             if (_sampListField == null)
-            {
                 return true;
-            }
-
-            var src = PhaseSwiftManager.CurrentVisBands;
-            if (src == null || src.Length == 0)
-            {
-                return true;
-            }
 
             var dst = _sampListField.GetValue(data) as List<float>;
             if (dst == null)
-            {
                 return true;
-            }
+
+            // 调用 Manager 从滚动缓冲实时采样
+            PhaseSwiftManager.UpdateVisualization();
+
+            // 读取 CurrentVisBands（UpdateVisualization 写入的 256 个值）
+            var src = PhaseSwiftManager.CurrentVisBands;
+            if (src == null || src.Length == 0)
+                return true;
 
             dst.Clear();
             for (int i = 0; i < SIZE; i++)
@@ -76,9 +74,7 @@ namespace KernelExtensions.Patches
                 float val = 0f;
                 int idx = i * src.Length / SIZE;
                 if (idx >= 0 && idx < src.Length)
-                {
-                    val = Math.Min(1f, Math.Abs(src[idx]));
-                }
+                    val = src[idx];
                 dst.Add(val);
             }
 

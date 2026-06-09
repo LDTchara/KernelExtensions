@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace KernelExtensions.Actions.Aircraft
 {
-    public class AttackAircraft : PathfinderAction
+    public class AttackAircraft : DelayablePathfinderAction
     {
         [XMLStorage] public string NodeID;
 
@@ -16,9 +16,8 @@ namespace KernelExtensions.Actions.Aircraft
 
         public string Nodeid => NodeID;
 
-        public override void Trigger(object os_obj)
+        public override void Trigger(OS os)
         {
-            OS os = (OS)os_obj;
             Computer c = Programs.getComputer(os, Nodeid);
             if (c == null)
             {

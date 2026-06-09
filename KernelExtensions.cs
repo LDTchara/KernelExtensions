@@ -65,53 +65,51 @@ namespace KernelExtensions
             // 1. 注册自定义可执行程序
             Console.WriteLine("[KernelExtensions] Registering executables...");
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
-            Log.LogDebug("[KernelExtensions] CustomTrial registered.");
+            Log.LogDebug("CustomTrial registered.");
             ExecutableManager.RegisterExecutable<PhaseSwiftExe>("#PHASESWIFT#");
-            Log.LogDebug("[KernelExtensions] PhaseSwift registered.");
+            Log.LogDebug("PhaseSwift registered.");
 
             // 2. 注册各 Action
             Console.WriteLine("[KernelExtensions] Registering actions...");
             ActionManager.RegisterAction<FailTrialAction>("FailTrial");
-            Log.LogDebug("[KernelExtensions] FailTrial action registered.");
+            Log.LogDebug("FailTrial action registered.");
             ActionManager.RegisterAction<LaunchVMAttackAction>("LaunchVMAttack");
-            Log.LogDebug("[KernelExtensions] LaunchVMAttack action registered.");
+            Log.LogDebug("LaunchVMAttack action registered.");
             ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
-            Log.LogDebug("[KernelExtensions] PlaySound action registered.");
+            Log.LogDebug("PlaySound action registered.");
             ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
-            Log.LogDebug("[KernelExtensions] PhaseSwiftScene action registered.");
+            Log.LogDebug("PhaseSwiftScene action registered.");
             ActionManager.RegisterAction<PhaseSwiftInitAction>("PhaseSwiftInit");
-            Log.LogDebug("[KernelExtensions] PhaseSwiftInit action registered.");
-
+            Log.LogDebug("PhaseSwiftInit action registered.");
             ActionManager.RegisterAction<PhaseSwiftStopAction>("PhaseSwiftStop");
-            Log.LogDebug("[KernelExtensions] PhaseSwiftStop action registered.");
+            Log.LogDebug("PhaseSwiftStop action registered.");
             ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
-            Log.LogDebug("[KernelExtensions] PhaseSwiftFadeOut action registered.");
+            Log.LogDebug("PhaseSwiftFadeOut action registered.");
             ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
-            Log.LogDebug("[KernelExtensions] PhaseSwiftMusic action registered.");
+            Log.LogDebug("PhaseSwiftMusic action registered.");
             ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
-            Log.LogDebug("[KernelExtensions] SwitchToThemeKeepLayout action registered.");
+            Log.LogDebug("SwitchToThemeKeepLayout action registered.");
             ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
-            Log.LogDebug("[KernelExtensions] TerminalFocus action registered.");
+            Log.LogDebug("TerminalFocus action registered.");
             ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
-            Log.LogDebug("[KernelExtensions] TerminalWrite action registered.");
+            Log.LogDebug("TerminalWrite action registered.");
             ActionManager.RegisterAction<TerminalTypeAction>("TerminalType");
-            Log.LogDebug("[KernelExtensions] TerminalType action registered.");
+            Log.LogDebug("TerminalType action registered.");
             ActionManager.RegisterAction<RenameNodeAction>("RenameNode");
-            Log.LogDebug("[KernelExtensions] RenameNode action registered.");
+            Log.LogDebug("RenameNode action registered.");
             ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
-            Log.LogDebug("[KernelExtensions] RestoreCustomTrialNodes action registered.");
-
+            Log.LogDebug("RestoreCustomTrialNodes action registered.");
             // 3. 注册各事件处理器
             Console.WriteLine("[KernelExtensions] Registering event handlers...");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_CheckVMInfection);
-            Log.LogDebug("[KernelExtensions] OSLoaded event handler registered.");
+            Log.LogDebug("OSLoaded event handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
-            Log.LogDebug("[KernelExtensions] Save event handler registered.");
+            Log.LogDebug("Save event handler registered.");
 
             // 4. 注册自定义存档加载器（用于从存档中读取删除节点）
             Console.WriteLine("[KernelExtensions] Registering save loaders...");
             SaveLoader.RegisterExecutor<CustomTrialSaveExecutor>("CustomTrialData");
-            Log.LogDebug("[KernelExtensions] CustomTrialSaveExecutor registered.");
+            Log.LogDebug("CustomTrialSaveExecutor registered.");
 
             // 4.5 飞机Daemon相关
             Console.WriteLine("[KernelExtensions] Registering aircraft-related actions and daemons...");
@@ -119,15 +117,15 @@ namespace KernelExtensions
             Console.WriteLine("[KernelExtensions] Thanks for April_Crystal");
             Console.ResetColor();
             ActionManager.RegisterAction<HideAircraftOverlay>("HideAircraftOverlay");
-            Log.LogDebug("[KernelExtensions] HideAircraftOverlay action registered.");
+            Log.LogDebug("HideAircraftOverlay action registered.");
             ActionManager.RegisterAction<ShowAircraftOverlay>("ShowAircraftOverlay");
-            Log.LogDebug("[KernelExtensions] ShowAircraftOverlay action registered.");
+            Log.LogDebug("ShowAircraftOverlay action registered.");
             DaemonManager.RegisterDaemon<FlightDaemon>();
-            Log.LogDebug("[KernelExtensions] FlightDaemon registered.");
+            Log.LogDebug("FlightDaemon registered.");
             ActionManager.RegisterAction<UploadAircraftSysFile>("UploadAircraftSysFile");
-            Log.LogDebug("[KernelExtensions] UploadAircraftSysFile action registered.");
+            Log.LogDebug("UploadAircraftSysFile action registered.");
             ActionManager.RegisterAction<AttackAircraft>("AttackAircraft");
-            Log.LogDebug("[KernelExtensions] AttackAircraft action registered.");
+            Log.LogDebug("AttackAircraft action registered.");
 
             // 5. 加载 Harmony 补丁
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");

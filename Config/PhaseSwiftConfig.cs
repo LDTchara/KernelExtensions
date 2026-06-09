@@ -17,8 +17,10 @@ namespace KernelExtensions.Config
         [XmlElement("StartButtonText")] public string StartButtonText = "开始";
         [XmlElement("ShiftButtonText")] public string ShiftButtonText = "Shift";
         [XmlElement("ShowSceneNumber")] public bool ShowSceneNumber = true;
+        [XmlElement("CompleteText")] public string CompleteText = null;
         [XmlElement("FinishMode")] public string FinishMode = "none";
         [XmlElement("UseDualTrackMusic")] public bool UseDualTrackMusic = true;
+        [XmlElement("RestoreThemeOnStop")] public bool RestoreThemeOnStop = true;
         [XmlElement("SingleTrack")] public string SingleTrack = null;
 
         [XmlArray("MusicPhases"), XmlArrayItem("Phase")]

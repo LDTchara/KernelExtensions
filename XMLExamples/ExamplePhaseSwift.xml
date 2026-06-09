@@ -22,15 +22,27 @@
          不恢复的话节点间的连接会永久偏离初始配置。
     -->
     <FinishMode>none</FinishMode>
+
+    <!-- ============================================================
+         文本局部化
+         以下字段控制 PS 中各个框架元素的显示文字。
+         全部可选，不填则回退到内置词典（未来将支持 Locales/*.xml 外部语言文件）。
+         ============================================================ -->
     <!--
          准备阶段（NotStarted）的"开始"按钮文字
     -->
     <StartButtonText>激活</StartButtonText>
     <!--
          运行阶段（Active）的"Shift"按钮文字
-         是否显示当前场景数 (X/X)
     -->
     <ShiftButtonText>穿梭</ShiftButtonText>
+	<!--
+         PS 完成时显示的文字（不填回退到内置词典）
+    -->
+	<CompleteText>完成</CompleteText>
+    <!--
+         是否显示当前场景数 (X/X)
+    -->
     <ShowSceneNumber>true</ShowSceneNumber>
     <!-- 切换主题时是否同时改变节点布局（默认 false，只变色不改位置） -->
     <ChangeLayout>false</ChangeLayout>
@@ -47,6 +59,11 @@
          例: Music/MySong 或 ../Extensions/扩展名/Music/MySong.ogg
     -->
     <SingleTrack></SingleTrack>
+    <!--
+         PS 停止时是否自动恢复启动前的主题（默认 true）
+         false 时作者可通过 Action 自行控制完成时的主题。
+    -->
+    <RestoreThemeOnStop>true</RestoreThemeOnStop>
     <!-- ============================================================
          音乐组 (MusicPhases)
          每个 Phase 定义一组音乐文件，数量应与场景数一致。
@@ -58,14 +75,14 @@
     <MusicPhases>
         <Phase id="0">
             <Tracks>
-                <Track>Music/Rock1.wav</Track>
-                <Track>Music/EDM1.wav</Track>
+                <Track>Music/Rock1.ogg</Track>
+                <Track>Music/EDM1.ogg</Track>
             </Tracks>
         </Phase>
         <Phase id="1">
             <Tracks>
-                <Track>Music/Rock2.wav</Track>
-                <Track>Music/EDM2.wav</Track>
+                <Track>Music/Rock2.ogg</Track>
+                <Track>Music/EDM2.ogg</Track>
             </Tracks>
         </Phase>
     </MusicPhases>

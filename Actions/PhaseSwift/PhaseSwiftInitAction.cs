@@ -30,6 +30,13 @@ namespace KernelExtensions.Actions.PhaseSwift
             if (string.IsNullOrEmpty(ConfigName)) ConfigName = "Default";
             PhaseSwiftManager.Initialize(os, ConfigName);
             PhaseSwiftManager.Start();
+            // 添加 Exe flag 以便下次启动时 Exe 自动检测到此配置
+            string flag = "PhaseSwift_" + ConfigName;
+            if (!os.Flags.HasFlag(flag))
+            {
+                os.Flags.AddFlag(flag);
+                os.threadedSaveExecute(true);
+            }
         }
     }
 }

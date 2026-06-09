@@ -32,13 +32,10 @@ namespace KernelExtensions.Actions
 
         public override void LoadFromXml(ElementInfo info)
         {
+            base.LoadFromXml(info);
             Text = info.Attributes.GetString("text", null);
             if (info.Attributes.TryGetValue("CharDelay", out string delayStr))
                 float.TryParse(delayStr, out CharDelay);
-            if (info.Attributes.TryGetValue("Delay", out string delayStr2))
-                Delay = delayStr2;
-            if (info.Attributes.TryGetValue("DelayHost", out string delayHost))
-                DelayHost = delayHost;
         }
     }
 }

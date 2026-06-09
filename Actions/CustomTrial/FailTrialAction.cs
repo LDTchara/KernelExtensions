@@ -20,14 +20,5 @@ namespace KernelExtensions.Actions.CustomTrial
                 trial.ForceFail();
             }
         }
-
-        public override void LoadFromXml(ElementInfo info)
-        {
-            // 手动处理延迟字段，避免基类解析异常（同 TerminalWriteAction）
-            if (info.Attributes.TryGetValue("Delay", out string delayStr))
-                Delay = delayStr;
-            if (info.Attributes.TryGetValue("DelayHost", out string delayHost))
-                DelayHost = delayHost;
-        }
     }
 }

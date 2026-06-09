@@ -32,12 +32,7 @@ namespace KernelExtensions.Actions
 
         public override void LoadFromXml(ElementInfo info)
         {
-            // 基类调用会读取 XMLStorage 标记的字段：Path, Volume, Pitch, Pan
             base.LoadFromXml(info);
-            if (info.Attributes.TryGetValue("Delay", out string delayStr))
-                Delay = delayStr;
-            if (info.Attributes.TryGetValue("DelayHost", out string delayHost))
-                DelayHost = delayHost;
         }
     }
 }

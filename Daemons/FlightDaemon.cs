@@ -348,6 +348,12 @@ namespace KernelExtensions.Daemons
                 rectangle2.Height, LocaleTerms.Loc("Pilot Alert"), ThemeColor))
             {
                 PilotAlerted = true;
+                string flag = "PilotAlerted_" + comp.idName;
+                if (!os.Flags.HasFlag(flag))
+                {
+                    os.Flags.AddFlag(flag);
+                    os.threadedSaveExecute(true);
+                }
             }
 
             if (Button.doButton(632877706, rectangle2.X + num * 3 + num2 * 2 - 10, rectangle2.Y, num2 + 10 + num,

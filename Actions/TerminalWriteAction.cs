@@ -27,11 +27,8 @@ namespace KernelExtensions.Actions
 
         public override void LoadFromXml(ElementInfo info)
         {
+            base.LoadFromXml(info);
             Text = info.Attributes.GetString("text", null);
-            if (info.Attributes.TryGetValue("Delay", out string delayStr))
-                Delay = delayStr;
-            if (info.Attributes.TryGetValue("DelayHost", out string delayHost))
-                DelayHost = delayHost;
         }
     }
 }
