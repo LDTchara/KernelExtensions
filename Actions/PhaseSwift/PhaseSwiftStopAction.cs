@@ -30,11 +30,10 @@ namespace KernelExtensions.Actions.PhaseSwift
         {
             string mode = FinishMode ?? PhaseSwiftManager.Config?.FinishMode ?? "none";
             PhaseSwiftManager.Stop(mode);
-            // 由于主动 Stop 会清空音频和场景状态，Exe 不再需要显示 Complete 动画
+            // 让 Exe 进入 Completing 状态，显示 3 秒完成文本后自动退出
             if (PhaseSwiftExe.CurrentInstance != null && !PhaseSwiftExe.CurrentInstance.isExiting)
             {
-                PhaseSwiftExe.CurrentInstance.isExiting = true;
-                PhaseSwiftExe.CurrentInstance.Result = Pathfinder.Executable.CompletionResult.Success;
+                PhaseSwiftExe.CurrentInstance.IsComplete = true;
             }
         }
     }

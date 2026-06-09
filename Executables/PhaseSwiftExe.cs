@@ -229,12 +229,14 @@ namespace KernelExtensions.Executables
 
         private void DrawCompleteText(Rectangle contentRect)
         {
+            // 完成计时器即将归零时不绘制文字，避免退出动画期间残留
+            if (completeTimer <= 0.15f) return;
             string text = (config != null && !string.IsNullOrEmpty(config.CompleteText))
                 ? config.CompleteText : LocaleTerms.Loc("Complete");
             Vector2 size = GuiData.font.MeasureString(text);
             Vector2 pos = new(contentRect.X + (contentRect.Width - size.X) / 2,
                               contentRect.Y + (contentRect.Height - size.Y) / 2);
-            spriteBatch.DrawString(GuiData.font, text, pos, Color.LimeGreen * this.fade);
+            spriteBatch.DrawString(GuiData.font, text, pos, Color.LimeGreen);
         }
 
         private static string GetLocalizedLockedText()
@@ -254,6 +256,7 @@ namespace KernelExtensions.Executables
 
         private void DrawLocked(Rectangle bgRect)
         {
+            if (lockTimer <= 0.15f) return;
             string lockText = GetLocalizedLockedText();
             Vector2 textSize = GuiData.font.MeasureString(lockText);
             Vector2 textPos = new(
@@ -262,7 +265,7 @@ namespace KernelExtensions.Executables
             );
             // this.fade 处理入场/退出渐变，Math.Sin 做呼吸动效
             float breathing = (float)(Math.Sin(os.timer * 3.0) * 0.3 + 0.7);
-            spriteBatch.DrawString(GuiData.font, lockText, textPos, os.highlightColor * this.fade * breathing);
+            spriteBatch.DrawString(GuiData.font, lockText, textPos, os.highlightColor * breathing);
         }
 
         public override void OnComplete()
