@@ -18,13 +18,15 @@ jobs:
         dotnet-version: '6.x'
 
     - name: Restore
-      run: dotnet restore KernelExtensions/KernelExtensions.csproj
+      working-directory: KernelExtensions
+      run: dotnet restore KernelExtensions.csproj
 
     - name: Build
-      run: dotnet build KernelExtensions/KernelExtensions.csproj --configuration Release --no-restore
+      working-directory: KernelExtensions
+      run: dotnet build KernelExtensions.csproj --configuration Release --no-restore
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: KernelExtensions-Nightly
-        path: KernelExtensions/bin/Release/net472/KernelExtensions.dll
+        path: bin/Release/net472/KernelExtensions.dll
