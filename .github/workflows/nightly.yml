@@ -18,11 +18,9 @@ jobs:
         dotnet-version: '6.x'
 
     - name: Restore
-      working-directory: KernelExtensions
       run: dotnet restore KernelExtensions.csproj
 
     - name: Build
-      working-directory: KernelExtensions
       run: dotnet build KernelExtensions.csproj --configuration Release --no-restore
 
     - name: Upload Artifact
