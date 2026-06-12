@@ -98,6 +98,12 @@
     <Scenes>
         <!-- ======== 场景 0：表层世界 ======== -->
         <Scene id="0">
+            <!--
+                 场景主题。
+                 若不填则保持 PS 启动前（或上一个 Scene 的 OnSwitch Action 设置的）的主题不变。
+                 如需自定义，可填内置主题名 (HacknetBlue/HacknetMint/HacknetOrange/HacknetRed)、
+                 自定义主题文件路径。
+            -->
             <Theme>HacknetBlue</Theme>
             <!-- 切换到此场景时执行的动作文件（可选） -->
             <OnSwitch file="Actions/scene0_switch.xml" />

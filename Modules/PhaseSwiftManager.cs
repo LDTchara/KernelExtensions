@@ -224,6 +224,25 @@ namespace KernelExtensions.Modules
             }
 
             PhaseSwiftConnectionPatch.CurrentExe = null;
+            // 清空所有运行时状态，确保下次 Initialize 从干净状态开始
+            _controlledNodeIds.Clear();
+            _currentVisibleNodeIds.Clear();
+            _originalLinks.Clear();
+            _sceneStartIds.Clear();
+            _sceneVisibleIds.Clear();
+            _sceneBlockedIds.Clear();
+            _sceneDiscoveredNodeIds.Clear();
+            _rollingBuf = null;
+            _rollingBufCount = 0;
+            _rollingBufPos = 0;
+            _visOffset = 0;
+            _visSampList = null;
+            _fadeProgress = 0f;
+            _isFading = false;
+            CurrentScene = 0;
+            Config = null;
+            CurrentOS = null;
+            ExtensionRoot = null;
             UseDualTrack = false;
             IsRunning = false;
             IsInitialized = false;
@@ -356,6 +375,20 @@ namespace KernelExtensions.Modules
                 if (!Config.ChangeLayout)
                 {
                     CurrentOS.delayer.Post(ActionDelayer.Wait(Config.ThemeFlickerDuration + 0.15f), () => { PhaseSwiftLayoutPatch.SkipLayoutChange = false; });
+                }
+                else
+                {
+                    // ChangeLayout=true: 等待主题闪烁完成后才应用拓扑/可见性，避免特效与切换重叠
+                    CurrentOS.delayer.Post(ActionDelayer.Wait(Config.ThemeFlickerDuration), () =>
+                    {
+                        ApplyTopology(targetScene);
+                        UpdateVisibility(targetScene);
+                        var onSwitch = Config.Scenes[targetScene].OnSwitch;
+                        if (onSwitch != null && !string.IsNullOrEmpty(onSwitch.FilePath))
+                            ActionHelper.ExecuteActionFile(CurrentOS, onSwitch.FilePath, ExtensionRoot);
+                    });
+                    CurrentScene = targetScene;
+                    return;
                 }
             }
 
@@ -509,10 +542,14 @@ private static List<float> _visSampList;
             int read = reader.ReadSamples(floatBuf, 0, bufSamples);
             if (read < bufSamples)
             {
+                // 独立循环：音轨播完后重置到文件开头
+                // 不清零剩余缓冲，避免不同长度音轨的 seek 偏移积累
                 _trackStreams[trackIdx].Position = 0;
                 _trackReaders[trackIdx].Dispose();
                 _trackReaders[trackIdx] = new VorbisReader(_trackStreams[trackIdx], false);
-                if (read > 0) _trackReaders[trackIdx].ReadSamples(floatBuf, read, bufSamples - read);
+                // 读取更多样本补足当前帧（从文件开头继续读）
+                int more = _trackReaders[trackIdx].ReadSamples(floatBuf, read, bufSamples - read);
+                read += more;
             }
             // 写入滚动缓冲（取第 0 声道）
             int ch = _trackChannels[trackIdx];
