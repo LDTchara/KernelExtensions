@@ -437,6 +437,16 @@ namespace KernelExtensions.Patches
             var aliasField = osType.GetField(alias);
             if (aliasField != null && aliasField.FieldType == typeof(Color))
                 aliasField.SetValue(os, color);
+
         }
+        public static void ResetPresets()
+        {
+            _presetsLoaded = false;
+            _presetCache.Clear();
+            _dynamicFields.Clear();
+            _fieldCache.Clear();
+            _lastScannedPath = null;
+        }
+
     }
 }
