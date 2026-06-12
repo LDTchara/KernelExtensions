@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<HacknetEditorHint>
+    <!-- ==========================================================
+         KernelExtensions (KE) 自定义标签提示
+
+         使用方法（二选一）：
+         方法A — Include 引用（推荐）：
+           在项目根目录的 Hacknet-EditorHint.xml 中添加一行：
+           <Include path="EditorHint_KE.xml" />
+           将本文件放在 Hacknet-EditorHint.xml 同级目录即可。
+
+         方法B — 手动合并：
+           将本文件 <Node> 内容全部复制到 Hacknet-EditorHint.xml 中。
+
+         ========================================================== -->
+
+    <!-- ==================== PhaseSwift 配置 ==================== -->
+    <Node name="PhaseSwift" enable="true" multi="false" desc="PhaseSwift 场景切换系统根标签" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="ProgramName" required="false" default="PhaseSwift" desc="Exe 窗口标题" />
+        <Attribute name="BackgroundColor" required="false" default="#000000" desc="Exe 背景色" hint="Color" />
+        <Attribute name="DefaultFadeDuration" required="false" default="2.5" desc="场景切换默认淡化时长" />
+        <Attribute name="ThemeFlickerDuration" required="false" default="1.2" desc="主题闪烁切换时长" />
+        <Attribute name="InitialScene" required="false" default="0" desc="启动时默认场景索引" />
+        <Attribute name="ChangeLayout" required="false" default="true" desc="切换场景时是否改变节点布局" />
+        <Attribute name="FinishMode" required="false" default="none" desc="完成时节点处理方式" hint="enum">
+            <Enums>
+                <Enum desc="全隐藏">none</Enum>
+                <Enum desc="全保留">full</Enum>
+                <Enum desc="保留场景 N 的节点">scene_N</Enum>
+            </Enums>
+        </Attribute>
+        <Attribute name="UseDualTrackMusic" required="false" default="true" desc="是否使用 DSEI 流式音频（false 则 MusicManager 单曲）" />
+        <Attribute name="SingleTrack" required="false" desc="单曲模式下的音乐文件路径" hint="Path" />
+        <Attribute name="CompleteText" required="false" desc="Exe 完成时显示的文本" />
+        <Attribute name="RestoreThemeOnStop" required="false" default="true" desc="Stop 时是否恢复 PS 启动前的主题" />
+        <Attribute name="StartButtonText" required="false" default="开始" desc="准备阶段的激活按钮文字" />
+        <Attribute name="ShiftButtonText" required="false" default="穿梭" desc="运行阶段的场景切换按钮文字" />
+        <Attribute name="ShowSceneNumber" required="false" default="true" desc="是否在场景按钮上显示序号" />
+        <Content />
+    </Node>
+
+    <Node name="PhaseSwift.Scenes" enable="true" multi="false" desc="场景定义列表" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene" enable="true" multi="true" desc="定义一个场景" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="id" required="true" desc="场景 ID（从 0 开始）" />
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.Theme" enable="true" multi="false" desc="该场景的主题。不填则保持 PS 启动前的主题" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.OnSwitch" enable="true" multi="false" desc="切到此场景时执行的动作文件" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="file" required="true" desc="动作文件路径" hint="ActionFile" />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.StartNodes" enable="true" multi="false" desc="在此场景中首次可见的节点" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.StartNodes.Node" enable="true" multi="true" desc="一个起始节点" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="id" required="true" desc="节点 ID" hint="Computer" />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.VisibleNodes" enable="true" multi="false" desc="此场景的所有可见节点列表" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.VisibleNodes.Node" enable="true" multi="true" desc="一个可见节点" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="id" required="true" desc="节点 ID" hint="Computer" />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.BlockedNodes" enable="true" multi="false" desc="此场景中禁止 direct connect 的节点" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.BlockedNodes.Node" enable="true" multi="true" desc="一个禁止连接的节点" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="id" required="true" desc="节点 ID" hint="Computer" />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.Topology" enable="true" multi="false" desc="此场景的网络拓扑连接" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.Scenes.Scene.Topology.Link" enable="true" multi="true" desc="两个节点间的连接" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="from" required="true" desc="源节点 ID" hint="Computer" />
+        <Attribute name="to" required="true" desc="目标节点 ID" hint="Computer" />
+    </Node>
+
+    <Node name="PhaseSwift.MusicPhases" enable="true" multi="false" desc="音乐组定义" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.MusicPhases.Phase" enable="true" multi="true" desc="定义一组音乐" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="id" required="true" desc="音乐组 ID" />
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.MusicPhases.Phase.Tracks" enable="true" multi="false" desc="场景对应的一组音轨" fileTriggerPattern="PhaseSwift/*.xml">
+        <Content />
+    </Node>
+    <Node name="PhaseSwift.MusicPhases.Phase.Tracks.Track" enable="true" multi="true" desc="一条音轨路径" fileTriggerPattern="PhaseSwift/*.xml">
+        <Attribute name="path" required="false" desc="音频文件路径" hint="Path" />
+        <Content desc="音频文件路径（也可直接写在内容中）" />
+    </Node>
+
+    <!-- ==================== KE 自定义 Action ==================== -->
+
+    <!-- PhaseSwift Actions -->
+    <Node name="PhaseSwiftInit" enable="true" multi="false" desc="加载配置并启动 PhaseSwift" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="ConfigName" required="true" desc="PhaseSwift 配置名（文件名为 ExamplePhaseSwift → Example）" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="PhaseSwiftScene" enable="true" multi="false" desc="切换到目标场景" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="TargetScene" required="true" desc="目标场景 ID" />
+        <Attribute name="FadeDuration" required="false" desc="渐变时长（覆盖 Config 默认值）" />
+        <Attribute name="Theme" required="false" desc="主题名或文件路径（覆盖场景配置）" />
+        <Attribute name="MusicPhase" required="false" desc="切换到的音乐组 ID（覆盖场景配置）" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="PhaseSwiftMusic" enable="true" multi="false" desc="仅切换音乐组，不切换场景" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Phase" required="true" desc="目标音乐组 ID" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="PhaseSwiftStop" enable="true" multi="false" desc="停止 PhaseSwift 并标记 Exe 完成" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="FinishMode" required="false" desc="完成模式（覆盖 Config 设置）" hint="enum">
+            <Enums>
+                <Enum desc="全隐藏">none</Enum>
+                <Enum desc="全保留">full</Enum>
+                <Enum desc="保留场景 N">scene_N</Enum>
+            </Enums>
+        </Attribute>
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="PhaseSwiftFadeOut" enable="true" multi="false" desc="淡出所有音频到静音" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Duration" required="true" desc="淡出时长（秒）" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+
+    <!-- 通用 KE Action -->
+    <Node name="TerminalFocus" enable="true" multi="false" desc="终端居中聚焦动画" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Duration" required="false" default="0.4" desc="动画总时长" />
+        <Attribute name="BorderDuration" required="false" default="0.4" desc="边框动画时长" />
+        <Attribute name="FadeInDuration" required="false" default="0.4" desc="淡入时长" />
+        <Attribute name="DarkenAlpha" required="false" default="0.3" desc="背景暗化强度" />
+        <Attribute name="ExpandAmount" required="false" default="3" desc="边框展开量" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="TerminalWrite" enable="true" multi="false" desc="向终端写入文本" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Text" required="true" desc="写入的文本内容" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="TerminalType" enable="true" multi="false" desc="打字机效果输入文本" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Text" required="true" desc="输入的文本" />
+        <Attribute name="TypeSpeed" required="false" default="0.1" desc="打字速度（秒/字）" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="RenameNode" enable="true" multi="false" desc="修改节点显示名称" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="NodeID" required="true" desc="节点 ID" hint="Computer" />
+        <Attribute name="DisplayName" required="true" desc="新名称。支持 #PLAYERNAME# #PLAYER_IP# #RANDOM_IP#" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="SwitchToThemeKeepLayout" enable="true" multi="false" desc="切换主题但保持节点布局不变" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+
+    <!-- Aircraft Actions -->
+    <Node name="ShowAircraftOverlay" enable="true" multi="false" desc="显示飞机高度覆盖层" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="NodeID" required="true" desc="飞机所在的计算机 ID" hint="Computer" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="HideAircraftOverlay" enable="true" multi="false" desc="关闭飞机覆盖层" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="AttackAircraft" enable="true" multi="false" desc="攻击飞机（删除关键文件，触发坠毁）" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="NodeID" required="true" desc="目标飞机计算机 ID" hint="Computer" />
+        <Attribute name="FallDuration" required="false" desc="坠毁时长（秒）" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="UploadAircraftSysFile" enable="true" multi="false" desc="上传合法系统文件到飞机（触发 OnSaved）" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="NodeID" required="true" desc="目标飞机计算机 ID" hint="Computer" />
+        <Attribute name="Path" required="true" desc="合法 747FlightOps.dll 文件路径" hint="Path" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+
+    <!-- VM Attack -->
+    <Node name="LaunchVMAttack" enable="true" multi="false" desc="启动预设的 VM 多阶段攻击" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="ConfigName" required="true" desc="VM 攻击配置名" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+
+    <Node name="PlaySound" enable="true" multi="false" desc="播放一个音效" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Path" required="true" desc="音频文件路径" hint="Path" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+
+    <!-- ==================== CustomColor 配置 ==================== -->
+    <Node name="CustomColor" enable="true" multi="false" desc="CustomColor 预设根标签" fileTriggerPattern="CustomColor/**/*.xml" />
+    <Node name="CustomColor.ColorPresets" enable="true" multi="false" desc="颜色预设列表" fileTriggerPattern="CustomColor/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="CustomColor.ColorPresets.Preset" enable="true" multi="true" desc="定义一个颜色预设" fileTriggerPattern="CustomColor/**/*.xml">
+        <Attribute name="name" required="true" desc="预设名称" />
+        <Content />
+    </Node>
+    <Node name="CustomColor.ColorPresets.Preset.SolidColor" enable="true" multi="false" desc="纯色定义" fileTriggerPattern="CustomColor/**/*.xml">
+        <Attribute name="value" required="true" desc="颜色值，支持 #RRGGBB / #AARRGGBB / R,G,B / rainbow / ldtchara" />
+    </Node>
+    <Node name="CustomColor.ColorPresets.Preset.Gradient" enable="true" multi="false" desc="渐变定义" fileTriggerPattern="CustomColor/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="CustomColor.ColorPresets.Preset.Gradient.Segment" enable="true" multi="true" desc="渐变段" fileTriggerPattern="CustomColor/**/*.xml">
+        <Attribute name="position" required="true" desc="段位置（0.0~1.0）" />
+        <Attribute name="value" required="true" desc="该位置的颜色值" />
+    </Node>
+    <Node name="CustomColor.GlobalAlias" enable="true" multi="false" desc="全局别名单" fileTriggerPattern="CustomColor/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="CustomColor.GlobalAlias.Alias" enable="true" multi="true" desc="定义一个别名" fileTriggerPattern="CustomColor/**/*.xml">
+        <Attribute name="name" required="true" desc="别名" />
+        <Attribute name="value" required="true" desc="指向的预设名" />
+    </Node>
+    <Node name="CustomColor.CategoryOverride" enable="true" multi="false" desc="分类覆盖配置" fileTriggerPattern="CustomColor/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="CustomColor.CategoryOverride.Category" enable="true" multi="true" desc="定义一个分类覆盖" fileTriggerPattern="CustomColor/**/*.xml">
+        <Attribute name="field" required="true" desc="覆盖的主题字段名" />
+        <Attribute name="preset" required="true" desc="使用的预设名" />
+    </Node>
+
+    <!-- ==================== FlightDaemon 配置 ==================== -->
+    <Node name="FlightDaemon" enable="true" multi="false" desc="飞机守护进程" fileTriggerPattern="Daemons/**/*.xml">
+        <Attribute name="OnFailed" required="false" desc="坠毁时执行的动作文件路径" hint="ActionFile" />
+        <Attribute name="OnSaved" required="false" desc="成功拯救后执行的动作文件路径" hint="ActionFile" />
+        <Attribute name="FallDuration" required="false" default="135" desc="坠落总时长（秒）" />
+        <Attribute name="PilotAlertedFlag" required="false" desc="Pilot Alert 按下的标识 flag" />
+    </Node>
+
+    <!-- ==================== 主题颜色字段覆盖（CustomColor 兼容） ====================
+         覆盖原始 hint="color" 为 hint="js"，支持 RGB / Hex(#RRGGBB) / 任意预设名。
+         ============================================================ -->
+    <Node name="CustomTheme.BackgroundImageFillColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.defaultHighlightColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.defaultTopBarColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.moduleColorSolidDefault" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.moduleColorStrong" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.moduleColorBacking" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.exeModuleTopBar" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.exeModuleTitleText" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.warningColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.subtleTextColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.darkBackgroundColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.indentBackgroundColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.outlineColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.lockedColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.brightLockedColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.brightUnlockedColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.unlockedColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.lightGray" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+    <Node name="CustomTheme.shellColor" enable="true" multi="false" repeatRule="override">
+        <Content desc="" hint="js" diag="W">
+            (function(n){
+    var v = n.value; if(!v) return [{desc:"输入颜色值或预设名"}];
+    if(/^\s*\d+\s*,\s*\d+\s*,\s*\d+/.test(v)) return [{value:v}];
+    if(/^#[0-9a-fA-F]{6,8}$/.test(v)) return [{value:v}];
+    return [{value:v, desc:"CustomColor预设名"}];
+})
+        </Content>
+    </Node>
+
+        <!-- ==================== CustomTrial 试炼配置 ==================== -->
+    <Node name="TrialConfig" enable="true" multi="false" desc="CustomTrial 试炼配置根标签" fileTriggerPattern="Trial/**/*.xml">
+        <Attribute name="ProgramName" required="false" default="CustomTrial" desc="程序窗口标题" />
+        <Attribute name="SpinUpDuration" required="false" default="13.8" desc="旋转动画时长（秒）" />
+        <Attribute name="EnableFlickering" required="false" default="true" desc="是否启用 UI 闪烁特效" />
+        <Attribute name="EnableMailIconDestroy" required="false" default="true" desc="是否启用邮件图标爆炸" />
+        <Attribute name="FlickeringDuration" required="false" default="10" desc="闪烁持续时长" />
+        <Attribute name="MailIconDestroyDuration" required="false" default="3.82" desc="邮件爆炸持续时长" />
+        <Attribute name="EnableNodeDestruction" required="false" default="true" desc="闪烁期间是否摧毁节点" />
+        <Attribute name="StartMusic" required="false" desc="启动到点击按钮前的背景音乐路径" hint="Path" />
+        <Attribute name="TrialStartMusic" required="false" desc="点击开始后的背景音乐路径" hint="Path" />
+        <Attribute name="OnStart" required="false" desc="点击开始后执行的动作文件路径" hint="ActionFile" />
+        <Attribute name="OnAnimationComplete" required="false" desc="动画完成后执行的动作文件路径" hint="ActionFile" />
+        <Attribute name="BackgroundColor" required="false" desc="窗口背景色（预设名/Hex/RGB）" />
+        <Attribute name="GlobalTimerColor" required="false" desc="全局进度条颜色" />
+        <Attribute name="PhaseTimerColor" required="false" desc="阶段进度条颜色" />
+        <Attribute name="SpinUpColor" required="false" desc="旋转动画颜色" />
+        <Attribute name="RamReductionDelay" required="false" default="5" desc="进入破解阶段后延迟多久开始缩减 RAM" />
+        <Attribute name="RamReductionDuration" required="false" default="3" desc="RAM 缩减总时长（秒）" />
+        <Attribute name="RamReductionTarget" required="false" default="88" desc="RAM 缩减目标值" />
+        <Attribute name="StartButtonText" required="false" desc="开始按钮文字（不填回退十国语言）" />
+        <Content />
+    </Node>
+    <Node name="TrialConfig.Phases" enable="true" multi="false" desc="阶段配置列表" fileTriggerPattern="Trial/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="TrialConfig.Phases.Phase" enable="true" multi="true" desc="定义一个阶段" fileTriggerPattern="Trial/**/*.xml">
+        <Attribute name="id" required="true" desc="阶段编号" />
+        <Attribute name="Duration" required="true" desc="阶段持续时间（秒）" />
+        <Attribute name="ClearPhasesOnComplete" required="false" default="false" desc="完成后是否清除开启的端口" />
+        <Attribute name="OnComplete" required="false" desc="阶段完成时执行的动作文件" hint="ActionFile" />
+        <Content />
+    </Node>
+    <Node name="TrialConfig.Phases.Phase.ExpectedOpenPorts" enable="true" multi="false" desc="此阶段需要开启的端口列表" fileTriggerPattern="Trial/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="TrialConfig.Phases.Phase.ExpectedOpenPorts.Port" enable="true" multi="true" desc="一个端口" fileTriggerPattern="Trial/**/*.xml">
+        <Attribute name="index" required="true" desc="端口索引（0~3）" />
+        <Attribute name="required" required="false" default="true" desc="是否必须开启" />
+    </Node>
+    <Node name="TrialConfig.Phases.Phase.TargetNodes" enable="true" multi="false" desc="此阶段的目标节点列表" fileTriggerPattern="Trial/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="TrialConfig.Phases.Phase.TargetNodes.Node" enable="true" multi="true" desc="一个目标节点" fileTriggerPattern="Trial/**/*.xml">
+        <Attribute name="id" required="true" desc="节点 ID" hint="Computer" />
+        <Attribute name="required" required="false" default="true" desc="是否必须破解" />
+    </Node>
+    <Node name="FailTrial" enable="true" multi="false" desc="立即失败并退出试炼" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="FailText" required="false" desc="失败时显示的文本" />
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+    <Node name="RestoreCustomTrialNodes" enable="true" multi="false" desc="恢复 CustomTrial 中被隐藏的节点" fileTriggerPattern="Actions/**/*.xml">
+        <Attribute name="Delay" required="false" desc="触发前等待秒数" />
+        <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
+    </Node>
+
+    <!-- ==================== VM 攻击配置 ==================== -->
+    <Node name="VMAttackConfig" enable="true" multi="false" desc="VM 攻击配置根标签" fileTriggerPattern="VMAttack/**/*.xml">
+        <Attribute name="ConfigName" required="true" desc="攻击配置名" />
+        <Attribute name="TargetNode" required="true" desc="目标虚拟机节点 ID" hint="Computer" />
+        <Attribute name="PhaseCount" required="false" default="3" desc="攻击阶段数" />
+        <Attribute name="DaemonNode" required="false" desc="攻击守护进程所在节点 ID" hint="Computer" />
+        <Content />
+    </Node>
+    <Node name="VMAttackConfig.Phases" enable="true" multi="false" desc="攻击阶段列表" fileTriggerPattern="VMAttack/**/*.xml">
+        <Content />
+    </Node>
+    <Node name="VMAttackConfig.Phases.Phase" enable="true" multi="true" desc="定义一个攻击阶段" fileTriggerPattern="VMAttack/**/*.xml">
+        <Attribute name="id" required="true" desc="阶段编号" />
+        <Attribute name="Duration" required="false" desc="阶段持续时间" />
+        <Attribute name="OnStart" required="false" desc="阶段开始时执行的动作" hint="ActionFile" />
+        <Attribute name="OnComplete" required="false" desc="阶段完成时执行的动作" hint="ActionFile" />
+    </Node>
+</HacknetEditorHint>
