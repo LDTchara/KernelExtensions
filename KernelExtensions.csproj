@@ -13,9 +13,9 @@
     <Company>LDTchara</Company>
     <Product>KernelExtensions</Product>
     <Copyright>Copyright © 2026 LDTchara</Copyright>
-    <Version>0.5.1</Version>
-    <FileVersion>0.5.1</FileVersion>
-    <AssemblyVersion>0.5.1</AssemblyVersion>
+    <Version>0.7.0</Version>
+    <FileVersion>0.7.0</FileVersion>
+    <AssemblyVersion>0.7.0</AssemblyVersion>
   </PropertyGroup>
 	
   <ItemGroup>

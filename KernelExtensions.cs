@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Hacknet;
 using Hacknet;
 using Hacknet.Extensions;
@@ -58,17 +59,24 @@ namespace KernelExtensions
 #===============================================================================================================#
 ";
 
-        public static bool Debug = true;   // <--- 调试开关，测试时请改为 true
+        public static ConfigEntry<bool> Debug;
+        public static ConfigEntry<bool> SkipVanillaIRCLogs;   // <--- 调试开关，测试时请改为 true
 
         public override bool Load()
         {
+            // 0. 绑定 BepInEx 配置
+            Debug = Config.Bind("General", "Debug", true, "调试模式开关");
+            SkipVanillaIRCLogs = Config.Bind("General", "SkipVanillaIRCLogs", false, "跳过原版 BashLogs.txt IRC 日志加载");
             // 1. 注册自定义可执行程序
             Console.WriteLine("[KernelExtensions] Registering executables...");
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
             Log.LogDebug("CustomTrial registered.");
             ExecutableManager.RegisterExecutable<PhaseSwiftExe>("#PHASESWIFT#");
-            ExecutableManager.RegisterExecutable<EffectsPlayerExe>("#EFFECTS#");
             Log.LogDebug("PhaseSwift registered.");
+            ExecutableManager.RegisterExecutable<EffectsPlayerExe>("#EFFECTS#"); 
+            Log.LogDebug("EffectsPlayer registered.");
+            ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
+            Log.LogDebug("WPTEST registered.");
 
             // 2. 注册各 Action
             Console.WriteLine("[KernelExtensions] Registering actions...");
@@ -103,7 +111,6 @@ namespace KernelExtensions
             // 3. 注册各事件处理器
             Console.WriteLine("[KernelExtensions] Registering event handlers...");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_CheckVMInfection);
-            EventManager<OSLoadedEvent>.AddHandler((e) => { try { LoadCustomIRCLogs(); } catch { } });
             Log.LogDebug("OSLoaded event handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             Log.LogDebug("Save event handler registered.");
@@ -139,58 +146,6 @@ namespace KernelExtensions
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;
-        }
-
-        private static HashSet<string> _injectedIRCLogs = new();
-
-        /// <summary>扫描扩展目录的 CustomIRCLogs.txt，注入 FileEntry 随机文件池</summary>
-        private static void LoadCustomIRCLogs()
-        {
-            // 清除上一次注入的日志（扩展切换时静态列表会残留旧数据）
-            foreach (var fn in _injectedIRCLogs)
-            {
-                int idx = FileEntry.filenames.IndexOf(fn);
-                if (idx >= 0) { FileEntry.filenames.RemoveAt(idx); FileEntry.fileData.RemoveAt(idx); }
-            }
-            _injectedIRCLogs.Clear();
-
-            var extInfo = ExtensionLoader.ActiveExtensionInfo;
-            if (extInfo == null) return;
-            string root = extInfo.FolderPath.Replace('\\', '/');
-            string ircPath = Path.Combine(root, "CustomIRCLogs.txt");
-            if (!File.Exists(ircPath)) return;
-
-            string text = File.ReadAllText(ircPath);
-            string[] entries = text.Split(new[] { "\n#" }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var entry in entries)
-            {
-                string clean = entry.TrimStart('#');
-                int idx = clean.IndexOf('\n');
-                if (idx < 0) idx = clean.IndexOf('\r');
-                if (idx < 0) continue;
-
-                string topic = clean.Substring(0, idx).Trim();
-                string data = clean.Substring(idx).TrimStart('\n', '\r', ' ');
-                if (string.IsNullOrEmpty(topic) || string.IsNullOrEmpty(data)) continue;
-
-                AddIRCLog(topic, data, extInfo.Name);
-            }
-            Console.WriteLine($"[KE] Loaded {entries.Length} custom IRC logs from {extInfo.Name}");
-        }
-
-        /// <summary>公共 API：向 FileEntry 注入自定义 IRC 日志</summary>
-        public static void AddIRCLog(string topic, string content, string sourceName)
-        {
-            if (string.IsNullOrEmpty(topic)) return;
-            string filename = "IRC_Log:" + topic.Replace(" ", "").Replace("- [X]", "");
-            string data = content.Trim();
-            if (!data.EndsWith("\n") && !data.EndsWith("\r"))
-                data += "\n\nArchived Via : " + sourceName;
-
-            FileEntry.filenames.Add(filename);
-            FileEntry.fileData.Add(data);
-            _injectedIRCLogs.Add(filename);
-            Console.WriteLine($"[KE] Added IRC log: {filename}");
         }
 
         public override bool Unload()
@@ -240,7 +195,7 @@ namespace KernelExtensions
             string flag = os.Flags.GetFlagStartingWith("Kernel_VMInfected_");
 
             // 以下是原有感染分支，也加入少量调试
-            if (Debug) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
+            if (Debug != null && Debug.Value) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
 
             // 没有感染标记，直接返回
             if (flag == null)
@@ -253,7 +208,7 @@ namespace KernelExtensions
 
             if (!File.Exists(configPath))
             {
-                if (Debug) Log.LogDebug("Config file not found at: " + configPath);
+                if (Debug != null && Debug.Value) Log.LogDebug("Config file not found at: " + configPath);
                 os.Flags.RemoveFlag(flag);
                 return;
             }
@@ -267,13 +222,13 @@ namespace KernelExtensions
             }
             catch (Exception ex)
             {
-                if (Debug) Log.LogDebug("Failed to deserialize config: " + ex.Message);
+                if (Debug != null && Debug.Value) Log.LogDebug("Failed to deserialize config: " + ex.Message);
                 return;
             }
 
             VMInfectionManager.CurrentConfig = config;
 
-            if (Debug) Log.LogDebug("Config loaded. Mode = " + config.Mode);
+            if (Debug != null && Debug.Value) Log.LogDebug("Config loaded. Mode = " + config.Mode);
 
             if (config.Mode == RecoveryMode.FileDeletion)
             {
@@ -283,7 +238,7 @@ namespace KernelExtensions
                     // 播放成功音乐
                     if (!string.IsNullOrEmpty(config.SuccessMusic))
                     {
-                        if (Debug) Log.LogDebug("Playing success music before reboot...");
+                        if (Debug != null && Debug.Value) Log.LogDebug("Playing success music before reboot...");
                         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                         MusicManager.loadAsCurrentSong(resolved);
@@ -307,7 +262,7 @@ namespace KernelExtensions
                 {
                     if (!string.IsNullOrEmpty(config.SuccessMusic))
                     {
-                        if (Debug) Log.LogDebug("Playing success music before reboot...");
+                        if (Debug != null && Debug.Value) Log.LogDebug("Playing success music before reboot...");
                         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                         MusicManager.loadAsCurrentSong(resolved);
