@@ -4,6 +4,7 @@ using System.IO;
 using HarmonyLib;
 using Hacknet;
 using Microsoft.Xna.Framework.Content;
+using KernelExtensions.Utility;
 
 namespace KernelExtensions.Patches;
 
@@ -14,7 +15,7 @@ namespace KernelExtensions.Patches;
 [HarmonyPatch(typeof(FileEntry), nameof(FileEntry.init))]
 internal static class CN_IRCLogInjector
 {
-    private static bool OverrideOriginal => KernelExtensions.SkipVanillaIRCLogs?.Value ?? false;
+    private static bool OverrideOriginal => KEConfigLoader.SkipVanillaIRCLogs;
 
     static bool Prefix(ContentManager content)
     {

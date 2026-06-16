@@ -15,6 +15,7 @@ using KernelExtensions.Executables;
 using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
+using KernelExtensions.Storage;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -59,14 +60,10 @@ namespace KernelExtensions
 #===============================================================================================================#
 ";
 
-        public static ConfigEntry<bool> Debug;
-        public static ConfigEntry<bool> SkipVanillaIRCLogs;   // <--- 调试开关，测试时请改为 true
 
         public override bool Load()
         {
             // 0. 绑定 BepInEx 配置
-            Debug = Config.Bind("General", "Debug", true, "调试模式开关");
-            SkipVanillaIRCLogs = Config.Bind("General", "SkipVanillaIRCLogs", false, "跳过原版 BashLogs.txt IRC 日志加载");
             // 1. 注册自定义可执行程序
             Console.WriteLine("[KernelExtensions] Registering executables...");
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
@@ -108,10 +105,20 @@ namespace KernelExtensions
             Log.LogDebug("RenameNode action registered.");
             ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
             Log.LogDebug("RestoreCustomTrialNodes action registered.");
+
+            // 2.5 注册节点图标 Action
+            ActionManager.RegisterAction<SetNodeIconAction>("SetNodeIcon");
+            Log.LogDebug("SetNodeIcon action registered.");
+
             // 3. 注册各事件处理器
             Console.WriteLine("[KernelExtensions] Registering event handlers...");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_CheckVMInfection);
             Log.LogDebug("OSLoaded event handler registered.");
+            EventManager<SaveComputerEvent>.AddHandler(NodeIconEventHandlers.OnSaveComputer);
+            EventManager<SaveComputerLoadedEvent>.AddHandler(NodeIconEventHandlers.OnLoadComputer);
+            Log.LogDebug("NodeIcon save/load event handlers registered.");
+            EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
+            Log.LogDebug("NodeIcon OSLoaded handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             Log.LogDebug("Save event handler registered.");
 
@@ -195,7 +202,7 @@ namespace KernelExtensions
             string flag = os.Flags.GetFlagStartingWith("Kernel_VMInfected_");
 
             // 以下是原有感染分支，也加入少量调试
-            if (Debug != null && Debug.Value) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
+            if (KEConfigLoader.Debug) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
 
             // 没有感染标记，直接返回
             if (flag == null)
@@ -208,7 +215,7 @@ namespace KernelExtensions
 
             if (!File.Exists(configPath))
             {
-                if (Debug != null && Debug.Value) Log.LogDebug("Config file not found at: " + configPath);
+                if (KEConfigLoader.Debug) Log.LogDebug("Config file not found at: " + configPath);
                 os.Flags.RemoveFlag(flag);
                 return;
             }
@@ -222,13 +229,13 @@ namespace KernelExtensions
             }
             catch (Exception ex)
             {
-                if (Debug != null && Debug.Value) Log.LogDebug("Failed to deserialize config: " + ex.Message);
+                if (KEConfigLoader.Debug) Log.LogDebug("Failed to deserialize config: " + ex.Message);
                 return;
             }
 
             VMInfectionManager.CurrentConfig = config;
 
-            if (Debug != null && Debug.Value) Log.LogDebug("Config loaded. Mode = " + config.Mode);
+            if (KEConfigLoader.Debug) Log.LogDebug("Config loaded. Mode = " + config.Mode);
 
             if (config.Mode == RecoveryMode.FileDeletion)
             {
@@ -238,7 +245,7 @@ namespace KernelExtensions
                     // 播放成功音乐
                     if (!string.IsNullOrEmpty(config.SuccessMusic))
                     {
-                        if (Debug != null && Debug.Value) Log.LogDebug("Playing success music before reboot...");
+                        if (KEConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
                         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                         MusicManager.loadAsCurrentSong(resolved);
@@ -262,7 +269,7 @@ namespace KernelExtensions
                 {
                     if (!string.IsNullOrEmpty(config.SuccessMusic))
                     {
-                        if (Debug != null && Debug.Value) Log.LogDebug("Playing success music before reboot...");
+                        if (KEConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
                         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                         MusicManager.loadAsCurrentSong(resolved);

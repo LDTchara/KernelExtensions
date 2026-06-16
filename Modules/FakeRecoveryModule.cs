@@ -304,7 +304,7 @@ namespace KernelExtensions.Modules
                 string actionPath = config.ActionOnGuideTextStart;  // 例如 "Actions/ActionOnGuideTextStart.xml"
                 string extensionRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
 
-                if (KernelExtensions.Debug != null && KernelExtensions.Debug.Value)
+                if (KEConfigLoader.Debug)
                     Console.WriteLine("[FakeRecoveryModule] Executing guide start action via ActionHelper...");
 
                 ActionHelper.ExecuteActionFile(os, actionPath, extensionRoot);
