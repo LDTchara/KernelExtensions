@@ -15,7 +15,6 @@ namespace KernelExtensions.Executables
         private class EffectEntry
         {
             public string Name;
-            public string Description;
             public float Duration = 8f;
             public Action<SpriteBatch, Rectangle, float> DrawAction;
             public Action<float> UpdateAction;
@@ -179,7 +178,7 @@ namespace KernelExtensions.Executables
             TextItem.doFontLabel(new Vector2(bg.X + 10, bg.Y + 5),
                 _statusText, GuiData.font, GetRainbowColor());
             TextItem.doFontLabel(new Vector2(bg.X + 10, bg.Y + bg.Height - 40),
-                cur.Description ?? cur.Name, GuiData.smallfont, Color.White * 0.7f);
+                cur.Name, GuiData.smallfont, Color.White * 0.7f);
             // 进度条已取消
             int btnY = bg.Y + bg.Height - 28;
             if (Button.doButton(9001 + PID, bg.X + 10, btnY, 50, 22, "上一个", os.highlightColor))

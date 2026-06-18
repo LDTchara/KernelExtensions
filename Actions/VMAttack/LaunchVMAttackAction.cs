@@ -5,6 +5,7 @@ using KernelExtensions.Modules;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
+using KernelExtensions.Utility;
 using System.IO;
 
 namespace KernelExtensions.Actions.VMAttack
@@ -18,7 +19,7 @@ namespace KernelExtensions.Actions.VMAttack
         {
             if (string.IsNullOrEmpty(ConfigName))
             {
-                Console.WriteLine("[KernelExtensions] LaunchVMAttack: ConfigName required.");
+                KELog.Error("[LaunchVMAttack] ConfigName required.");
                 return;
             }
 
@@ -26,7 +27,7 @@ namespace KernelExtensions.Actions.VMAttack
             string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, "VMATK", ConfigName + ".xml");
             if (!File.Exists(configPath))
             {
-                Console.WriteLine($"[KernelExtensions] LaunchVMAttack: Config not found: {configPath}");
+                KELog.Error($"[LaunchVMAttack] Config not found: {configPath}");
                 return;
             }
 

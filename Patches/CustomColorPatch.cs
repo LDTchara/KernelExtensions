@@ -141,7 +141,7 @@ namespace KernelExtensions.Patches
             }
 
             _presetsLoaded = true;
-            Console.WriteLine($"[CustomColor] 已加载 {loaded} 个预设，共有 {_presetCache.Count} 个缓存项");
+            KELog.Debug($"[CustomColor] loaded {loaded} presets, {_presetCache.Count} cached");
         }
 
         // ========== ThemeManager.Update Prefix ==========

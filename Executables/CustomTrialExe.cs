@@ -4,8 +4,8 @@ using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using KernelExtensions.Config;
-using KernelExtensions.Storage;   // 用于节点存储
-using KernelExtensions.Utility;
+using KernelExtensions.Storage;
+using KernelExtensions.Utility;   // 用于节点存储
 using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using Microsoft.Xna.Framework;
@@ -127,7 +127,6 @@ namespace KernelExtensions.Executables
         // 动态颜色缓存（静态解析值，但会通过 CustomColorPatch 实时刷新）
         private Color _staticBgColor = Color.Transparent;
         private Color _staticGlobalTimerColor = Color.Transparent;
-        private bool _guardBlocked;
         private Color _staticPhaseTimerColor = Color.Transparent;
         private Color _staticSpinUpColor = Color.Transparent;
 
@@ -157,7 +156,6 @@ namespace KernelExtensions.Executables
                 os.write("【" + other.IdentifierName + "】已经在运行中！");
                 isExiting = true;
                 CurrentInstance = (CustomTrialExe)other;
-                _guardBlocked = true;
                 return;
             }
 
@@ -184,7 +182,7 @@ namespace KernelExtensions.Executables
             if (string.IsNullOrEmpty(flag))
             {
                 trialLocked = true;
-                Console.WriteLine("[KernelExtensions]CustomTrialExe: No CustomTrial_ flag found. Trial locked.");
+                KELog.Info("[CustomTrial] No CustomTrial_ flag found. Trial locked.");
                 config = null;
                 return; // 锁定，不再继续加载配置相关
             }

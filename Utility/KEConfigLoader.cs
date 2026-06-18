@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using KernelExtensions.Utility;
 
 namespace KernelExtensions.Utility
 {
@@ -22,7 +23,7 @@ namespace KernelExtensions.Utility
         /// </summary>
         public static void Load()
         {
-            // 每次读取前重置（热重载用）
+            // 每次读取前重置
             Debug = false;
             SkipVanillaIRCLogs = false;
             CustomImages = new List<string>();
@@ -37,7 +38,7 @@ namespace KernelExtensions.Utility
             if (!File.Exists(cfgPath))
             {
                 try { File.WriteAllText(cfgPath, GetDefaultTemplate()); }
-                catch (Exception ex) { Console.WriteLine($"[KE] 无法创建 KE-Config.xml: {ex.Message}"); }
+                catch (Exception ex) { KELog.Warn($"failed to create KE-Config.xml: {ex.Message}"); }
                 return; // 新生成的模板全是注释，全部使用默认值
             }
 
@@ -51,7 +52,11 @@ namespace KernelExtensions.Utility
                 var skip = rootEl.Element("SkipVanillaIRCLogs");
                 var dbg = rootEl.Element("Debug");
                 if (dbg != null && bool.TryParse(dbg.Value, out bool db))
+                {
                     Debug = db;
+                    if (Debug)
+                        KELog.Warn("Debug mode enabled - disable before release!");
+                }
                 if (skip != null && bool.TryParse(skip.Value, out bool sv))
                     SkipVanillaIRCLogs = sv;
 
@@ -66,7 +71,7 @@ namespace KernelExtensions.Utility
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[KE] KE-Config.xml 解析失败，使用默认值: {ex.Message}");
+                KELog.Warn($"KE-Config.xml parse failed, using defaults: {ex.Message}");
             }
         }
 
@@ -80,20 +85,18 @@ namespace KernelExtensions.Utility
          修改后重启游戏生效（OSLoad 时重新读取）。
          ========================================================== -->
 
-    <!-- 调试模式开关。开发时开，发布前关。 -->
-    <!-- <Debug>false</Debug> -->
+    <!-- 调试模式，true=开启，false=关闭（发布前关） -->
+    <Debug>false</Debug>
 
-    <!-- 是否跳过原版 BashLogs.txt 的 IRC 日志（只加载 CustomIRCLogs.txt） -->
-    <!-- 默认 false（原版日志 + 自定义日志同时加载） -->
-    <!-- <SkipVanillaIRCLogs>false</SkipVanillaIRCLogs> -->
+    <!-- 是否跳过原版 BashLogs.txt IRC 日志，只加载 CustomIRCLogs.txt。false=同时加载 -->
+    <SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>
 
-    <!-- 自定义图标图片路径列表（每行一条），用于 SetNodeIcon Action -->
+    <!-- 自定义图标图片列表，用于 SetNodeIcon Action（自动注册为 @文件名） -->
     <!-- 以扩展根目录为基准，建议尺寸 128x128 -->
-    <!-- 写入的值会自动注册为 @文件名 前缀，供 SetNodeIcon 引用 -->
-    <!-- <CustomImages> -->
-    <!--     <Image>Images/MyIcon.png</Image> -->
-    <!--     <Image>Images/AnotherIcon.png</Image> -->
-    <!-- </CustomImages> -->
+    <CustomImages>
+        <Image>Images/MyIcon.png</Image>
+        <Image>Images/AnotherIcon.png</Image>
+    </CustomImages>
 </KEConfig>";
         }
     }

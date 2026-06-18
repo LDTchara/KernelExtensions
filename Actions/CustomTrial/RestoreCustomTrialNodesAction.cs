@@ -1,6 +1,7 @@
 ﻿using Hacknet;
 using Hacknet.Effects;
 using KernelExtensions.Storage;
+using KernelExtensions.Utility;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
@@ -23,14 +24,14 @@ namespace KernelExtensions.Actions.CustomTrial
         {
             if (string.IsNullOrEmpty(ConfigName))
             {
-                Console.WriteLine("[KernelExtensions] RestoreCustomTrialNodes: ConfigName attribute is missing.");
+                KELog.Error("[RestoreCustomTrialNodes] ConfigName attribute is missing.");
                 return;
             }
 
             var nodesToRestore = CustomTrialNodeStorage.GetDeletedNodes(ConfigName);
             if (nodesToRestore.Count == 0)
             {
-                Console.WriteLine($"[KernelExtensions] RestoreCustomTrialNodes: No deleted nodes found for config '{ConfigName}'.");
+                KELog.Warn($"[RestoreCustomTrialNodes] No deleted nodes found for config '{ConfigName}'.");
                 return;
             }
 
@@ -66,7 +67,7 @@ namespace KernelExtensions.Actions.CustomTrial
 
             // 恢复完成后清除该配置的删除记录
             CustomTrialNodeStorage.ClearDeletedNodes(ConfigName);
-            Console.WriteLine($"[KernelExtensions] RestoreCustomTrialNodes: Restored {nodesToRestore.Count} nodes for config '{ConfigName}'.");
+            KELog.Info($"[RestoreCustomTrialNodes] Restored {nodesToRestore.Count} nodes for config '{ConfigName}'.");
         }
 
         public override void LoadFromXml(ElementInfo info)

@@ -65,67 +65,70 @@ namespace KernelExtensions
         {
             // 0. 绑定 BepInEx 配置
             // 1. 注册自定义可执行程序
+            KELog.Init();
             Console.WriteLine("[KernelExtensions] Registering executables...");
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
-            Log.LogDebug("CustomTrial registered.");
+            KELog.Info("CustomTrial registered.");
             ExecutableManager.RegisterExecutable<PhaseSwiftExe>("#PHASESWIFT#");
-            Log.LogDebug("PhaseSwift registered.");
+            KELog.Info("PhaseSwift registered.");
             ExecutableManager.RegisterExecutable<EffectsPlayerExe>("#EFFECTS#"); 
-            Log.LogDebug("EffectsPlayer registered.");
+            KELog.Info("EffectsPlayer registered.");
             ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
-            Log.LogDebug("WPTEST registered.");
+            KELog.Info("WPTEST registered.");
 
             // 2. 注册各 Action
             Console.WriteLine("[KernelExtensions] Registering actions...");
             ActionManager.RegisterAction<FailTrialAction>("FailTrial");
-            Log.LogDebug("FailTrial action registered.");
+            KELog.Info("FailTrial action registered.");
             ActionManager.RegisterAction<LaunchVMAttackAction>("LaunchVMAttack");
-            Log.LogDebug("LaunchVMAttack action registered.");
+            KELog.Info("LaunchVMAttack action registered.");
             ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
-            Log.LogDebug("PlaySound action registered.");
+            KELog.Info("PlaySound action registered.");
             ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
-            Log.LogDebug("PhaseSwiftScene action registered.");
+            KELog.Info("PhaseSwiftScene action registered.");
             ActionManager.RegisterAction<PhaseSwiftInitAction>("PhaseSwiftInit");
-            Log.LogDebug("PhaseSwiftInit action registered.");
+            KELog.Info("PhaseSwiftInit action registered.");
             ActionManager.RegisterAction<PhaseSwiftStopAction>("PhaseSwiftStop");
-            Log.LogDebug("PhaseSwiftStop action registered.");
+            KELog.Info("PhaseSwiftStop action registered.");
             ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
-            Log.LogDebug("PhaseSwiftFadeOut action registered.");
+            KELog.Info("PhaseSwiftFadeOut action registered.");
             ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
-            Log.LogDebug("PhaseSwiftMusic action registered.");
+            KELog.Info("PhaseSwiftMusic action registered.");
             ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
-            Log.LogDebug("SwitchToThemeKeepLayout action registered.");
+            KELog.Info("SwitchToThemeKeepLayout action registered.");
             ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
-            Log.LogDebug("TerminalFocus action registered.");
+            KELog.Info("TerminalFocus action registered.");
             ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
-            Log.LogDebug("TerminalWrite action registered.");
+            KELog.Info("TerminalWrite action registered.");
             ActionManager.RegisterAction<TerminalTypeAction>("TerminalType");
-            Log.LogDebug("TerminalType action registered.");
+            KELog.Info("TerminalType action registered.");
             ActionManager.RegisterAction<RenameNodeAction>("RenameNode");
-            Log.LogDebug("RenameNode action registered.");
+            KELog.Info("RenameNode action registered.");
             ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
-            Log.LogDebug("RestoreCustomTrialNodes action registered.");
+            KELog.Info("RestoreCustomTrialNodes action registered.");
 
             // 2.5 注册节点图标 Action
             ActionManager.RegisterAction<SetNodeIconAction>("SetNodeIcon");
-            Log.LogDebug("SetNodeIcon action registered.");
+            KELog.Info("SetNodeIcon action registered.");
 
             // 3. 注册各事件处理器
             Console.WriteLine("[KernelExtensions] Registering event handlers...");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_CheckVMInfection);
-            Log.LogDebug("OSLoaded event handler registered.");
+            KELog.Info("OSLoaded event handler registered.");
             EventManager<SaveComputerEvent>.AddHandler(NodeIconEventHandlers.OnSaveComputer);
             EventManager<SaveComputerLoadedEvent>.AddHandler(NodeIconEventHandlers.OnLoadComputer);
-            Log.LogDebug("NodeIcon save/load event handlers registered.");
+            KELog.Info("NodeIcon save/load event handlers registered.");
             EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
-            Log.LogDebug("NodeIcon OSLoaded handler registered.");
+            KELog.Info("NodeIcon OSLoaded handler registered.");
+            EventManager<OSLoadedEvent>.AddHandler((e) => { try { KEConfigLoader.Load(); } catch { } });
+            KELog.Info("KEConfigLoader handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
-            Log.LogDebug("Save event handler registered.");
+            KELog.Info("Save event handler registered.");
 
             // 4. 注册自定义存档加载器（用于从存档中读取删除节点）
             Console.WriteLine("[KernelExtensions] Registering save loaders...");
             SaveLoader.RegisterExecutor<CustomTrialSaveExecutor>("CustomTrialData");
-            Log.LogDebug("CustomTrialSaveExecutor registered.");
+            KELog.Info("CustomTrialSaveExecutor registered.");
 
             // 4.5 飞机Daemon相关
             Console.WriteLine("[KernelExtensions] Registering aircraft-related actions and daemons...");
@@ -133,15 +136,15 @@ namespace KernelExtensions
             Console.WriteLine("[KernelExtensions] Thanks for April_Crystal");
             Console.ResetColor();
             ActionManager.RegisterAction<HideAircraftOverlay>("HideAircraftOverlay");
-            Log.LogDebug("HideAircraftOverlay action registered.");
+            KELog.Info("HideAircraftOverlay action registered.");
             ActionManager.RegisterAction<ShowAircraftOverlay>("ShowAircraftOverlay");
-            Log.LogDebug("ShowAircraftOverlay action registered.");
+            KELog.Info("ShowAircraftOverlay action registered.");
             DaemonManager.RegisterDaemon<FlightDaemon>();
-            Log.LogDebug("FlightDaemon registered.");
+            KELog.Info("FlightDaemon registered.");
             ActionManager.RegisterAction<UploadAircraftSysFile>("UploadAircraftSysFile");
-            Log.LogDebug("UploadAircraftSysFile action registered.");
+            KELog.Info("UploadAircraftSysFile action registered.");
             ActionManager.RegisterAction<AttackAircraft>("AttackAircraft");
-            Log.LogDebug("AttackAircraft action registered.");
+            KELog.Info("AttackAircraft action registered.");
 
             // 5. 加载 Harmony 补丁
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");

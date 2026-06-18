@@ -19,6 +19,8 @@ internal static class CN_IRCLogInjector
 
     static bool Prefix(ContentManager content)
     {
+        // 确保配置在 FileEntry.init 处理前已加载
+        KEConfigLoader.Load();
         string extRoot = "";  // 稍后填
 
         // 1. 创建列表
@@ -61,13 +63,13 @@ internal static class CN_IRCLogInjector
                 {
                     string customText = File.ReadAllText(path);
                     ParseAndAdd(customText, extInfo.Name, false);
-                    Console.WriteLine($"[KE-CN] Prefix injected from {path}");
+                    KELog.Info($"[IRCLogsPatch] Prefix injected from {path}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[KE-CN] Prefix error: {ex.Message}");
+            KELog.Warn($"[IRCLogsPatch] Prefix error: {ex.Message}");
         }
 
         // 跳过原版 init()

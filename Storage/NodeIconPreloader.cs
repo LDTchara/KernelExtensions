@@ -62,9 +62,9 @@ namespace KernelExtensions.Storage
                 }
 
                 if (count > 0)
-                    Console.WriteLine($"[SetNodeIcon] 预加载完成: {count} 个");
+                    KELog.Debug($"[SetNodeIcon] preloaded {count} textures");
             }
-            catch (Exception ex) { Console.WriteLine($"[SetNodeIcon] 预加载异常: {ex.Message}"); }
+            catch (Exception ex) { KELog.Warn($"[SetNodeIcon] preload exception: {ex.Message}"); }
         }
 
         internal static Texture2D LoadFromFile(string path)
@@ -73,14 +73,14 @@ namespace KernelExtensions.Storage
             {
                 string fullPath = Path.IsPathRooted(path) ? path
                     : Path.Combine(ExtensionLoader.ActiveExtensionInfo?.FolderPath ?? ".", path);
-                if (!File.Exists(fullPath)) { Console.WriteLine($"[SetNodeIcon] 文件不存在: {fullPath}"); return null; }
+                if (!File.Exists(fullPath)) { KELog.Warn($"[SetNodeIcon] file not found: {fullPath}"); return null; }
                 var gd = GuiData.spriteBatch?.GraphicsDevice ?? Game1.getSingleton()?.GraphicsDevice;
-                if (gd == null) { Console.WriteLine("[SetNodeIcon] GraphicsDevice 不可用"); return null; }
+                if (gd == null) { KELog.Error("[SetNodeIcon] GraphicsDevice unavailable"); return null; }
                 using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
 
                 return Texture2D.FromStream(gd, fs);
             }
-            catch (Exception ex) { Console.WriteLine($"[SetNodeIcon] 加载异常: {ex.Message}"); return null; }
+            catch (Exception ex) { KELog.Warn($"[SetNodeIcon] load exception: {ex.Message}"); return null; }
         }
     }
 }

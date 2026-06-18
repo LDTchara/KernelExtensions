@@ -8,6 +8,7 @@ using Pathfinder.Util;
 using Pathfinder.Util.XML;
 using KernelExtensions.Storage;
 using KernelExtensions.Patches;
+using KernelExtensions.Utility;
 
 namespace KernelExtensions.Actions
 {
@@ -68,7 +69,7 @@ namespace KernelExtensions.Actions
                     return;
                 }
                 comp.icon = iconKey;
-                Console.WriteLine($"[SetNodeIcon] 自定义纹理未找到: {iconKey}");
+                KELog.Warn($"[SetNodeIcon] custom texture not found: {iconKey}");
                 return;
             }
 
