@@ -60,7 +60,7 @@ namespace KernelExtensions.Storage
             OS os = e.Os;
             if (os?.netMap?.nodes == null) return;
 
-            // 预加载 KE-Images.ini 中的纹理
+            // 预加载自定义纹理
             NodeIconPreloader.Load();
 
             var currIcons = NodeIconStorage.GetAllCurrIcons();

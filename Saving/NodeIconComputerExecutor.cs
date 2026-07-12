@@ -17,12 +17,14 @@ namespace KernelExtensions.Saving
         {
             if (Comp == null) return;
 
+            // 确定 OrgIcon：有显式 icon 属性 → 直接用；否则按 security 级别映射
             string orgIcon;
             if (info.Attributes.TryGetValue("icon", out var srcIcon) && !string.IsNullOrEmpty(srcIcon))
                 orgIcon = srcIcon;
             else
             {
-                int secLevel = 2;
+                // 默认 0 与 C# int 默认值一致，也对应 computers[0] = Sec0Computer
+                int secLevel = 0;
                 if (info.Attributes.TryGetValue("security", out var secStr)
                     && int.TryParse(secStr, out var parsed))
                     secLevel = parsed;

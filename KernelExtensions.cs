@@ -161,6 +161,9 @@ namespace KernelExtensions
         public override bool Unload()
         {
             PhaseSwiftExe.CleanupAll();
+            // 清理 IRC 日志静态列表（退出扩展时清空，避免残留到下一局）
+            FileEntry.filenames?.Clear();
+            FileEntry.fileData?.Clear();
             _harmony?.UnpatchSelf();
             _harmony = null;
             return base.Unload();
@@ -270,23 +273,44 @@ namespace KernelExtensions
                 string checkPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
                 if (File.Exists(checkPath))
                 {
-                    if (!string.IsNullOrEmpty(config.SuccessMusic))
+                    // CheckFilePattern：文件内容必须与参考文件一致
+                    bool contentMatch = true;
+                    if (!string.IsNullOrEmpty(config.CheckFilePattern))
                     {
-                        if (KEConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
-                        string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
-                        string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
-                        MusicManager.loadAsCurrentSong(resolved);
+                        try
+                        {
+                            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
+                            string refPath = System.IO.Path.Combine(extRoot, config.CheckFilePattern);
+                            contentMatch = System.IO.File.Exists(refPath) && FilesMatch(checkPath, refPath);
+                            if (KEConfigLoader.Debug)
+                                KELog.Debug($"[VM] CheckFilePattern: comparing with {refPath} -> {(contentMatch ? "match" : "mismatch")}");
+                        }
+                        catch
+                        {
+                            contentMatch = false;
+                        }
                     }
-                    string guideReadFlag = "Kernel_VMGuideRead_" + configName;
-                    if (os.Flags.HasFlag(guideReadFlag))
-                        os.Flags.RemoveFlag(guideReadFlag);
-                    // 清理引导动作完成 Flag
-                    string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + configName;
-                    if (os.Flags.HasFlag(guideActionDoneFlag))
-                        os.Flags.RemoveFlag(guideActionDoneFlag);
-                    os.Flags.RemoveFlag(flag);
-                    os.rebootThisComputer();
-                    return;
+                    if (contentMatch)
+                    {
+                        // 播放成功音乐
+                        if (!string.IsNullOrEmpty(config.SuccessMusic))
+                        {
+                            if (KEConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
+                            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
+                            string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
+                            MusicManager.loadAsCurrentSong(resolved);
+                        }
+                        string guideReadFlag = "Kernel_VMGuideRead_" + configName;
+                        if (os.Flags.HasFlag(guideReadFlag))
+                            os.Flags.RemoveFlag(guideReadFlag);
+                        // 清理引导动作完成 Flag
+                        string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + configName;
+                        if (os.Flags.HasFlag(guideActionDoneFlag))
+                            os.Flags.RemoveFlag(guideActionDoneFlag);
+                        os.Flags.RemoveFlag(flag);
+                        os.rebootThisComputer();
+                        return;
+                    }
                 }
             }
 
@@ -392,6 +416,23 @@ namespace KernelExtensions
                 if (ansi) Console.Write("\x1b[0m");
                 Console.ResetColor();
                 Console.WriteLine();
+            }
+        }
+
+        private static bool FilesMatch(string pathA, string pathB)
+        {
+            try
+            {
+                byte[] a = System.IO.File.ReadAllBytes(pathA);
+                byte[] b = System.IO.File.ReadAllBytes(pathB);
+                if (a.Length != b.Length) return false;
+                for (int i = 0; i < a.Length; i++)
+                    if (a[i] != b[i]) return false;
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

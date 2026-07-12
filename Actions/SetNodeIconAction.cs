@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using HarmonyLib;
 using Hacknet;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Action;
@@ -17,29 +18,29 @@ namespace KernelExtensions.Actions
         public const string RESET_MARKER = "#RESET#";
 
         [XMLStorage] public string TargetComp;
+        [XMLStorage] public string NodeID;     // 别名
         [XMLStorage] public string Icon;
-
-        private static FieldInfo _compAltIconsField;
-        private static bool _compAltIconsFieldLookedUp;
 
         private static readonly string[] SecLevelTextures =
         {
             "Sprites/CompLogos/Sec0Computer", "Sprites/CompLogos/Sec1Computer",
             "Sprites/CompLogos/Computer", "Sprites/CompLogos/OldServer",
             "Sprites/CompLogos/Sec2Computer", "Sprites/CompLogos/Sec2Computer",
-            "Sprites/CompLogos/Computer",
+            "Sprites/CompLogos/Sec2Computer",
         };
 
         public override void Trigger(OS os)
         {
-            var comp = ComputerLookup.Find(TargetComp, SearchType.Id) ?? Programs.getComputer(os, TargetComp);
-            if (comp == null) { os.write($"SetNodeIcon: 未找到节点 {TargetComp}"); return; }
+            string id = TargetComp ?? NodeID;
+            if (string.IsNullOrEmpty(id)) { os.write("SetNodeIcon: 缺少 TargetComp 或 NodeID"); return; }
+            var comp = ComputerLookup.Find(id, SearchType.Id) ?? Programs.getComputer(os, id);
+            if (comp == null) { os.write($"SetNodeIcon: 未找到节点 {id}"); return; }
 
             if (Icon == RESET_MARKER)
             {
                 if (!NodeIconStorage.HasOrgIcon(comp.idName))
                 {
-                    os.write($"SetNodeIcon: 节点 {TargetComp} 没有记录的原始图标，无法重置");
+                    os.write($"SetNodeIcon: 节点 {id} 没有记录的原始图标，无法重置");
                     return;
                 }
                 string orgIcon = NodeIconStorage.ResetIcon(comp.idName);
@@ -77,11 +78,41 @@ namespace KernelExtensions.Actions
             var dict = GetCompAltIcons(os);
             if (dict != null && dict.ContainsKey(iconKey)) { comp.icon = iconKey; return; }
 
-            if (dict != null && iconKey.StartsWith(NodeIconStorage.SEC_PREFIX))
+            if (iconKey.StartsWith(NodeIconStorage.SEC_PREFIX))
             {
-                int seclv = Math.Max(0, Math.Min(comp.securityLevel, SecLevelTextures.Length - 1));
-                var tex = TextureBank.load(SecLevelTextures[seclv], os.content);
-                if (tex != null) { dict[iconKey] = tex; comp.icon = iconKey; return; }
+                // 不依赖前面可能为 null 的 dict，独立获取 compAltIcons
+                string numPart = iconKey.Substring(NodeIconStorage.SEC_PREFIX.Length);
+                int seclv = int.TryParse(numPart, out var parsed) ? Math.Max(0, Math.Min(parsed, SecLevelTextures.Length - 1)) : 0;
+                var localDict = GetCompAltIcons(os);
+                if (localDict != null)
+                {
+                    // 1. 从 DisplayModule.computers[] 取（private 字段，通过反射）
+                    var dm = os?.display ?? OS.currentInstance?.display;
+                    var ct = dm.GetType();
+                    System.Reflection.FieldInfo compsField = null;
+                    while (ct != null && compsField == null)
+                    {
+                        compsField = ct.GetField("computers", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                        ct = ct.BaseType;
+                    }
+                    if (dm != null && compsField != null)
+                    {
+                        var comps = compsField.GetValue(dm) as List<Texture2D>;
+                        if (comps != null && seclv < comps.Count && comps[seclv] != null)
+                        {
+                            localDict[iconKey] = comps[seclv];
+                            comp.icon = iconKey;
+                            return;
+                        }
+                    }
+                    // 2. 回退：TextureBank.load
+                    var tex = TextureBank.load(SecLevelTextures[seclv], os.content);
+                    if (tex != null) { localDict[iconKey] = tex; comp.icon = iconKey; return; }
+                }
+                // 3. 无法写入 compAltIcons——只能设 icon 字符串，渲染会回退到默认
+                comp.icon = iconKey;
+                KELog.Warn($"[SetNodeIcon] SEC_LEVEL: cannot access compAltIcons for {iconKey}");
+                return;
             }
 
             comp.icon = iconKey;
@@ -95,16 +126,19 @@ namespace KernelExtensions.Actions
 
         internal static Dictionary<string, Texture2D> GetCompAltIcons(OS os)
         {
-            if (!_compAltIconsFieldLookedUp)
-            {
-                _compAltIconsField = typeof(DisplayModule).GetField("compAltIcons",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                _compAltIconsFieldLookedUp = true;
-            }
-            if (_compAltIconsField == null) return null;
             var dm = os?.display ?? OS.currentInstance?.display;
             if (dm == null) return null;
-            return _compAltIconsField.GetValue(dm) as Dictionary<string, Texture2D>;
+            // 遍历类型继承链（private 字段在派生类上找不到）
+            var t = dm.GetType();
+            System.Reflection.FieldInfo f = null;
+            while (t != null && f == null)
+            {
+                f = t.GetField("compAltIcons",
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                t = t.BaseType;
+            }
+            if (f == null) return null;
+            return f.GetValue(dm) as Dictionary<string, Texture2D>;
         }
     }
 }

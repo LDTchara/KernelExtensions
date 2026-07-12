@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
     ============================================================
     KernelExtensions VM 攻击配置文件完整示例
@@ -228,15 +228,15 @@
 	<CheckFilePath>payload.dll</CheckFilePath>
 
 	<!-- ============================================================
-    15. 文件内容正则匹配（可选）/ File Content Regex (Optional)
+    15. 文件内容校验（可选）/ File Content Verification (Optional)
     ============================================================ -->
 	<!--
     仅用于文件存在模式（FileExists）。
-    如果指定了正则表达式，则文件不仅必须存在，其内容（逐行）还必须匹配该正则才算解除。
+    参考文件路径（相对于扩展目录），目标文件必须与参考文件内容完全一致才算解除。
     留空则不检查内容。
     Only for FileExists mode.
-    If a regex is specified, the file must not only exist but also match the regex (line‑by‑line) to consider the attack resolved.
-    Leave empty to skip content checking.
+    Path to a reference file (relative to the extension root). The target file must be byte‑identical to this reference file.
+    Leave empty to skip content checking (file existence is enough).
     -->
 	<CheckFilePattern></CheckFilePattern>
 </VMAttackConfig>

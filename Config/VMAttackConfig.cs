@@ -49,7 +49,7 @@ namespace KernelExtensions.Config
 
         // 文件检测相关的目标路径（相对于存档目录）
         [XmlElement("CheckFilePath")] public string CheckFilePath;
-        // 可选的内容正则匹配（文件存在模式）
+        // 可选的内容校验：参考文件路径（相对扩展目录），比对两者内容是否完全一致
         [XmlElement("CheckFilePattern")] public string CheckFilePattern;
     }
 

@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using KernelExtensions.Config;
 using KernelExtensions.Utility;
@@ -26,8 +26,40 @@ namespace KernelExtensions.Modules
             if (string.IsNullOrEmpty(config.CheckFilePath)) return false;
             string fullPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
             if (config.Mode == RecoveryMode.FileDeletion) return File.Exists(fullPath);
-            if (config.Mode == RecoveryMode.FileExists) return !File.Exists(fullPath);
+            if (config.Mode == RecoveryMode.FileExists)
+            {
+                if (!File.Exists(fullPath)) return false;
+                // CheckFilePattern：文件内容必须与扩展目录下的参考文件一致
+                return FileContentMatches(fullPath, config);
+            }
             return false;
+        }
+
+        private static bool FileContentMatches(string targetPath, VMAttackConfig config)
+        {
+            if (string.IsNullOrEmpty(config.CheckFilePattern)) return true;
+            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
+            if (string.IsNullOrEmpty(extRoot)) return false;
+            string refPath = System.IO.Path.Combine(extRoot, config.CheckFilePattern);
+            if (!File.Exists(refPath)) return false;
+            return FilesMatch(targetPath, refPath);
+        }
+
+        private static bool FilesMatch(string pathA, string pathB)
+        {
+            try
+            {
+                byte[] a = File.ReadAllBytes(pathA);
+                byte[] b = File.ReadAllBytes(pathB);
+                if (a.Length != b.Length) return false;
+                for (int i = 0; i < a.Length; i++)
+                    if (a[i] != b[i]) return false;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>

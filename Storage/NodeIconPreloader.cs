@@ -10,7 +10,7 @@ using KernelExtensions.Utility;
 namespace KernelExtensions.Storage
 {
     /// <summary>
-    /// 从 BepInEx 配置的 CustomImagesPath 或 KE-Images.ini 预加载自定义纹理。
+    /// 从 KE-Config.xml 的 CustomImages 预加载自定义纹理。
     /// 在 OSLoaded 时调用，确保所有 @ 前缀图标在 Action 触发前已就绪。
     /// </summary>
     internal static class NodeIconPreloader
@@ -39,23 +39,6 @@ namespace KernelExtensions.Storage
                         if (string.IsNullOrEmpty(line)) continue;
                         string iconKey = "@" + Path.GetFileNameWithoutExtension(line);
                         if (NodeIconRenderPatch.CustomTextures.ContainsKey(iconKey)) continue;
-                        var tex = LoadFromFile(line);
-                        if (tex != null) { NodeIconRenderPatch.CustomTextures[iconKey] = tex; count++; }
-                    }
-                }
-
-                // 2. 回退：从 KE-Images.ini 加载
-                string iniPath = Path.Combine(extInfo.FolderPath, "KE-Images.ini");
-                if (File.Exists(iniPath))
-                {
-                    foreach (string rawLine in File.ReadAllLines(iniPath))
-                    {
-                        string line = rawLine.Trim();
-                        if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith(";")) continue;
-
-                        string iconKey = "@" + line;
-                        if (NodeIconRenderPatch.CustomTextures.ContainsKey(iconKey)) continue;
-
                         var tex = LoadFromFile(line);
                         if (tex != null) { NodeIconRenderPatch.CustomTextures[iconKey] = tex; count++; }
                     }
