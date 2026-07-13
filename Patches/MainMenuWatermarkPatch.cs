@@ -1,10 +1,8 @@
 ﻿using Hacknet;
-using Hacknet.Gui;
 using HarmonyLib;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 
 namespace KernelExtensions.Patches
 {

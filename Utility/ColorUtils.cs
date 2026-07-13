@@ -1,20 +1,16 @@
-/// <summary>
-/// 共享颜色工具类。
-///
-/// 集中的 HSV/RGB 转换和十六进制颜色解析，
-/// 由 CustomColorPatch、PhaseSwiftManager、CustomTrialExe 等共同使用。
-///
-/// 函数：
-///   HSVToColor(hue, saturation, value)  — HSV → Color，hue 范围 0~1
-///   ParseHexColor(hex)                   — #RRGGBB 或 #AARRGGBB → Color
-/// </summary>
 using Microsoft.Xna.Framework;
-using System;
 
 namespace KernelExtensions.Utility
 {
     /// <summary>
-    /// 颜色工具：HSV/RGB 转换、动态色解析。
+    /// 共享颜色工具类。
+    ///
+    /// 集中的 HSV/RGB 转换和十六进制颜色解析，
+    /// 由 CustomColorPatch、PhaseSwiftManager、CustomTrialExe 等共同使用。
+    ///
+    /// 函数：
+    ///   HSVToColor(hue, saturation, value)  — HSV → Color，hue 范围 0~1
+    ///   ParseHexColor(hex)                   — #RRGGBB 或 #AARRGGBB → Color
     /// </summary>
     public static class ColorUtils
     {

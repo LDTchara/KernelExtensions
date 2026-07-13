@@ -3,8 +3,6 @@ using KernelExtensions.Daemons;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
-using System;
-using System.Linq;
 
 namespace KernelExtensions.Actions.Aircraft
 {

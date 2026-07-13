@@ -1,13 +1,9 @@
 ﻿using Hacknet;
-using Hacknet.Effects;
 using KernelExtensions.Storage;
 using KernelExtensions.Utility;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
-using System;
-using System.Collections.Generic;
-using System.Xml;
 
 namespace KernelExtensions.Actions.CustomTrial
 {

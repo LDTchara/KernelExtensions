@@ -1,11 +1,9 @@
-﻿using BepInEx.Hacknet;
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Daemons.Helpers;
 using Hacknet.Gui;
 using KernelExtensions.Modules;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Pathfinder.Meta.Load;
 using Pathfinder.Util;
 
 namespace KernelExtensions.Daemons

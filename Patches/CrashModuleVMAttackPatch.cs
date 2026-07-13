@@ -3,11 +3,6 @@ using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Config;
 using KernelExtensions.Modules;
-using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 
 namespace KernelExtensions.Patches
 {

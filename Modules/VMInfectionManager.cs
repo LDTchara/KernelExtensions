@@ -1,8 +1,6 @@
 using Hacknet;
 using Hacknet.Extensions;
 using KernelExtensions.Config;
-using KernelExtensions.Utility;
-using System.IO;
 
 namespace KernelExtensions.Modules
 {

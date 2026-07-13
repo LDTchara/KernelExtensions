@@ -4,9 +4,7 @@ using KernelExtensions.Config;
 using KernelExtensions.Modules;
 using Pathfinder.Action;
 using Pathfinder.Util;
-using Pathfinder.Util.XML;
 using KernelExtensions.Utility;
-using System.IO;
 
 namespace KernelExtensions.Actions.VMAttack
 {

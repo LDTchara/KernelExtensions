@@ -1,21 +1,3 @@
-/// <summary>
-/// PhaseSwift 核心管理器（静态类）。
-///
-/// 提供不依赖 Exe 实例的完整 PhaseSwift 功能：
-///   音频系统（DSEI 流式 OGG 解码 + 交叉淡化）
-///   场景系统（拓扑/可见性/节点发现）
-///   主题切换（布局保护/自定义路径）
-///   可视化数据导出（CurrentVisBands）
-///
-/// 使用方式：
-///   1. Initialize(os, configName)  — 加载配置
-///   2. Start()                     — 启动音频 + 应用场景
-///   3. SwitchToScene()             — 切换场景
-///   4. Stop()                      — 清理
-///
-/// 不依赖 Exe，可通过 PhaseSwiftInitAction 等 Action 直接调用。
-/// </summary>
-
 using Hacknet;
 using Hacknet.Extensions;
 using Microsoft.Xna.Framework;
@@ -24,15 +6,27 @@ using KernelExtensions.Config;
 using KernelExtensions.Utility;
 using KernelExtensions.Patches;
 using NVorbis;
-using Pathfinder.Util;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Xml.Serialization;
 
 namespace KernelExtensions.Modules
 {
+    /// <summary>
+    /// PhaseSwift 核心管理器（静态类）。
+    ///
+    /// 提供不依赖 Exe 实例的完整 PhaseSwift 功能：
+    ///   音频系统（DSEI 流式 OGG 解码 + 交叉淡化）
+    ///   场景系统（拓扑/可见性/节点发现）
+    ///   主题切换（布局保护/自定义路径）
+    ///   可视化数据导出（CurrentVisBands）
+    ///
+    /// 使用方式：
+    ///   1. Initialize(os, configName)  — 加载配置
+    ///   2. Start()                     — 启动音频 + 应用场景
+    ///   3. SwitchToScene()             — 切换场景
+    ///   4. Stop()                      — 清理
+    ///
+    /// 不依赖 Exe，可通过 PhaseSwiftInitAction 等 Action 直接调用。
+    /// </summary>
     public static class PhaseSwiftManager
     {
         public static bool IsInitialized { get; private set; }

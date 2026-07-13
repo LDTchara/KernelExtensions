@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using HarmonyLib;
 using Hacknet;
 using Microsoft.Xna.Framework.Content;

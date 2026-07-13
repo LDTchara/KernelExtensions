@@ -3,7 +3,6 @@ using KernelExtensions.Utility;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace KernelExtensions.Actions
 {

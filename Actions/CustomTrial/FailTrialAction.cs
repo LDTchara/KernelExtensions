@@ -1,6 +1,5 @@
 ﻿using Hacknet;
 using Pathfinder.Action;
-using Pathfinder.Util.XML;
 
 namespace KernelExtensions.Actions.CustomTrial
 {

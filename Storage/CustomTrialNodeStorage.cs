@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace KernelExtensions.Storage
+﻿namespace KernelExtensions.Storage
 {
     /// <summary>
     /// 全局存储每个试炼配置删除的节点索引（int 列表）。

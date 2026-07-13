@@ -1,5 +1,4 @@
 ﻿using BepInEx;
-using BepInEx.Configuration;
 using BepInEx.Hacknet;
 using Hacknet;
 using Hacknet.Extensions;
@@ -13,12 +12,9 @@ using KernelExtensions.Config;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Modules;
-using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
 using KernelExtensions.Utility;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Action;
 using Pathfinder.Daemon;
 using Pathfinder.Event;

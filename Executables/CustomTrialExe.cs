@@ -1,26 +1,15 @@
-﻿using BepInEx;
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using KernelExtensions.Config;
 using KernelExtensions.Storage;
 using KernelExtensions.Utility;   // 用于节点存储
-using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
-using Pathfinder.Util;
-using Pathfinder.Replacements;
-using Pathfinder.Util.XML;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;          // 用于反射获取私有字段
-using System.Xml;
 using System.Xml.Serialization;
 using Module = Hacknet.Module;   // 消除与 System.Reflection.Module 的歧义
 

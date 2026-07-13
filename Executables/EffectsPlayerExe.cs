@@ -1,12 +1,9 @@
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Gui;
-using KernelExtensions.Patches;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
-using System;
-using System.Collections.Generic;
 
 namespace KernelExtensions.Executables
 {

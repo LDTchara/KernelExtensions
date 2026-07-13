@@ -1,63 +1,58 @@
-/// <summary>
-/// 自定义动态颜色系统。
-///
-/// ── 作用 ──
-/// 在主题 XML 和模组配置的颜色字段中，使用关键字代替静态色值，
-/// 实现每帧刷新的动态颜色（彩虹、渐变）。
-///
-/// ── 支持的关键字 ──
-///   1. 彩虹色系列
-///      LDTchara                    默认彩虹（速度 0.1）
-///      LDTchara:0.05               自定义速度
-///      LDTchara:0.1:0.8            速度:透明度
-///      LDTchara:0.1:1.0:0.8:1.0   速度:透明度:饱和度:明度
-///      Rainbow 是 LDTchara 的别名，语法相同。
-///
-///   2. 双色渐变（旧语法，兼容）
-///      Gradient:#FF0000:#00FF00:2.0  红→蓝渐变，2 秒循环
-///
-///   3. 预设引用（推荐）
-///      Riptide                     引用 CustomColor/Riptide.xml
-///      Riptide:0.5                 速度 x0.5
-///      Riptide:0.5:0.8            速度 x0.5 + 透明度 80%
-///
-/// ── 预设文件格式 ──
-///   CustomColor/预设名.xml：
-///     <ColorPreset>
-///       <Name>Riptide</Name>
-///       <CustomColor id="0"><Color>#FF6B6B</Color><Duration>2.0</Duration></CustomColor>
-///       <CustomColor id="1"><Color>#4ECDC4</Color><Duration>2.0</Duration></CustomColor>
-///       ...
-///     </ColorPreset>
-///
-/// ── 别名同步 ──
-///   defaultHighlightColor ↔ highlightColor
-///   lockedColor ↔ brightLockedColor
-///   unlockedColor ↔ brightUnlockedColor
-///   defaultTopBarColor ↔ topBarColor
-///   moduleColorSolidDefault ↔ moduleColorSolid
-///
-/// ── 注意 ──
-///   - 仅在自定义主题（OSTheme.Custom）激活时扫描主题 XML
-///   - 预设文件在扩展加载时扫描一次并缓存
-///   - 适用于主题 XML、PhaseSwift 配置、CustomTrial 配置
-///   - 不适用于非 OS 字段（IRC 颜色、任务板颜色等）
-/// </summary>
-
 using Hacknet;
 using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace KernelExtensions.Patches
 {
+    /// <summary>
+    /// 自定义动态颜色系统。
+    ///
+    /// ── 作用 ──
+    /// 在主题 XML 和模组配置的颜色字段中，使用关键字代替静态色值，
+    /// 实现每帧刷新的动态颜色（彩虹、渐变）。
+    ///
+    /// ── 支持的关键字 ──
+    ///   1. 彩虹色系列
+    ///      LDTchara                    默认彩虹（速度 0.1）
+    ///      LDTchara:0.05               自定义速度
+    ///      LDTchara:0.1:0.8            速度:透明度
+    ///      LDTchara:0.1:1.0:0.8:1.0   速度:透明度:饱和度:明度
+    ///      Rainbow 是 LDTchara 的别名，语法相同。
+    ///
+    ///   2. 双色渐变（旧语法，兼容）
+    ///      Gradient:#FF0000:#00FF00:2.0  红→蓝渐变，2 秒循环
+    ///
+    ///   3. 预设引用（推荐）
+    ///      Riptide                     引用 CustomColor/Riptide.xml
+    ///      Riptide:0.5                 速度 x0.5
+    ///      Riptide:0.5:0.8            速度 x0.5 + 透明度 80%
+    ///
+    /// ── 预设文件格式 ──
+    ///   CustomColor/预设名.xml：
+    ///     <ColorPreset>
+    ///       <Name>Riptide</Name>
+    ///       <CustomColor id="0"><Color>#FF6B6B</Color><Duration>2.0</Duration></CustomColor>
+    ///       <CustomColor id="1"><Color>#4ECDC4</Color><Duration>2.0</Duration></CustomColor>
+    ///       ...
+    ///     </ColorPreset>
+    ///
+    /// ── 别名同步 ──
+    ///   defaultHighlightColor ↔ highlightColor
+    ///   lockedColor ↔ brightLockedColor
+    ///   unlockedColor ↔ brightUnlockedColor
+    ///   defaultTopBarColor ↔ topBarColor
+    ///   moduleColorSolidDefault ↔ moduleColorSolid
+    ///
+    /// ── 注意 ──
+    ///   - 仅在自定义主题（OSTheme.Custom）激活时扫描主题 XML
+    ///   - 预设文件在扩展加载时扫描一次并缓存
+    ///   - 适用于主题 XML、PhaseSwift 配置、CustomTrial 配置
+    ///   - 不适用于非 OS 字段（IRC 颜色、任务板颜色等）
+    /// </summary>
     [HarmonyPatch]
     public static class CustomColorPatch
     {

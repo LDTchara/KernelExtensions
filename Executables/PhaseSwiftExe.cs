@@ -1,36 +1,30 @@
-/// <summary>
-/// PhaseSwift 可执行程序。
-/// 是 Pathfinder GameExecutable 的薄封装，核心逻辑委托给 PhaseSwiftManager。
-///
-/// 状态机：
-///   Locked（无 flag/config）→ 3s → 自动退出
-///   NotStarted（有 flag+config）→ 点击"开始"按钮 → Manager.Start() → Active
-///   Active → Shift 按钮切换场景 → Manager.SwitchToScene()
-///   Active → IsComplete → Completing → 3s → 退出
-///
-/// UI：
-///   - 锁定画面：点阵背景 + 呼吸锁定文字（无按钮）
-///   - 准备阶段：点阵背景 + "开始"按钮（文本可配置）
-///   - 运行阶段：点阵背景 + "Shift"按钮 + 可选场景号
-///
-/// 配置通过 PhaseSwift_{ConfigName} flag 指定。
-/// </summary>
 using Hacknet;
-using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using KernelExtensions.Config;
 using KernelExtensions.Modules;
-using KernelExtensions.Patches;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
-using System;
-using System.Linq;
-using System.IO;
 
 namespace KernelExtensions.Executables
 {
+    /// <summary>
+    /// PhaseSwift 可执行程序。
+    /// 是 Pathfinder GameExecutable 的薄封装，核心逻辑委托给 PhaseSwiftManager。
+    ///
+    /// 状态机：
+    ///   Locked（无 flag/config）→ 3s → 自动退出
+    ///   NotStarted（有 flag+config）→ 点击"开始"按钮 → Manager.Start() → Active
+    ///   Active → Shift 按钮切换场景 → Manager.SwitchToScene()
+    ///   Active → IsComplete → Completing → 3s → 退出
+    ///
+    /// UI：
+    ///   - 锁定画面：点阵背景 + 呼吸锁定文字（无按钮）
+    ///   - 准备阶段：点阵背景 + "开始"按钮（文本可配置）
+    ///   - 运行阶段：点阵背景 + "Shift"按钮 + 可选场景号
+    ///
+    /// 配置通过 PhaseSwift_{ConfigName} flag 指定。
+    /// </summary>
     public class PhaseSwiftExe : GameExecutable
     {
         public static PhaseSwiftExe CurrentInstance { get; private set; }

@@ -1,7 +1,5 @@
 ﻿using BepInEx;
-using Hacknet;
 using Hacknet.Extensions;
-using System.IO;
 
 namespace KernelExtensions.Utility
 {

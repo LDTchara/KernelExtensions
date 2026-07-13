@@ -2,18 +2,11 @@
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using Hacknet.Localization;
-using Hacknet.UIUtils;
 using KernelExtensions.Config;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Pathfinder.Replacements;
-using Pathfinder.Util.XML;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 
 namespace KernelExtensions.Modules
 {

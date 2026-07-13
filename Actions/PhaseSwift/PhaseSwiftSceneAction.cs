@@ -1,17 +1,3 @@
-/// <summary>
-/// 切换 PhaseSwift 场景。
-/// 触发音频交叉淡化、拓扑替换、可见性更新、主题切换、OnSwitch 动作。
-///
-/// 用法：
-///   <PhaseSwiftScene TargetScene="1" />
-///   <PhaseSwiftScene TargetScene="0" FadeDuration="2.0" Theme="HacknetMint" MusicPhase="1" />
-///
-/// 参数：
-///   TargetScene   (int, 必填)    目标场景索引（从 0 开始）
-///   FadeDuration  (float, 可选)  音乐渐变时长（秒），不填则用配置默认
-///   Theme         (string, 可选) 覆盖主题（预设名或自定义路径）
-///   MusicPhase    (int, 可选)    同时切换音乐组
-/// </summary>
 using Hacknet;
 using KernelExtensions.Executables;
 using KernelExtensions.Modules;
@@ -21,6 +7,20 @@ using Pathfinder.Util.XML;
 
 namespace KernelExtensions.Actions.PhaseSwift
 {
+    /// <summary>
+    /// 切换 PhaseSwift 场景。
+    /// 触发音频交叉淡化、拓扑替换、可见性更新、主题切换、OnSwitch 动作。
+    ///
+    /// 用法：
+    ///   <PhaseSwiftScene TargetScene="1" />
+    ///   <PhaseSwiftScene TargetScene="0" FadeDuration="2.0" Theme="HacknetMint" MusicPhase="1" />
+    ///
+    /// 参数：
+    ///   TargetScene   (int, 必填)    目标场景索引（从 0 开始）
+    ///   FadeDuration  (float, 可选)  音乐渐变时长（秒），不填则用配置默认
+    ///   Theme         (string, 可选) 覆盖主题（预设名或自定义路径）
+    ///   MusicPhase    (int, 可选)    同时切换音乐组
+    /// </summary>
     public class PhaseSwiftSceneAction : DelayablePathfinderAction
     {
         [XMLStorage] public int TargetScene;

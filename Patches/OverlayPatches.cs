@@ -1,6 +1,4 @@
-﻿using System;
-using Hacknet;
-using Hacknet.Gui;
+﻿using Hacknet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using HarmonyLib;

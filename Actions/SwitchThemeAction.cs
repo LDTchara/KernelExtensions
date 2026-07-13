@@ -3,7 +3,6 @@ using KernelExtensions.Patches;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
-using System;
 
 namespace KernelExtensions.Actions
 {

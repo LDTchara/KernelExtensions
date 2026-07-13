@@ -1,6 +1,3 @@
-
-using System;
-using System.IO;
 using Hacknet;
 using Hacknet.Extensions;
 using Microsoft.Xna.Framework.Graphics;

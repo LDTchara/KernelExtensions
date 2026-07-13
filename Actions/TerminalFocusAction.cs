@@ -2,7 +2,6 @@
 using Hacknet.Gui;
 using Microsoft.Xna.Framework;
 using Pathfinder.Action;
-using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
 namespace KernelExtensions.Actions

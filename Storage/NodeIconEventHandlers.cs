@@ -1,9 +1,7 @@
-using System.Linq;
 using System.Xml.Linq;
 using Hacknet;
 using Pathfinder.Event.Loading;
 using Pathfinder.Event.Saving;
-using KernelExtensions.Storage;
 using KernelExtensions.Actions;
 
 namespace KernelExtensions.Storage

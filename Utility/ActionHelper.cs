@@ -1,9 +1,6 @@
 ﻿using Hacknet;
-using Pathfinder.Action;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;
-using System;
-using System.IO;
 using System.Xml;
 
 namespace KernelExtensions.Utility

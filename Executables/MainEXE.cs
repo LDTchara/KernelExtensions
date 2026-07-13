@@ -2,9 +2,7 @@ using Hacknet;
 using Hacknet.Gui;
 using KernelExtensions.Modules;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
-using System;
 
 namespace KernelExtensions.Executables
 {
