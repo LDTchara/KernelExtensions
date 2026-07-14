@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Pathfinder.Meta.Load;
 using Pathfinder.Replacements;      // 提供 SaveLoader.SaveExecutor 基类
 using Pathfinder.Util.XML;

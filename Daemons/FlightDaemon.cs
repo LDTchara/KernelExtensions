@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Daemons.Helpers;
 using Hacknet.Gui;
 using KernelExtensions.Modules;

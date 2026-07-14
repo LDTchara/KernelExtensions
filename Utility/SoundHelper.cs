@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using Microsoft.Xna.Framework.Audio;
 

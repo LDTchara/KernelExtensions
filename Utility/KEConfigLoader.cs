@@ -1,4 +1,4 @@
-﻿using Hacknet.Extensions;
+using Hacknet.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;

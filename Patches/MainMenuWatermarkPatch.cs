@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using HarmonyLib;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;

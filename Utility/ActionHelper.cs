@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;
 using System.Xml;

@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using Hacknet.Localization;

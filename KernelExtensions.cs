@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Hacknet;
 using Hacknet;
 using Hacknet.Extensions;
@@ -80,6 +80,10 @@ namespace KernelExtensions
             KELog.Info("LaunchVMAttack action registered.");
             ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
             KELog.Info("PlaySound action registered.");
+
+            ActionManager.RegisterAction<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
+            KELog.Info("StartScreenBleedEffectWCC action registered.");
+
             ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
             KELog.Info("PhaseSwiftScene action registered.");
             ActionManager.RegisterAction<PhaseSwiftInitAction>("PhaseSwiftInit");

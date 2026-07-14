@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Pathfinder.Action;
 
 namespace KernelExtensions.Actions.CustomTrial
