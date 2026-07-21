@@ -1,4 +1,3 @@
-using System;
 using System.Globalization;
 using Hacknet;
 using KernelExtensions.Modules;
@@ -12,11 +11,10 @@ using Pathfinder.Util.XML;
 namespace KernelExtensions.Actions
 {
     /// <summary>
-    /// 全屏 ScreenBleed 效果（支持 CustomColor）。
-    /// 替代原版 StartScreenBleedEffect，背景色和文字背景色支持自定义颜色与预设。
-    /// 兼容原版 CancelScreenBleedEffect Action 停止。
+    /// 管理 WCC（WithCustomColor）ScreenBleed 效果的计时、渲染和清理。
+    /// 替代原版 StartScreenBleedEffect，支持自定义颜色和文字颜色。
+    /// 支持 CancelScreenBleedEffect Action 停止。
     /// 用法：
-    /// <![CDATA[
     /// <StartScreenBleedEffectWCC
     ///     AlertTitle="WARNING"
     ///     TotalDurationSeconds="5.0"
@@ -27,10 +25,8 @@ namespace KernelExtensions.Actions
     /// Line 2 text
     /// Line 3 text
     /// </StartScreenBleedEffectWCC>
-    /// ]]>
-    /// 颜色值支持 CustomColor 全部语法：Hex (#RRGGBB)、预设名 (Monochrome)、
-    /// 动态色 (Rainbow, Rainbow:0.5:0.3)、CustomColor 预设 (RedWarn2) 等。
-    /// 使用 9.36 灰度功能时，颜色饱和度越低灰度效果越强。
+    /// 颜色值支持 CustomColor 预设，Hex (#RRGGBB) 和命名色 (Monochrome)。
+    /// 支持动态颜色 (Rainbow, Rainbow:0.5:0.3) 等。
     /// </summary>
     public class StartScreenBleedEffectWCCAction : DelayablePathfinderAction
     {
@@ -72,7 +68,7 @@ namespace KernelExtensions.Actions
         private static string[] SplitLines(string text)
         {
             var parts = text.Split(Utils.robustNewlineDelim, StringSplitOptions.None);
-            var list = new System.Collections.Generic.List<string>(parts);
+            var list = new List<string>(parts);
             while (list.Count < 3) list.Add("");
             return list.ToArray();
         }
@@ -107,6 +103,10 @@ namespace KernelExtensions.Actions
                 }
                 catch { }
             }
+
+            // 兜底：数值 RGB (255,0,0) / RGBA (255,0,0,128) 和命名色
+            try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(raw) as Color? ?? fallback; }
+            catch { }
             return fallback;
         }
     }

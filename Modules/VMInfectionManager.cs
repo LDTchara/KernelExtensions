@@ -1,7 +1,7 @@
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Extensions;
 using KernelExtensions.Config;
-
+// 傻逼PowerShell给我注释全爆了，孩子们记住永远不要用ps1改东西
 namespace KernelExtensions.Modules
 {
     /// <summary>

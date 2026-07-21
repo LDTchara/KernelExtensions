@@ -1,68 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-╔════════════════════════════════╗
-║                  CustomColor 预设文件                          ║
-╚════════════════════════════════╝
+╔════════════════╗
+║     CustomColor Preset File    ║
+╚════════════════╝
 
-使用方法：
+使用方法 / Usage:
   在主题 XML 或本模组的各配置文件中，引用预设名即可使用该预设的渐变动画。
+  Reference the preset name in theme XML or other config files to use its animation.
   预设文件放在扩展目录的 CustomColor/ 文件夹下，扩展启动时自动加载。
+  Place preset files in the extension's CustomColor/ folder; they auto-load on startup.
 
-  主题 XML 引用示例：
+  主题 XML 引用示例 / Theme XML example:
     <defaultHighlightColor>Monochrome</defaultHighlightColor>
-    <defaultHighlightColor>Monochrome:0.5</defaultHighlightColor>       ← 速度 x0.5
+    <defaultHighlightColor>Monochrome:0.5</defaultHighlightColor>       ← 速度 x0.5 / speed x0.5
     <defaultHighlightColor>Monochrome:0.5:0.8</defaultHighlightColor>  ← 速度 x0.5 + 透明度 80%
 
-  模组内置了彩虹色作为一种预设，通过以下方式可以使用：
-    <defaultHighlightColor>LDTchara</defaultHighlightColor>
+  模组内置了彩虹色作为一种预设 / The mod includes Rainbow as a built-in preset:
     <defaultHighlightColor>Rainbow:0.1:0.8:1.0:1.0</defaultHighlightColor>
-    参数顺序: 速度:透明度:饱和度:明度
-
+  你也可以填我的名字 / You can also use my name:
+    <defaultHighlightColor>LDTchara</defaultHighlightColor>
+    参数顺序 / Parameter order: 速度:透明度:饱和度:明度/speed:opacity:saturation:brightness
 -->
-
 <ColorPreset>
   <!--
-    ── 预设名称 ──
+    ── 预设名称 / Preset Name ──
     在主题 XML 中用 <字段名>预设名</字段名> 引用。
+    Referenced in theme XML as <fieldName>presetName</fieldName>.
     预设名区分大小写，必须与文件中 <Name> 一致。
+    Case-sensitive, must match <Name> in this file.
   -->
   <Name>Monochrome</Name>
 
   <!--
-    ── 颜色格式 ──
-    支持以下四种颜色格式，可混用：
+    ── 颜色格式 / Color Format ──
+    支持以下四种颜色格式，可混用 / Four formats supported, can be mixed:
 
-      1. 十六进制 RGB
-         <Color>#FF0000</Color>          ← 红色
+      1. 十六进制 RGB / Hex RGB
+         <Color>#FF0000</Color>          ← 红色 / Red
 
-      2. 十六进制 ARGB（带透明度）
-         <Color>#88FF0000</Color>        ← 红色 + 50% 透明度
+      2. 十六进制 ARGB（带透明度）/ Hex ARGB (with alpha)
+         <Color>#88FF0000</Color>        ← 红色 + 50% 透明度 / Red + 50% alpha
 
-      3. 数值 RGB
-         <Color>255,0,0</Color>          ← 红色
+      3. 数值 RGB / Numeric RGB
+         <Color>255,0,0</Color>          ← 红色 / Red
 
-      4. 数值 RGBA（带透明度）
-         <Color>255,0,0,128</Color>      ← 红色 + 50% 透明度
+      4. 数值 RGBA（带透明度）/ Numeric RGBA (with alpha)
+         <Color>255,0,0,128</Color>      ← 红色 + 50% 透明度 / Red + 50% alpha
   -->
 
   <!--
-    ── 渐变色段 ──
+    ── 渐变色段 / Gradient Segments ──
     按 id 顺序排列，至少需要 2 个段才能形成循环。
+    Ordered by id. At least 2 segments needed for a loop.
     总循环时长 = sum(各段 Duration + Transition)
+    Total cycle duration = sum(each segment's Duration + Transition)
 
-    Duration    — 停留在此颜色的时长（秒）
-    Transition  — 渐变到下一颜色所需的时长（秒）
-                  可不填，默认 0（瞬间切换）
+    Duration    — 停留在此颜色的时长（秒）/ how long to stay on this color (sec)
+    Transition  — 渐变到下一颜色所需的时长（秒）/ time to fade to the next color (sec)
+                  可不填，默认 0（瞬间切换）/ Optional; default 0 (instant switch)
   -->
 
-  <!-- 第 0 段：黑色，停留 2 秒后用 1 秒渐变为白色 -->
+  <!-- 第 0 段：黑色，停留 2 秒后用 1 秒渐变为白色 / Segment 0: black, hold 2s then fade 1s to white -->
   <CustomColor id="0">
     <Color>#000000</Color>
     <Duration>2.0</Duration>
     <Transition>1.0</Transition>
   </CustomColor>
 
-  <!-- 第 1 段：白色，停留 2 秒后用 1 秒渐变为黑色 -->
+  <!-- 第 1 段：白色，停留 2 秒后用 1 秒渐变为黑色 / Segment 1: white, hold 2s then fade 1s to black -->
   <CustomColor id="1">
     <Color>255,255,255</Color>
     <Duration>2.0</Duration>
@@ -70,28 +75,28 @@
   </CustomColor>
 
   <!--
-    ── 延伸用法 ──
+    ── 延伸用法 / Extended Usage ──
     
-    三段以上渐变：
+    三段以上渐变 / Three+ segment gradient:
       <CustomColor id="0"><Color>#FF0000</Color><Duration>1.0</Duration><Transition>1.0</Transition></CustomColor>
       <CustomColor id="1"><Color>#00FF00</Color><Duration>1.0</Duration><Transition>1.0</Transition></CustomColor>
       <CustomColor id="2"><Color>#0000FF</Color><Duration>1.0</Duration><Transition>1.0</Transition></CustomColor>
-      红 → 绿 → 蓝 → 红，6 秒循环
+      红 → 绿 → 蓝 → 红，6 秒循环 / Red → Green → Blue → Red, 6s cycle
 
-    停留不动 / 瞬间切换：
+    停留不动 / 瞬间切换 / Static hold / instant switch:
       <CustomColor id="0"><Color>#FF0000</Color><Duration>3.0</Duration><Transition>0</Transition></CustomColor>
       <CustomColor id="1"><Color>#00FF00</Color><Duration>3.0</Duration><Transition>0</Transition></CustomColor>
-      红 3 秒 → 瞬间切绿 3 秒，无过渡
+      红 3 秒 → 瞬间切绿 3 秒，无过渡 / Red 3s → instant Green 3s, no transition
 
-    带透明度的渐变：
+    带透明度的渐变 / Gradient with alpha:
       <CustomColor id="0"><Color>#88FF0000</Color><Duration>2.0</Duration><Transition>1.0</Transition></CustomColor>
       <CustomColor id="1"><Color>#8800FF00</Color><Duration>2.0</Duration><Transition>1.0</Transition></CustomColor>
-      半透红 ↔ 半透绿
+      半透红 ↔ 半透绿 / Semi-transparent Red ↔ Semi-transparent Green
 
-    单段 + Transition（两个颜色来回渐变）：
+    单段 + Transition（两个颜色来回渐变）/ Single segment + Transition (two-color oscillation):
       <CustomColor id="0"><Color>#FF0000</Color><Duration>0</Duration><Transition>2.0</Transition></CustomColor>
       <CustomColor id="1"><Color>#0000FF</Color><Duration>0</Duration><Transition>2.0</Transition></CustomColor>
-      红 → 蓝 → 红，无停留，4 秒完整循环
-      配合透明度可做出呼吸（fade in/out）效果
+      红 → 蓝 → 红，无停留，4 秒完整循环 / Red → Blue → Red, no hold, 4s full cycle
+      配合透明度可做出呼吸（fade in/out）效果 / Combine with alpha for breathing (fade in/out) effects
   -->
 </ColorPreset>

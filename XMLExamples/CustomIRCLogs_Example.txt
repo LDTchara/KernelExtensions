@@ -20,6 +20,12 @@
 <Dev> All 44100Hz files playing cleanly.
 <QA> Finally.
 
+---
+Each line starting with # begins a new entry.
+The first line (after #) is the entry title, used as the filename "IRC_Log:title".
+Lines after the title are the entry content.
+Encoding must be UTF-8.
+---
 每个 # 开头的行是新条目的开始。
 第一行（# 之后）是语录标题，会作为文件名 "IRC_Log:标题"。
 标题后面的行是语录正文。

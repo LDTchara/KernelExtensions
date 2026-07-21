@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PhaseSwiftConfig>
     <!-- 程序窗口中显示的名称 -->
+    <!-- English: Name displayed in the program window -->
     <ProgramName>相位穿梭</ProgramName>
-    <!-- 背景颜色：支持颜色名 (Red)、十六进制 (#4488FF)、或我的名字 (LDTchara = 彩虹渐变) -->
+    <!-- 背景颜色：支持颜色名 (Red)、十六进制 (#4488FF)、或CustomColor预设名 -->
+    <!-- English: Background color: supports color names (Red), hex (#4488FF), or CustomColor preset names -->
     <BackgroundColor>LDTchara</BackgroundColor>
     <!-- 音乐交叉渐变的默认时长（秒） -->
+    <!-- English: Default music crossfade duration (seconds) -->
     <DefaultFadeDuration>1.5</DefaultFadeDuration>
     <!-- 主题切换时的闪烁时长（秒），建议与 DefaultFadeDuration 相同 -->
+    <!-- English: Theme flicker duration (seconds), recommended to match DefaultFadeDuration -->
     <ThemeFlickerDuration>0.8</ThemeFlickerDuration>
     <!-- 启动后默认激活的场景索引（从 0 开始） -->
+    <!-- English: Default active scene index on startup (0-based) -->
     <InitialScene>0</InitialScene>
     <!--
          PS 完成/退出后的节点处理模式（FinishMode）
@@ -21,6 +26,17 @@
          因为 PS 每个场景的 <Topology> 会覆盖节点原先的邻居关系，
          不恢复的话节点间的连接会永久偏离初始配置。
     -->
+    <!-- English:
+         FinishMode — How nodes are handled when PS completes/exits.
+         Three modes:
+           none   — Full cleanup: restore original links, hide all managed nodes, restore theme. Default.
+           full   — Full integration: restore original links, but keep all discovered nodes visible, restore theme.
+           scene_0~N — Keep only the specified scene's nodes visible (e.g. scene_2), restore theme + links.
+
+         Regardless of mode, original links of managed nodes are always restored.
+         Since each scene's <Topology> overwrites the original neighbor relationships,
+         not restoring them would permanently alter node connections from the initial config.
+    -->
     <FinishMode>none</FinishMode>
 
     <!-- ============================================================
@@ -28,23 +44,33 @@
          以下字段控制 PS 中各个框架元素的显示文字。
          全部可选，不填则回退到内置词典（未来将支持 Locales/*.xml 外部语言文件）。
          ============================================================ -->
+    <!-- English:
+         Text Localization
+         The following fields control the display text of various UI elements in PS.
+         All optional; if left empty, falls back to built-in dictionary (future support for Locales/*.xml external language files).
+    -->
     <!--
          准备阶段（NotStarted）的"开始"按钮文字
     -->
+    <!-- English: "Start" button text during NotStarted phase -->
     <StartButtonText>激活</StartButtonText>
     <!--
          运行阶段（Active）的"Shift"按钮文字
     -->
+    <!-- English: "Shift" button text during Active phase -->
     <ShiftButtonText>穿梭</ShiftButtonText>
 	<!--
          PS 完成时显示的文字（不填回退到内置词典）
     -->
+	<!-- English: Text displayed when PS completes (falls back to built-in dictionary if empty) -->
 	<CompleteText>完成</CompleteText>
     <!--
          是否显示当前场景数 (X/X)
     -->
+    <!-- English: Whether to show current scene number (X/X) -->
     <ShowSceneNumber>true</ShowSceneNumber>
     <!-- 切换主题时是否同时改变节点布局（默认 false，只变色不改位置） -->
+    <!-- English: Whether changing the theme also changes node layout (default false, color-only) -->
     <ChangeLayout>false</ChangeLayout>
     <!--
          双轨音乐开关（默认 true）
@@ -52,16 +78,31 @@
          false — 用 MusicManager 播放单曲，不使用 DSEI 和交叉淡化。
                  此时 MusicPhases 留空，用 <SingleTrack> 指定音乐即可。
     -->
+    <!-- English:
+         Dual-track music toggle (default true)
+         true  — DSEI streaming decode + crossfade + custom visualization (requires MusicPhases)
+         false — Use MusicManager for single-track playback without DSEI or crossfade.
+                 Leave MusicPhases empty and use <SingleTrack> to specify the music.
+    -->
     <UseDualTrackMusic>true</UseDualTrackMusic>
     <!--
          单曲模式音乐（UseDualTrackMusic=false 时有效）
          指定内容名或相对路径。不填则回退到 MusicPhases 第一个 Track。
          例: Music/MySong 或 ../Extensions/扩展名/Music/MySong.ogg
     -->
+    <!-- English:
+         Single-track music (effective when UseDualTrackMusic=false)
+         Specify a content name or relative path. Falls back to the first Track in MusicPhases if empty.
+         Example: Music/MySong or ../Extensions/ExtensionName/Music/MySong.ogg
+    -->
     <SingleTrack></SingleTrack>
     <!--
          PS 停止时是否自动恢复启动前的主题（默认 true）
          false 时作者可通过 Action 自行控制完成时的主题。
+    -->
+    <!-- English:
+         Whether to automatically restore the pre-start theme when PS stops (default true)
+         When false, extension authors can control the completion theme via Actions.
     -->
     <RestoreThemeOnStop>true</RestoreThemeOnStop>
     <!-- ============================================================
@@ -72,6 +113,14 @@
          强烈建议扩展作者使同 Phase 内所有音乐长度完全一致，
          否则切换时进度会逐渐错位。
          ============================================================ -->
+    <!-- English:
+         Music Phases
+         Each Phase defines a set of music files; the count should match the number of scenes.
+         Track at index i corresponds to the scene at index i in Scenes.
+         Different Phases can be switched during gameplay via the PhaseSwitchMusicPhase Action.
+         It is strongly recommended that all tracks within the same Phase have identical lengths,
+         otherwise playback progress will drift on switch.
+    -->
     <MusicPhases>
         <Phase id="0">
             <Tracks>
@@ -95,8 +144,18 @@
          BlockedNodes 中出现的节点都会由 PhaseSwift 全权管理。
          非受控节点不受影响。
          ============================================================ -->
+    <!-- English:
+         Scene Definitions (Scenes)
+         Each Scene describes the configuration of a "surface/underworld" layer.
+         Unlimited count (2~4 are fine); clicking the Shift button cycles through them.
+
+         Managed nodes: All nodes appearing in StartNodes, VisibleNodes, Topology, and
+         BlockedNodes are fully managed by PhaseSwift.
+         Unmanaged nodes are unaffected.
+    -->
     <Scenes>
         <!-- ======== 场景 0：表层世界 ======== -->
+        <!-- English: ======== Scene 0: Surface World ======== -->
         <Scene id="0">
             <!--
                  场景主题。
@@ -104,21 +163,37 @@
                  如需自定义，可填内置主题名 (HacknetBlue/HacknetMint/HacknetOrange/HacknetRed)、
                  自定义主题文件路径。
             -->
+            <!-- English:
+                 Scene theme.
+                 If left empty, keeps the theme from before PS started (or set by the previous Scene's OnSwitch Action).
+                 Customize with built-in theme names (HacknetBlue/HacknetMint/HacknetOrange/HacknetRed)
+                 or a custom theme file path.
+            -->
             <Theme>HacknetBlue</Theme>
             <!-- 切换到此场景时执行的动作文件（可选） -->
+            <!-- English: Action file to execute when switching to this scene (optional) -->
             <OnSwitch file="Actions/scene0_switch.xml" />
             <!--
                  起始节点：切换到此场景时默认可见的节点。
                  只有这些节点会直接出现在网络地图中，
                  其余节点需要通过扫描拓扑链路自然发现。
-             -->
+            -->
+            <!-- English:
+                 Start nodes: Nodes visible by default when switching to this scene.
+                 Only these nodes appear directly on the network map;
+                 other nodes must be discovered by scanning topology links.
+            -->
             <StartNodes>
                 <Node id="A" />
             </StartNodes>
             <!--
                  场景所有节点：本场景用到的完整节点列表。
                  用于连接拦截和受控管理，不影响初始可见性。
-             -->
+            -->
+            <!-- English:
+                 All scene nodes: Complete node list used by this scene.
+                 Used for connection blocking and managed node tracking; does not affect initial visibility.
+            -->
             <VisibleNodes>
                 <Node id="A" />
                 <Node id="C" />
@@ -130,7 +205,14 @@
                  PS 会先清除受控节点间的所有现有链接（无论 XML 中是否有 <dlink>），再按此配置添加链接。
 				 这意味着即使某个节点原本是孤立的，只要出现在拓扑中就会被强制连线。
                  切换场景时会重新应用新场景的拓扑。
-             -->
+            -->
+            <!-- English:
+                 Network topology: Describes connections between managed nodes in this scene.
+                 PS first clears all existing links between managed nodes (regardless of existing <dlink> elements),
+                 then adds links per this config.
+                 This means even isolated nodes will be forcefully connected if they appear in the topology.
+                 Switching scenes reapplies the new scene's topology.
+            -->
             <Topology>
                 <Link from="A" to="C" />
                 <Link from="C" to="D" />
@@ -138,13 +220,15 @@
             </Topology>
             <!--
                  黑名单：阻止玩家 direct connect 到这些节点。
-             -->
+            -->
+            <!-- English: Blacklist: prevents players from direct connecting to these nodes -->
             <BlockedNodes>
                 <Node>B</Node>
                 <Node>F</Node>
             </BlockedNodes>
         </Scene>
         <!-- ======== 场景 1：里层世界 ======== -->
+        <!-- English: ======== Scene 1: Underworld ======== -->
         <Scene id="1">
             <Theme>HacknetMint</Theme>
             <OnSwitch file="Actions/scene1_switch.xml" />
