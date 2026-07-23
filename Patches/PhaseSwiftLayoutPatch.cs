@@ -3,27 +3,42 @@ using HarmonyLib;
 
 namespace KernelExtensions.Patches
 {
-    /// <summary>
-    /// 拦截 ThemeManager.switchThemeLayout，允许 PhaseSwift 控制主题切换时
-    /// 是否改变面板布局（terminal、netMap、display、ram 的 Bounds）。
-    ///
-    /// 当 SkipLayoutChange = true 时，switchThemeLayout 被跳过，
-    /// 只有颜色和背景会变化，面板位置保持不变。
-    /// </summary>
     [HarmonyPatch(typeof(ThemeManager), "switchThemeLayout")]
     public static class PhaseSwiftLayoutPatch
     {
-        /// <summary>
-        /// 设为 true 时跳过面板布局切换。
-        /// PhaseSwift 的 ChangeLayout=false 时使用，
-        /// 切换完成后需由调用方恢复为 false。
-        /// </summary>
         internal static bool SkipLayoutChange = false;
 
         [HarmonyPrefix]
         static bool Prefix()
         {
             return !SkipLayoutChange;
+        }
+    }
+
+    [HarmonyPatch(typeof(OS), "Update")]
+    public static class PhaseSwiftLayoutResetPatch
+    {
+        /// <summary>
+        /// 每次 OS Update 第一帧强制重置 SkipLayoutChange = false，
+        /// 确保跨会话残留的 true 不会导致新游戏开局布局丢失。
+        /// 重置后不再执行。
+        /// 感觉像是强制扳回来，目前也没弄明白为什么重进后主题会变仅终端，之后再想
+        /// </summary>
+        internal static bool _resetDone = false;
+
+        [HarmonyPrefix]
+        static void Prefix()
+        {
+            if (!_resetDone)
+            {
+                _resetDone = true;
+                PhaseSwiftLayoutPatch.SkipLayoutChange = false;
+            }
+        }
+
+        public static void Reset()
+        {
+            _resetDone = false;
         }
     }
 }

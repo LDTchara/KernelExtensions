@@ -93,6 +93,8 @@ namespace KernelExtensions
             ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
             KELog.Info("PhaseSwiftFadeOut action registered.");
             ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
+            ActionManager.RegisterAction<BlockNodeAction>("BlockNode");
+            ActionManager.RegisterAction<UnblockNodeAction>("UnblockNode");
             KELog.Info("PhaseSwiftMusic action registered.");
             ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
             KELog.Info("SwitchToThemeKeepLayout action registered.");
@@ -121,6 +123,7 @@ namespace KernelExtensions
             EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
             KELog.Info("NodeIcon OSLoaded handler registered.");
             EventManager<OSLoadedEvent>.AddHandler((e) => { try { KEConfigLoader.Load(); } catch { } });
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_AutoRestorePhaseSwift);
             KELog.Info("KEConfigLoader handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
@@ -128,6 +131,7 @@ namespace KernelExtensions
             // 4. 注册自定义存档加载器（用于从存档中读取删除节点）
             Console.WriteLine("[KernelExtensions] Registering save loaders...");
             SaveLoader.RegisterExecutor<CustomTrialSaveExecutor>("CustomTrialData");
+            SaveLoader.RegisterExecutor<PhaseSwiftSaveExecutor>("PhaseSwiftData");
             KELog.Info("CustomTrialSaveExecutor registered.");
 
             // 4.5 飞机Daemon相关
@@ -434,6 +438,27 @@ namespace KernelExtensions
             {
                 return false;
             }
+        }
+
+        private void OnOSLoaded_AutoRestorePhaseSwift(OSLoadedEvent e)
+        {
+            OS os = e.Os;
+            string flag = os.Flags.GetFlagStartingWith("PhaseSwift_");
+            if (flag == null) return;
+
+            string configName = flag.Substring("PhaseSwift_".Length);
+            var restore = PhaseSwiftManager.PendingRestore;
+
+            PhaseSwiftManager.Initialize(os, configName);
+
+            if (restore != null && restore.ConfigName == configName)
+            {
+                PhaseSwiftManager.OverrideOriginalLinks(restore.OriginalLinkIds, os);
+                PhaseSwiftManager.RestorePersistentState(restore);
+                PhaseSwiftManager.PendingRestore = null;
+            }
+
+            PhaseSwiftManager.Start(overrideScene: restore?.Scene);
         }
     }
 }

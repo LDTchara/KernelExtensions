@@ -82,6 +82,14 @@ namespace KernelExtensions.Executables
             if (ExtensionLoader.ActiveExtensionInfo != null)
                 extRoot = ExtensionLoader.ActiveExtensionInfo.FolderPath.Replace('\\', '/');
 
+            // PS already running -> skip to Active
+            if (PhaseSwiftManager.IsRunning)
+            {
+                config = PhaseSwiftManager.Config;
+                state = RunState.Active;
+                return;
+            }
+
             string flag = os.Flags.GetFlagStartingWith("PhaseSwift_");
             if (string.IsNullOrEmpty(flag))
             {
@@ -270,7 +278,12 @@ namespace KernelExtensions.Executables
 
         public override void OnCompleteKilled()
         {
-            OnComplete();
+            if (!_cleanedUp)
+            {
+                _cleanedUp = true;
+                activeInstances.Remove(this);
+                if (CurrentInstance == this) CurrentInstance = null;
+            }
         }
 
         private void DoCleanup()

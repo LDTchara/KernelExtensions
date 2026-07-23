@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using KernelExtensions.Config;
 using KernelExtensions.Utility;
+using KernelExtensions.Saving;
 using KernelExtensions.Patches;
 using NVorbis;
 using System.Xml.Serialization;
@@ -66,6 +67,9 @@ namespace KernelExtensions.Modules
         private static List<HashSet<string>> _sceneVisibleIds;
         private static List<HashSet<string>> _sceneBlockedIds;
         private static Dictionary<int, HashSet<string>> _sceneDiscoveredNodeIds = new();
+        internal static PhaseSwiftPersistentState PendingRestore;
+        private static Dictionary<int, HashSet<string>> _runtimeBlockedNodeIds = new();
+        private static Dictionary<int, HashSet<string>> _sceneAdminNodeIds = new();
 
         public static void Initialize(OS os, string configName)
         {
@@ -122,7 +126,7 @@ namespace KernelExtensions.Modules
             IsInitialized = true;
         }
 
-        public static void Start()
+        public static void Start(int? overrideScene = null)
         {
             if (!IsInitialized || Config == null || IsRunning) return;
 
@@ -146,7 +150,7 @@ namespace KernelExtensions.Modules
                     MusicManager.playSongImmediatley(resolved);
                 }
                 }
-            int firstScene = Config.InitialScene;
+            int firstScene = overrideScene ?? Config.InitialScene;
             CurrentScene = -1;
             SwitchToScene(firstScene);
             IsRunning = true;
@@ -218,6 +222,8 @@ namespace KernelExtensions.Modules
             }
 
             PhaseSwiftConnectionPatch.CurrentExe = null;
+            PhaseSwiftLayoutPatch.SkipLayoutChange = false;
+            PhaseSwiftLayoutResetPatch.Reset();// 这一段更像是强行扳回来主题的状态，后续再研究如何更改
             // 清空所有运行时状态，确保下次 Initialize 从干净状态开始
             _controlledNodeIds.Clear();
             _currentVisibleNodeIds.Clear();
@@ -226,6 +232,9 @@ namespace KernelExtensions.Modules
             _sceneVisibleIds.Clear();
             _sceneBlockedIds.Clear();
             _sceneDiscoveredNodeIds.Clear();
+            _runtimeBlockedNodeIds.Clear();
+            _sceneAdminNodeIds.Clear();
+            PendingRestore = null;
             _rollingBuf = null;
             _rollingBufCount = 0;
             _rollingBufPos = 0;
@@ -276,6 +285,7 @@ namespace KernelExtensions.Modules
         {
             if (!UseDualTrack) return;
             if (!IsRunning) return;
+            SyncVolume();
             for (int i = 0; i < _dseInstances.Length; i++)
             {
                 if (_dseInstances[i] != null)
@@ -295,17 +305,18 @@ namespace KernelExtensions.Modules
         {
             if (!UseDualTrack) return;
             if (!_isFading) return;
+            float volMul = MusicManager.getVolume();
             _fadeProgress += dt;
             float t = Math.Min(_fadeProgress / _targetFadeDuration, 1f);
             for (int i = 0; i < _dseInstances.Length; i++)
                 if (_dseInstances[i] != null)
-                    _dseInstances[i].Volume = MathHelper.Lerp(_startVolumes[i], _targetVolumes[i], t);
+                    _dseInstances[i].Volume = MathHelper.Lerp(_startVolumes[i], _targetVolumes[i], t) * volMul;
             if (_fadeProgress >= _targetFadeDuration)
             {
                 _isFading = false;
                 for (int i = 0; i < _dseInstances.Length; i++)
                     if (_dseInstances[i] != null)
-                        _dseInstances[i].Volume = _targetVolumes[i];
+                        _dseInstances[i].Volume = _targetVolumes[i] * volMul;
             }
         }
 
@@ -368,7 +379,8 @@ namespace KernelExtensions.Modules
                 }
                 if (!Config.ChangeLayout)
                 {
-                    CurrentOS.delayer.Post(ActionDelayer.Wait(Config.ThemeFlickerDuration + 0.15f), () => { PhaseSwiftLayoutPatch.SkipLayoutChange = false; });
+                    CurrentOS.delayer.Post(ActionDelayer.Wait(Config.ThemeFlickerDuration + 0.15f), () => { PhaseSwiftLayoutPatch.SkipLayoutChange = false;
+                    PhaseSwiftLayoutResetPatch.Reset(); });
                 }
                 else
                 {
@@ -377,6 +389,25 @@ namespace KernelExtensions.Modules
                     {
                         ApplyTopology(targetScene);
                         UpdateVisibility(targetScene);
+                        if (!Config.AdminSync)
+                        {
+                            SaveCurrentSceneAdmin();
+                            foreach (var id in _controlledNodeIds)
+                            {
+                                var comp = Programs.getComputer(CurrentOS, id);
+                                if (comp?.adminIP == CurrentOS.thisComputer.ip)
+                                    comp.adminIP = comp.ip;
+                            }
+                            if (_sceneAdminNodeIds.TryGetValue(targetScene, out var admins))
+                            {
+                                foreach (var id in admins)
+                                {
+                                    var comp = Programs.getComputer(CurrentOS, id);
+                                    if (comp?.admin != null)
+                                        comp.giveAdmin(CurrentOS.thisComputer.ip);
+                                }
+                            }
+                        }
                         var onSwitch = Config.Scenes[targetScene].OnSwitch;
                         if (onSwitch != null && !string.IsNullOrEmpty(onSwitch.FilePath))
                             ActionHelper.ExecuteActionFile(CurrentOS, onSwitch.FilePath, ExtensionRoot);
@@ -388,6 +419,27 @@ namespace KernelExtensions.Modules
 
             ApplyTopology(targetScene);
             UpdateVisibility(targetScene);
+
+            // 9.16: AdminSync=false — 保存旧场景 admin + 回收 + 恢复新场景 admin
+            if (!Config.AdminSync)
+            {
+                SaveCurrentSceneAdmin();
+                foreach (var id in _controlledNodeIds)
+                {
+                    var comp = Programs.getComputer(CurrentOS, id);
+                    if (comp?.adminIP == CurrentOS.thisComputer.ip)
+                        comp.adminIP = comp.ip;
+                }
+                if (_sceneAdminNodeIds.TryGetValue(targetScene, out var admins))
+                {
+                    foreach (var id in admins)
+                    {
+                        var comp = Programs.getComputer(CurrentOS, id);
+                        if (comp?.admin != null)
+                            comp.giveAdmin(CurrentOS.thisComputer.ip);
+                    }
+                }
+            }
 
             var onSwitch = Config.Scenes[targetScene].OnSwitch;
             if (onSwitch != null && !string.IsNullOrEmpty(onSwitch.FilePath))
@@ -658,6 +710,25 @@ private static List<float> _visSampList;
             var nodesToShow = new HashSet<string>(_sceneStartIds[sceneIdx]);
             if (_sceneDiscoveredNodeIds.TryGetValue(sceneIdx, out var prev))
                 foreach (var id in prev) nodesToShow.Add(id);
+            // 9.28: GlobalDiscovery — 其他场景发现的节点如果本场景 VisibleNodes 也含有，一并显示
+            if (Config != null && Config.GlobalDiscovery)
+            {
+                foreach (var kv in _sceneDiscoveredNodeIds)
+                {
+                    if (kv.Key == sceneIdx) continue;
+                    foreach (var id in kv.Value)
+                    {
+                        if (_sceneVisibleIds[sceneIdx].Contains(id))
+                            nodesToShow.Add(id);
+                    }
+                }
+            }
+            // 9.8: 从 nodesToShow 中排除运行时黑名单中的节点
+            if (_runtimeBlockedNodeIds.TryGetValue(sceneIdx, out var blocked))
+            {
+                foreach (var id in blocked)
+                    nodesToShow.Remove(id);
+            }
             foreach (var id in nodesToShow)
             {
                 var comp = Programs.getComputer(CurrentOS, id);
@@ -673,6 +744,68 @@ private static List<float> _visSampList;
                 }
             }
             _currentVisibleNodeIds = _sceneStartIds[sceneIdx].ToHashSet();
+        }
+
+        public static void OverrideOriginalLinks(Dictionary<string, System.Collections.Generic.List<string>> linkIds, OS os)
+        {
+            _originalLinks.Clear();
+            foreach (var kv in linkIds)
+            {
+                var comp = Programs.getComputer(os, kv.Key);
+                if (comp == null) continue;
+                var indices = new System.Collections.Generic.List<int>();
+                foreach (var targetId in kv.Value)
+                {
+                    var targetComp = Programs.getComputer(os, targetId);
+                    if (targetComp == null) continue;
+                    int idx = os.netMap.nodes.IndexOf(targetComp);
+                    if (idx >= 0) indices.Add(idx);
+                }
+                _originalLinks[kv.Key] = indices;
+            }
+        }
+
+        public static void BlockNode(string nodeId, int sceneIndex = -1)
+        {
+            int idx = sceneIndex >= 0 ? sceneIndex : CurrentScene;
+            if (Config == null || idx < 0) return;
+            if (!_runtimeBlockedNodeIds.TryGetValue(idx, out var set))
+            {
+                set = new HashSet<string>();
+                _runtimeBlockedNodeIds[idx] = set;
+            }
+            set.Add(nodeId);
+        }
+
+        public static void UnblockNode(string nodeId, int sceneIndex = -1)
+        {
+            int idx = sceneIndex >= 0 ? sceneIndex : CurrentScene;
+            if (_runtimeBlockedNodeIds.TryGetValue(idx, out var set))
+                set.Remove(nodeId);
+        }
+
+        private static void SaveCurrentSceneAdmin()
+        {
+            if (Config == null || CurrentScene < 0 || CurrentScene >= Config.Scenes.Count) return;
+            var adminned = new HashSet<string>();
+            foreach (var id in _controlledNodeIds)
+            {
+                var comp = Programs.getComputer(CurrentOS, id);
+                if (comp?.adminIP == CurrentOS.thisComputer.ip)
+                    adminned.Add(id);
+            }
+            _sceneAdminNodeIds[CurrentScene] = adminned;
+        }
+
+        private static void SyncVolume()
+        {
+            if (_dseInstances == null || _dseInstances.Length == 0) return;
+            float volMul = MusicManager.getVolume();
+            for (int i = 0; i < _dseInstances.Length; i++)
+            {
+                if (_dseInstances[i] != null)
+                    _dseInstances[i].Volume = _targetVolumes[i] * volMul;
+            }
         }
 
         private static void SaveCurrentSceneDiscovery()
@@ -713,5 +846,20 @@ private static List<float> _visSampList;
             try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(colorStr) as Color? ?? defaultColor; }
             catch { return defaultColor; }
         }
+
+        public static void RestorePersistentState(PhaseSwiftPersistentState state)
+        {
+            if (state == null) return;
+            _sceneDiscoveredNodeIds = state.DiscoveredNodes ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
+            _runtimeBlockedNodeIds = state.RuntimeBlocked ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
+            _sceneAdminNodeIds = state.AdminNodes ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
+            if (!string.IsNullOrEmpty(state.Theme))
+                DefaultTheme = state.Theme;
+        }
+
+        public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetSceneDiscoveredNodes() => new(_sceneDiscoveredNodeIds);
+        public static System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>> GetOriginalLinks() => new(_originalLinks);
+        public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetRuntimeBlockedNodes() => new(_runtimeBlockedNodeIds);
+        public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetSceneAdminNodes() => new(_sceneAdminNodeIds);
     }
 }

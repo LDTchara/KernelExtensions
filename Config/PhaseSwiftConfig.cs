@@ -21,6 +21,9 @@ namespace KernelExtensions.Config
         [XmlElement("RestoreThemeOnStop")] public bool RestoreThemeOnStop = true;
         [XmlElement("SingleTrack")] public string SingleTrack = null;
 
+        [XmlElement("GlobalDiscovery")] public bool GlobalDiscovery = true;
+        [XmlElement("AdminSync")] public bool AdminSync = true;
+
         [XmlArray("MusicPhases"), XmlArrayItem("Phase")]
         public List<PhaseSwiftMusicPhase> MusicPhases = new();
         [XmlArray("Scenes"), XmlArrayItem("Scene")]

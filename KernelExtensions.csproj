@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
@@ -8,7 +8,7 @@
     <NoWarn>CS8500;MSB3277</NoWarn>
     <AnalysisMode>Recommended</AnalysisMode>
     <PlatformTarget>x86</PlatformTarget>
-	<AssemblyTitle>KernelExtensions</AssemblyTitle>
+    <AssemblyTitle>KernelExtensions</AssemblyTitle>
     <Description>A mod that adds some useful things for Hacknet via Pathfinder API.</Description>
     <Company>LDTchara</Company>
     <Product>KernelExtensions</Product>
@@ -17,7 +17,7 @@
     <FileVersion>0.7.0</FileVersion>
     <AssemblyVersion>0.7.0</AssemblyVersion>
   </PropertyGroup>
-	
+    
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>libs\0Harmony.dll</HintPath>

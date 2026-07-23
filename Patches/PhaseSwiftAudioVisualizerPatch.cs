@@ -28,11 +28,11 @@ namespace KernelExtensions.Patches
             // 不保存旧值、不恢复——MusicManager 自己的操作会正确管理 State
             _stateField.SetValue(null, MediaState.Playing);
         }
-
+        /*
         [HarmonyPostfix]
         static void Postfix()
         {
             // 不再恢复旧 State，避免覆盖 MusicManager 后续设的 Playing
-        }
+        }*/
     }
 }

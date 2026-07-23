@@ -105,6 +105,12 @@
          When false, extension authors can control the completion theme via Actions.
     -->
     <RestoreThemeOnStop>true</RestoreThemeOnStop>
+    <!-- 跨场景发现同步（默认 true）：节点在场景 A 被发现后，切到场景 B 时若 B 的 VisibleNodes 也包含此节点，保持可见 -->
+    <!-- English: Cross-scene discovery sync (default true): nodes discovered in scene A remain visible when switching to scene B if B's VisibleNodes also contain them -->
+    <GlobalDiscovery>true</GlobalDiscovery>
+    <!-- 场景独立管理员权限同步（默认 true）：true 时切场景保留玩家已获取的 admin；false 时各场景 admin 独立 -->
+    <!-- English: Per-scene admin sync (default true): when true, player-admin carry across scenes; when false, each scene has independent admin -->
+    <AdminSync>true</AdminSync>
     <!-- ============================================================
          音乐组 (MusicPhases)
          每个 Phase 定义一组音乐文件，数量应与场景数一致。
