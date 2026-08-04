@@ -10,7 +10,8 @@ namespace KernelExtensions.Saving
     /// 读取存档中的 <PhaseSwiftData> 节点，恢复 PhaseSwift 持久化状态。
     /// 存入 PhaseSwiftManager.PendingRestore 供 OS 加载后自动恢复。
     /// </summary>
-    [SaveExecutor("PhaseSwiftData")]
+    // ParseInterior：必须解析子元素（DiscoveredScene/OrigLink 等），否则 info.Children 恒为空
+    [SaveExecutor("PhaseSwiftData", ParseOption.ParseInterior)]
     public class PhaseSwiftSaveExecutor : SaveLoader.SaveExecutor
     {
         private static string GetAttr(ElementInfo info, string key, string fallback)

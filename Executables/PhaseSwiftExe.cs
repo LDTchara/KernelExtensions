@@ -87,6 +87,13 @@ namespace KernelExtensions.Executables
             {
                 config = PhaseSwiftManager.Config;
                 state = RunState.Active;
+                // 读档后 PS 由 AutoRestore 启动（IsRunning=true），
+                // 此处仍要应用配置的程序名，否则重启 exe 时显示默认名
+                if (config != null && !string.IsNullOrEmpty(config.ProgramName))
+                {
+                    IdentifierName = config.ProgramName;
+                    name = config.ProgramName;
+                }
                 return;
             }
 

@@ -22,6 +22,7 @@ using Pathfinder.Event.Loading;
 using Pathfinder.Event.Saving;
 using Pathfinder.Executable;
 using Pathfinder.Replacements;      // 提供 SaveLoader 用于注册存档加载器
+using Pathfinder.Util.XML;          // 提供 ParseOption
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
@@ -131,7 +132,8 @@ namespace KernelExtensions
             // 4. 注册自定义存档加载器（用于从存档中读取删除节点）
             Console.WriteLine("[KernelExtensions] Registering save loaders...");
             SaveLoader.RegisterExecutor<CustomTrialSaveExecutor>("CustomTrialData");
-            SaveLoader.RegisterExecutor<PhaseSwiftSaveExecutor>("PhaseSwiftData");
+            // ParseInterior：必须解析子元素（DiscoveredScene/OrigLink 等），否则读档时 Children 恒为空
+            SaveLoader.RegisterExecutor<PhaseSwiftSaveExecutor>("PhaseSwiftData", ParseOption.ParseInterior);
             KELog.Info("CustomTrialSaveExecutor registered.");
 
             // 4.5 飞机Daemon相关
@@ -179,31 +181,99 @@ namespace KernelExtensions
         /// </summary>
         private void OnSaveGame(SaveEvent e)
         {
+            OS os = e.Os;
+
+            // ========== CustomTrial 存档数据 ==========
             // 获取当前正在运行的 CustomTrialExe 实例
             var currentTrial = CustomTrialExe.CurrentInstance;
-            if (currentTrial == null)
-                return;
+            if (currentTrial != null)
+            {
+                // 获取当前试炼的配置名（用于区分不同试炼）
+                string configName = currentTrial.CurrentConfigName;
+                if (!string.IsNullOrEmpty(configName))
+                {
+                    // 获取已删除的节点索引列表
+                    var deletedNodes = currentTrial.GetDeletedNodeIndices();
+                    if (deletedNodes.Count > 0)
+                    {
+                        // 将列表转换为逗号分隔的字符串
+                        string nodesStr = string.Join(",", deletedNodes);
+                        // 创建自定义 XML 节点
+                        XElement customNode = new("CustomTrialData",
+                            new XAttribute("ConfigName", configName),
+                            new XAttribute("Nodes", nodesStr));
+                        // 添加到存档根元素中
+                        e.Save.Add(customNode);
+                    }
+                }
+            }
 
-            // 获取当前试炼的配置名（用于区分不同试炼）
-            string configName = currentTrial.CurrentConfigName;
-            if (string.IsNullOrEmpty(configName))
-                return;
+            // ========== PhaseSwift 存档数据（9.6b） ==========
+            // 只在 PS 运行时写入；未运行时不写（读档时无 PhaseSwift_ flag 也不会恢复）
+            if (PhaseSwiftManager.IsRunning && PhaseSwiftManager.Config != null)
+            {
+                // 刷新内存中的发现状态 + admin 记录（切场景时才保存，存档前补一次）
+                PhaseSwiftManager.RefreshPersistentState();
 
-            // 获取已删除的节点索引列表
-            var deletedNodes = currentTrial.GetDeletedNodeIndices();
-            if (deletedNodes.Count == 0)
-                return;
+                // 配置名：从 flag PhaseSwift_{ConfigName} 解析
+                string flag = os?.Flags.GetFlagStartingWith("PhaseSwift_");
+                string psConfigName = flag?.Substring("PhaseSwift_".Length);
+                if (string.IsNullOrEmpty(psConfigName)) psConfigName = "Default";
 
-            // 将列表转换为逗号分隔的字符串
-            string nodesStr = string.Join(",", deletedNodes);
+                XElement psNode = new("PhaseSwiftData",
+                    new XAttribute("ConfigName", psConfigName),
+                    new XAttribute("CurrentScene", PhaseSwiftManager.CurrentScene),
+                    new XAttribute("MusicPhase", PhaseSwiftManager.CurrentMusicPhase),
+                    new XAttribute("Theme", PhaseSwiftManager.DefaultTheme ?? ""));
 
-            // 创建自定义 XML 节点
-            XElement customNode = new("CustomTrialData",
-                new XAttribute("ConfigName", configName),
-                new XAttribute("Nodes", nodesStr));
+                // 各场景已发现节点
+                foreach (var kv in PhaseSwiftManager.GetSceneDiscoveredNodes())
+                {
+                    if (kv.Value == null || kv.Value.Count == 0) continue;
+                    var sceneEl = new XElement("DiscoveredScene", new XAttribute("Index", kv.Key));
+                    foreach (var id in kv.Value)
+                        sceneEl.Add(new XElement("Node", id));
+                    psNode.Add(sceneEl);
+                }
 
-            // 添加到存档根元素中
-            e.Save.Add(customNode);
+                // 原始链接：int 索引 → 节点 ID（跨会话安全）
+                foreach (var kv in PhaseSwiftManager.GetOriginalLinks())
+                {
+                    var targets = new System.Collections.Generic.List<string>();
+                    foreach (var idx in kv.Value)
+                    {
+                        if (idx >= 0 && os != null && os.netMap != null && idx < os.netMap.nodes.Count
+                            && os.netMap.nodes[idx] != null)
+                            targets.Add(os.netMap.nodes[idx].idName);
+                    }
+                    if (targets.Count == 0) continue;
+                    psNode.Add(new XElement("OrigLink",
+                        new XAttribute("NodeId", kv.Key),
+                        new XAttribute("Targets", string.Join(",", targets))));
+                }
+
+                // 运行时黑名单（9.8）
+                foreach (var kv in PhaseSwiftManager.GetRuntimeBlockedNodes())
+                {
+                    if (kv.Value == null || kv.Value.Count == 0) continue;
+                    var sceneEl = new XElement("RuntimeBlockedScene", new XAttribute("Index", kv.Key));
+                    foreach (var id in kv.Value)
+                        sceneEl.Add(new XElement("Node", id));
+                    psNode.Add(sceneEl);
+                }
+
+                // 场景独立 admin 记录（9.16）
+                foreach (var kv in PhaseSwiftManager.GetSceneAdminNodes())
+                {
+                    if (kv.Value == null || kv.Value.Count == 0) continue;
+                    var sceneEl = new XElement("AdminScene", new XAttribute("Index", kv.Key));
+                    foreach (var id in kv.Value)
+                        sceneEl.Add(new XElement("Node", id));
+                    psNode.Add(sceneEl);
+                }
+
+                e.Save.Add(psNode);
+            }
         }
 
         private void OnOSLoaded_CheckVMInfection(OSLoadedEvent e)

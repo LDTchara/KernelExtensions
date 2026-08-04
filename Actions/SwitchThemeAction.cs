@@ -46,18 +46,14 @@ namespace KernelExtensions.Actions
             if (!Enum.TryParse<OSTheme>(ThemePathOrName, true, out ostheme))
                 ostheme = OSTheme.Custom;
 
-            PhaseSwiftLayoutPatch.SkipLayoutChange = true;
+            // 布局拦截改为时间戳自动过期，不需要 delayer 回调复位
+            PhaseSwiftLayoutPatch.SkipLayoutChange(FlickerInDuration + 0.15f);
             os.EffectsUpdater.StartThemeSwitch(
                 FlickerInDuration,
                 ostheme,
                 os,
                 (ostheme == OSTheme.Custom) ? ThemePathOrName : null
             );
-            // 闪烁结束后恢复标志
-            os.delayer.Post(ActionDelayer.Wait(FlickerInDuration + 0.15f), () =>
-            {
-                PhaseSwiftLayoutPatch.SkipLayoutChange = false;
-            });
         }
 
         public override void LoadFromXml(ElementInfo info)

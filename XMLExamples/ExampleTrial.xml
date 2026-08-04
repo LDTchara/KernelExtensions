@@ -282,7 +282,4 @@
 		</Phase>
 	</Phases>
 
-	<!-- 所有阶段完成后的最终动作（可选） -->
-	<!-- Final action after all phases are completed (optional). -->
-	<OnComplete file="Actions/AllComplete.xml" />
 </TrialConfig>

@@ -222,8 +222,7 @@ namespace KernelExtensions.Modules
             }
 
             PhaseSwiftConnectionPatch.CurrentExe = null;
-            PhaseSwiftLayoutPatch.SkipLayoutChange = false;
-            PhaseSwiftLayoutResetPatch.Reset();// 这一段更像是强行扳回来主题的状态，后续再研究如何更改
+            PhaseSwiftLayoutPatch.Clear();// 取消布局拦截，新会话由 ResetPatch 兜底
             // 清空所有运行时状态，确保下次 Initialize 从干净状态开始
             _controlledNodeIds.Clear();
             _currentVisibleNodeIds.Clear();
@@ -363,7 +362,7 @@ namespace KernelExtensions.Modules
             if (string.IsNullOrEmpty(theme)) theme = DefaultTheme;
             if (!string.IsNullOrEmpty(theme))
             {
-                if (!Config.ChangeLayout) PhaseSwiftLayoutPatch.SkipLayoutChange = true;
+                if (!Config.ChangeLayout) PhaseSwiftLayoutPatch.SkipLayoutChange(Config.ThemeFlickerDuration + 0.15f);
                 if (Enum.TryParse<OSTheme>(theme, true, out OSTheme themeEnum))
                 {
                     CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, themeEnum, CurrentOS, null);
@@ -371,18 +370,13 @@ namespace KernelExtensions.Modules
                 }
                 else
                 {
-                    string fullPath = theme;
-                    if (!string.IsNullOrEmpty(ExtensionRoot) && !Path.IsPathRooted(theme))
-                        fullPath = ExtensionRoot + "/" + theme;
-                    CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, OSTheme.Custom, CurrentOS, fullPath);
-                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, fullPath);
+                    // 自定义主题：直接传相对路径，由 ThemeManager 自行拼接扩展根目录。
+                    // 之前先拼 ExtensionRoot 会产生双前缀，导致主题加载失败、
+                    // x-server.sys 持久化后读档恢复失败（getThemeForDataString 解密+拼接 → TerminalOnlyBlack）
+                    CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, OSTheme.Custom, CurrentOS, theme);
+                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, theme);
                 }
-                if (!Config.ChangeLayout)
-                {
-                    CurrentOS.delayer.Post(ActionDelayer.Wait(Config.ThemeFlickerDuration + 0.15f), () => { PhaseSwiftLayoutPatch.SkipLayoutChange = false;
-                    PhaseSwiftLayoutResetPatch.Reset(); });
-                }
-                else
+                if (Config.ChangeLayout)
                 {
                     // ChangeLayout=true: 等待主题闪烁完成后才应用拓扑/可见性，避免特效与切换重叠
                     CurrentOS.delayer.Post(ActionDelayer.Wait(Config.ThemeFlickerDuration), () =>
@@ -823,6 +817,16 @@ private static List<float> _visSampList;
                     discovered.Add(id);
             }
             _sceneDiscoveredNodeIds[CurrentScene] = discovered;
+        }
+
+        /// <summary>
+        /// 保存前刷新内存中的发现状态与 admin 记录（9.6b）。
+        /// 由 OnSaveGame 在写 PhaseSwiftData 前调用。
+        /// </summary>
+        public static void RefreshPersistentState()
+        {
+            SaveCurrentSceneDiscovery();
+            SaveCurrentSceneAdmin();
         }
 
         private static Color ParseColor(string colorStr)

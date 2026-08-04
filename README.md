@@ -41,7 +41,8 @@ All detailed documentation, configuration guides, and action references have mov
 
 ## ❤️ 致谢 / Thanks
 
-- **April_Crystal** – 飞机 Daemon 的核心实现与大量改进建议。  
+- **April_Crystal** – 飞机 Daemon 的核心实现与大量改进建议，KE 早期开发者之一。
+- **ZQG** - 成为第一个使用 KE 的扩展作者，提供了宝贵的测试反馈。
 - **HN 扩展小屋的各位朋友** – 测试、反馈与支持。
 
 ---
