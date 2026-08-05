@@ -29,6 +29,12 @@ namespace KernelExtensions.Actions.PhaseSwift
         public override void Trigger(OS os)
         {
             string mode = FinishMode ?? PhaseSwiftManager.Config?.FinishMode ?? "none";
+            // 结束剧情：移除 PhaseSwift_{ConfigName} flag，防止读档后 AutoRestore 误恢复 PS。
+            // 只在这里清 —— 其他 Stop 调用（exe 被杀/扩展卸载）是清理而非剧情结束，
+            // 清理它们会破坏"杀 exe 后读档剧情继续"的语义。
+            string psFlag = os.Flags.GetFlagStartingWith("PhaseSwift_");
+            if (!string.IsNullOrEmpty(psFlag))
+                os.Flags.RemoveFlag(psFlag);
             PhaseSwiftManager.Stop(mode);
             // 让 Exe 进入 Completing 状态，显示 3 秒完成文本后自动退出
             if (PhaseSwiftExe.CurrentInstance != null && !PhaseSwiftExe.CurrentInstance.isExiting)

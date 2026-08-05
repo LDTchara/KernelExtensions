@@ -152,7 +152,8 @@ namespace KernelExtensions.Modules
                 }
             int firstScene = overrideScene ?? Config.InitialScene;
             CurrentScene = -1;
-            SwitchToScene(firstScene);
+            // AutoRestore（overrideScene 有值）无过渡直切，避免读档重进时主题/音乐闪烁
+            SwitchToScene(firstScene, immediate: overrideScene.HasValue);
             IsRunning = true;
         }
 
@@ -221,7 +222,6 @@ namespace KernelExtensions.Modules
                 }
             }
 
-            PhaseSwiftConnectionPatch.CurrentExe = null;
             PhaseSwiftLayoutPatch.Clear();// 取消布局拦截，新会话由 ResetPatch 兜底
             // 清空所有运行时状态，确保下次 Initialize 从干净状态开始
             _controlledNodeIds.Clear();
@@ -333,7 +333,7 @@ namespace KernelExtensions.Modules
             _isFading = true;
         }
 
-        public static void SwitchToScene(int targetScene, float? fadeDurationOverride = null, string overrideTheme = null)
+        public static void SwitchToScene(int targetScene, float? fadeDurationOverride = null, string overrideTheme = null, bool immediate = false)
         {
             if (Config == null || targetScene < 0 || targetScene >= Config.Scenes.Count || targetScene == CurrentScene) return;
             SaveCurrentSceneDiscovery();
@@ -347,6 +347,22 @@ namespace KernelExtensions.Modules
 
             if (UseDualTrack && _dseInstances.Length > 0)
             {
+                if (immediate)
+                {
+                    // 无过渡直切：直接设音量，不启动交叉淡化
+                    for (int i = 0; i < _dseInstances.Length; i++)
+                    {
+                        if (_dseInstances[i] != null)
+                            _dseInstances[i].Volume = (i == targetScene) ? 1f : 0f;
+                        // 必须同步 _targetVolumes：SyncVolume() 每帧用它覆盖 DSEI 音量，
+                        // 只设 Volume 会在下一帧被覆盖回 0（LoadMusicPhase 初始化时全 0）→ 静音
+                        _targetVolumes[i] = (i == targetScene) ? 1f : 0f;
+                        _startVolumes[i] = (i == targetScene) ? 1f : 0f;
+                    }
+                    _isFading = false;
+                }
+                else
+                {
                 for (int i = 0; i < _dseInstances.Length; i++)
                 {
                     _startVolumes[i] = _dseInstances[i] != null ? _dseInstances[i].Volume : 0f;
@@ -357,26 +373,45 @@ namespace KernelExtensions.Modules
                 _fadeProgress = 0f;
                 _isFading = true;
             }
+            }
 
             string theme = overrideTheme ?? Config.Scenes[targetScene].Theme;
             if (string.IsNullOrEmpty(theme)) theme = DefaultTheme;
             if (!string.IsNullOrEmpty(theme))
             {
-                if (!Config.ChangeLayout) PhaseSwiftLayoutPatch.SkipLayoutChange(Config.ThemeFlickerDuration + 0.15f);
+                if (!Config.ChangeLayout) PhaseSwiftLayoutPatch.SkipLayoutChange(immediate ? 0.05f : Config.ThemeFlickerDuration + 0.15f);
                 if (Enum.TryParse<OSTheme>(theme, true, out OSTheme themeEnum))
                 {
+                    if (immediate)
+                    {
+                        // 无过渡直切：不走 StartThemeSwitch 闪烁动画
+                        ThemeManager.switchTheme(CurrentOS, themeEnum);
+                        ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, themeEnum);
+                    }
+                    else
+                    {
                     CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, themeEnum, CurrentOS, null);
                     ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, themeEnum);
+                    }
                 }
                 else
                 {
                     // 自定义主题：直接传相对路径，由 ThemeManager 自行拼接扩展根目录。
                     // 之前先拼 ExtensionRoot 会产生双前缀，导致主题加载失败、
                     // x-server.sys 持久化后读档恢复失败（getThemeForDataString 解密+拼接 → TerminalOnlyBlack）
+                    if (immediate)
+                    {
+                        // 无过渡直切：不走 StartThemeSwitch 闪烁动画
+                        ThemeManager.switchTheme(CurrentOS, theme);
+                        ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, theme);
+                    }
+                    else
+                    {
                     CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, OSTheme.Custom, CurrentOS, theme);
                     ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, theme);
+                    }
                 }
-                if (Config.ChangeLayout)
+                if (Config.ChangeLayout && !immediate)
                 {
                     // ChangeLayout=true: 等待主题闪烁完成后才应用拓扑/可见性，避免特效与切换重叠
                     CurrentOS.delayer.Post(ActionDelayer.Wait(Config.ThemeFlickerDuration), () =>
@@ -409,6 +444,7 @@ namespace KernelExtensions.Modules
                     CurrentScene = targetScene;
                     return;
                 }
+                // immediate + ChangeLayout=true：无闪烁，直接落入下方同步 ApplyTopology/UpdateVisibility
             }
 
             ApplyTopology(targetScene);
@@ -502,6 +538,12 @@ private static List<float> _visSampList;
             {
                 bool inScene = _sceneVisibleIds[CurrentScene].Contains(id);
                 bool notBlocked = !_sceneBlockedIds[CurrentScene].Contains(id);
+                // 9.8: 运行时黑名单同样拦截连接
+                if (_runtimeBlockedNodeIds.TryGetValue(CurrentScene, out var runtimeBlocked)
+                    && runtimeBlocked.Contains(id))
+                {
+                    notBlocked = false;
+                }
                 return inScene && notBlocked;
             }
             return true;
@@ -769,6 +811,22 @@ private static List<float> _visSampList;
                 _runtimeBlockedNodeIds[idx] = set;
             }
             set.Add(nodeId);
+            // 若节点在当前场景，立即从地图隐藏（无需等下次切场景 UpdateVisibility）
+            if (idx == CurrentScene)
+                HideNodeIfCurrentScene(nodeId);
+        }
+
+        /// <summary>
+        /// 若目标节点属于当前场景，立即从地图上隐藏。
+        /// </summary>
+        private static void HideNodeIfCurrentScene(string nodeId)
+        {
+            if (CurrentOS?.netMap == null) return;
+            var comp = Programs.getComputer(CurrentOS, nodeId);
+            if (comp == null) return;
+            int idx = CurrentOS.netMap.nodes.IndexOf(comp);
+            if (idx >= 0 && CurrentOS.netMap.visibleNodes.Contains(idx))
+                CurrentOS.netMap.visibleNodes.Remove(idx);
         }
 
         public static void UnblockNode(string nodeId, int sceneIndex = -1)
@@ -857,6 +915,9 @@ private static List<float> _visSampList;
             _sceneDiscoveredNodeIds = state.DiscoveredNodes ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
             _runtimeBlockedNodeIds = state.RuntimeBlocked ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
             _sceneAdminNodeIds = state.AdminNodes ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
+            // 恢复音乐组：Start() 里 LoadMusicPhase 用 CurrentMusicPhase 加载对应组
+            if (Config != null && state.MusicPhase >= 0 && state.MusicPhase < Config.MusicPhases.Count)
+                CurrentMusicPhase = state.MusicPhase;
             if (!string.IsNullOrEmpty(state.Theme))
                 DefaultTheme = state.Theme;
         }
