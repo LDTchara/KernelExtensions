@@ -22,7 +22,6 @@ namespace KernelExtensions.Config
         [XmlElement("SingleTrack")] public string SingleTrack = null;
 
         [XmlElement("GlobalDiscovery")] public bool GlobalDiscovery = true;
-        [XmlElement("AdminSync")] public bool AdminSync = true;
 
         [XmlArray("MusicPhases"), XmlArrayItem("Phase")]
         public List<PhaseSwiftMusicPhase> MusicPhases = new();

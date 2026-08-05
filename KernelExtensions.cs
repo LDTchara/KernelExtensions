@@ -262,17 +262,8 @@ namespace KernelExtensions
                     psNode.Add(sceneEl);
                 }
 
-                // 场景独立 admin 记录（9.16）
-                // AdminSync=true 时 admin 跨场景保留，无需按场景记录（防存档冗余）
-                if (!PhaseSwiftManager.Config.AdminSync)
-                foreach (var kv in PhaseSwiftManager.GetSceneAdminNodes())
-                {
-                    if (kv.Value == null || kv.Value.Count == 0) continue;
-                    var sceneEl = new XElement("AdminScene", new XAttribute("Index", kv.Key));
-                    foreach (var id in kv.Value)
-                        sceneEl.Add(new XElement("Node", id));
-                    psNode.Add(sceneEl);
-                }
+                // 9.16 已废弃（2026-08-05）：Hacknet 密码机制下无法真正回收 admin，
+                // AdminScene 不再写入存档（旧存档残留元素读档时忽略，无副作用）
 
                 e.Save.Add(psNode);
             }

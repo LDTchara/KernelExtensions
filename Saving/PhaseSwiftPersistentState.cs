@@ -23,7 +23,5 @@ namespace KernelExtensions.Saving
         /// <summary>场景索引 → 运行时黑名单节点 ID（9.8）</summary>
         public Dictionary<int, HashSet<string>> RuntimeBlocked = new();
 
-        /// <summary>场景索引 → 该场景玩家已获得 admin 的节点 ID（9.16, AdminSync=false）</summary>
-        public Dictionary<int, HashSet<string>> AdminNodes = new();
     }
 }

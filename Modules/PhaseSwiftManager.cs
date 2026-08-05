@@ -69,7 +69,6 @@ namespace KernelExtensions.Modules
         private static Dictionary<int, HashSet<string>> _sceneDiscoveredNodeIds = new();
         internal static PhaseSwiftPersistentState PendingRestore;
         private static Dictionary<int, HashSet<string>> _runtimeBlockedNodeIds = new();
-        private static Dictionary<int, HashSet<string>> _sceneAdminNodeIds = new();
 
         public static void Initialize(OS os, string configName)
         {
@@ -232,7 +231,6 @@ namespace KernelExtensions.Modules
             _sceneBlockedIds.Clear();
             _sceneDiscoveredNodeIds.Clear();
             _runtimeBlockedNodeIds.Clear();
-            _sceneAdminNodeIds.Clear();
             PendingRestore = null;
             _rollingBuf = null;
             _rollingBufCount = 0;
@@ -418,25 +416,6 @@ namespace KernelExtensions.Modules
                     {
                         ApplyTopology(targetScene);
                         UpdateVisibility(targetScene);
-                        if (!Config.AdminSync)
-                        {
-                            SaveCurrentSceneAdmin();
-                            foreach (var id in _controlledNodeIds)
-                            {
-                                var comp = Programs.getComputer(CurrentOS, id);
-                                if (comp?.adminIP == CurrentOS.thisComputer.ip)
-                                    comp.adminIP = comp.ip;
-                            }
-                            if (_sceneAdminNodeIds.TryGetValue(targetScene, out var admins))
-                            {
-                                foreach (var id in admins)
-                                {
-                                    var comp = Programs.getComputer(CurrentOS, id);
-                                    if (comp?.admin != null)
-                                        comp.giveAdmin(CurrentOS.thisComputer.ip);
-                                }
-                            }
-                        }
                         var onSwitch = Config.Scenes[targetScene].OnSwitch;
                         if (onSwitch != null && !string.IsNullOrEmpty(onSwitch.FilePath))
                             ActionHelper.ExecuteActionFile(CurrentOS, onSwitch.FilePath, ExtensionRoot);
@@ -449,27 +428,6 @@ namespace KernelExtensions.Modules
 
             ApplyTopology(targetScene);
             UpdateVisibility(targetScene);
-
-            // 9.16: AdminSync=false — 保存旧场景 admin + 回收 + 恢复新场景 admin
-            if (!Config.AdminSync)
-            {
-                SaveCurrentSceneAdmin();
-                foreach (var id in _controlledNodeIds)
-                {
-                    var comp = Programs.getComputer(CurrentOS, id);
-                    if (comp?.adminIP == CurrentOS.thisComputer.ip)
-                        comp.adminIP = comp.ip;
-                }
-                if (_sceneAdminNodeIds.TryGetValue(targetScene, out var admins))
-                {
-                    foreach (var id in admins)
-                    {
-                        var comp = Programs.getComputer(CurrentOS, id);
-                        if (comp?.admin != null)
-                            comp.giveAdmin(CurrentOS.thisComputer.ip);
-                    }
-                }
-            }
 
             var onSwitch = Config.Scenes[targetScene].OnSwitch;
             if (onSwitch != null && !string.IsNullOrEmpty(onSwitch.FilePath))
@@ -836,19 +794,6 @@ private static List<float> _visSampList;
                 set.Remove(nodeId);
         }
 
-        private static void SaveCurrentSceneAdmin()
-        {
-            if (Config == null || CurrentScene < 0 || CurrentScene >= Config.Scenes.Count) return;
-            var adminned = new HashSet<string>();
-            foreach (var id in _controlledNodeIds)
-            {
-                var comp = Programs.getComputer(CurrentOS, id);
-                if (comp?.adminIP == CurrentOS.thisComputer.ip)
-                    adminned.Add(id);
-            }
-            _sceneAdminNodeIds[CurrentScene] = adminned;
-        }
-
         private static void SyncVolume()
         {
             if (_dseInstances == null || _dseInstances.Length == 0) return;
@@ -884,10 +829,6 @@ private static List<float> _visSampList;
         public static void RefreshPersistentState()
         {
             SaveCurrentSceneDiscovery();
-            // AdminSync=true 时 admin 跨场景保留，无需按场景记录（与切场景路径一致，
-            // 避免存档冗余 AdminScene 数据）
-            if (Config != null && !Config.AdminSync)
-                SaveCurrentSceneAdmin();
         }
 
         private static Color ParseColor(string colorStr)
@@ -917,7 +858,6 @@ private static List<float> _visSampList;
             if (state == null) return;
             _sceneDiscoveredNodeIds = state.DiscoveredNodes ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
             _runtimeBlockedNodeIds = state.RuntimeBlocked ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
-            _sceneAdminNodeIds = state.AdminNodes ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
             // 恢复音乐组：Start() 里 LoadMusicPhase 用 CurrentMusicPhase 加载对应组
             if (Config != null && state.MusicPhase >= 0 && state.MusicPhase < Config.MusicPhases.Count)
                 CurrentMusicPhase = state.MusicPhase;
@@ -928,6 +868,5 @@ private static List<float> _visSampList;
         public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetSceneDiscoveredNodes() => new(_sceneDiscoveredNodeIds);
         public static System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>> GetOriginalLinks() => new(_originalLinks);
         public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetRuntimeBlockedNodes() => new(_runtimeBlockedNodeIds);
-        public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetSceneAdminNodes() => new(_sceneAdminNodeIds);
     }
 }

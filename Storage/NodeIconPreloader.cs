@@ -53,7 +53,7 @@ namespace KernelExtensions.Storage
             {
                 string fullPath = Path.IsPathRooted(path) ? path
                     : Path.Combine(ExtensionLoader.ActiveExtensionInfo?.FolderPath ?? ".", path);
-                if (!File.Exists(fullPath)) { KELog.Warn($"[SetNodeIcon] file not found: {fullPath}"); return null; }
+                if (!File.Exists(fullPath)) { KELog.Error($"[SetNodeIcon] file not found: {fullPath}"); return null; }
                 var gd = GuiData.spriteBatch?.GraphicsDevice ?? Game1.getSingleton()?.GraphicsDevice;
                 if (gd == null) { KELog.Error("[SetNodeIcon] GraphicsDevice unavailable"); return null; }
                 using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);

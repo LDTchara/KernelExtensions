@@ -69,20 +69,6 @@ namespace KernelExtensions.Saving
                 state.RuntimeBlocked[idx] = nodes;
             }
 
-            // 解析各场景 admin 记录（9.16）
-            foreach (var child in info.Children)
-            {
-                if (child.Name != "AdminScene") continue;
-                if (!int.TryParse(GetAttr(child, "Index", "-1"), out int idx) || idx < 0) continue;
-                var nodes = new HashSet<string>();
-                foreach (var n in child.Children)
-                {
-                    if (!string.IsNullOrEmpty(n.Content))
-                        nodes.Add(n.Content);
-                }
-                state.AdminNodes[idx] = nodes;
-            }
-
             PhaseSwiftManager.PendingRestore = state;
         }
     }
