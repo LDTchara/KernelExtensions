@@ -884,7 +884,10 @@ private static List<float> _visSampList;
         public static void RefreshPersistentState()
         {
             SaveCurrentSceneDiscovery();
-            SaveCurrentSceneAdmin();
+            // AdminSync=true 时 admin 跨场景保留，无需按场景记录（与切场景路径一致，
+            // 避免存档冗余 AdminScene 数据）
+            if (Config != null && !Config.AdminSync)
+                SaveCurrentSceneAdmin();
         }
 
         private static Color ParseColor(string colorStr)

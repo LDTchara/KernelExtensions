@@ -263,6 +263,8 @@ namespace KernelExtensions
                 }
 
                 // 场景独立 admin 记录（9.16）
+                // AdminSync=true 时 admin 跨场景保留，无需按场景记录（防存档冗余）
+                if (!PhaseSwiftManager.Config.AdminSync)
                 foreach (var kv in PhaseSwiftManager.GetSceneAdminNodes())
                 {
                     if (kv.Value == null || kv.Value.Count == 0) continue;
