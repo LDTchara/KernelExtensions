@@ -303,9 +303,11 @@ namespace KernelExtensions.Locales
         }
 
         /// <summary>
-        /// 解析单个语言文件。根元素为语言代码（或 "default"），
-        /// <c>&lt;L key="KEY" [exact="true"]&gt;值&lt;/L&gt;</c> 为词条。
-        /// 返回该文件是否包含当前语言的根元素。
+        /// 解析单个语言文件，兼容两种格式：
+        /// 1. Hacknet 原生/单段格式：根元素即语言代码，如 &lt;en-us&gt;&lt;L key="KEY"&gt;值&lt;/L&gt;&lt;/en-us&gt;；
+        /// 2. ZDTK 风格包装格式：&lt;Locale&gt;&lt;en-us&gt;&lt;l key="KEY"&gt;值&lt;/l&gt;&lt;/en-us&gt;&lt;/Locale&gt;（一个文件可含多个语言段）。
+        /// 词条元素名大小写不敏感（&lt;l&gt; / &lt;L&gt;），可选 exact="true" 表示仅整串匹配。
+        /// 返回该文件是否包含当前语言或 default 的词条段。
         /// </summary>
         private static bool ReadLocaleFile(string file,
             Dictionary<string, string> def, Dictionary<string, string> en,
@@ -321,26 +323,31 @@ namespace KernelExtensions.Locales
                 if (reader.NodeType != XmlNodeType.Element) return false;
 
                 string root = reader.Name.ToLowerInvariant();
+
+                if (root == "locale")
+                {
+                    // ZDTK 风格：<Locale><en-us>…</en-us><zh-cn>…</zh-cn>…</Locale>
+                    while (reader.Read())
+                    {
+                        if (reader.NodeType != XmlNodeType.Element) continue;
+                        string sec = reader.Name.ToLowerInvariant();
+                        Dictionary<string, string> t = null;
+                        if (sec == activeLocale) { t = active; foundActive = true; }
+                        else if (sec == "en-us") t = en;
+                        else if (sec == "default") { t = def; foundActive = true; }
+                        if (t != null) ReadLocaleSection(reader, t, exact);
+                    }
+                    return foundActive;
+                }
+
+                // Hacknet 原生格式：根元素即语言代码（或 "default"）
                 Dictionary<string, string> target;
                 if (root == activeLocale) { target = active; foundActive = true; }
                 else if (root == "en-us") target = en;
-                else if (root == "default") target = def;
+                else if (root == "default") { target = def; foundActive = true; }
                 else return false; // 未知语言的文件，跳过
 
-                while (reader.Read())
-                {
-                    if (reader.NodeType != XmlNodeType.Element) continue;
-                    if (reader.Name.Equals("L", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string key = reader.GetAttribute("key");
-                        if (string.IsNullOrEmpty(key)) continue;
-                        bool isExact = bool.TryParse(reader.GetAttribute("exact"), out bool e) && e;
-                        string value = reader.ReadElementContentAsString();
-                        if (value == null) continue;
-                        target[key] = value;
-                        if (isExact) exact.Add(key);
-                    }
-                }
+                ReadLocaleSection(reader, target, exact);
                 return foundActive;
             }
             catch (Exception ex)
@@ -348,6 +355,27 @@ namespace KernelExtensions.Locales
                 if (DebugLog)
                     Console.WriteLine($"[KernelExtensions] Localization: failed to read '{file}': {ex.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>读取当前语言段内的所有词条，直到段结束元素。reader 当前位于语言段开始元素。</summary>
+        private static void ReadLocaleSection(XmlReader reader,
+            Dictionary<string, string> target, HashSet<string> exact)
+        {
+            while (reader.Read())
+            {
+                if (reader.NodeType == XmlNodeType.EndElement) return;
+                if (reader.NodeType != XmlNodeType.Element) continue;
+                if (reader.Name.Equals("L", StringComparison.OrdinalIgnoreCase))
+                {
+                    string key = reader.GetAttribute("key");
+                    if (string.IsNullOrEmpty(key)) continue;
+                    bool isExact = bool.TryParse(reader.GetAttribute("exact"), out bool e) && e;
+                    string value = reader.ReadElementContentAsString();
+                    if (value == null) continue;
+                    target[key] = value;
+                    if (isExact) exact.Add(key);
+                }
             }
         }
 

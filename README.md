@@ -50,7 +50,9 @@ KernelExtensions ships a built-in localization system (same mechanism as [ZeroDa
 1. 把本仓库 `Locales/` 文件夹（含 `en-us.xml`、`zh-cn.xml` 及 `ja/ko/ru/de/fr/es/tr/nl.xml`）复制到**扩展根目录**的 `Locales/` 文件夹；也可以放在插件目录（`Plugins/`）下的 `Locales/` 中。
    Copy the `Locales/` folder from this repo (containing `en-us.xml`, `zh-cn.xml` plus `ja/ko/ru/de/fr/es/tr/nl.xml`) into the **extension root's** `Locales/` folder, or into a `Locales/` folder next to the plugin DLL (`Plugins/Locales/`).
 2. 词条使用 Hacknet 原生语言文件格式：根元素为语言代码，`<L key="KEY">值</L>` 定义词条，可选 `exact="true"` 表示仅整串匹配。
+   同时兼容 ZeroDayToolKit 风格的 `<Locale><en-us><l key="KEY">值</l></en-us></Locale>` 包装格式（一个文件可含多个语言段）。
    Terms use Hacknet's native locale format: the root element is the locale code, `<L key="KEY">value</L>` defines a term; optional `exact="true"` means full-string match only.
+   ZeroDayToolKit-style wrapper files are also accepted: `<Locale><en-us><l key="KEY">value</l></en-us></Locale>` (multiple locale sections per file).
 3. 优先级：当前语言 > `en-us` > `default`；未收录的词条自动回退到内置英文表。
    Precedence: active locale > `en-us` > `default`; missing terms fall back to the built-in English table.
 4. 内置语言 / Built-in languages：`en-us`、`zh-cn`、`ja`、`ko`、`ru`、`de`、`fr`、`es`、`tr`、`nl`（后 8 种由原硬编码翻译迁移而来，覆盖试炼界面与 VM 恢复界面全部文本）。
