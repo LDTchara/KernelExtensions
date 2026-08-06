@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - Deutsch
+    Locale file for KernelExtensions - German
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<de>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">BEGINNE DIE PRÜFUNG</L>
+  <L key="TRIAL_LOCKED">PRÜFUNG GESPERRT</L>
+  <L key="TRIAL_INITIALIZING">INITIALISIERUNG</L>
+  <L key="TRIAL_COMPLETE">ABGESCHLOSSEN</L>
+  <L key="TRIAL_FAILED">FEHLGESCHLAGEN</L>
+  <L key="TRIAL_EXIT_BUTTON">BEENDEN</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">ERGEBNIS: VOLLE ÜBEREINSTIMMUNG. Neustart in 3 Sek...</L>
+  <L key="VM_MATCH_FAIL">ERGEBNIS: KEINE ÜBEREINSTIMMUNG</L>
+  <L key="VM_HELP_BUTTON">Hilfe</L>
+</de>

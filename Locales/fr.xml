@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - Français
+    Locale file for KernelExtensions - French
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<fr>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">COMMENCER L'ÉPREUVE</L>
+  <L key="TRIAL_LOCKED">ÉPREUVE VERROUILLÉE</L>
+  <L key="TRIAL_INITIALIZING">INITIALISATION</L>
+  <L key="TRIAL_COMPLETE">TERMINÉ</L>
+  <L key="TRIAL_FAILED">ÉCHEC</L>
+  <L key="TRIAL_EXIT_BUTTON">QUITTER</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">RÉSULTAT : CORRESPONDANCE PARFAITE. Redémarrage dans 3 s...</L>
+  <L key="VM_MATCH_FAIL">RÉSULTAT : NON CORRESPONDANCE</L>
+  <L key="VM_HELP_BUTTON">Aide</L>
+</fr>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - Nederlands
+    Locale file for KernelExtensions - Dutch
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<nl>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">BEGIN MET PROEF</L>
+  <L key="TRIAL_LOCKED">PROEF GESLOTEN</L>
+  <L key="TRIAL_INITIALIZING">INITIALISEREN</L>
+  <L key="TRIAL_COMPLETE">VOLTOOID</L>
+  <L key="TRIAL_FAILED">MISLUKT</L>
+  <L key="TRIAL_EXIT_BUTTON">AFSLUITEN</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">RESULTAAT: VOLLEDIGE MATCH. Herstart over 3 seconden...</L>
+  <L key="VM_MATCH_FAIL">RESULTAAT: GEEN MATCH</L>
+  <L key="VM_HELP_BUTTON">Help</L>
+</nl>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - Русский
+    Locale file for KernelExtensions - Russian
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<ru>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">НАЧАТЬ ИСПЫТАНИЕ</L>
+  <L key="TRIAL_LOCKED">ИСПЫТАНИЕ ЗАБЛОКИРОВАНО</L>
+  <L key="TRIAL_INITIALIZING">ИНИЦИАЛИЗАЦИЯ</L>
+  <L key="TRIAL_COMPLETE">ЗАВЕРШЕНО</L>
+  <L key="TRIAL_FAILED">ПРОВАЛ</L>
+  <L key="TRIAL_EXIT_BUTTON">ВЫХОД</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">РЕЗУЛЬТАТ: ПОЛНОЕ СОВПАДЕНИЕ. Перезапуск через 3 сек...</L>
+  <L key="VM_MATCH_FAIL">РЕЗУЛЬТАТ: НЕ СОВПАДАЕТ</L>
+  <L key="VM_HELP_BUTTON">Помощь</L>
+</ru>

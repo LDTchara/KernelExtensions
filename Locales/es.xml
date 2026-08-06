@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - Español
+    Locale file for KernelExtensions - Spanish
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<es>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">COMENZAR PRUEBA</L>
+  <L key="TRIAL_LOCKED">PRUEBA BLOQUEADA</L>
+  <L key="TRIAL_INITIALIZING">INICIALIZANDO</L>
+  <L key="TRIAL_COMPLETE">COMPLETADO</L>
+  <L key="TRIAL_FAILED">FALLIDO</L>
+  <L key="TRIAL_EXIT_BUTTON">SALIR</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">RESULTADO: COINCIDENCIA EXACTA. Reiniciando en 3 seg...</L>
+  <L key="VM_MATCH_FAIL">RESULTADO: NO COINCIDE</L>
+  <L key="VM_HELP_BUTTON">Ayuda</L>
+</es>

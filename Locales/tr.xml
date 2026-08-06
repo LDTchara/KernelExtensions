@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - Türkçe
+    Locale file for KernelExtensions - Turkish
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<tr>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">DENEMEYE BAŞLA</L>
+  <L key="TRIAL_LOCKED">DENEME KİLİTLİ</L>
+  <L key="TRIAL_INITIALIZING">BAŞLATILIYOR</L>
+  <L key="TRIAL_COMPLETE">TAMAMLANDI</L>
+  <L key="TRIAL_FAILED">BAŞARISIZ</L>
+  <L key="TRIAL_EXIT_BUTTON">ÇIKIŞ</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">SONUÇ: TAM EŞLEŞME. 3 saniye içinde yeniden başlatılıyor...</L>
+  <L key="VM_MATCH_FAIL">SONUÇ: EŞLEŞMİYOR</L>
+  <L key="VM_HELP_BUTTON">Yardım</L>
+</tr>

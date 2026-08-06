@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - 한국어
+    Locale file for KernelExtensions - Korean
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<ko>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">시험 시작</L>
+  <L key="TRIAL_LOCKED">시험이 잠겼습니다</L>
+  <L key="TRIAL_INITIALIZING">초기화 중</L>
+  <L key="TRIAL_COMPLETE">완료</L>
+  <L key="TRIAL_FAILED">실패</L>
+  <L key="TRIAL_EXIT_BUTTON">종료</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">결과: 완전히 일치합니다. 3초 후 다시 시작...</L>
+  <L key="VM_MATCH_FAIL">결과: 일치하지 않음</L>
+  <L key="VM_HELP_BUTTON">도움말</L>
+</ko>

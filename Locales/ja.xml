@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - 日本語
+    Locale file for KernelExtensions - Japanese
+    （翻译迁移自原硬编码 GetLocalized* 方法 / translations migrated from the original hardcoded methods）
+-->
+<ja>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">試験を開始</L>
+  <L key="TRIAL_LOCKED">トライアルはロックされています</L>
+  <L key="TRIAL_INITIALIZING">初期化中</L>
+  <L key="TRIAL_COMPLETE">完了</L>
+  <L key="TRIAL_FAILED">失敗</L>
+  <L key="TRIAL_EXIT_BUTTON">終了</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">照合結果：完全一致。3秒後に再起動します...</L>
+  <L key="VM_MATCH_FAIL">照合結果：不一致</L>
+  <L key="VM_HELP_BUTTON">ヘルプ</L>
+</ja>
