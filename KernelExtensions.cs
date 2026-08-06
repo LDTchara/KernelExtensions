@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Hacknet;
 using Hacknet;
 using Hacknet.Extensions;
@@ -7,6 +7,7 @@ using KernelExtensions.Actions;
 using KernelExtensions.Config;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
+using KernelExtensions.Locales;
 using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
@@ -113,6 +114,12 @@ namespace KernelExtensions
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
+
+            // 5.5 多语言支持：加载扩展 Locales/*.xml 词条
+            Localization.DebugLog = Debug;
+            Localization.Reload(ExtensionLoader.ActiveExtensionInfo?.FolderPath);
+            Localization.LoadGlobalCustomLocales();
+            Console.WriteLine($"[KernelExtensions] Localization ready (terms: {Localization.HasTerms}).");
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");

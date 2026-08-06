@@ -1,9 +1,10 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using Hacknet.Localization;
 using Hacknet.UIUtils;
 using KernelExtensions.Config;
+using KernelExtensions.Locales;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -160,50 +161,11 @@ namespace KernelExtensions.Modules
             return sb.ToString();
         }
 
-        private static string GetLocalizedPasswordMatch()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "检测结果：完全匹配。3秒后重启...";
-            if (lang.StartsWith("ja")) return "照合結果：完全一致。3秒後に再起動します...";
-            if (lang.StartsWith("ko")) return "결과: 완전히 일치합니다. 3초 후 다시 시작...";
-            if (lang.StartsWith("ru")) return "РЕЗУЛЬТАТ: ПОЛНОЕ СОВПАДЕНИЕ. Перезапуск через 3 сек...";
-            if (lang.StartsWith("de")) return "ERGEBNIS: VOLLE ÜBEREINSTIMMUNG. Neustart in 3 Sek...";
-            if (lang.StartsWith("fr")) return "RÉSULTAT : CORRESPONDANCE PARFAITE. Redémarrage dans 3 s...";
-            if (lang.StartsWith("es")) return "RESULTADO: COINCIDENCIA EXACTA. Reiniciando en 3 seg...";
-            if (lang.StartsWith("tr")) return "SONUÇ: TAM EŞLEŞME. 3 saniye içinde yeniden başlatılıyor...";
-            if (lang.StartsWith("nl")) return "RESULTAAT: VOLLEDIGE MATCH. Herstart over 3 seconden...";
-            return "MATCH: FULL. Restarting in 3s...";
-        }
+        private static string GetLocalizedPasswordMatch() => Localization.Loc("VM_MATCH_SUCCESS");
 
-        private static string GetLocalizedPasswordMismatch()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "检测结果：不匹配";
-            if (lang.StartsWith("ja")) return "照合結果：不一致";
-            if (lang.StartsWith("ko")) return "결과: 일치하지 않음";
-            if (lang.StartsWith("ru")) return "РЕЗУЛЬТАТ: НЕ СОВПАДАЕТ";
-            if (lang.StartsWith("de")) return "ERGEBNIS: KEINE ÜBEREINSTIMMUNG";
-            if (lang.StartsWith("fr")) return "RÉSULTAT : NON CORRESPONDANCE";
-            if (lang.StartsWith("es")) return "RESULTADO: NO COINCIDE";
-            if (lang.StartsWith("tr")) return "SONUÇ: EŞLEŞMİYOR";
-            if (lang.StartsWith("nl")) return "RESULTAAT: GEEN MATCH";
-            return "MATCH: MISMATCH";
-        }
+        private static string GetLocalizedPasswordMismatch() => Localization.Loc("VM_MATCH_FAIL");
 
-        private static string GetLocalizedHelpButton()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "帮助";
-            if (lang.StartsWith("ja")) return "ヘルプ";
-            if (lang.StartsWith("ko")) return "도움말";
-            if (lang.StartsWith("ru")) return "Помощь";
-            if (lang.StartsWith("de")) return "Hilfe";
-            if (lang.StartsWith("fr")) return "Aide";
-            if (lang.StartsWith("es")) return "Ayuda";
-            if (lang.StartsWith("tr")) return "Yardım";
-            if (lang.StartsWith("nl")) return "Help";
-            return "HELP";
-        }
+        private static string GetLocalizedHelpButton() => Localization.Loc("VM_HELP_BUTTON");
 
         private void LoadLines()
         {
@@ -281,7 +243,7 @@ namespace KernelExtensions.Modules
             if (systemLogLineTimer >= SYS_LOG_INTERVAL)
             {
                 systemLogLineTimer = 0f;
-                outputLines.Add((line, true));
+                outputLines.Add((Localization.Localize(line), true));
                 systemLogLineIndex++;
             }
         }
@@ -315,7 +277,7 @@ namespace KernelExtensions.Modules
             {
                 foreach (string raw2 in guideLines)
                 {
-                    string clean = StripAllMarkers(raw2);
+                    string clean = Localization.Localize(StripAllMarkers(raw2));
                     if (!string.IsNullOrEmpty(clean))
                         outputLines.Add(("> " + clean, false));
                 }
@@ -339,7 +301,7 @@ namespace KernelExtensions.Modules
             if (guideCharCount == 0 && string.IsNullOrEmpty(currentPartialText))
             {
                 string rawLine = guideLines[guideLineIndex];
-                currentFullDisplayText = StripAllMarkers(rawLine); // 整行纯文本
+                currentFullDisplayText = Localization.Localize(StripAllMarkers(rawLine)); // 整行纯文本
                 currentPartialText = "";
             }
 
@@ -542,7 +504,7 @@ namespace KernelExtensions.Modules
 
                     // 提交按钮
                     Rectangle submitBtn = new(inputRect.X + 210, inputRect.Y, 100, 20);
-                    if (Button.doButton(1002, submitBtn.X, submitBtn.Y, submitBtn.Width, submitBtn.Height, config.ButtonText, Color.White))
+                    if (Button.doButton(1002, submitBtn.X, submitBtn.Y, submitBtn.Width, submitBtn.Height, Localization.Localize(config.ButtonText), Color.White))
                     {
                         if (passwordInput == config.Password)
                         {
@@ -588,7 +550,7 @@ namespace KernelExtensions.Modules
                 else
                 {
                     Rectangle btn = new(bounds.X + 20, (int)btnTopY, 220, 30);
-                    if (Button.doButton(1002, btn.X, btn.Y, btn.Width, btn.Height, config.ButtonText, Color.White))
+                    if (Button.doButton(1002, btn.X, btn.Y, btn.Width, btn.Height, Localization.Localize(config.ButtonText), Color.White))
                     {
                         if (!string.IsNullOrEmpty(config.HelpFile))
                         {

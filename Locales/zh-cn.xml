@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - 简体中文
+    Locale file for KernelExtensions - Simplified Chinese
+
+    放置位置 / Where to place:
+      扩展根目录/Locales/zh-cn.xml   (Extension root/Locales/zh-cn.xml)
+    或 / Or:
+      插件目录/Locales/zh-cn.xml      (Plugins folder/Locales/zh-cn.xml)
+
+    说明：缺省词条会自动回退到 en-us 文件；en-us 未收录的词条回退到英文内置表。
+    Note: missing terms fall back to en-us, then to the built-in English table.
+-->
+<zh-cn>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">开始试炼</L>
+  <L key="TRIAL_LOCKED">试炼已锁定</L>
+  <L key="TRIAL_INITIALIZING">正在初始化</L>
+  <L key="TRIAL_COMPLETE">完成</L>
+  <L key="TRIAL_FAILED">失败</L>
+  <L key="TRIAL_EXIT_BUTTON">退出</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">检测结果：完全匹配。3秒后重启...</L>
+  <L key="VM_MATCH_FAIL">检测结果：不匹配</L>
+  <L key="VM_HELP_BUTTON">帮助</L>
+
+  <!-- CrashModule 错误信息 / boot error messages -->
+  <L key="VM_ERROR_BOOTLOADER">错误：加载 "VMBootloaderTrap.dll" 时出现严重启动错误</L>
+  <L key="VM_ERROR_TPM">错误：严重启动错误 - TPM 平台密钥验证失败</L>
+
+  <!-- 自定义 Action 消息 / custom action messages -->
+  <L key="ERR_OVERLAY_NO_COMPUTERID">错误：ActivateAircraftOverlayAction 需要 ComputerID 属性。</L>
+  <L key="ERR_OVERLAY_COMPUTER_NOT_FOUND">错误：未找到 idName 为 '{0}' 的计算机。</L>
+  <L key="MSG_OVERLAY_ACTIVATED">已为 {0} 激活飞机覆盖层（idName: {1}）。</L>
+  <L key="MSG_OVERLAY_DEACTIVATED">飞机覆盖层已关闭。</L>
+  <L key="ERR_OVERLAY_NO_DAEMON">错误：计算机 '{0}' 上未找到 FlightDaemon。</L>
+  <L key="ERR_AIRCRAFT_COMPUTER_NOT_FOUND">错误：未找到计算机 '{0}'。</L>
+  <L key="ERR_AIRCRAFT_NO_DAEMON">错误：计算机 '{0}' 上没有 FlightDaemon。</L>
+  <L key="ERR_RENAME_NODE_NOT_FOUND">RenameNode: 未找到节点 {0}</L>
+  <L key="ERR_ACTION_FILE_NOT_FOUND">动作文件未找到：{0}</L>
+</zh-cn>

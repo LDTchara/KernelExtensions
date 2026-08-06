@@ -1,4 +1,5 @@
-﻿using Hacknet;
+using Hacknet;
+using KernelExtensions.Locales;
 using Pathfinder.Action;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;
@@ -23,7 +24,7 @@ namespace KernelExtensions.Utility
             string fullPath = Path.Combine(extensionRoot, actionFilePath).Replace('\\', '/');
             if (!File.Exists(fullPath))
             {
-                os.write($"Action file not found: {actionFilePath}");
+                os.write(Localization.LocFormat("ERR_ACTION_FILE_NOT_FOUND", actionFilePath));
                 return;
             }
 

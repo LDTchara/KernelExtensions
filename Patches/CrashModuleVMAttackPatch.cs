@@ -1,7 +1,8 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Config;
+using KernelExtensions.Locales;
 using KernelExtensions.Modules;
 using Microsoft.Xna.Framework;
 using System;
@@ -144,12 +145,12 @@ namespace KernelExtensions.Patches
                 {
                     // 若配置了自定义错误消息，优先使用；否则使用默认 TPM 消息
                     if (!string.IsNullOrEmpty(VMInfectionManager.CurrentConfig.ErrorMessage))
-                        return VMInfectionManager.CurrentConfig.ErrorMessage;
-                    return "ERROR: Critical boot error - TPM Platform Key Verification Failure";
+                        return Localization.Localize(VMInfectionManager.CurrentConfig.ErrorMessage);
+                    return Localization.Loc("VM_ERROR_TPM");
                 }
-                return VMInfectionManager.CurrentConfig.ErrorMessage;
+                return Localization.Localize(VMInfectionManager.CurrentConfig.ErrorMessage);
             }
-            return "ERROR: Critical boot error loading \"VMBootloaderTrap.dll\"";
+            return Localization.Loc("VM_ERROR_BOOTLOADER");
         }
     }
 }

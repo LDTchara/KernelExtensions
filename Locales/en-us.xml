@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言词条文件 - English
+    Locale file for KernelExtensions - English (fallback language)
+
+    放置位置 / Where to place:
+      扩展根目录/Locales/en-us.xml   (Extension root/Locales/en-us.xml)
+    或 / Or:
+      插件目录/Locales/en-us.xml      (Plugins folder/Locales/en-us.xml)
+
+    格式说明 / Format notes:
+      - 根元素为语言代码 / Root element is the locale code.
+      - <L key="KEY">value</L> 定义一个词条 / defines a term.
+      - 可选 exact="true" 表示仅整串匹配，不参与文本子串替换 /
+        optional exact="true" means full-string match only (no substring replacement).
+      - 文本中的 {{KEY}} 会被替换为对应词条 /
+        {{KEY}} in text is replaced with the matching term.
+-->
+<en-us>
+  <!-- CustomTrialExe 界面 / UI -->
+  <L key="TRIAL_BEGIN_BUTTON">BEGIN TRIAL</L>
+  <L key="TRIAL_LOCKED">TRIAL LOCKED</L>
+  <L key="TRIAL_INITIALIZING">INITIALIZING</L>
+  <L key="TRIAL_COMPLETE">COMPLETE</L>
+  <L key="TRIAL_FAILED">FAILED</L>
+  <L key="TRIAL_EXIT_BUTTON">EXIT</L>
+
+  <!-- FakeRecoveryModule (VM 攻击恢复界面 / VM attack recovery UI) -->
+  <L key="VM_MATCH_SUCCESS">MATCH: FULL. Restarting in 3s...</L>
+  <L key="VM_MATCH_FAIL">MATCH: MISMATCH</L>
+  <L key="VM_HELP_BUTTON">HELP</L>
+
+  <!-- CrashModule 错误信息 / boot error messages -->
+  <L key="VM_ERROR_BOOTLOADER">ERROR: Critical boot error loading "VMBootloaderTrap.dll"</L>
+  <L key="VM_ERROR_TPM">ERROR: Critical boot error - TPM Platform Key Verification Failure</L>
+
+  <!-- 自定义 Action 消息 / custom action messages -->
+  <L key="ERR_OVERLAY_NO_COMPUTERID">ERROR: ActivateAircraftOverlayAction requires a ComputerID attribute.</L>
+  <L key="ERR_OVERLAY_COMPUTER_NOT_FOUND">ERROR: Computer with idName '{0}' not found.</L>
+  <L key="MSG_OVERLAY_ACTIVATED">Aircraft overlay activated for {0} (idName: {1}).</L>
+  <L key="MSG_OVERLAY_DEACTIVATED">Aircraft overlay deactivated.</L>
+  <L key="ERR_OVERLAY_NO_DAEMON">ERROR: No FlightDaemon found on computer '{0}'.</L>
+  <L key="ERR_AIRCRAFT_COMPUTER_NOT_FOUND">ERROR: Computer '{0}' not found.</L>
+  <L key="ERR_AIRCRAFT_NO_DAEMON">ERROR: No FlightDaemon on computer '{0}'.</L>
+  <L key="ERR_RENAME_NODE_NOT_FOUND">RenameNode: node {0} not found.</L>
+  <L key="ERR_ACTION_FILE_NOT_FOUND">Action file not found: {0}</L>
+</en-us>

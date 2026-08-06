@@ -1,5 +1,6 @@
-﻿using Hacknet;
+using Hacknet;
 using KernelExtensions.Daemons;
+using KernelExtensions.Locales;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
@@ -22,7 +23,7 @@ namespace KernelExtensions.Actions
             Computer c = Programs.getComputer(os, Nodeid);
             if (c == null)
             {
-                os.write($"ERROR: Computer '{Nodeid}' not found.");
+                os.write(Localization.LocFormat("ERR_AIRCRAFT_COMPUTER_NOT_FOUND", Nodeid));
                 return;
             }
 
@@ -35,7 +36,7 @@ namespace KernelExtensions.Actions
                     FlightDaemon.CompToDaemons[c] = d;   // 补全字典，下次直接找到
                 else
                 {
-                    os.write($"ERROR: No FlightDaemon on computer '{Nodeid}'.");
+                    os.write(Localization.LocFormat("ERR_AIRCRAFT_NO_DAEMON", Nodeid));
                     return;
                 }
             }

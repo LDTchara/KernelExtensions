@@ -1,4 +1,5 @@
-﻿using Hacknet;
+using Hacknet;
+using KernelExtensions.Locales;
 using KernelExtensions.Modules;
 using Pathfinder.Action;
 
@@ -15,7 +16,7 @@ namespace KernelExtensions.Actions
             GlobalAircraftOverlayManager.CurrentFlightDaemon = null;
 
             OS os = os_obj as OS;
-            os?.write("Aircraft overlay deactivated.");
+            os?.write(Localization.Loc("MSG_OVERLAY_DEACTIVATED"));
         }
     }
 }

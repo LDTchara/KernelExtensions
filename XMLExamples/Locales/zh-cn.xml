@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言示例词条 - 简体中文
+    Example locale file for KernelExtensions - Simplified Chinese
+
+    把本文件复制到扩展根目录的 Locales 文件夹（扩展根目录/Locales/）即可让
+    XMLExamples 中的 ExampleTrial.xml 与 MyAttack.xml 按玩家语言显示文本。
+    Copy this file into your extension's Locales folder (ExtensionRoot/Locales/)
+    to make ExampleTrial.xml and MyAttack.xml display text in the player's language.
+
+    注意：此文件只包含示例用词条；KernelExtensions 自身 UI 的完整词条见
+    仓库根目录 Locales/ 下的 en-us.xml / zh-cn.xml。
+    Note: this file only contains example keys; the mod's own UI terms live in
+    the repo-root Locales/en-us.xml and Locales/zh-cn.xml.
+-->
+<zh-cn>
+  <!-- ExampleTrial.xml 阶段标题 / phase titles -->
+  <L key="TRIAL0_TITLE">第一阶段：入侵 Gibson</L>
+  <L key="TRIAL0_SUBTITLE">获取 root 权限并删除日志</L>
+  <L key="TRIAL1_TITLE">第二阶段：清除痕迹</L>
+  <L key="TRIAL1_SUBTITLE">删除所有操作记录</L>
+
+  <!-- MyAttack.xml 引导文本 / guide text -->
+  <L key="VM_GUIDE_LINE1">这里是LDTchara，发生了什么事？||P0.5||</L>
+  <L key="VM_GUIDE_LINE2">你节点的追踪器开始到处发送警告。||P0.5||</L>
+  <L key="VM_GUIDE_LINE3">我之前就见过这样的事情||P0.5||</L>
+  <L key="VM_GUIDE_LINE4">稍等，我看看怎么个事...||P0.5||</L>
+  <L key="VM_GUIDE_LINE5"> ||P2.0||</L>
+  <L key="VM_GUIDE_LINE6">CTMD。应该是虚拟机级别的攻击。||P0.5||</L>
+  <L key="VM_GUIDE_LINE7">我有应对这类攻击的经验，我知道也许你自己慢慢琢磨也能解决。||P0.5||</L>
+  <L key="VM_GUIDE_LINE8">但是我已急哭所以我决定上传一份快速指南给你用||P0.5||</L>
+  <L key="VM_GUIDE_LINE9">无论你在什么系统上运行你的虚拟机，你都可以基于这个指南进行修复。||P0.5||</L>
+  <L key="VM_GUIDE_LINE10">等我一下……</L>
+  <L key="VM_GUIDE_LINE11"> ||P2.0||</L>
+  <L key="VM_GUIDE_LINE12">完事了。当你准备好以后，我会终止你的虚拟机程序并让你回到桌面。||P0.5||</L>
+  <L key="VM_GUIDE_LINE13">我写了一个脚本，它将打开你的cmd或者终端，并为你准备了操作指南。||P0.5||</L>
+  <L key="VM_GUIDE_LINE14">祝你好运 - 你完成修复后，我们在聊天频道见。我要开始干爆攻击者了。||P0.5||</L>
+  <L key="VM_GUIDE_LINE15">||S0.3||准备好了就点击按钮||P0.5||</L>
+  <L key="VM_GUIDE_LINE16">||S0.04||- LDTchara||P2.0||</L>
+
+  <!-- MyAttack.xml 按钮文本 / button text -->
+  <L key="VM_EXIT_BUTTON">退出虚拟机</L>
+</zh-cn>

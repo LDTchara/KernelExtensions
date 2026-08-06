@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KernelExtensions 多语言示例词条 - English
+    Example locale file for KernelExtensions - English
+
+    把本文件复制到扩展根目录的 Locales 文件夹（扩展根目录/Locales/）即可让
+    XMLExamples 中的 ExampleTrial.xml 与 MyAttack.xml 按玩家语言显示文本。
+    Copy this file into your extension's Locales folder (ExtensionRoot/Locales/)
+    to make ExampleTrial.xml and MyAttack.xml display text in the player's language.
+
+    注意：此文件只包含示例用词条；KernelExtensions 自身 UI 的完整词条见
+    仓库根目录 Locales/ 下的 en-us.xml / zh-cn.xml。
+    Note: this file only contains example keys; the mod's own UI terms live in
+    the repo-root Locales/en-us.xml and Locales/zh-cn.xml.
+-->
+<en-us>
+  <!-- ExampleTrial.xml 阶段标题 / phase titles -->
+  <L key="TRIAL0_TITLE">Phase 1: Intrude Gibson</L>
+  <L key="TRIAL0_SUBTITLE">Get root access and delete the logs</L>
+  <L key="TRIAL1_TITLE">Phase 2: Cover Tracks</L>
+  <L key="TRIAL1_SUBTITLE">Erase all operation records</L>
+
+  <!-- MyAttack.xml 引导文本 / guide text -->
+  <L key="VM_GUIDE_LINE1">This is LDTchara, what happened?||P0.5||</L>
+  <L key="VM_GUIDE_LINE2">The tracker on your node is spamming warnings everywhere.||P0.5||</L>
+  <L key="VM_GUIDE_LINE3">I've seen this before||P0.5||</L>
+  <L key="VM_GUIDE_LINE4">Hold on, let me check...||P0.5||</L>
+  <L key="VM_GUIDE_LINE5"> ||P2.0||</L>
+  <L key="VM_GUIDE_LINE6">Damn. It's a VM-level attack.||P0.5||</L>
+  <L key="VM_GUIDE_LINE7">I've dealt with this kind of attack before. I know you could figure it out yourself.||P0.5||</L>
+  <L key="VM_GUIDE_LINE8">But I'm crying with urgency, so I decided to upload a quick guide for you.||P0.5||</L>
+  <L key="VM_GUIDE_LINE9">No matter what system your VM runs on, you can use this guide to fix it.||P0.5||</L>
+  <L key="VM_GUIDE_LINE10">Give me a second...</L>
+  <L key="VM_GUIDE_LINE11"> ||P2.0||</L>
+  <L key="VM_GUIDE_LINE12">Done. When you're ready, I'll kill your VM program and drop you back to the desktop.||P0.5||</L>
+  <L key="VM_GUIDE_LINE13">I wrote a script that will open your cmd or terminal, and I've prepared an operation guide for you.||P0.5||</L>
+  <L key="VM_GUIDE_LINE14">Good luck - once you're done fixing, meet me on the chat channel. I'm going to start wrecking the attacker.||P0.5||</L>
+  <L key="VM_GUIDE_LINE15">||S0.3||Click the button when you're ready||P0.5||</L>
+  <L key="VM_GUIDE_LINE16">||S0.04||- LDTchara||P2.0||</L>
+
+  <!-- MyAttack.xml 按钮文本 / button text -->
+  <L key="VM_EXIT_BUTTON">Exit VM</L>
+</en-us>

@@ -1,4 +1,5 @@
-﻿using Hacknet;
+using Hacknet;
+using KernelExtensions.Locales;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
@@ -28,7 +29,7 @@ namespace KernelExtensions.Actions
 
             if (comp == null)
             {
-                os.write($"RenameNode: 未找到节点 {NodeID}");
+                os.write(Localization.LocFormat("ERR_RENAME_NODE_NOT_FOUND", NodeID));
                 return;
             }
 

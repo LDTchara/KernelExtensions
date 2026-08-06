@@ -20,6 +20,19 @@
       For color settings: omit or leave empty to use the current theme's highlight color.
     - 对于内存缩减配置：省略则使用默认值（延迟5秒，持续时间3秒）。
       For RAM reduction settings: omit to use defaults (delay 5s, duration 3s).
+
+    == 多语言支持 / Multi-language support ==
+    - 标题、副标题、描述文本（含文本文件内容）与 OutroText 均支持 {{KEY}} 语法：
+      Titles, subtitles, description text (including file contents) and OutroText
+      support the {{KEY}} syntax:
+        <Title>{{TRIAL0_TITLE}}</Title>
+    - 对应的词条放在扩展根目录 /Locales/ 下的语言文件中（如 Locales/en-us.xml、
+      Locales/zh-cn.xml），格式：<L key="TRIAL0_TITLE">值</L>。
+      The matching terms live in locale files under the extension's /Locales/ folder
+      (e.g. Locales/en-us.xml, Locales/zh-cn.xml) as <L key="TRIAL0_TITLE">value</L>.
+    - 示例词条见本目录下 Locales/ 文件夹；未收录的词条按原样显示键名。
+      Example terms are in the Locales/ folder next to this file; unresolved keys
+      display as the key name itself.
 -->
 
 <TrialConfig>
@@ -195,10 +208,10 @@
 		<Phase id="0">
 			<!-- 阶段标题（显示在程序窗口中央，必填） -->
 			<!-- Phase title (displayed in the center of the program window, required). -->
-			<Title>第一阶段：入侵 Gibson</Title>
+			<Title>{{TRIAL0_TITLE}}</Title>
 			<!-- 阶段副标题（显示在标题下方，可选） -->
 			<!-- Phase subtitle (displayed below the title, optional). -->
-			<Subtitle>获取 root 权限并删除日志</Subtitle>
+			<Subtitle>{{TRIAL0_SUBTITLE}}</Subtitle>
 
 			<!-- 
                 描述文本：可以是文件路径（相对于扩展根目录），也可以是直接内嵌的文本。
@@ -267,9 +280,9 @@
 
 		<!-- 第二阶段 -->
 		<!-- Phase 1 -->
-		<Phase id="1">
-			<Title>第二阶段：清除痕迹</Title>
-			<Subtitle>删除所有操作记录</Subtitle>
+			<Phase id="1">
+			<Title>{{TRIAL1_TITLE}}</Title>
+			<Subtitle>{{TRIAL1_SUBTITLE}}</Subtitle>
 			<DescriptionText>Docs/MyTrialDesc2.txt</DescriptionText>
 			<MissionFile>Missions/ExampleMission2.xml</MissionFile>
 			<Timeout>90</Timeout>

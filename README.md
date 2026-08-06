@@ -39,6 +39,40 @@ All detailed documentation, configuration guides, and action references have mov
 
 ---
 
+## 🌍 多语言支持 / Multi-Language Support
+
+KernelExtensions 内置多语言系统（机制与 [ZeroDayToolKit](https://github.com/prodzpod/ZeroDayToolKit) 一致），玩家切换游戏语言后，模组界面与文本会自动跟随。
+
+KernelExtensions ships a built-in localization system (same mechanism as [ZeroDayToolKit](https://github.com/prodzpod/ZeroDayToolKit)); the mod's UI follows the player's in-game language automatically.
+
+### 使用方式 / How it works
+
+1. 把本仓库 `Locales/` 文件夹（含 `en-us.xml`、`zh-cn.xml`）复制到**扩展根目录**的 `Locales/` 文件夹；也可以放在插件目录（`Plugins/`）下的 `Locales/` 中。
+   Copy the `Locales/` folder from this repo (containing `en-us.xml`, `zh-cn.xml`) into the **extension root's** `Locales/` folder, or into a `Locales/` folder next to the plugin DLL (`Plugins/Locales/`).
+2. 词条使用 Hacknet 原生语言文件格式：根元素为语言代码，`<L key="KEY">值</L>` 定义词条，可选 `exact="true"` 表示仅整串匹配。
+   Terms use Hacknet's native locale format: the root element is the locale code, `<L key="KEY">value</L>` defines a term; optional `exact="true"` means full-string match only.
+3. 优先级：当前语言 > `en-us` > `default`；未收录的词条自动回退到内置英文表。
+   Precedence: active locale > `en-us` > `default`; missing terms fall back to the built-in English table.
+
+### 扩展作者可在文本中使用 `{{KEY}}` 语法 / Extension authors can use the `{{KEY}}` syntax
+
+以下位置均支持 `{{KEY}}` 引用语言词条：
+`{{KEY}}` is supported in all of the following places:
+
+- 试炼配置（`Trial/*.xml`）：`<Title>`、`<Subtitle>`、`<DescriptionText>`（含文本文件内容）、`<OutroText>`、`<ResetText>`
+  Trial configs: `<Title>`, `<Subtitle>`, `<DescriptionText>` (including text file contents), `<OutroText>`, `<ResetText>`
+- VM 攻击配置（`VMATK/*.xml`）：`<GuideText>` 每一行、`<ButtonText>`、`<ErrorMessage>`
+  VM attack configs: each `<GuideText>` line, `<ButtonText>`, `<ErrorMessage>`
+- 所有经 `OS.write` 输出的终端消息（自定义 Action 的文本也可直接写 `{{KEY}}`）
+  All terminal messages written via `OS.write` (custom action text may use `{{KEY}}` too)
+- 带 `Language="dynamic"` 属性的 Pathfinder XML 文件（如动作文件/守护进程 XML，属性会被替换为当前语言）
+  Pathfinder XML files carrying a `Language="dynamic"` attribute (e.g. action files / daemon XML; the attribute is replaced with the active locale)
+
+示例见 `XMLExamples/Locales/` 与 `XMLExamples/ExampleTrial.xml`。
+See `XMLExamples/Locales/` and `XMLExamples/ExampleTrial.xml` for examples.
+
+---
+
 ## ❤️ 致谢 / Thanks
 
 - **April_Crystal** – 飞机 Daemon 的核心实现与大量改进建议。  

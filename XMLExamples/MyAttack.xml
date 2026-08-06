@@ -8,6 +8,15 @@
     Location: Extension Root/VMATK/<ConfigName>.xml
     使用方法：通过 <LaunchVMAttack ConfigName="<ConfigName>" /> 触发
     Usage: Trigger via <LaunchVMAttack ConfigName="<ConfigName>" />
+
+    == 多语言支持 / Multi-language support ==
+    GuideText 每行、ButtonText、ErrorMessage 均支持 {{KEY}} 语法，词条放在
+    扩展根目录 /Locales/ 下（示例见本目录 Locales/ 文件夹）：
+    GuideText lines, ButtonText and ErrorMessage all support the {{KEY}} syntax;
+    terms live in the extension's /Locales/ folder (see the Locales/ folder here):
+      <Line>{{VM_GUIDE_LINE1}}</Line>
+      <ButtonText>{{VM_EXIT_BUTTON}}</ButtonText>
+    未收录的词条按原样显示键名 / Unresolved keys display as the key name itself.
     ============================================================
 -->
 
@@ -95,9 +104,11 @@
     在崩溃错误注入阶段显示的自定义错误消息。
     可以包含伪造的文件名或误导信息。
     密码模式下若留空则显示默认 TPM 验证失败消息；若填写则显示自定义消息。
+    也可用 {{KEY}} 引用语言文件中的词条（如 {{VM_ERROR_BOOTLOADER}}）。
     Custom error message displayed during the crash error injection phase.
     Can contain fake filenames or misleading information.
     In password mode, if empty, a default TPM failure message is shown; if filled, the custom message is used.
+    {{KEY}} references to locale terms are also supported (e.g. {{VM_ERROR_BOOTLOADER}}).
     -->
 	<ErrorMessage>ERROR: Critical boot error loading "payload.dll"</ErrorMessage>
 
@@ -142,23 +153,23 @@
     Markers can appear anywhere in a line and are never displayed.
     Speed is automatically reset to default at the start of each line.
     -->
-	<GuideText>
-		<Line>这里是LDTchara，发生了什么事？||P0.5||</Line>
-		<Line>你节点的追踪器开始到处发送警告。||P0.5||</Line>
-		<Line>我之前就见过这样的事情||P0.5||</Line>
-		<Line>稍等，我看看怎么个事...||P0.5||</Line>
-		<Line> ||P2.0||</Line>
-		<Line>CTMD。应该是虚拟机级别的攻击。||P0.5||</Line>
-		<Line>我有应对这类攻击的经验，我知道也许你自己慢慢琢磨也能解决。||P0.5||</Line>
-		<Line>但是我已急哭所以我决定上传一份快速指南给你用||P0.5||</Line>
-		<Line>无论你在什么系统上运行你的虚拟机，你都可以基于这个指南进行修复。||P0.5||</Line>
-		<Line>等我一下……</Line>
-		<Line> ||P2.0||</Line>
-		<Line>完事了。当你准备好以后，我会终止你的虚拟机程序并让你回到桌面。||P0.5||</Line>
-		<Line>我写了一个脚本，它将打开你的cmd或者终端，并为你准备了操作指南。||P0.5||</Line>
-		<Line>祝你好运 - 你完成修复后，我们在聊天频道见。我要开始干爆攻击者了。||P0.5||</Line>
-		<Line>||S0.3||准备好了就点击按钮||P0.5||</Line>
-		<Line>||S0.04||- LDTchara||P2.0||</Line>
+    <GuideText>
+		<Line>{{VM_GUIDE_LINE1}}</Line>
+		<Line>{{VM_GUIDE_LINE2}}</Line>
+		<Line>{{VM_GUIDE_LINE3}}</Line>
+		<Line>{{VM_GUIDE_LINE4}}</Line>
+		<Line>{{VM_GUIDE_LINE5}}</Line>
+		<Line>{{VM_GUIDE_LINE6}}</Line>
+		<Line>{{VM_GUIDE_LINE7}}</Line>
+		<Line>{{VM_GUIDE_LINE8}}</Line>
+		<Line>{{VM_GUIDE_LINE9}}</Line>
+		<Line>{{VM_GUIDE_LINE10}}</Line>
+		<Line>{{VM_GUIDE_LINE11}}</Line>
+		<Line>{{VM_GUIDE_LINE12}}</Line>
+		<Line>{{VM_GUIDE_LINE13}}</Line>
+		<Line>{{VM_GUIDE_LINE14}}</Line>
+		<Line>{{VM_GUIDE_LINE15}}</Line>
+		<Line>{{VM_GUIDE_LINE16}}</Line>
 	</GuideText>
 
 	<!-- ============================================================
@@ -170,7 +181,7 @@
     FileDeletion/FileExists mode: usually an exit button, clicking quits the game.
     Password mode: a submit button, clicking verifies the password.
     -->
-	<ButtonText>Exit VM</ButtonText>
+    <ButtonText>{{VM_EXIT_BUTTON}}</ButtonText>
 
 	<!-- ============================================================
     12. 恢复成功音乐 / Success Music

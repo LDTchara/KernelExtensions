@@ -1,9 +1,10 @@
-﻿using BepInEx;
+using BepInEx;
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using KernelExtensions.Config;
+using KernelExtensions.Locales;
 using KernelExtensions.Storage;   // 用于节点存储
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
@@ -745,9 +746,9 @@ namespace KernelExtensions.Executables
             string rawText = CurrentPhase.DescriptionText;
             string resolvedPath = ResolvePath(rawText);
             if (resolvedPath != null && File.Exists(resolvedPath))
-                currentDisplayText = Utils.readEntireFile(resolvedPath);
+                currentDisplayText = Localization.Localize(Utils.readEntireFile(resolvedPath));
             else
-                currentDisplayText = rawText ?? "";
+                currentDisplayText = Localization.Localize(rawText ?? "");
             // 执行阶段开始时的动作
             ExecuteActionFile(CurrentPhase.OnPhaseStart?.FilePath);
         }
@@ -763,9 +764,9 @@ namespace KernelExtensions.Executables
             {
                 string resolvedPath = ResolvePath(config.OutroText);
                 if (resolvedPath != null && File.Exists(resolvedPath))
-                    outroDisplayText = Utils.readEntireFile(resolvedPath);
+                    outroDisplayText = Localization.Localize(Utils.readEntireFile(resolvedPath));
                 else
-                    outroDisplayText = config.OutroText;
+                    outroDisplayText = Localization.Localize(config.OutroText);
             }
             else
             {
@@ -882,7 +883,7 @@ namespace KernelExtensions.Executables
             // 原始描述文本
             string rawDesc = CurrentPhase.DescriptionText;
             string resolvedDesc = ResolvePath(rawDesc);
-            string descText = (resolvedDesc != null && File.Exists(resolvedDesc)) ? Utils.readEntireFile(resolvedDesc) : rawDesc ?? "";
+            string descText = (resolvedDesc != null && File.Exists(resolvedDesc)) ? Localization.Localize(Utils.readEntireFile(resolvedDesc)) : Localization.Localize(rawDesc ?? "");
 
             // 重置文本（可选）
             string resetRaw = CurrentPhase.ResetText;
@@ -890,7 +891,7 @@ namespace KernelExtensions.Executables
             if (!string.IsNullOrEmpty(resetRaw))
             {
                 string resolvedReset = ResolvePath(resetRaw);
-                resetText = (resolvedReset != null && File.Exists(resolvedReset)) ? Utils.readEntireFile(resolvedReset) : resetRaw;
+                resetText = (resolvedReset != null && File.Exists(resolvedReset)) ? Localization.Localize(Utils.readEntireFile(resolvedReset)) : Localization.Localize(resetRaw);
                 resetText += "\n\n";   // 与原始描述隔开
             }
 
@@ -1427,95 +1428,17 @@ namespace KernelExtensions.Executables
                 TransitionToNextState();
         }
 
-        private string GetLocalizedBeginButton()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "开始试炼";
-            if (lang.StartsWith("ja")) return "試験を開始";
-            if (lang.StartsWith("ko")) return "시험 시작";
-            if (lang.StartsWith("ru")) return "НАЧАТЬ ИСПЫТАНИЕ";
-            if (lang.StartsWith("de")) return "BEGINNE DIE PRÜFUNG";
-            if (lang.StartsWith("fr")) return "COMMENCER L'ÉPREUVE";
-            if (lang.StartsWith("es")) return "COMENZAR PRUEBA";
-            if (lang.StartsWith("tr")) return "DENEMEYE BAŞLA";
-            if (lang.StartsWith("nl")) return "BEGIN MET PROEF";
-            return "BEGIN TRIAL";
-        }
+        private string GetLocalizedBeginButton() => Localization.Loc("TRIAL_BEGIN_BUTTON");
 
-        private string GetLocalizedLockedText()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "试炼已锁定";
-            if (lang.StartsWith("ja")) return "トライアルはロックされています";
-            if (lang.StartsWith("ko")) return "시험이 잠겼습니다";
-            if (lang.StartsWith("ru")) return "ИСПЫТАНИЕ ЗАБЛОКИРОВАНО";
-            if (lang.StartsWith("de")) return "PRÜFUNG GESPERRT";
-            if (lang.StartsWith("fr")) return "ÉPREUVE VERROUILLÉE";
-            if (lang.StartsWith("es")) return "PRUEBA BLOQUEADA";
-            if (lang.StartsWith("tr")) return "DENEME KİLİTLİ";
-            if (lang.StartsWith("nl")) return "PROEF GESLOTEN";
-            return "TRIAL LOCKED";
-        }
+        private string GetLocalizedLockedText() => Localization.Loc("TRIAL_LOCKED");
 
-        private string GetLocalizedInitializingText()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "正在初始化";
-            if (lang.StartsWith("ja")) return "初期化中";
-            if (lang.StartsWith("ko")) return "초기화 중";
-            if (lang.StartsWith("ru")) return "ИНИЦИАЛИЗАЦИЯ";
-            if (lang.StartsWith("de")) return "INITIALISIERUNG";
-            if (lang.StartsWith("fr")) return "INITIALISATION";
-            if (lang.StartsWith("es")) return "INICIALIZANDO";
-            if (lang.StartsWith("tr")) return "BAŞLATILIYOR";
-            if (lang.StartsWith("nl")) return "INITIALISEREN";
-            return "INITIALIZING";
-        }
+        private string GetLocalizedInitializingText() => Localization.Loc("TRIAL_INITIALIZING");
 
-        private string GetLocalizedCompleteText()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "完成";
-            if (lang.StartsWith("ja")) return "完了";
-            if (lang.StartsWith("ko")) return "완료";
-            if (lang.StartsWith("ru")) return "ЗАВЕРШЕНО";
-            if (lang.StartsWith("de")) return "ABGESCHLOSSEN";
-            if (lang.StartsWith("fr")) return "TERMINÉ";
-            if (lang.StartsWith("es")) return "COMPLETADO";
-            if (lang.StartsWith("tr")) return "TAMAMLANDI";
-            if (lang.StartsWith("nl")) return "VOLTOOID";
-            return "COMPLETE";
-        }
+        private string GetLocalizedCompleteText() => Localization.Loc("TRIAL_COMPLETE");
 
-        private string GetLocalizedFailedText()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "失败";
-            if (lang.StartsWith("ja")) return "失敗";
-            if (lang.StartsWith("ko")) return "실패";
-            if (lang.StartsWith("ru")) return "ПРОВАЛ";
-            if (lang.StartsWith("de")) return "FEHLGESCHLAGEN";
-            if (lang.StartsWith("fr")) return "ÉCHEC";
-            if (lang.StartsWith("es")) return "FALLIDO";
-            if (lang.StartsWith("tr")) return "BAŞARISIZ";
-            if (lang.StartsWith("nl")) return "MISLUKT";
-            return "FAILED";
-        }
+        private string GetLocalizedFailedText() => Localization.Loc("TRIAL_FAILED");
 
-        private string GetLocalizedExitButton()
-        {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "退出";
-            if (lang.StartsWith("ja")) return "終了";
-            if (lang.StartsWith("ko")) return "종료";
-            if (lang.StartsWith("ru")) return "ВЫХОД";
-            if (lang.StartsWith("de")) return "BEENDEN";
-            if (lang.StartsWith("fr")) return "QUITTER";
-            if (lang.StartsWith("es")) return "SALIR";
-            if (lang.StartsWith("tr")) return "ÇIKIŞ";
-            if (lang.StartsWith("nl")) return "AFSLUITEN";
-            return "EXIT";
-        }
+        private string GetLocalizedExitButton() => Localization.Loc("TRIAL_EXIT_BUTTON");
 
         private void DrawSpinningUp(Rectangle contentRect)
         {
@@ -1584,8 +1507,8 @@ namespace KernelExtensions.Executables
 
             if (CurrentPhase != null)
             {
-                titleText = CurrentPhase.Title;
-                subtitleText = CurrentPhase.Subtitle;
+                titleText = Localization.Localize(CurrentPhase.Title);
+                subtitleText = Localization.Localize(CurrentPhase.Subtitle);
             }
             else
             {

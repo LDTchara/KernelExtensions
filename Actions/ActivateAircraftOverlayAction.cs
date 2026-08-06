@@ -1,5 +1,6 @@
-﻿using Hacknet;
+using Hacknet;
 using KernelExtensions.Daemons;
+using KernelExtensions.Locales;
 using KernelExtensions.Modules;
 using Pathfinder.Action;
 using Pathfinder.Util;
@@ -19,7 +20,7 @@ namespace KernelExtensions.Actions
             OS os = (OS)os_obj;
             if (string.IsNullOrEmpty(NodeID))
             {
-                os.write("ERROR: ActivateAircraftOverlayAction requires a ComputerID attribute.");
+                os.write(Localization.Loc("ERR_OVERLAY_NO_COMPUTERID"));
                 return;
             }
 
@@ -36,7 +37,7 @@ namespace KernelExtensions.Actions
 
             if (targetComp == null)
             {
-                os.write($"ERROR: Computer with idName '{NodeID}' not found.");
+                os.write(Localization.LocFormat("ERR_OVERLAY_COMPUTER_NOT_FOUND", NodeID));
                 return;
             }
 
@@ -49,11 +50,11 @@ namespace KernelExtensions.Actions
                 // 确保该飞行守护进程已经订阅了更新（如果尚未订阅，则开始）
                 fd.StartUpdating();
 
-                os.write($"Aircraft overlay activated for {targetComp.name} (idName: {NodeID}).");
+                os.write(Localization.LocFormat("MSG_OVERLAY_ACTIVATED", targetComp.name, NodeID));
             }
             else
             {
-                os.write($"ERROR: No FlightDaemon found on computer '{NodeID}'.");
+                os.write(Localization.LocFormat("ERR_OVERLAY_NO_DAEMON", NodeID));
             }
         }
     }
