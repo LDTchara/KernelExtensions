@@ -1,20 +1,55 @@
 using Hacknet;
 using Hacknet.Daemons.Helpers;
 using Hacknet.Gui;
-using KernelExtensions.Modules;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Util;
 
 namespace KernelExtensions.Daemons
 {
+    /// <summary>
+    /// 飞机 Daemon —— 原版 AircraftDaemon 的 KE 通用化版本。
+    ///
+    /// ── 节点 XML 用法（全部参数可选）──────────────────────────────────────────
+    /// <Computer>
+    ///     <FlightDaemon OnFailed="Actions/Failed" OnSaved="Actions/Saved" CrashIPPrefix="YourPrefix"/>
+    /// <Computer/>
+    /// ── 参数说明（均可选）────────────────────────────────────────────────────
+    ///   OnFailed      — 坠机后加载的 Action 文件（相对扩展根目录）。默认不执行。
+    ///   OnSaved       — 固件重载期间成功恢复 747FlightOps.dll 后加载的 Action 文件。
+    ///                    默认不执行。
+    ///   FallDuration  — 坠落总时长（秒），同时作为 AttackAircraft CrashDelay=-1
+    ///                    时的默认坠落时长。默认 135。
+    ///   CrashIPPrefix — 坠机后加在节点 IP 前的前缀，使旧 IP 不可达（对齐原版
+    ///                    "DCLOC:" 行为）。空字符串 = 不修改 IP（节点仍可访问，
+    ///                    重访显示为静态残骸，不复活不重复触发 OnFailed）。
+    ///                    默认 "DCLOC:"。
+    ///
+    /// ── 行为特性 ─────────────────────────────────────────────────────────────
+    ///   · 攻击入口: AttackAircraft Action（NodeID + CrashDelay: -1 默认 / 0 立即 /
+    ///     N 秒延迟）
+    ///   · 固件重载链: 删 747FlightOps.dll → StartReloadFirmware → 6s 后检测缺失 →
+    ///     IsInCriticalFirmwareFailure → 坠落 → CrashAircraft
+    ///   · 按需更新（对齐原版）: 巡航时物理仅在 daemon 界面绘制（draw 补 tick）或
+    ///     覆盖层激活（ShowAircraftOverlay）时推进；离开界面即冻结。固件重载/坠机
+    ///     过程持续更新（StartReloadFirmware 自动订阅），不依赖观看
+    ///   · 坠毁终结: 坠机后 IsCrashed，物理彻底停止，重访节点不复活、不重复 OnFailed
+    ///   · 覆盖层: GlobalAircraftOverlayManager 全局高度计（固定位置绘制，与界面无关）；
+    ///     坠毁后持续显示残骸，仅由 HideAircraftOverlay Action 关闭（不自动关闭，
+    ///     对齐原版 AircraftInfoOverlay 行为）
+    ///   · Pathfinder 兼容: 坠机改 IP 后手动刷新 ComputerLookup 缓存（原版由
+    ///     NodeLookup.OnAircraftDaemonChangeIP patch 自动处理，KE 自实现类需手动
+    ///     RebuildLookups，否则 getComputer/connect 缓存 miss 连不上）
+    ///
+    /// ── 内部机制备忘 ─────────────────────────────────────────────────────────
+    ///   注册表: CompToDaemons（Computer → FlightDaemon），loadInit 时注册
+    ///   生命周期: initFiles（新游戏建 FlightSystems + 固件文件）/ loadInit（读档重建）
+    ///   更新订阅: StartUpdating / UnsubscribeFromUpdates / UnsubscribeIfIdle（安全退订）
+    /// </summary>
     public class FlightDaemon : Pathfinder.Daemon.BaseDaemon
     {
         public FlightDaemon(Computer computer, string serviceName, OS opSystem) : base(computer, serviceName, opSystem) { }
         public override string Identifier => this.comp.name+" SYSTEM";
-
-        // ====== 全局字典（静态，公开只读） ======
-        public static Dictionary<string, Computer> FlightIdToComputer = new();
 
         // ====== 私有内部状态（不序列化） ======
         private const float FlightHoursPerLengthUnit = 0.06855416f;
@@ -36,6 +71,7 @@ namespace KernelExtensions.Daemons
         public float H = 135f;
         private bool IsSubscribedForUpdates = false;
         public bool IsInCriticalFirmwareFailure = false;
+        private bool IsCrashed = false; // 坠毁终结标志：坠机后物理彻底停止，防止重访节点时"复活"
         public bool AircraftFallStartsImmediatley = true;
         public Action CrashAction;
         private Texture2D WorldMap = OS.currentInstance.content.Load<Texture2D>("DLC/Sprites/SmallWorldMap");
@@ -65,6 +101,9 @@ namespace KernelExtensions.Daemons
 
         [XMLStorage]
         public float FallDuration = 135f; // 默认坠落时长
+
+        [XMLStorage]
+        public string CrashIPPrefix = "DCLOC:"; // 坠机后加在 IP 前的前缀（空 = 不修改 IP，节点仍可访问）
 
         // ====== 文件系统初始化 ======
         public override void initFiles()
@@ -100,9 +139,6 @@ namespace KernelExtensions.Daemons
 
             ThemeColor = os.highlightColor;
             MainFolder = comp.files.root.searchForFolder("FlightSystems");
-            // 注册全局字典
-            if (!FlightIdToComputer.ContainsKey(comp.idName))
-                FlightIdToComputer[comp.idName] = comp;
             if (!CompToDaemons.ContainsKey(comp))
                 CompToDaemons[comp] = this;
 
@@ -111,7 +147,8 @@ namespace KernelExtensions.Daemons
         public override void navigatedTo()
         {
             base.navigatedTo();
-            StartUpdating();
+            // 按需更新（对齐原版）：不在此订阅。物理仅在 daemon 界面绘制时（draw 补 tick）、
+            // 固件重载中（StartReloadFirmware）或覆盖层激活时（ShowAircraftOverlay）推进
         }
 
         // ====== 更新订阅管理 ======
@@ -133,9 +170,23 @@ namespace KernelExtensions.Daemons
             }
         }
 
+        /// <summary>
+        /// 安全退订：仅当不在固件重载/坠落中且未坠毁时退订（供覆盖层关闭等场景调用）。
+        /// 坠机或重载进行中退订会冻结坠落过程，必须避免。
+        /// </summary>
+        public void UnsubscribeIfIdle()
+        {
+            if (IsCrashed || IsReloadingFirmware || IsInCriticalFirmwareFailure)
+                return;
+            UnsubscribeFromUpdates();
+        }
+
         // ====== 核心更新逻辑 ======
         private void Update(float t)
         {
+            if (IsCrashed)
+                return; // 坠毁终结：物理不再推进（防重访节点时复活/重复 OnFailed）
+
             if (IsReloadingFirmware)
             {
                 firmwareReloadProgress += t;
@@ -213,12 +264,7 @@ namespace KernelExtensions.Daemons
         // ★修改：CrashAircraft 中调用 OnFailed 条件动作
         internal void CrashAircraft()
         {
-            // ★ 如果当前全局覆盖层显示的是本飞机的数据，立即关闭
-            if (GlobalAircraftOverlayManager.CurrentFlightDaemon == this)
-            {
-                GlobalAircraftOverlayManager.IsOverlayActive = false;
-                GlobalAircraftOverlayManager.CurrentFlightDaemon = null;
-            }
+            IsCrashed = true; // 坠毁终结：物理停止，防重访节点时复活/重复 OnFailed
 
             if (os.connectedComp == comp)
             {
@@ -228,8 +274,15 @@ namespace KernelExtensions.Daemons
             CrashAction?.Invoke();
             os.netMap.visibleNodes.Remove(os.netMap.nodes.IndexOf(comp));
 
-            if (!string.IsNullOrEmpty(comp.idName) && FlightIdToComputer.ContainsKey(comp.idName))
-                FlightIdToComputer.Remove(comp.idName);
+            // 坠机后 IP 加前缀使其不可达（对齐原版 DCLOC: 行为；CrashIPPrefix 为空则不修改）
+            if (!string.IsNullOrEmpty(CrashIPPrefix))
+            {
+                comp.ip = CrashIPPrefix + comp.ip;
+                // Pathfinder 的 getComputer/connect 走 ComputerLookup 缓存（NodeLookup patch），
+                // 改 IP 后必须刷新缓存——原版由 NodeLookup.OnAircraftDaemonChangeIP 自动处理，
+                // 但该 patch 绑定原版 AircraftDaemon，KE 自实现类需手动调用
+                Pathfinder.Util.ComputerLookup.RebuildLookups();
+            }
 
             if (!string.IsNullOrEmpty(OnFailed))
             {
@@ -293,15 +346,10 @@ namespace KernelExtensions.Daemons
             Rectangle bounds2 = new(bounds.X, bounds.Y,
                 (int)((double)bounds.Width * 0.666), (int)((double)bounds.Height * 0.666));
             DrawHeadings(bounds2, sb);
-            // ★ 修改点：仅当全局覆盖层未激活或指向其他 daemon 时才绘制高度计
-            if (!(GlobalAircraftOverlayManager.IsOverlayActive &&
-                  GlobalAircraftOverlayManager.CurrentFlightDaemon == this))
-            {
-                AircraftAltitudeIndicator.RenderAltitudeIndicator(dest, sb,
-                    (int)(CurrentAltitude + 0.5),
-                    IsInCriticalDescent(),
-                    AircraftAltitudeIndicator.GetFlashRateFromTimer(OS.currentInstance.timer));
-            }
+            AircraftAltitudeIndicator.RenderAltitudeIndicator(dest, sb,
+                (int)(CurrentAltitude + 0.5),
+                IsInCriticalDescent(),
+                AircraftAltitudeIndicator.GetFlashRateFromTimer(OS.currentInstance.timer));
         }
 
         private void DrawHeadings(Rectangle bounds, SpriteBatch sb)

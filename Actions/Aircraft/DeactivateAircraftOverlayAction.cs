@@ -11,8 +11,12 @@ namespace KernelExtensions.Actions.Aircraft
     {
         public override void Trigger(OS os)
         {
+            var fd = GlobalAircraftOverlayManager.CurrentFlightDaemon;
             GlobalAircraftOverlayManager.IsOverlayActive = false;
             GlobalAircraftOverlayManager.CurrentFlightDaemon = null;
+
+            // 覆盖层关闭：若 daemon 空闲则停止持续更新（坠机/固件重载中不打断）
+            fd?.UnsubscribeIfIdle();
 
             os?.write("Aircraft overlay deactivated.");
         }

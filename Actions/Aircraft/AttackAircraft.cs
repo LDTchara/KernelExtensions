@@ -67,8 +67,8 @@ namespace KernelExtensions.Actions.Aircraft
 
         private void StartAttack(OS os, FlightDaemon d)
         {
-            // 获取目标计算机（通过 FlightIdToComputer 字典，间接获取）
-            Computer c = FlightDaemon.FlightIdToComputer[Nodeid];
+            // 目标计算机 = daemon 的宿主（不再查 FlightIdToComputer 字典，规避注册时机/裸索引器隐患）
+            Computer c = d.comp;
 
             // 确保 FlightSystems 文件夹存在
             Folder f = c.files.root.searchForFolder("FlightSystems");
