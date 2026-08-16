@@ -151,6 +151,8 @@ namespace KernelExtensions
             KELog.Info("UploadAircraftSysFile action registered.");
             ActionManager.RegisterAction<AttackAircraft>("AttackAircraft");
             KELog.Info("AttackAircraft action registered.");
+            ActionManager.RegisterAction<FlashScreenAction>("FlashScreen");
+            KELog.Info("FlashScreen action registered.");
 
             // 5. 加载 Harmony 补丁
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
