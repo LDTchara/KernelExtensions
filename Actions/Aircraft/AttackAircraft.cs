@@ -49,7 +49,7 @@ namespace KernelExtensions.Actions.Aircraft
 
             // 处理 CrashDelay
             if (CrashDelay == -1)
-                d.H = 135f;
+                d.H = d.FallDuration; // 使用 Daemon 自身配置的默认坠落时长
             else if (CrashDelay == 0)
             {
                 d.CurrentAltitude = 0;

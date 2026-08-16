@@ -110,6 +110,8 @@ namespace KernelExtensions.Daemons
         {
             base.initFiles();
 
+            H = FallDuration; // 将 XML 配置的坠落时长应用到运行时变量 H（此前未生效）
+
             MainFolder = comp.files.root.searchForFolder("FlightSystems");
             if (MainFolder == null)
             {
@@ -139,6 +141,7 @@ namespace KernelExtensions.Daemons
 
             ThemeColor = os.highlightColor;
             MainFolder = comp.files.root.searchForFolder("FlightSystems");
+            H = FallDuration; // 读档后同步 H（XMLStorage 反序列化在 loadInit 前完成）
             if (!CompToDaemons.ContainsKey(comp))
                 CompToDaemons[comp] = this;
 
