@@ -153,6 +153,10 @@ namespace KernelExtensions
             KELog.Info("AttackAircraft action registered.");
             ActionManager.RegisterAction<FlashScreenAction>("FlashScreen");
             KELog.Info("FlashScreen action registered.");
+            ActionManager.RegisterAction<ClockStartAction>("ClockStart");
+            KELog.Info("ClockStart action registered.");
+            ActionManager.RegisterAction<ClockStopAction>("ClockStop");
+            KELog.Info("ClockStop action registered.");
 
             // 5. 加载 Harmony 补丁
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
