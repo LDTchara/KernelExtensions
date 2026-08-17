@@ -442,8 +442,12 @@ namespace KernelExtensions
         /// </summary>
         public static void PrintGradientAscii(string art)
         {
-            Console.OutputEncoding = Encoding.UTF8;
-            bool ansi = EnableAnsiColors();
+            // 无控制台环境（MCP detached/管道启动、无窗口运行）下 Console 操作（OutputEncoding/颜色）会抛
+            // IOException("句柄无效") 导致插件加载失败——banner 只是装饰，失败静默跳过
+            try
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+                bool ansi = EnableAnsiColors();
 
             string[] lines = art.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             int maxLen = 0;
@@ -490,6 +494,8 @@ namespace KernelExtensions
                 Console.ResetColor();
                 Console.WriteLine();
             }
+            }
+            catch { /* 无控制台环境：跳过 banner */ }
         }
 
         private static bool FilesMatch(string pathA, string pathB)
