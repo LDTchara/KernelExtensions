@@ -22,6 +22,11 @@ namespace KernelExtensions.Actions
     ///   Delay / DelayHost — 由 DelayablePathfinderAction 提供
     ///
     /// 兼容性：历史版本曾用小写 "text" 属性，仍可用（仅当 Text 未提供时回退读取）。
+    ///
+    /// 实现：原版 TextWriterTimed.WriteTextToTerminal 是**增量渲染**函数
+    /// （按 elapsedTimeSoFar 计算应渲染到第几个字符并返回进度），不能一次性调用。
+    /// 因此用一次性实例订阅 os.UpdateSubscriptions 逐帧推进（同 9.35 FlashScreen
+    /// 模式），渲染完成后退订自清理。
     /// </summary>
     public class TerminalTypeAction : DelayablePathfinderAction
     {
@@ -47,12 +52,7 @@ namespace KernelExtensions.Actions
                 if (KEConfigLoader.Debug)
                     KELog.Debug($"[TerminalType] trigger: len={finalText.Length} CharDelay={CharDelay}");
 
-                os.delayer.Post(ActionDelayer.NextTick(), () =>
-                {
-                    // 使用原版逐字打印方法
-                    TextWriterTimed.WriteTextToTerminal(
-                        finalText, os, CharDelay, 1f, 20f, 0f, 0);
-                });
+                new TimedPrinter(os, finalText, CharDelay).Start();
             }
             catch (Exception ex)
             {
@@ -66,6 +66,43 @@ namespace KernelExtensions.Actions
             // 兼容历史小写 "text"（仅当正式名 Text 未提供时回退）
             if (string.IsNullOrEmpty(Text) && info.Attributes.TryGetValue("text", out string legacyText))
                 Text = legacyText;
+        }
+
+        /// <summary>一次性逐字打印实例：订阅驱动，渲染完成退订自清理（FlashScreen 同款模式）。</summary>
+        private class TimedPrinter
+        {
+            private readonly OS os;
+            private readonly string text;
+            private readonly float timePerChar;
+            private float elapsed;
+            private int rendered;
+            private bool done;
+
+            public TimedPrinter(OS os, string text, float timePerChar)
+            {
+                this.os = os;
+                this.text = text;
+                this.timePerChar = timePerChar;
+            }
+
+            public void Start()
+            {
+                os.UpdateSubscriptions += Update;
+            }
+
+            private void Update(float dt)
+            {
+                if (done) return;
+                elapsed += dt;
+                // 增量渲染：传入累计时间 + 上次进度，返回新进度
+                rendered = TextWriterTimed.WriteTextToTerminal(
+                    text, os, timePerChar, 1f, 20f, elapsed, rendered);
+                if (rendered >= text.Length)
+                {
+                    done = true;
+                    os.UpdateSubscriptions -= Update;
+                }
+            }
         }
     }
 }
