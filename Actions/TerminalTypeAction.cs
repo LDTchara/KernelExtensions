@@ -87,6 +87,11 @@ namespace KernelExtensions.Actions
 
             public void Start()
             {
+                // 输出前先换行，从新行开始逐字；文本本身以 \n 开头时交给
+                // TextWriterTimed 处理（避免双空行）。与原版 TextWriterTimed
+                // 的换行处理一致（os.write(" ")）。
+                if (text.Length > 0 && text[0] != '\n')
+                    os.write(" ");
                 os.UpdateSubscriptions += Update;
             }
 
