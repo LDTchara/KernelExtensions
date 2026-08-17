@@ -7,7 +7,7 @@ using KernelExtensions.Storage;
 namespace KernelExtensions.Saving
 {
     /// <summary>
-    /// 自定义存档加载器，用于从存档 XML 中读取 <CustomTrialData> 节点，
+    /// 自定义存档加载器，用于从存档 XML 中读取 &lt;CustomTrialData&gt; 节点，
     /// 恢复试炼过程中被删除的节点索引列表，存入全局存储。
     /// </summary>
     [SaveExecutor("CustomTrialData")]   // 对应存档中的根元素名

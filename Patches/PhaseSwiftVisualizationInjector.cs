@@ -7,7 +7,7 @@ namespace KernelExtensions.Patches
 {
     /// <summary>
     /// Prefix 注入：用 PhaseSwiftManager 的实时 PCM 数据填进 VisualizationData.sampList。
-    /// 直接修改 backing List<float>，ReadOnlyCollection Samples 自动同步。
+    /// 直接修改 backing List&lt;float&gt;，ReadOnlyCollection Samples 自动同步。
     /// </summary>
     [HarmonyPatch(typeof(MediaPlayer), "GetVisualizationData")]
     public class PhaseSwiftVisualizationInjector

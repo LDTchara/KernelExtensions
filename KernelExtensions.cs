@@ -183,7 +183,7 @@ namespace KernelExtensions
 
         /// <summary>
         /// 在游戏保存存档时触发，将当前正在运行的试炼中已删除的节点列表
-        /// 写入存档的自定义节点 <CustomTrialData> 中。
+        /// 写入存档的自定义节点 &lt;CustomTrialData&gt; 中。
         /// </summary>
         private void OnSaveGame(SaveEvent e)
         {

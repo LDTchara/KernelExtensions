@@ -12,6 +12,9 @@ namespace KernelExtensions.Utility
         /// </summary>
         /// <param name="os">当前 OS 实例（未使用，保留备用）</param>
         /// <param name="soundPath">例如 "Sounds/Boom.wav"</param>
+        /// <param name="volume">音量（0~1），默认 0.5</param>
+        /// <param name="pitch">音调（-1~1），默认 0.5</param>
+        /// <param name="pan">声像（-1 左 ~ 1 右），默认 0</param>
         public static void PlaySound(OS os, string soundPath, float volume = 0.5f, float pitch = 0.5f, float pan = 0f)
         {
             if (string.IsNullOrEmpty(soundPath)) return;

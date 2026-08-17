@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ============================================================
+    KernelExtensions Clock 定时器完整示例
+    Clock Timer Complete Example
+    ============================================================
+    定位：剧情资产，分散组织 —— 每个 Clock 一个独立 XML 文件，
+    放扩展根目录任意位置（惯例 Clocks/ 目录），由 ClockStart 按文件路径引用。
+    Position: story asset, organized as separate files - one Clock per XML file,
+    placed anywhere under the extension root (conventionally in Clocks/),
+    referenced by path via ClockStart.
+
+    触发方式 / Trigger:
+      <ClockStart Filepath="Clocks/traceFlash.xml" />  启动 / start
+      <ClockStop  ClockID="traceFlash" />              按 ID 停止 / stop by ID
+      <ClockStop  Filepath="Clocks/traceFlash.xml" />  按路径停止 / stop by path
+
+    属性 / Attributes:
+      ID         — 标识名（ClockStop/去重用；省略回退为文件名不含扩展名）
+                   Identifier (for ClockStop/dedup; falls back to file name without extension)
+      Interval   — 触发间隔（秒），必须 > 0 / trigger interval (s), must be > 0
+      Times      — 循环次数上限（0/省略/负数 = 无限），耗尽自动停止
+                   max loop count (0/omitted/negative = infinite); auto-stops when exhausted
+      Duration   — 运行总时长上限（秒），与 Times 谁先到谁停；0/省略 = 不限
+                   max total runtime (s); stops at whichever hits first; 0/omitted = unlimited
+      OnComplete — 可选，耗尽自动停止后执行的 Action 文件（相对扩展根，对齐 9.36）
+                   optional Action file executed after auto-stop (relative to extension root)
+
+    行为 / Behavior:
+      - 启动后先等 Interval 才第一次触发（对齐原版 Delay 的"延迟后执行"）
+        Waits one Interval before the first trigger (like vanilla Delay)
+      - Actions 启动时一次性预加载，每次触发逐个执行（= 每次执行一遍无条件 instantly 集合）
+        Actions are preloaded at start; each trigger runs them in order
+      - 手动 ClockStop 不触发 OnComplete（仅 Times/Duration 耗尽自动停止才触发）
+        Manual ClockStop does NOT trigger OnComplete (only auto-stop does)
+      - 重复 ClockStart 同一 ID → 刷新（重置计时/计数）
+        Repeating ClockStart on the same ID refreshes (resets timer/count)
+    ============================================================
+-->
+
+<!-- ============================================================
+    示例 1：固定次数循环 / Example 1: fixed count
+    每 5 秒触发一次，共 3 次，第 3 次后执行 Clocks/done.xml 并停止。
+    Fires every 5s, 3 times total, then runs Clocks/done.xml and stops.
+============================================================ -->
+<Clock ID="traceFlash" Interval="5.0" Times="3" OnComplete="Clocks/done.xml">
+    <Actions>
+        <FlashScreen Color="Red" Duration="1.5" />
+        <TerminalType Text="[CLOCK] traceFlash tick!" />
+    </Actions>
+</Clock>
+
+<!-- ============================================================
+    示例 2：无限循环 + 限时 / Example 2: infinite loop + time limit
+    Times=0（无限），但 10 秒后因 Duration 到点自动停止并执行 OnComplete。
+    Times=0 (infinite), but auto-stops after 10s because Duration is reached.
+============================================================ -->
+<Clock ID="traceFlashInf" Interval="2.0" Times="0" Duration="10" OnComplete="Clocks/done.xml">
+    <Actions>
+        <FlashScreen Color="#00FF00" Duration="0.8" />
+    </Actions>
+</Clock>
+
+<!-- ============================================================
+    示例 3：单次延迟执行 / Example 3: one-shot delayed execution
+    Times=1 —— 延迟 Interval 后执行 1 次即停，即"无 DelayHost 的延迟执行"。
+    Times=1 - fires once after Interval, i.e. "delay execution without DelayHost".
+============================================================ -->
+<Clock ID="delayOnce" Interval="5.0" Times="1" OnComplete="Clocks/done.xml">
+    <Actions>
+        <FlashScreen Color="Blue" Duration="2.0" />
+        <TerminalType Text="[CLOCK] delayOnce fired once" />
+    </Actions>
+</Clock>
+
+<!-- ============================================================
+    OnComplete 动作文件（Actions 根，相对扩展根引用，如 Clocks/done.xml）：
+    OnComplete Action file (Actions root, referenced relative to extension root):
+    <Actions>
+        <TerminalType Text="[CLOCK] completed!" />
+    </Actions>
+============================================================ -->

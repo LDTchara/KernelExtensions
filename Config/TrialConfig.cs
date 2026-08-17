@@ -3,7 +3,7 @@ using System.Xml.Serialization;
 namespace KernelExtensions.Config
 {
     /// <summary>
-    /// 试炼配置的根对象，对应 XML 根元素 <TrialConfig>。
+    /// 试炼配置的根对象，对应 XML 根元素 &lt;TrialConfig&gt;。
     /// </summary>
     [XmlRoot("TrialConfig")]
     public class TrialConfig

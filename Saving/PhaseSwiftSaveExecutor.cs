@@ -7,7 +7,7 @@ using KernelExtensions.Modules;
 namespace KernelExtensions.Saving
 {
     /// <summary>
-    /// 读取存档中的 <PhaseSwiftData> 节点，恢复 PhaseSwift 持久化状态。
+    /// 读取存档中的 &lt;PhaseSwiftData&gt; 节点，恢复 PhaseSwift 持久化状态。
     /// 存入 PhaseSwiftManager.PendingRestore 供 OS 加载后自动恢复。
     /// </summary>
     // ParseInterior：必须解析子元素（DiscoveredScene/OrigLink 等），否则 info.Children 恒为空

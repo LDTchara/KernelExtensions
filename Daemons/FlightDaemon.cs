@@ -11,9 +11,9 @@ namespace KernelExtensions.Daemons
     /// 飞机 Daemon —— 原版 AircraftDaemon 的 KE 通用化版本。
     ///
     /// ── 节点 XML 用法（全部参数可选）──────────────────────────────────────────
-    /// <Computer>
-    ///     <FlightDaemon OnFailed="Actions/Failed" OnSaved="Actions/Saved" CrashIPPrefix="YourPrefix"/>
-    /// <Computer/>
+    /// &lt;Computer&gt;
+    ///     &lt;FlightDaemon OnFailed="Actions/Failed" OnSaved="Actions/Saved" CrashIPPrefix="YourPrefix"/&gt;
+    /// &lt;/Computer&gt;
     /// ── 参数说明（均可选）────────────────────────────────────────────────────
     ///   OnFailed      — 坠机后加载的 Action 文件（相对扩展根目录）。默认不执行。
     ///   OnSaved       — 固件重载期间成功恢复 747FlightOps.dll 后加载的 Action 文件。
