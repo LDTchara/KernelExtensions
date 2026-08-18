@@ -23,6 +23,8 @@ namespace KernelExtensions.Actions
     ///   Color    — 必要。Hex (#RRGGBB/#AARRGGBB)、数值 RGB (R,G,B[,A])、命名色、
     ///              CustomColor 动态色（LDTchara/Rainbow/Gradient/预设）
     ///   Duration — 渐变时长（秒），默认 2.0。触发瞬间最亮，线性渐隐回默认色。
+    ///   PlaySound — 可选，默认 false。true 时闪烁同时播放警告音效
+    ///              （os.beepSound = SFX/beep，原版警告提示音）。
     ///
     /// 行为：
     ///   - 重复触发 = 刷新（取消上一次闪烁，重新开始），不叠加
@@ -35,6 +37,7 @@ namespace KernelExtensions.Actions
     {
         [XMLStorage] public string Color;
         [XMLStorage] public float Duration = 2.0f;
+        [XMLStorage] public bool PlaySound;
 
         /// <summary>当前活跃闪烁实例（弱引用表：仅用于重复触发刷新，不阻止 GC、OS 卸载自动清理）</summary>
         private static readonly ConditionalWeakTable<OS, FlashFade> ActiveFades = new();
@@ -57,6 +60,10 @@ namespace KernelExtensions.Actions
                     old.Cancel();
                     ActiveFades.Remove(os);
                 }
+
+                // 可选：闪烁同时播放警告音效（原版 os.beepSound = SFX/beep）
+                if (PlaySound && os.beepSound != null)
+                    os.beepSound.Play();
 
                 var (staticColor, dynConfig) = ParseColor(os, Color);
                 var fade = new FlashFade(os, staticColor, dynConfig, Duration);
