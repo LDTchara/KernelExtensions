@@ -138,8 +138,11 @@ namespace KernelExtensions.Modules
                 if (timesDone || durDone)
                 {
                     clocks.Remove(id);
-                    // OnComplete 只在"耗尽自动停止"触发；移除即天然幂等
-                    foreach (var a in inst.Def.OnComplete) a.Trigger(os);
+                    // OnComplete 只在“耗尽自动停止”触发；移除即天然幂等。
+                    // 用 ActionHelper 一次性执行（对齐 9.36 CompleteAction，支持
+                    // <Actions>/<ConditionalActions> 双根，如测试扩展 Clocks/done.xml）
+                    if (!string.IsNullOrEmpty(inst.Def.OnCompletePath))
+                        ActionHelper.ExecuteActionFile(os, inst.Def.OnCompletePath, inst.Def.ExtensionRoot);
                     if (KEConfigLoader.Debug)
                         KELog.Debug($"[Clock] '{inst.Def.Id}' completed (times={inst.TimesElapsed}, elapsed={(OS.currentElapsedTime - inst.StartedAt):F1}s)");
                 }
@@ -220,13 +223,16 @@ namespace KernelExtensions.Modules
                     }
                 }
 
-                List<SerializableAction> onComplete = null;
+                // OnComplete：相对扩展根的动作文件路径（对齐 9.36 CompleteAction，
+                // 支持 <Actions>/<ConditionalActions> 双根，由 ActionHelper 一次性执行）
                 if (!string.IsNullOrWhiteSpace(onCompletePath))
                 {
                     string ocFull = NormalizePath(Path.Combine(extensionRoot ?? "", onCompletePath));
-                    onComplete = LoadActionsFile(ocFull);
-                    if (onComplete == null)
-                        KELog.Warn($"[Clock] '{id}' OnComplete file not found/parse failed: {onCompletePath}");
+                    if (!File.Exists(ocFull))
+                    {
+                        KELog.Warn($"[Clock] '{id}' OnComplete file not found: {onCompletePath}");
+                        onCompletePath = null;
+                    }
                 }
 
                 return new ClockDefinition
@@ -237,44 +243,13 @@ namespace KernelExtensions.Modules
                     MaxTimes = times,
                     MaxDuration = duration,
                     Actions = actions,
-                    OnComplete = onComplete ?? new List<SerializableAction>()
+                    OnCompletePath = onCompletePath,
+                    ExtensionRoot = extensionRoot
                 };
             }
             catch (Exception ex)
             {
                 KELog.Error("[Clock] LoadDefinition failed: " + ex.Message);
-                return null;
-            }
-        }
-
-        /// <summary>预加载一个动作文件（&lt;Actions&gt; 根，OnComplete 用）：只收集不触发。</summary>
-        private static List<SerializableAction> LoadActionsFile(string fullPath)
-        {
-            if (!File.Exists(fullPath)) return null;
-            try
-            {
-                var executor = new EventExecutor(fullPath, true);
-                var list = new List<SerializableAction>();
-                executor.RegisterExecutor("Actions", (exec, info) =>
-                {
-                    foreach (var child in info.Children)
-                    {
-                        try
-                        {
-                            list.Add(ActionsLoader.ReadAction(child));
-                        }
-                        catch (Exception ex)
-                        {
-                            KELog.Warn("[Clock] OnComplete action load failed: " + ex.Message);
-                        }
-                    }
-                }, ParseOption.ParseInterior);
-                if (!executor.TryParse(out _)) return null;
-                return list;
-            }
-            catch (Exception ex)
-            {
-                KELog.Error("[Clock] LoadActionsFile failed: " + ex.Message);
                 return null;
             }
         }
@@ -291,7 +266,8 @@ namespace KernelExtensions.Modules
             public int MaxTimes;                      // 0 = 无限
             public float MaxDuration;                 // 0 = 不限
             public List<SerializableAction> Actions;  // 预加载 <Actions>
-            public List<SerializableAction> OnComplete; // 预加载 OnComplete 文件（可空）
+            public string OnCompletePath;             // OnComplete 动作文件（相对扩展根，可空）
+            public string ExtensionRoot;              // 扩展根（OnComplete 执行用）
         }
 
         /// <summary>运行时实例。</summary>
