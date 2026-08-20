@@ -22,7 +22,7 @@ namespace KernelExtensions.Utility
             string extensionRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
             if (string.IsNullOrEmpty(extensionRoot))
             {
-                Console.WriteLine("[KernelExtensions] SoundHelper: No extension root.");
+                KELog.Warn("[SoundHelper] No extension root.");
                 return;
             }
 
@@ -31,7 +31,7 @@ namespace KernelExtensions.Utility
 
             if (!File.Exists(fullPath))
             {
-                Console.WriteLine($"[KernelExtensions] SoundHelper: File not found: {fullPath}");
+                KELog.Warn($"[SoundHelper] File not found: {fullPath}");
                 return;
             }
 
@@ -43,12 +43,12 @@ namespace KernelExtensions.Utility
                 {
                     // 使用三参数版本，与 CrashModule.beep 相同
                     bool success = sound.Play(volume, pitch, pan);
-                    Console.WriteLine($"[KernelExtensions] SoundHelper: Play returned {success}");
+                    KELog.Debug($"[SoundHelper] Play returned {success}");
                 }
             }
             catch (System.Exception e)
             {
-                Console.WriteLine($"[KernelExtensions] SoundHelper: Error playing sound '{fullPath}': {e.Message}");
+                KELog.Error($"[SoundHelper] Error playing sound '{fullPath}': {e.Message}");
             }
         }
     }

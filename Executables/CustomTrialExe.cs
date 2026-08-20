@@ -176,7 +176,7 @@ namespace KernelExtensions.Executables
                 return; // 锁定，不再继续加载配置相关
             }
 
-            Console.WriteLine($"[KernelExtensions]CustomTrialExe: Found flag '{flag}'");
+            KELog.Debug($"[CustomTrialExe] Found flag '{flag}'");
 
             // 从 flag 中提取配置名
             string configName = flag.Substring("CustomTrial_".Length);
@@ -189,7 +189,7 @@ namespace KernelExtensions.Executables
             if (config == null)
             {
                 trialLocked = true;
-                Console.WriteLine("[KernelExtensions]CustomTrialExe: Failed to load trial config.");
+                KELog.Error("[CustomTrialExe] Failed to load trial config.");
                 return;
             }
 
@@ -229,7 +229,7 @@ namespace KernelExtensions.Executables
 
             if (string.IsNullOrEmpty(extensionRoot))
             {
-                Console.WriteLine("[KernelExtensions]CustomTrialExe: Error: No extension root found. This mod must be run as part of an extension.");
+                KELog.Error("[CustomTrialExe] Error: No extension root found. This mod must be run as part of an extension.");
                 return null;
             }
             return Path.Combine(extensionRoot, relativePath).Replace('\\', '/');
@@ -252,7 +252,7 @@ namespace KernelExtensions.Executables
             // 配置文件必须位于扩展根目录下的 Trial 文件夹中
             if (string.IsNullOrEmpty(extensionRoot))
             {
-                Console.WriteLine("[KernelExtensions]CustomTrialExe: Error: Cannot locate trial config because no extension root is available.");
+                KELog.Error("[CustomTrialExe] Error: Cannot locate trial config because no extension root is available.");
                 isExiting = true;
                 return;
             }
@@ -260,7 +260,7 @@ namespace KernelExtensions.Executables
             string configPath = Path.Combine(extensionRoot, "Trial", configName + ".xml").Replace('\\', '/');
             if (!File.Exists(configPath))
             {
-                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error: Trial config '{configName}.xml' not found at '{configPath}'. Please ensure the file exists and the flag '{flag}' is correct.");
+                KELog.Error($"[CustomTrialExe] Error: Trial config '{configName}.xml' not found at '{configPath}'. Please ensure the file exists and the flag '{flag}' is correct.");
                 isExiting = true;
                 return;
             }
@@ -274,7 +274,7 @@ namespace KernelExtensions.Executables
             }
             catch (Exception e)
             {
-                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error loading config: {e.Message}");
+                KELog.Error($"[CustomTrialExe] Error loading config: {e.Message}");
                 isExiting = true;
             }
         }
@@ -548,7 +548,7 @@ namespace KernelExtensions.Executables
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"[KernelExtensions]CustomTrialExe: ConnectTarget '{config.ConnectTarget}' not found.");
+                                        KELog.Error($"[CustomTrialExe] ConnectTarget '{config.ConnectTarget}' not found.");
                                     }
                                 }
                                 ExecuteActionFile(config.OnComplete?.FilePath);
@@ -780,7 +780,7 @@ namespace KernelExtensions.Executables
                 string missionPath = ResolvePath(CurrentPhase.MissionFile);
                 if (missionPath == null || !File.Exists(missionPath))
                 {
-                    Console.WriteLine($"[KernelExtensions]CustomTrialExe: Error: Mission file not found: {CurrentPhase.MissionFile}");
+                    KELog.Error($"[CustomTrialExe] Error: Mission file not found: {CurrentPhase.MissionFile}");
                     currentMission = null;
                 }
                 else
@@ -901,7 +901,7 @@ namespace KernelExtensions.Executables
             if (!string.IsNullOrEmpty(currentFlag))
             {
                 os.Flags.RemoveFlag(currentFlag);
-                Console.WriteLine($"[KernelExtensions]CustomTrialExe: Removed flag: {currentFlag}");
+                KELog.Debug($"[CustomTrialExe] Removed flag: {currentFlag}");
             }
         }
 

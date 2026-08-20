@@ -537,7 +537,7 @@ private static List<float> _visSampList;
                             filePath = altPath;
                         else
                         {
-                            Console.WriteLine($"[PhaseSwift] 找不到音轨 {i}: {filePath} (已尝试 {altPath})");
+                            KELog.Warn($"[PhaseSwift] 找不到音轨 {i}: {filePath} (已尝试 {altPath})");
                             continue;
                         }
                     }
@@ -559,7 +559,7 @@ private static List<float> _visSampList;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[PhaseSwift] 加载音轨 {i} 失败: {ex.Message}");
+                    KELog.Error($"[PhaseSwift] 加载音轨 {i} 失败: {ex.Message}");
                     if (_trackStreams[i] != null) { _trackStreams[i].Dispose(); _trackStreams[i] = null; }
                 }
             }
@@ -621,7 +621,7 @@ private static List<float> _visSampList;
             }
             catch (Exception ex_)
             {
-                Console.WriteLine($"[PhaseSwift] SubmitBuffer error: {ex_.Message}");
+                KELog.Error($"[PhaseSwift] SubmitBuffer error: {ex_.Message}");
             }
         }
 

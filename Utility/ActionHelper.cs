@@ -66,7 +66,7 @@ namespace KernelExtensions.Utility
             }
             catch (Exception e)
             {
-                Console.WriteLine($"[KernelExtensions] ActionHelper: Error executing action file '{fullPath}': {e.Message}");
+                KELog.Error($"[ActionHelper] Error executing action file '{fullPath}': {e.Message}");
             }
         }
     }
