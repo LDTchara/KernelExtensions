@@ -1,5 +1,6 @@
 using Hacknet;
 using KernelExtensions.Modules;
+using KernelExtensions.Utility;
 using Pathfinder.Action;
 
 namespace KernelExtensions.Actions.Aircraft
@@ -18,7 +19,8 @@ namespace KernelExtensions.Actions.Aircraft
             // 覆盖层关闭：若 daemon 空闲则停止持续更新（坠机/固件重载中不打断）
             fd?.UnsubscribeIfIdle();
 
-            os?.write("Aircraft overlay deactivated.");
+            // 成功状态写入 KELog（开发日志），不刷玩家终端
+            KELog.Info("Aircraft overlay deactivated.");
         }
     }
 }

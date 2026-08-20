@@ -1,6 +1,7 @@
 using Hacknet;
 using KernelExtensions.Daemons;
 using KernelExtensions.Modules;
+using KernelExtensions.Utility;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
@@ -48,7 +49,8 @@ namespace KernelExtensions.Actions.Aircraft
                 // 确保该飞行守护进程已经订阅了更新（如果尚未订阅，则开始）
                 fd.StartUpdating();
 
-                os.write($"Aircraft overlay activated for {targetComp.name} (idName: {NodeID}).");
+                // 成功状态写入 KELog（开发日志），不刷玩家终端
+                KELog.Info($"Aircraft overlay activated for {targetComp.name} (idName: {NodeID}).");
             }
             else
             {
