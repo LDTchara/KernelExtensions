@@ -83,7 +83,7 @@ namespace KernelExtensions.Modules
         {
             if (string.IsNullOrWhiteSpace(id)) return;
             if (!ActiveClocks.TryGetValue(os, out var clocks) || !clocks.Remove(id)) return;
-            if (KEConfigLoader.Debug) KELog.Debug($"[Clock] stopped '{id}' by ID");
+            KELog.Debug($"[Clock] stopped '{id}' by ID");
             if (clocks.Count == 0)
             {
                 ActiveClocks.Remove(os);
