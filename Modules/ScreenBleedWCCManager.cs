@@ -82,7 +82,7 @@ namespace KernelExtensions.Modules
                 if (!string.IsNullOrWhiteSpace(state.CompleteAction))
                 {
                     try { RunnableConditionalActions.LoadIntoOS(state.CompleteAction, os); }
-                    catch (Exception ex) { KELog.Debug("[WCC] CompleteAction: " + ex.Message); }
+                    catch (Exception ex) { KELog.Warn("[WCC] CompleteAction: " + ex.Message); }
                 }
                 return;
             }

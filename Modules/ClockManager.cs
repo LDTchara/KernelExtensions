@@ -75,7 +75,7 @@ namespace KernelExtensions.Modules
             Subscribe(os);
 
             if (KEConfigLoader.Debug)
-                KELog.Debug($"[Clock] started '{def.Id}' interval={def.Interval}s times={def.MaxTimes} duration={def.MaxDuration}s");
+                KELog.Info($"[Clock] started '{def.Id}' interval={def.Interval}s times={def.MaxTimes} duration={def.MaxDuration}s");
         }
 
         /// <summary>按 ID 停止（手动取消，不触发 OnComplete）。未知 ID 静默。</summary>
@@ -83,7 +83,7 @@ namespace KernelExtensions.Modules
         {
             if (string.IsNullOrWhiteSpace(id)) return;
             if (!ActiveClocks.TryGetValue(os, out var clocks) || !clocks.Remove(id)) return;
-            KELog.Debug($"[Clock] stopped '{id}' by ID");
+            KELog.Info($"[Clock] stopped '{id}' by ID");
             if (clocks.Count == 0)
             {
                 ActiveClocks.Remove(os);
@@ -105,7 +105,7 @@ namespace KernelExtensions.Modules
 
             foreach (var id in toRemove) clocks.Remove(id);
             if (toRemove.Count > 0 && KEConfigLoader.Debug)
-                KELog.Debug($"[Clock] stopped '{string.Join(",", toRemove)}' by path");
+                KELog.Info($"[Clock] stopped '{string.Join(",", toRemove)}' by path");
             if (clocks.Count == 0)
             {
                 ActiveClocks.Remove(os);
@@ -144,7 +144,7 @@ namespace KernelExtensions.Modules
                     if (!string.IsNullOrEmpty(inst.Def.OnCompletePath))
                         ActionHelper.ExecuteActionFile(os, inst.Def.OnCompletePath, inst.Def.ExtensionRoot);
                     if (KEConfigLoader.Debug)
-                        KELog.Debug($"[Clock] '{inst.Def.Id}' completed (times={inst.TimesElapsed}, elapsed={(OS.currentElapsedTime - inst.StartedAt):F1}s)");
+                        KELog.Info($"[Clock] '{inst.Def.Id}' completed (times={inst.TimesElapsed}, elapsed={(OS.currentElapsedTime - inst.StartedAt):F1}s)");
                 }
                 else
                 {

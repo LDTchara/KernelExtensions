@@ -136,7 +136,7 @@ namespace KernelExtensions.Patches
             }
 
             _presetsLoaded = true;
-            KELog.Debug($"[CustomColor] loaded {loaded} presets, {_presetCache.Count} cached");
+            KELog.Info($"[CustomColor] loaded {loaded} presets, {_presetCache.Count} cached");
         }
 
         // ========== ThemeManager.Update Prefix ==========

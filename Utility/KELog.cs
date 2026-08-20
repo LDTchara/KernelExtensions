@@ -12,6 +12,9 @@ namespace KernelExtensions.Utility
     ///   KELog.Error("...");  // 不该发生/功能失败：代码路径错误、配置非法、异常导致功能未生效
     ///
     /// 分层: Debug(默认关) &lt; Info &lt; Warn &lt; Error（后三者始终显示）
+    /// Info/Debug 划分（2026-08-20）:
+    ///   Info  = 扩展作者配置/触发动作的“结果/状态”（动作级，一次触发一条，如 Clock 启停/完成）
+    ///   Debug = KE 内部机制/数据流细节（数据级/循环级，如 len、预加载计数、内部比较）
     /// 用法：KELog.Info("...");
     /// </summary>
     public static class KELog

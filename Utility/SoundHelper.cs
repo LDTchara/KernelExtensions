@@ -43,7 +43,7 @@ namespace KernelExtensions.Utility
                 {
                     // 使用三参数版本，与 CrashModule.beep 相同
                     bool success = sound.Play(volume, pitch, pan);
-                    KELog.Debug($"[SoundHelper] Play returned {success}");
+                    KELog.Info($"[SoundHelper] Play returned {success}");
                 }
             }
             catch (System.Exception e)
