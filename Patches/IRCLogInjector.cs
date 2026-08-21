@@ -10,7 +10,7 @@ namespace KernelExtensions.Patches;
 /// false 时原版 + 自定义。
 /// </summary>
 [HarmonyPatch(typeof(FileEntry), nameof(FileEntry.init))]
-internal static class CN_IRCLogInjector
+internal static class IRCLogInjector
 {
     private static bool OverrideOriginal => KEConfigLoader.SkipVanillaIRCLogs;
 
