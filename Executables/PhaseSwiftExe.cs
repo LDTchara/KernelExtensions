@@ -1,7 +1,7 @@
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Extensions;
 using Hacknet.Gui;
-using KernelExtensions.Config;
+using KernelExtensions.Configs;
 using KernelExtensions.Modules;
 using Microsoft.Xna.Framework;
 using Pathfinder.Executable;

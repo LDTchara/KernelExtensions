@@ -1,6 +1,6 @@
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 
-namespace KernelExtensions.Config
+namespace KernelExtensions.Configs
 {
     [XmlRoot("PhaseSwiftConfig")]
     public class PhaseSwiftConfig

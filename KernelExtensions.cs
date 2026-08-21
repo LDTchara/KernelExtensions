@@ -1,4 +1,4 @@
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Hacknet;
 using Hacknet;
 using Hacknet.Extensions;
@@ -8,7 +8,7 @@ using KernelExtensions.Actions.Aircraft;
 using KernelExtensions.Actions.CustomTrial;
 using KernelExtensions.Actions.PhaseSwift;
 using KernelExtensions.Actions.VMAttack;
-using KernelExtensions.Config;
+using KernelExtensions.Configs;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Modules;

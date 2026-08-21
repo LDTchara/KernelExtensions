@@ -1,7 +1,7 @@
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Extensions;
 using HarmonyLib;
-using KernelExtensions.Config;
+using KernelExtensions.Configs;
 using KernelExtensions.Modules;
 
 namespace KernelExtensions.Patches

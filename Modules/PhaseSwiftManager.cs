@@ -1,8 +1,8 @@
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Extensions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
-using KernelExtensions.Config;
+using KernelExtensions.Configs;
 using KernelExtensions.Utility;
 using KernelExtensions.Saving;
 using KernelExtensions.Patches;

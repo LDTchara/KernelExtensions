@@ -2,7 +2,7 @@
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
-using KernelExtensions.Config;
+using KernelExtensions.Configs;
 using KernelExtensions.Storage;
 using KernelExtensions.Utility;   // 用于节点存储
 using KernelExtensions.Patches;

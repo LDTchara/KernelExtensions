@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
-using KernelExtensions.Config;
+using KernelExtensions.Configs;
 using KernelExtensions.Patches;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;

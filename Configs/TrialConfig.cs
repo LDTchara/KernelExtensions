@@ -1,6 +1,6 @@
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 
-namespace KernelExtensions.Config
+namespace KernelExtensions.Configs
 {
     /// <summary>
     /// 试炼配置的根对象，对应 XML 根元素 &lt;TrialConfig&gt;。

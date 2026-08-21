@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Hacknet;
-using KernelExtensions.Config;
+using KernelExtensions.Configs;
 using KernelExtensions.Utility;
 using Pathfinder.Replacements;
 using Pathfinder.Util;
