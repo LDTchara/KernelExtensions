@@ -8,7 +8,7 @@ using KernelExtensions.Modules;
 namespace KernelExtensions.Patches
 {
     [HarmonyPatch]
-    public static class OverlayPatches
+    public static class OverlayPatch
     {
         // ========== 在 OS.drawModules 末尾绘制高度计 ==========
         [HarmonyPostfix]

@@ -11,7 +11,7 @@ namespace KernelExtensions.Patches
     /// 通过 PatchAll 自动注册，驱动 WCC 效果每帧更新和取消兼容。
     /// </summary>
     [HarmonyPatch]
-    public static class ScreenBleedWCCPatches
+    public static class ScreenBleedWCCPatch
     {
         /// <summary>
         /// OS.Update Postfix：每帧驱动 WCC ScreenBleed 计时和渲染。

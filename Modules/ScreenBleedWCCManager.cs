@@ -14,7 +14,7 @@ namespace KernelExtensions.Modules
 {
     /// <summary>
     /// 管理 WCC（WithCustomColor）ScreenBleed 效果的计时、渲染和清理。
-    /// 由 StartScreenBleedEffectWCCAction 触发，ScreenBleedWCCPatches 驱动。
+    /// 由 StartScreenBleedEffectWCCAction 触发，ScreenBleedWCCPatch 驱动。
     /// 完全替代原版 PostProcessor.dangerMode + StartScreenBleed 方案。
     /// </summary>
     internal static class ScreenBleedWCCManager
@@ -93,7 +93,7 @@ namespace KernelExtensions.Modules
             os.postFXDrawActions += WccDraw;
         }
 
-        /// <summary>供 ScreenBleedWCCPatches 调用的取消处理器。</summary>
+        /// <summary>供 ScreenBleedWCCPatch 调用的取消处理器。</summary>
         public static void OnCancelScreenBleed(ActiveEffectsUpdater updater)
         {
             if (UpdaterToOS.TryGetValue(updater, out var os))
