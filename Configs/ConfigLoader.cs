@@ -1,4 +1,4 @@
-using Hacknet.Extensions;
+﻿using Hacknet.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,13 +6,13 @@ using System.Linq;
 using System.Xml.Linq;
 using KernelExtensions.Utility;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Configs
 {
     /// <summary>
     /// 读取扩展根目录的 KE-Config.xml。
     /// 文件不存在时自动生成带注释的模板，字段缺失时回退默认值。
     /// </summary>
-    public static class KEConfigLoader
+    public static class ConfigLoader
     {
         public static bool Debug { get; private set; }
         public static bool SkipVanillaIRCLogs { get; private set; }

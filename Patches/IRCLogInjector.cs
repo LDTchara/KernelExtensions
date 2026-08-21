@@ -1,6 +1,7 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using Hacknet;
 using Microsoft.Xna.Framework.Content;
+using KernelExtensions.Configs;
 using KernelExtensions.Utility;
 
 namespace KernelExtensions.Patches;
@@ -12,12 +13,12 @@ namespace KernelExtensions.Patches;
 [HarmonyPatch(typeof(FileEntry), nameof(FileEntry.init))]
 internal static class IRCLogInjector
 {
-    private static bool OverrideOriginal => KEConfigLoader.SkipVanillaIRCLogs;
+    private static bool OverrideOriginal => ConfigLoader.SkipVanillaIRCLogs;
 
     static bool Prefix(ContentManager content)
     {
         // 确保配置在 FileEntry.init 处理前已加载
-        KEConfigLoader.Load();
+        ConfigLoader.Load();
         string extRoot = "";  // 稍后填
 
         // 1. 创建列表

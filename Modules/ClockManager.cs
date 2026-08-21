@@ -74,7 +74,7 @@ namespace KernelExtensions.Modules
             };
             Subscribe(os);
 
-            if (KEConfigLoader.Debug)
+            if (ConfigLoader.Debug)
                 KELog.Info($"[Clock] started '{def.Id}' interval={def.Interval}s times={def.MaxTimes} duration={def.MaxDuration}s");
         }
 
@@ -104,7 +104,7 @@ namespace KernelExtensions.Modules
                     toRemove.Add(kv.Key);
 
             foreach (var id in toRemove) clocks.Remove(id);
-            if (toRemove.Count > 0 && KEConfigLoader.Debug)
+            if (toRemove.Count > 0 && ConfigLoader.Debug)
                 KELog.Info($"[Clock] stopped '{string.Join(",", toRemove)}' by path");
             if (clocks.Count == 0)
             {
@@ -143,7 +143,7 @@ namespace KernelExtensions.Modules
                     // <Actions>/<ConditionalActions> 双根，如测试扩展 Clocks/done.xml）
                     if (!string.IsNullOrEmpty(inst.Def.OnCompletePath))
                         ActionHelper.ExecuteActionFile(os, inst.Def.OnCompletePath, inst.Def.ExtensionRoot);
-                    if (KEConfigLoader.Debug)
+                    if (ConfigLoader.Debug)
                         KELog.Info($"[Clock] '{inst.Def.Id}' completed (times={inst.TimesElapsed}, elapsed={(OS.currentElapsedTime - inst.StartedAt):F1}s)");
                 }
                 else

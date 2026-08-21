@@ -1,4 +1,5 @@
-using BepInEx.Logging;
+﻿using BepInEx.Logging;
+using KernelExtensions.Configs;
 
 namespace KernelExtensions.Utility
 {
@@ -43,7 +44,7 @@ namespace KernelExtensions.Utility
 
         public static void Debug(string msg)
         {
-            if (KEConfigLoader.Debug)
+            if (ConfigLoader.Debug)
                 _log?.LogDebug(msg);
         }
     }

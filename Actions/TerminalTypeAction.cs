@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using Hacknet;
 using Hacknet.Effects;
+using KernelExtensions.Configs;
 using KernelExtensions.Utility;
 using Pathfinder.Action;
 using Pathfinder.Util;
@@ -49,7 +50,7 @@ namespace KernelExtensions.Actions
                 }
 
                 string finalText = ComputerLoader.filter(Text);
-                if (KEConfigLoader.Debug)
+                if (ConfigLoader.Debug)
                     KELog.Debug($"[TerminalType] trigger: len={finalText.Length} CharDelay={CharDelay}");
 
                 new TimedPrinter(os, finalText, CharDelay).Start();

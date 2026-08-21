@@ -1,6 +1,7 @@
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Extensions;
 using Microsoft.Xna.Framework.Graphics;
+using KernelExtensions.Configs;
 using KernelExtensions.Patches;
 using KernelExtensions.Utility;
 
@@ -27,7 +28,7 @@ namespace KernelExtensions.Storage
                 int count = 0;
 
                 // 1. 从 BepInEx CustomImagesPath 加载（;分隔的图片路径列表，建议 128x128）
-                var customImages = KEConfigLoader.CustomImages;
+                var customImages = ConfigLoader.CustomImages;
                 if (customImages.Count > 0)
                 {
                     foreach (string raw in customImages)

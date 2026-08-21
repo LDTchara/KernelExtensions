@@ -123,9 +123,9 @@ namespace KernelExtensions
             KELog.Info("NodeIcon save/load event handlers registered.");
             EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
             KELog.Info("NodeIcon OSLoaded handler registered.");
-            EventManager<OSLoadedEvent>.AddHandler((e) => { try { KEConfigLoader.Load(); } catch { } });
+            EventManager<OSLoadedEvent>.AddHandler((e) => { try { ConfigLoader.Load(); } catch { } });
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_AutoRestorePhaseSwift);
-            KELog.Info("KEConfigLoader handler registered.");
+            KELog.Info("ConfigLoader handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
 
@@ -281,7 +281,7 @@ namespace KernelExtensions
             string flag = os.Flags.GetFlagStartingWith("Kernel_VMInfected_");
 
             // 以下是原有感染分支，也加入少量调试
-            if (KEConfigLoader.Debug) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
+            if (ConfigLoader.Debug) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
 
             // 没有感染标记，直接返回
             if (flag == null)
@@ -294,7 +294,7 @@ namespace KernelExtensions
 
             if (!File.Exists(configPath))
             {
-                if (KEConfigLoader.Debug) Log.LogDebug("Config file not found at: " + configPath);
+                if (ConfigLoader.Debug) Log.LogDebug("Config file not found at: " + configPath);
                 os.Flags.RemoveFlag(flag);
                 return;
             }
@@ -308,13 +308,13 @@ namespace KernelExtensions
             }
             catch (Exception ex)
             {
-                if (KEConfigLoader.Debug) Log.LogDebug("Failed to deserialize config: " + ex.Message);
+                if (ConfigLoader.Debug) Log.LogDebug("Failed to deserialize config: " + ex.Message);
                 return;
             }
 
             VMInfectionManager.CurrentConfig = config;
 
-            if (KEConfigLoader.Debug) Log.LogDebug("Config loaded. Mode = " + config.Mode);
+            if (ConfigLoader.Debug) Log.LogDebug("Config loaded. Mode = " + config.Mode);
 
             if (config.Mode == RecoveryMode.FileDeletion)
             {
@@ -324,7 +324,7 @@ namespace KernelExtensions
                     // 播放成功音乐
                     if (!string.IsNullOrEmpty(config.SuccessMusic))
                     {
-                        if (KEConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
+                        if (ConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
                         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                         MusicManager.loadAsCurrentSong(resolved);
@@ -355,7 +355,7 @@ namespace KernelExtensions
                             string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                             string refPath = System.IO.Path.Combine(extRoot, config.CheckFilePattern);
                             contentMatch = System.IO.File.Exists(refPath) && FilesMatch(checkPath, refPath);
-                            if (KEConfigLoader.Debug)
+                            if (ConfigLoader.Debug)
                                 KELog.Debug($"[VM] CheckFilePattern: comparing with {refPath} -> {(contentMatch ? "match" : "mismatch")}");
                         }
                         catch
@@ -368,7 +368,7 @@ namespace KernelExtensions
                         // 播放成功音乐
                         if (!string.IsNullOrEmpty(config.SuccessMusic))
                         {
-                            if (KEConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
+                            if (ConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
                             string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                             string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                             MusicManager.loadAsCurrentSong(resolved);
