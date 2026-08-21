@@ -1,9 +1,8 @@
 using Pathfinder.Meta.Load;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;
-using KernelExtensions.Storage;
 
-namespace KernelExtensions.Saving
+namespace KernelExtensions.Storage
 {
     /// <summary>
     /// 在游戏加载/创建节点时自动初始化 OrgIcon 和 CurrIcon。
