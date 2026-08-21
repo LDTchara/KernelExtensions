@@ -6,7 +6,7 @@ using Pathfinder.Util.XML;
 
 namespace KernelExtensions.Actions.Aircraft
 {
-    public class AttackAircraft : DelayablePathfinderAction
+    public class AttackAircraftAction : DelayablePathfinderAction
     {
         [XMLStorage] public string NodeID;
 

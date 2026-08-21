@@ -6,7 +6,7 @@ using Pathfinder.Util;
 namespace KernelExtensions.Actions.Aircraft
 {
     // 表示上传飞机系统文件到指定计算机或文件夹的可延迟路径查找动作
-    public class UploadAircraftSysFile : DelayablePathfinderAction
+    public class UploadAircraftSysFileAction : DelayablePathfinderAction
     {
         // 目标节点的ID（如计算机ID）
         [XMLStorage]
