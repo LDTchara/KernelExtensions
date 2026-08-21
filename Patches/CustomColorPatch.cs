@@ -1,4 +1,4 @@
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Utility;
@@ -120,7 +120,7 @@ namespace KernelExtensions.Patches
                         float trans = m.Groups[4].Success ? float.Parse(m.Groups[4].Value, System.Globalization.CultureInfo.InvariantCulture) : 0f;
                         segments.Add(new GradientSegment
                         {
-                            Color = ColorUtils.ParseHexColor(m.Groups[2].Value),
+                            Color = ColorHelper.ParseHexColor(m.Groups[2].Value),
                             Duration = dur,
                             Transition = trans
                         });
@@ -199,12 +199,12 @@ namespace KernelExtensions.Patches
                     var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
                     cfg.Segments.Add(new GradientSegment
                     {
-                        Color = ColorUtils.ParseHexColor(match.Groups[3].Value),
+                        Color = ColorHelper.ParseHexColor(match.Groups[3].Value),
                         Duration = 0f
                     });
                     cfg.Segments.Add(new GradientSegment
                     {
-                        Color = ColorUtils.ParseHexColor(match.Groups[4].Value),
+                        Color = ColorHelper.ParseHexColor(match.Groups[4].Value),
                         Duration = float.TryParse(match.Groups[5].Value, out float d) ? d : 2f
                     });
                     _dynamicFields[fieldName] = cfg;
@@ -279,7 +279,7 @@ namespace KernelExtensions.Patches
             if (cfg.ColorType == DynColorConfig.Type.Rainbow)
             {
                 float hue = (float)(time * cfg.Speed) % 1.0f;
-                Color c = ColorUtils.HSVToColor(hue, cfg.Saturation, cfg.Value);
+                Color c = ColorHelper.HSVToColor(hue, cfg.Saturation, cfg.Value);
                 if (cfg.Alpha < 1f) c *= cfg.Alpha;
                 return c;
             }
@@ -347,8 +347,8 @@ namespace KernelExtensions.Patches
                 if (m.Success)
                 {
                     var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
-                    cfg.Segments.Add(new GradientSegment { Color = ColorUtils.ParseHexColor(m.Groups[1].Value), Duration = 0f });
-                    cfg.Segments.Add(new GradientSegment { Color = ColorUtils.ParseHexColor(m.Groups[2].Value), Duration = float.Parse(m.Groups[3].Value) });
+                    cfg.Segments.Add(new GradientSegment { Color = ColorHelper.ParseHexColor(m.Groups[1].Value), Duration = 0f });
+                    cfg.Segments.Add(new GradientSegment { Color = ColorHelper.ParseHexColor(m.Groups[2].Value), Duration = float.Parse(m.Groups[3].Value) });
                     return cfg;
                 }
                 return null;

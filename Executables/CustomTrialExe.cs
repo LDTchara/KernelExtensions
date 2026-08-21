@@ -1,4 +1,4 @@
-using Hacknet;
+﻿using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
@@ -314,7 +314,7 @@ namespace KernelExtensions.Executables
             if (colorStr.Equals("LDTchara", StringComparison.OrdinalIgnoreCase))
             {
                 float hue = (float)(OS.currentElapsedTime * 0.1) % 1.0f;
-                return ColorUtils.HSVToColor(hue, 1.0f, 1.0f);
+                return ColorHelper.HSVToColor(hue, 1.0f, 1.0f);
             }
 
             // 尝试使用 XNA 的颜色转换器

@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 
 namespace KernelExtensions.Utility
 {
@@ -12,7 +12,7 @@ namespace KernelExtensions.Utility
     ///   HSVToColor(hue, saturation, value)  — HSV → Color，hue 范围 0~1
     ///   ParseHexColor(hex)                   — #RRGGBB 或 #AARRGGBB → Color
     /// </summary>
-    public static class ColorUtils
+    public static class ColorHelper
     {
         /// <summary>HSV → RGB，hue 范围 0~1</summary>
         public static Color HSVToColor(float hue, float saturation, float value)

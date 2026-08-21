@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Hacknet;
 using KernelExtensions.Patches;
 using KernelExtensions.Utility;
@@ -88,7 +88,7 @@ namespace KernelExtensions.Actions
 
             // 静态色：#RRGGBB / #AARRGGBB / R,G,B[,A]
             if (raw.StartsWith("#") || raw.Contains(','))
-                return (ColorUtils.ParseHexColor(raw), null);
+                return (ColorHelper.ParseHexColor(raw), null);
 
             // 兜底：命名色（Red/Monochrome 等）
             try

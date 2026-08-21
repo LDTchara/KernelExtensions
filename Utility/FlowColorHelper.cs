@@ -1,11 +1,11 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 
 namespace KernelExtensions.Utility
 {
     /// <summary>
     /// 提供基于时间流动的彩虹颜色计算。
     /// </summary>
-    public static class FlowColorUtils
+    public static class FlowColorHelper
     {
         /// <summary>
         /// 根据当前位置（0~1）和基础时间偏移，返回流动的彩虹色。

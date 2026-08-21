@@ -1,4 +1,4 @@
-using Hacknet;
+﻿using Hacknet;
 using HarmonyLib;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
@@ -45,7 +45,7 @@ namespace KernelExtensions.Patches
             for (int i = 0; i < text.Length; i++)
             {
                 float pos = text.Length <= 1 ? 0f : (float)i / (text.Length - 1);
-                Color color = FlowColorUtils.GetFlowingRainbowColor(pos, baseTime);
+                Color color = FlowColorHelper.GetFlowingRainbowColor(pos, baseTime);
                 // 同时间源产生逐字相位偏移的垂直晃动
                 float bob = (float)Math.Sin(baseTime * 4 + pos * Math.PI * 4.0) * bobAmplitude;
 
