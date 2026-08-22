@@ -22,6 +22,8 @@ namespace KernelExtensions.Patches
     {
         private static FieldInfo targetField;
         private static FieldInfo progressField;
+        private static FieldInfo targetingField;   // IsTargetingPorthackHeart（heart 特殊状态标志）
+        private static FieldInfo cubeSeqField;     // cubeSeq（破解界面立方体序列）
 
         public static void ApplyPatch(Harmony harmony)
         {
@@ -35,6 +37,8 @@ namespace KernelExtensions.Patches
 
                 targetField = AccessTools.Field(type, "target");
                 progressField = AccessTools.Field(type, "progress");
+                targetingField = AccessTools.Field(type, "IsTargetingPorthackHeart");
+                cubeSeqField = AccessTools.Field(type, "cubeSeq");
 
                 harmony.Patch(update, postfix: new HarmonyMethod(
                     typeof(PorthackAutoPatch).GetMethod(nameof(Postfix), BindingFlags.Static | BindingFlags.NonPublic)));
@@ -61,6 +65,18 @@ namespace KernelExtensions.Patches
 
                 // 对齐原版时机：破解进度 > 50%
                 if (progressField != null && progressField.GetValue(__instance) is float prog && prog <= 0.5f) return;
+
+                // 对齐原版：把 porthack 置为 heart 特殊状态——IsTargetingPorthackHeart=true
+                // （progress 随机卡住永不完成 + 界面 DarkRed 闪烁显示 UNKNOWN ERROR），
+                // 以及破解界面立方体序列无限旋转（cubeSeq.ShouldCentralSpinInfinitley=true）
+                try { targetingField?.SetValue(__instance, true); } catch { }
+                try
+                {
+                    var cubeSeq = cubeSeqField?.GetValue(__instance);
+                    if (cubeSeq != null)
+                        cubeSeq.GetType().GetField("ShouldCentralSpinInfinitley")?.SetValue(cubeSeq, true);
+                }
+                catch { }
 
                 phd.BreakHeart();
             }

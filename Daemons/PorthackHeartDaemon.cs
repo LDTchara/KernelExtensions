@@ -3,6 +3,7 @@ using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Gui;
 using Hacknet.Extensions;
+using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
@@ -194,6 +195,11 @@ namespace KernelExtensions.Daemons
             heartbreakFinished = true;
             UnlockInputIfLocked();
 
+            // 显式关闭错误状态中的 porthackexe（os.exes 里的 PortHackExe → isExiting=true；
+            // ExeModule internal 无法直接访问，反射处理）——porthack 处于 UNKNOWN ERROR
+            // 特殊状态且 progress 永不完成，断开/清理前必须关闭，否则界面残留
+            try { ClosePorthackExe(); } catch { }
+
             // 断开玩家 + 清理 heart 节点（移除可见/禁用/清 daemon/换随机 IP），
             // 防止悬空连接与重复访问；flag/结局任务/音乐/存档等交给 OnComplete 自定义
             try { Programs.disconnect(new string[0], os); } catch { }
@@ -213,6 +219,22 @@ namespace KernelExtensions.Daemons
             catch { }
 
             ExecuteOnComplete();
+        }
+
+        /// <summary>关闭 os.exes 中处于 UNKNOWN ERROR 特殊状态的 PortHackExe（isExiting=true）。</summary>
+        private void ClosePorthackExe()
+        {
+            var exes = AccessTools.Field(typeof(OS), "exes")?.GetValue(os) as System.Collections.IList;
+            if (exes == null) return;
+            for (int i = 0; i < exes.Count; i++)
+            {
+                var exe = exes[i];
+                if (exe != null && exe.GetType().Name == "PortHackExe")
+                {
+                    var f = exe.GetType().GetField("isExiting", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    f?.SetValue(exe, true);
+                }
+            }
         }
 
         private void ExecuteOnComplete()
