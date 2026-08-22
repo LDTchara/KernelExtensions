@@ -561,12 +561,27 @@ namespace KernelExtensions
         {
             if (e.Result != ExecutionResult.NotFound) return;
             var info = ExecutableManager.AllCustomExes.FirstOrDefault(x => x.ExeData == e.ExecutableData);
-            if (info.ExeType == null || info.ExeType != typeof(CustomTrialExe)) return;
-            var running = CustomTrialExe.RunningInstance;
-            if (running == null) return;
-            // 文案与 OnInitialize 兜底一致：运行中实例的 IdentifierName（可被配置 ProgramName 覆盖）
-            e.OS.write("【" + running.IdentifierName + "】已经在运行中！");
-            e.Result = ExecutionResult.Cancelled;
+            if (info.ExeType == null) return;
+
+            if (info.ExeType == typeof(CustomTrialExe))
+            {
+                var running = CustomTrialExe.RunningInstance;
+                if (running == null) return;
+                // 文案与 OnInitialize 兜底一致：运行中实例的 IdentifierName（可被配置 ProgramName 覆盖）
+                e.OS.write("【" + running.IdentifierName + "】已经在运行中！");
+                e.Result = ExecutionResult.Cancelled;
+                return;
+            }
+
+            if (info.ExeType == typeof(PhaseSwiftExe))
+            {
+                // 仅拦截 exe 窗口级重复（activeInstances）；管理器级 IsRunning 不拦截——
+                // 读档 AutoRestore 启动 PS 后玩家开 exe 当控制台是合法多视图
+                var running = PhaseSwiftExe.RunningInstance;
+                if (running == null) return;
+                e.OS.write("【" + running.IdentifierName + "】已经在运行中！");
+                e.Result = ExecutionResult.Cancelled;
+            }
         }
 
         private void OnOSLoaded_AutoRestorePhaseSwift(OSLoadedEvent e)

@@ -1,6 +1,7 @@
 ﻿using Hacknet;
 using Hacknet.Extensions;
 using Hacknet.Gui;
+using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Modules;
 using KernelExtensions.Utility;
@@ -32,6 +33,12 @@ namespace KernelExtensions.Executables
         private static readonly List<PhaseSwiftExe> activeInstances = new();
         public static void CleanupAll() { foreach (var e in activeInstances.ToArray()) e.DoCleanup(); }
 
+        /// <summary>是否存在正在运行的实例（事件层无痕互斥检查用，2026-08-23）。</summary>
+        public static bool HasRunningInstance() => activeInstances.Any(inst => !inst.isExiting);
+
+        /// <summary>当前正在运行的实例（事件层无痕互斥提示用，与 OnInitialize 兜底查找一致）。</summary>
+        public static PhaseSwiftExe RunningInstance => activeInstances.FirstOrDefault(inst => !inst.isExiting);
+
         // 兼容转发给 Manager（旧 Action 可能通过 Exe 实例调用）
         public void SwitchToScene(int targetScene, float? fadeDuration = null, string overrideTheme = null)
             => PhaseSwiftManager.SwitchToScene(targetScene, fadeDuration, overrideTheme);
@@ -62,7 +69,11 @@ namespace KernelExtensions.Executables
         public override void OnInitialize()
         {
             base.OnInitialize();
-            // 互斥检查：已有正在运行的同名 EXE 时禁止启动
+            // 互斥检查（兜底防御，2026-08-23 主防线已移到事件层）：
+            // KernelExtensions.OnExecutableExecute_Mutex 在 ExecutableExecuteEvent 取消重复启动，
+            // 实例根本不会被创建（无痕，对齐 CustomTrial 的处理）；此处在实例仍被直接创建时兜底：
+            // 拒绝的实例从 os.exes 移除避免窗口残留（isExiting 的实例仍会被绘制，Draw 靠 config==null
+            // 不崩但窗口/ram 回落可见）
             var other = activeInstances.FirstOrDefault(inst => inst != this && !inst.isExiting);
             if (other != null)
             {
@@ -71,6 +82,14 @@ namespace KernelExtensions.Executables
                 os.write("【" + other.IdentifierName + "】已经在运行中！");
                 isExiting = true;
                 _guardBlocked = true;
+                activeInstances.Remove(this);
+                try
+                {
+                    // ExeModule internal 无法直接访问，反射处理（同 CustomTrialExe 兜底）
+                    var exes = AccessTools.Field(typeof(OS), "exes")?.GetValue(os) as System.Collections.IList;
+                    exes?.Remove(this);
+                }
+                catch { }
                 return;
             }
             PhaseSwift_onInit();
