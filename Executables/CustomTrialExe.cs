@@ -2,6 +2,7 @@
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
+using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Storage;
 using KernelExtensions.Utility;   // 用于节点存储
@@ -139,12 +140,24 @@ namespace KernelExtensions.Executables
             base.OnInitialize();
 
             // 互斥检查：已有正在运行的同名 EXE 时禁止启动
+            // 对齐原版 KaguyaTrial（OS.cs case "KaguyaTrial.exe"：exes 已有实例则拒绝创建）：
+            // 拒绝的实例直接从 os.exes 移除、不进入绘制循环——否则 Draw 的 DrawLockedMessage
+            // 会因 backgroundEffect 未初始化（本 return 在资源初始化之前）抛 NullReferenceException
+            // （2026-08-23 实测复现：运行第二个 CustomTrial 时锁定画面 NRE）
             var other = activeInstances.FirstOrDefault(inst => inst != this && !inst.isExiting);
             if (other != null)
             {
                 os.write("【" + other.IdentifierName + "】已经在运行中！");
                 isExiting = true;
                 CurrentInstance = (CustomTrialExe)other;
+                activeInstances.Remove(this);
+                try
+                {
+                    // ExeModule internal 无法直接访问，反射处理（同 PorthackHeartDaemon.ClosePorthackExe）
+                    var exes = AccessTools.Field(typeof(OS), "exes")?.GetValue(os) as System.Collections.IList;
+                    exes?.Remove(this);
+                }
+                catch { }
                 return;
             }
 
@@ -1372,8 +1385,9 @@ namespace KernelExtensions.Executables
         {
             // 始终绘制网格背景，若配置不存在则使用系统高亮色
             Color gridColor = (config != null) ? GetDynamicColor(config.BackgroundColor, os.highlightColor) : os.highlightColor;
-            backgroundEffect.Update(t);
-            backgroundEffect.Draw(bgRect, spriteBatch, Color.Black, gridColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
+            // 防御：互斥拒绝路径可能未初始化 backgroundEffect（正常锁定路径已初始化）
+            backgroundEffect?.Update(t);
+            backgroundEffect?.Draw(bgRect, spriteBatch, Color.Black, gridColor * 0.2f, HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
 
             string lockText = GetLocalizedLockedText();
             int btnHeight = 30;
