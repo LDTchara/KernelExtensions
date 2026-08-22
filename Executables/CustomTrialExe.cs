@@ -30,6 +30,12 @@ namespace KernelExtensions.Executables
         private static readonly List<CustomTrialExe> activeInstances = new();
         // CleanupAll removed - CustomTrialExe doesn't have DoCleanup
 
+        /// <summary>是否存在正在运行的实例（事件层无痕互斥检查用，2026-08-23）。</summary>
+        public static bool HasRunningInstance() => activeInstances.Any(inst => !inst.isExiting);
+
+        /// <summary>当前正在运行的实例（事件层无痕互斥提示用，与 OnInitialize 兜底查找一致）。</summary>
+        public static CustomTrialExe RunningInstance => activeInstances.FirstOrDefault(inst => !inst.isExiting);
+
         // ---------- 状态机枚举 ----------
         private enum RunState
         {
@@ -139,11 +145,12 @@ namespace KernelExtensions.Executables
         {
             base.OnInitialize();
 
-            // 互斥检查：已有正在运行的同名 EXE 时禁止启动
-            // 对齐原版 KaguyaTrial（OS.cs case "KaguyaTrial.exe"：exes 已有实例则拒绝创建）：
-            // 拒绝的实例直接从 os.exes 移除、不进入绘制循环——否则 Draw 的 DrawLockedMessage
-            // 会因 backgroundEffect 未初始化（本 return 在资源初始化之前）抛 NullReferenceException
-            // （2026-08-23 实测复现：运行第二个 CustomTrial 时锁定画面 NRE）
+            // 互斥检查（兜底防御，2026-08-23 主防线已移到事件层）：
+            // KernelExtensions.OnExecutableExecute_Mutex 在 ExecutableExecuteEvent 取消重复启动，
+            // 实例根本不会被创建（无痕，对齐原版 KaguyaTrial 的 OS 层拒绝）；此处在实例仍被
+            // 直接创建时兜底：拒绝的实例直接从 os.exes 移除、不进入绘制循环——否则 Draw 的
+            // DrawLockedMessage 会因 backgroundEffect 未初始化（本 return 在资源初始化之前）
+            // 抛 NullReferenceException（2026-08-23 实测复现）
             var other = activeInstances.FirstOrDefault(inst => inst != this && !inst.isExiting);
             if (other != null)
             {

@@ -19,6 +19,7 @@ using KernelExtensions.Utility;
 using Pathfinder.Action;
 using Pathfinder.Daemon;
 using Pathfinder.Event;
+using Pathfinder.Event.Gameplay;
 using Pathfinder.Event.Loading;
 using Pathfinder.Event.Saving;
 using Pathfinder.Executable;
@@ -64,6 +65,9 @@ namespace KernelExtensions
             // 0. 绑定 BepInEx 配置
             // 1. 注册自定义可执行程序
             KELog.Init();
+            // 无痕互斥 handler 必须先于 ExecutableManager 注册（RegisterExecutable 触发其静态
+            // 构造 → OnExeExecute 事件 handler 注册；InvokeAll 按注册顺序稳定执行）
+            EventManager<ExecutableExecuteEvent>.AddHandler(OnExecutableExecute_Mutex);
             Console.WriteLine("[KernelExtensions] Registering executables...");
             ExecutableManager.RegisterExecutable<CustomTrialExe>("#CUSTOMTRIAL#");
             KELog.Info("CustomTrial registered.");
@@ -543,6 +547,26 @@ namespace KernelExtensions
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 无痕互斥（2026-08-23）：对齐原版 KaguyaTrial（OS.cs case "KaguyaTrial.exe" 在
+        /// addExe 前检查 exes 列表拒绝创建）——在 ExecutableExecuteEvent 层直接取消重复启动，
+        /// 实例根本不会被创建（此前 OnInitialize 互斥先建实例再移除：短暂窗口 + ram 回落，有痕）。
+        /// Result=Cancelled(2)：调用方 num5==0 报 "Execution failed"、小于 0 报 "No Command"，
+        /// Cancelled 非 0 非负无额外提示，且 Cancelled 跳过后续 handler（PF OnExeExecute 不再创建）。
+        /// 注册必须在 ExecutableManager.RegisterExecutable 之前（InvokeAll 按注册顺序稳定执行）。
+        /// </summary>
+        private static void OnExecutableExecute_Mutex(ExecutableExecuteEvent e)
+        {
+            if (e.Result != ExecutionResult.NotFound) return;
+            var info = ExecutableManager.AllCustomExes.FirstOrDefault(x => x.ExeData == e.ExecutableData);
+            if (info.ExeType == null || info.ExeType != typeof(CustomTrialExe)) return;
+            var running = CustomTrialExe.RunningInstance;
+            if (running == null) return;
+            // 文案与 OnInitialize 兜底一致：运行中实例的 IdentifierName（可被配置 ProgramName 覆盖）
+            e.OS.write("【" + running.IdentifierName + "】已经在运行中！");
+            e.Result = ExecutionResult.Cancelled;
         }
 
         private void OnOSLoaded_AutoRestorePhaseSwift(OSLoadedEvent e)
