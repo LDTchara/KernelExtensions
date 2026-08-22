@@ -43,8 +43,11 @@ namespace KernelExtensions.Daemons
     ///     （SFX/TraceKill）+ 18s 后 glow（SFX/Ending/PorthackSpindown，原版资源，
     ///     缺失静默）→ 立方体对齐 → 心形序列 → 白色淡出
     ///   · **不触发原版结局**（原版 endingSequence 是硬编码结局，对扩展无用；自定义
-    ///     结局画面由 AC 模组实现，届时搬入）。序列结束执行 OnComplete 并复位到
-    ///     默认态（一次性，防重复触发）
+    ///     结局画面由 AC 模组实现，届时搬入）。对齐原版"心碎=终结"：序列结束进入
+    ///     终结态（暗屏），自动做通用清理——解锁输入 + 断开玩家 + heart 节点失效
+    ///     （移除可见/disabled/清 daemon/换随机 IP），然后执行 OnComplete 交给剧情
+    ///     接管（flag/结局任务/音乐/存档等由作者在 OnComplete 里自行定义）；
+    ///     ResetHeartbreak() 可主动复位重玩
     ///   · 音效不开放配置（用户定）：直接用原版 Content 路径，try-catch 缺失静默
     ///   · 触发入口: BreakHeartAction（剧情显式）/ AutoOnPorthack（porthack 破解）
     ///   · 存档: BaseDaemon.GetSaveElement（[XMLStorage] 字段自动序列化）
@@ -73,10 +76,11 @@ namespace KernelExtensions.Daemons
         private float flashOutTime = 0f;
         private SoundEffect spinDownEffect;
         private SoundEffect glowSoundEffect;
-        private bool heartbreakFinished = false; // 一次性：心碎序列已结束（防重复触发）
+        private bool heartbreakTriggered = false; // 一次性触发标志（对齐原版 hasCheckedForheart，防 AutoOnPorthack 每帧重复触发）
+        private bool heartbreakFinished = false;  // 终结态：心碎序列已结束
 
-        public PorthackHeartDaemon(Computer c, OS os)
-            : base(c, "Porthack.Heart", os)
+        public PorthackHeartDaemon(Computer c, string serviceName, OS os)
+            : base(c, serviceName, os)
         {
             name = "Porthack.Heart";
             // 原版资源路径，扩展模式 os.content 仍含原版 Content；缺失静默（不崩）
@@ -89,7 +93,8 @@ namespace KernelExtensions.Daemons
         /// <summary>触发"心碎"序列（对齐原版 BreakHeart；不触发原版结局）。</summary>
         public void BreakHeart()
         {
-            if (heartbreakFinished) return;
+            if (heartbreakTriggered || heartbreakFinished) return;
+            heartbreakTriggered = true;
 
             if (os.TraceDangerSequence.IsActive)
                 os.TraceDangerSequence.CancelTraceDangerSequence();
@@ -122,6 +127,7 @@ namespace KernelExtensions.Daemons
         /// <summary>供扩展/测试复位（恢复默认态，允许再次触发）。</summary>
         public void ResetHeartbreak()
         {
+            heartbreakTriggered = false;
             heartbreakFinished = false;
             PlayingHeartbreak = false;
             IsFlashingOut = false;
@@ -144,6 +150,8 @@ namespace KernelExtensions.Daemons
 
         private void UpdateForTime(Rectangle bounds, SpriteBatch sb)
         {
+            if (heartbreakFinished) return; // 已终结：不再更新（OnComplete 剧情接管）
+
             if (playTimeExpended > FadeoutDelay)
             {
                 float fade = Math.Min(1f, (playTimeExpended - FadeoutDelay) / FadeoutDuration);
@@ -164,12 +172,11 @@ namespace KernelExtensions.Daemons
                     flashOutTime = FlashOutTime;
                     PostProcessor.EndingSequenceFlashOutActive = false;
                     PostProcessor.EndingSequenceFlashOutPercentageComplete = 0f;
-                    // KE 版：不触发原版结局（endingSequence 硬编码原版剧情）；
-                    // 序列结束 → OnComplete + 复位（一次性，防重复）
-                    heartbreakFinished = true;
-                    UnlockInputIfLocked();
-                    ExecuteOnComplete();
-                    ResetHeartbreak();
+                    // KE 版：不触发原版结局（endingSequence 硬编码原版剧情）。
+                    // 对齐原版"心碎=终结"：进入终结态（暗屏），做通用清理（解锁/断开/
+                    // 节点失效），执行 OnComplete 交给剧情接管（flag/结局任务/音乐/保存
+                    // 由作者在 OnComplete 里自行定义）；不复位。
+                    CompleteHeartbreak();
                     return;
                 }
                 PostProcessor.EndingSequenceFlashOutPercentageComplete = flashOutTime / FlashOutTime;
@@ -179,6 +186,33 @@ namespace KernelExtensions.Daemons
                 IsFlashingOut = false;
             }
             PostProcessor.EndingSequenceFlashOutActive = IsFlashingOut;
+        }
+
+        /// <summary>心碎序列终结收尾（对齐原版 CompleteAndReturnToMenu 的通用清理部分）。</summary>
+        private void CompleteHeartbreak()
+        {
+            heartbreakFinished = true;
+            UnlockInputIfLocked();
+
+            // 断开玩家 + 清理 heart 节点（移除可见/禁用/清 daemon/换随机 IP），
+            // 防止悬空连接与重复访问；flag/结局任务/音乐/存档等交给 OnComplete 自定义
+            try { Programs.disconnect(new string[0], os); } catch { }
+            try
+            {
+                var computer = comp;
+                if (computer != null)
+                {
+                    int idx = os.netMap.nodes.IndexOf(computer);
+                    if (idx >= 0)
+                        os.netMap.visibleNodes.Remove(idx);
+                    computer.disabled = true;
+                    computer.daemons.Clear();
+                    computer.ip = NetworkMap.generateRandomIP();
+                }
+            }
+            catch { }
+
+            ExecuteOnComplete();
         }
 
         private void ExecuteOnComplete()
@@ -198,6 +232,21 @@ namespace KernelExtensions.Daemons
         public override void draw(Rectangle bounds, SpriteBatch sb)
         {
             base.draw(bounds, sb);
+
+            // 终结态：心已碎，维持暗屏，不再渲染默认立方体/标题；
+            // 由 OnComplete 剧情接管（切场景/自定义结局画面）；ResetHeartbreak() 可主动复位重玩
+            if (heartbreakFinished)
+            {
+                try
+                {
+                    sb.Draw(Utils.white,
+                        new Rectangle(bounds.X, bounds.Y - Module.PANEL_HEIGHT,
+                            bounds.Width, bounds.Height + Module.PANEL_HEIGHT), Color.Black);
+                }
+                catch { }
+                return;
+            }
+
             try
             {
                 int width = bounds.Width;
