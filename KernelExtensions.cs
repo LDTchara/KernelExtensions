@@ -12,6 +12,7 @@ using KernelExtensions.Configs;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Modules;
+using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
 using KernelExtensions.Utility;
@@ -152,6 +153,8 @@ namespace KernelExtensions
             KELog.Info("ShowAircraftOverlay action registered.");
             DaemonManager.RegisterDaemon<FlightDaemon>();
             KELog.Info("FlightDaemon registered.");
+            DaemonManager.RegisterDaemon<global::KernelExtensions.Daemons.PorthackHeartDaemon>();
+            KELog.Info("PorthackHeartDaemon registered.");
             ActionManager.RegisterAction<UploadAircraftSysFileAction>("UploadAircraftSysFile");
             KELog.Info("UploadAircraftSysFile action registered.");
             ActionManager.RegisterAction<AttackAircraftAction>("AttackAircraft");
@@ -162,11 +165,16 @@ namespace KernelExtensions
             KELog.Info("ClockStart action registered.");
             ActionManager.RegisterAction<ClockStopAction>("ClockStop");
             KELog.Info("ClockStop action registered.");
+            ActionManager.RegisterAction<BreakHeartAction>("BreakHeart");
+            KELog.Info("BreakHeart action registered.");
 
             // 5. 加载 Harmony 补丁
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
+
+            // 9.47 AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
+            PorthackAutoPatch.ApplyPatch(_harmony);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
