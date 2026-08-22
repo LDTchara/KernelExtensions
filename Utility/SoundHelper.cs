@@ -17,7 +17,7 @@ namespace KernelExtensions.Utility
         /// <param name="pan">声像（-1 左 ~ 1 右），默认 0</param>
         public static void PlaySound(OS os, string soundPath, float volume = 0.5f, float pitch = 0.5f, float pan = 0f)
         {
-            if (string.IsNullOrEmpty(soundPath)) return;
+            if (ConfigValue.IsNone(soundPath)) return;
 
             string extensionRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
             if (string.IsNullOrEmpty(extensionRoot))

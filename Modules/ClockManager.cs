@@ -201,7 +201,7 @@ namespace KernelExtensions.Modules
                     // OnComplete 只在“耗尽自动停止”触发；移除即天然幂等。
                     // 用 ActionHelper 一次性执行（对齐 9.36 CompleteAction，支持
                     // <Actions>/<ConditionalActions> 双根，如测试扩展 Clocks/done.xml）
-                    if (!string.IsNullOrEmpty(inst.Def.OnCompletePath))
+                    if (!ConfigValue.IsNone(inst.Def.OnCompletePath))
                         ActionHelper.ExecuteActionFile(os, inst.Def.OnCompletePath, inst.Def.ExtensionRoot);
                     if (ConfigLoader.Debug)
                         KELog.Info($"[Clock] '{inst.Def.Id}' completed (times={inst.TimesElapsed}, elapsed={(OS.currentElapsedTime - inst.StartedAt):F1}s)");
@@ -284,8 +284,9 @@ namespace KernelExtensions.Modules
                 }
 
                 // OnComplete：相对扩展根的动作文件路径（对齐 9.36 CompleteAction，
-                // 支持 <Actions>/<ConditionalActions> 双根，由 ActionHelper 一次性执行）
-                if (!string.IsNullOrWhiteSpace(onCompletePath))
+                // 支持 <Actions>/<ConditionalActions> 双根，由 ActionHelper 一次性执行；
+                // NONE/空 = 不执行（不查文件，避免 NONE 误报）
+                if (!ConfigValue.IsNone(onCompletePath))
                 {
                     string ocFull = NormalizePath(Path.Combine(extensionRoot ?? "", onCompletePath));
                     if (!File.Exists(ocFull))

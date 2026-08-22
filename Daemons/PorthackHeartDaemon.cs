@@ -95,8 +95,7 @@ namespace KernelExtensions.Daemons
 
         public override string Identifier => "Porthack.Heart";
 
-        private static bool IsNone(string s)
-            => string.IsNullOrWhiteSpace(s) || s.Trim().Equals("NONE", StringComparison.OrdinalIgnoreCase);
+        private static bool IsNone(string s) => ConfigValue.IsNone(s);
 
         /// <summary>触发"心碎"序列（对齐原版 BreakHeart；不触发原版结局）。</summary>
         public void BreakHeart()

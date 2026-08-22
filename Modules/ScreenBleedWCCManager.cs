@@ -79,7 +79,7 @@ namespace KernelExtensions.Modules
             {
                 state.Cleanup(os);
                 ActiveBleeds.Remove(os);
-                if (!string.IsNullOrWhiteSpace(state.CompleteAction))
+                if (!ConfigValue.IsNone(state.CompleteAction))
                 {
                     try { RunnableConditionalActions.LoadIntoOS(state.CompleteAction, os); }
                     catch (Exception ex) { KELog.Warn("[WCC] CompleteAction: " + ex.Message); }

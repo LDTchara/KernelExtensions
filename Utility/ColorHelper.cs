@@ -36,7 +36,7 @@ namespace KernelExtensions.Utility
         /// <summary>解析颜色值：支持 #RRGGBB、#AARRGGBB、R,G,B、R,G,B,A</summary>
         public static Color ParseHexColor(string input)
         {
-            if (string.IsNullOrEmpty(input)) return Color.White;
+            if (ConfigValue.IsNone(input)) return Color.White;
 
             // 先尝试 R,G,B[,A] 格式
             string trimmed = input.Trim();

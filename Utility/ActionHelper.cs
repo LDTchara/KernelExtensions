@@ -15,7 +15,7 @@ namespace KernelExtensions.Utility
         /// <param name="extensionRoot">扩展根目录</param>
         public static void ExecuteActionFile(OS os, string actionFilePath, string extensionRoot)
         {
-            if (string.IsNullOrEmpty(actionFilePath)) return;
+            if (ConfigValue.IsNone(actionFilePath)) return;
 
             string fullPath = Path.Combine(extensionRoot, actionFilePath).Replace('\\', '/');
             if (!File.Exists(fullPath))

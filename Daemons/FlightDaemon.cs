@@ -1,6 +1,7 @@
 using Hacknet;
 using Hacknet.Daemons.Helpers;
 using Hacknet.Gui;
+using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Util;
@@ -277,8 +278,8 @@ namespace KernelExtensions.Daemons
             CrashAction?.Invoke();
             os.netMap.visibleNodes.Remove(os.netMap.nodes.IndexOf(comp));
 
-            // 坠机后 IP 加前缀使其不可达（对齐原版 DCLOC: 行为；CrashIPPrefix 为空则不修改）
-            if (!string.IsNullOrEmpty(CrashIPPrefix))
+            // 坠机后 IP 加前缀使其不可达（对齐原版 DCLOC: 行为；CrashIPPrefix 为空/NONE 则不修改）
+            if (!ConfigValue.IsNone(CrashIPPrefix))
             {
                 comp.ip = CrashIPPrefix + comp.ip;
                 // Pathfinder 的 getComputer/connect 走 ComputerLookup 缓存（NodeLookup patch），
@@ -287,7 +288,7 @@ namespace KernelExtensions.Daemons
                 Pathfinder.Util.ComputerLookup.RebuildLookups();
             }
 
-            if (!string.IsNullOrEmpty(OnFailed))
+            if (!ConfigValue.IsNone(OnFailed))
             {
                 RunnableConditionalActions.LoadIntoOS(OnFailed, OS.currentInstance);
             }
@@ -323,7 +324,7 @@ namespace KernelExtensions.Daemons
             if (wasCritical && !IsInCriticalFirmwareFailure && !hasBeenRescued)
             {
                 hasBeenRescued = true;
-                if (!string.IsNullOrEmpty(OnSaved))
+                if (!ConfigValue.IsNone(OnSaved))
                 {
                     RunnableConditionalActions.LoadIntoOS(OnSaved, OS.currentInstance);
                 }

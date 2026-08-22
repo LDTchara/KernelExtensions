@@ -18,7 +18,7 @@ namespace KernelExtensions.Utility
         /// </summary>
         public static string ResolveMusicPath(string musicPath, string extensionRoot)
         {
-            if (string.IsNullOrEmpty(musicPath))
+            if (ConfigValue.IsNone(musicPath))
                 return musicPath;
             // 已经是绝对路径或已带有扩展前缀，直接返回
             if (Path.IsPathRooted(musicPath) || musicPath.StartsWith("../Extensions/"))
