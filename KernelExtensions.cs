@@ -554,16 +554,21 @@ namespace KernelExtensions
             string configName = flag.Substring("PhaseSwift_".Length);
             var restore = PhaseSwiftManager.PendingRestore;
 
-            PhaseSwiftManager.Initialize(os, configName);
-
-            if (restore != null && restore.ConfigName == configName)
+            // 读档恢复条件 = flag（配置声明）AND 存档数据（PhaseSwiftData 仅在 PS 运行时写入）。
+            // 有 flag 但无数据 = 存档时 PS 未运行（如 PhaseSwiftInit 加过 flag 但 PS 被 Stop/
+            // 从未 Start），此时不应自动进入 PS——原实现 restore==null 也会 Start，
+            // 导致“有 flag 未开 PS”时读档错误进入 PS（2026-08-23 修复）
+            if (restore == null || restore.ConfigName != configName)
             {
-                PhaseSwiftManager.OverrideOriginalLinks(restore.OriginalLinkIds, os);
-                PhaseSwiftManager.RestorePersistentState(restore);
-                PhaseSwiftManager.PendingRestore = null;
+                PhaseSwiftManager.PendingRestore = null; // 消费即清空，防残留串档
+                return;
             }
 
-            PhaseSwiftManager.Start(overrideScene: restore?.Scene);
+            PhaseSwiftManager.Initialize(os, configName);
+            PhaseSwiftManager.OverrideOriginalLinks(restore.OriginalLinkIds, os);
+            PhaseSwiftManager.RestorePersistentState(restore);
+            PhaseSwiftManager.PendingRestore = null;
+            PhaseSwiftManager.Start(overrideScene: restore.Scene);
         }
 
         /// <summary>读档后按 &lt;ClockData&gt; 快照重建运行中的 Clock（9.46）。</summary>
