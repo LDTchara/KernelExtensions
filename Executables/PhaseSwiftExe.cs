@@ -3,6 +3,7 @@ using Hacknet.Extensions;
 using Hacknet.Gui;
 using KernelExtensions.Configs;
 using KernelExtensions.Modules;
+using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Pathfinder.Executable;
 
@@ -89,7 +90,7 @@ namespace KernelExtensions.Executables
                 state = RunState.Active;
                 // 读档后 PS 由 AutoRestore 启动（IsRunning=true），
                 // 此处仍要应用配置的程序名，否则重启 exe 时显示默认名
-                if (config != null && !string.IsNullOrEmpty(config.ProgramName))
+                if (config != null && !ConfigValue.IsNone(config.ProgramName))
                 {
                     IdentifierName = config.ProgramName;
                     name = config.ProgramName;
@@ -120,7 +121,7 @@ namespace KernelExtensions.Executables
 
             state = RunState.NotStarted;
 
-            if (!string.IsNullOrEmpty(config.ProgramName))
+            if (!ConfigValue.IsNone(config.ProgramName))
             {
                 IdentifierName = config.ProgramName;
                 name = config.ProgramName;
@@ -240,7 +241,7 @@ namespace KernelExtensions.Executables
         {
             // 完成计时器即将归零时不绘制文字，避免退出动画期间残留
             if (completeTimer <= 0.15f) return;
-            string text = (config != null && !string.IsNullOrEmpty(config.CompleteText))
+            string text = (config != null && !ConfigValue.IsNone(config.CompleteText))
                 ? config.CompleteText : LocaleTerms.Loc("Complete");
             Vector2 size = GuiData.font.MeasureString(text);
             Vector2 pos = new(contentRect.X + (contentRect.Width - size.X) / 2,

@@ -352,7 +352,7 @@ namespace KernelExtensions
                 if (!File.Exists(checkPath))
                 {
                     // 播放成功音乐
-                    if (!string.IsNullOrEmpty(config.SuccessMusic))
+                    if (!ConfigValue.IsNone(config.SuccessMusic))
                     {
                         if (ConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
                         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
@@ -378,7 +378,7 @@ namespace KernelExtensions
                 {
                     // CheckFilePattern：文件内容必须与参考文件一致
                     bool contentMatch = true;
-                    if (!string.IsNullOrEmpty(config.CheckFilePattern))
+                    if (!ConfigValue.IsNone(config.CheckFilePattern))
                     {
                         try
                         {
@@ -396,7 +396,7 @@ namespace KernelExtensions
                     if (contentMatch)
                     {
                         // 播放成功音乐
-                        if (!string.IsNullOrEmpty(config.SuccessMusic))
+                        if (!ConfigValue.IsNone(config.SuccessMusic))
                         {
                             if (ConfigLoader.Debug) Log.LogDebug("Playing success music before reboot...");
                             string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');

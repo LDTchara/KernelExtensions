@@ -141,9 +141,9 @@ namespace KernelExtensions.Modules
             {
                 // 单曲模式：MusicManager 播放指定音乐
                 string singleTrack = Config.SingleTrack;
-                if (string.IsNullOrEmpty(singleTrack) && Config.MusicPhases.Count > 0 && Config.MusicPhases[0].Tracks.Count > 0)
+                if (ConfigValue.IsNone(singleTrack) && Config.MusicPhases.Count > 0 && Config.MusicPhases[0].Tracks.Count > 0)
                     singleTrack = Config.MusicPhases[0].Tracks[0];
-                if (!string.IsNullOrEmpty(singleTrack))
+                if (!ConfigValue.IsNone(singleTrack))
                 {
                     string resolved = MusicPathResolver.ResolveMusicPath(singleTrack, ExtensionRoot);
                     MusicManager.playSongImmediatley(resolved);
@@ -207,7 +207,7 @@ namespace KernelExtensions.Modules
 
             // 恢复主题（可通过 RestoreThemeOnStop 关闭）
             if (Config != null && !Config.RestoreThemeOnStop) { /* 不恢复 */ }
-            else if (!string.IsNullOrEmpty(DefaultTheme))
+            else if (!ConfigValue.IsNone(DefaultTheme))
             {
                 if (Enum.TryParse<OSTheme>(DefaultTheme, true, out OSTheme t))
                 {
@@ -374,8 +374,8 @@ namespace KernelExtensions.Modules
             }
 
             string theme = overrideTheme ?? Config.Scenes[targetScene].Theme;
-            if (string.IsNullOrEmpty(theme)) theme = DefaultTheme;
-            if (!string.IsNullOrEmpty(theme))
+            if (ConfigValue.IsNone(theme)) theme = DefaultTheme;
+            if (!ConfigValue.IsNone(theme))
             {
                 if (!Config.ChangeLayout) PhaseSwiftLayoutPatch.SkipLayoutChange(immediate ? 0.05f : Config.ThemeFlickerDuration + 0.15f);
                 if (Enum.TryParse<OSTheme>(theme, true, out OSTheme themeEnum))
@@ -417,7 +417,7 @@ namespace KernelExtensions.Modules
                         ApplyTopology(targetScene);
                         UpdateVisibility(targetScene);
                         var onSwitch = Config.Scenes[targetScene].OnSwitch;
-                        if (onSwitch != null && !string.IsNullOrEmpty(onSwitch.FilePath))
+                        if (onSwitch != null && !ConfigValue.IsNone(onSwitch.FilePath))
                             ActionHelper.ExecuteActionFile(CurrentOS, onSwitch.FilePath, ExtensionRoot);
                     });
                     CurrentScene = targetScene;
@@ -430,7 +430,7 @@ namespace KernelExtensions.Modules
             UpdateVisibility(targetScene);
 
             var onSwitch = Config.Scenes[targetScene].OnSwitch;
-            if (onSwitch != null && !string.IsNullOrEmpty(onSwitch.FilePath))
+            if (onSwitch != null && !ConfigValue.IsNone(onSwitch.FilePath))
                 ActionHelper.ExecuteActionFile(CurrentOS, onSwitch.FilePath, ExtensionRoot);
 
             CurrentScene = targetScene;

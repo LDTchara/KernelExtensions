@@ -1,6 +1,7 @@
 ﻿using Hacknet;
 using Hacknet.Extensions;
 using KernelExtensions.Configs;
+using KernelExtensions.Utility;
 // 傻逼PowerShell给我注释全爆了，孩子们记住永远不要用ps1改东西
 namespace KernelExtensions.Modules
 {
@@ -21,7 +22,7 @@ namespace KernelExtensions.Modules
         /// </summary>
         public static bool CheckFileCondition(OS os, VMAttackConfig config)
         {
-            if (string.IsNullOrEmpty(config.CheckFilePath)) return false;
+            if (ConfigValue.IsNone(config.CheckFilePath)) return false;
             string fullPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
             if (config.Mode == RecoveryMode.FileDeletion) return File.Exists(fullPath);
             if (config.Mode == RecoveryMode.FileExists)
@@ -35,7 +36,7 @@ namespace KernelExtensions.Modules
 
         private static bool FileContentMatches(string targetPath, VMAttackConfig config)
         {
-            if (string.IsNullOrEmpty(config.CheckFilePattern)) return true;
+            if (ConfigValue.IsNone(config.CheckFilePattern)) return true;
             string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
             if (string.IsNullOrEmpty(extRoot)) return false;
             string refPath = System.IO.Path.Combine(extRoot, config.CheckFilePattern);

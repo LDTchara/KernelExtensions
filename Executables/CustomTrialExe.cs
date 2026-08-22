@@ -195,7 +195,7 @@ namespace KernelExtensions.Executables
 
             // 以下为仅当配置存在时才需要的初始化
             // 设置程序显示名称
-            if (!string.IsNullOrEmpty(config.ProgramName))
+            if (!ConfigValue.IsNone(config.ProgramName))
             {
                 this.IdentifierName = config.ProgramName;
                 this.name = config.ProgramName;
@@ -211,7 +211,7 @@ namespace KernelExtensions.Executables
             originalTopBarIconsColor = os.topBarIconsColor;
 
             // 播放启动音乐
-            if (!string.IsNullOrEmpty(config.StartMusic))
+            if (!ConfigValue.IsNone(config.StartMusic))
                 MusicManager.transitionToSong(MusicPathResolver.ResolveMusicPath(config.StartMusic, extensionRoot));
 
             // 应用持久化删除的节点
@@ -374,7 +374,7 @@ namespace KernelExtensions.Executables
         /// </summary>
         private void ApplyThemeSwitch()
         {
-            if (string.IsNullOrEmpty(config.ThemeToSwitch))
+            if (ConfigValue.IsNone(config.ThemeToSwitch))
                 return;
 
             // 尝试解析为主题枚举
@@ -537,7 +537,7 @@ namespace KernelExtensions.Executables
                             if (trialSucceeded)
                             {
                                 // ---- 转连处理 ----
-                                if (!string.IsNullOrEmpty(config.ConnectTarget))
+                                if (!ConfigValue.IsNone(config.ConnectTarget))
                                 {
                                     Computer targetComp = Programs.getComputer(os, config.ConnectTarget);
                                     if (targetComp != null)
@@ -582,7 +582,7 @@ namespace KernelExtensions.Executables
             {
                 case RunState.NotStarted:
                     this.CanBeKilled = false;
-                    if (!string.IsNullOrEmpty(config.TrialStartMusic))
+                    if (!ConfigValue.IsNone(config.TrialStartMusic))
                         MusicManager.playSongImmediatley(MusicPathResolver.ResolveMusicPath(config.TrialStartMusic, extensionRoot));
                     ExecuteActionFile(config.OnStart?.FilePath);
                     currentState = RunState.SpinningUp;
@@ -657,7 +657,7 @@ namespace KernelExtensions.Executables
                         phaseTimerActive = true;
                     }
                     else phaseTimerActive = false;
-                    if (!string.IsNullOrEmpty(CurrentPhase.Music))
+                    if (!ConfigValue.IsNone(CurrentPhase.Music))
                         MusicManager.transitionToSong(MusicPathResolver.ResolveMusicPath(CurrentPhase.Music, extensionRoot));
 
                     if (CurrentPhase.Timeout > 0 && !traceOverrideActive)
@@ -742,7 +742,7 @@ namespace KernelExtensions.Executables
             charsRenderedSoFar = 0;
             outroTextCompleted = false;
 
-            if (!string.IsNullOrEmpty(config.OutroText))
+            if (!ConfigValue.IsNone(config.OutroText))
             {
                 string resolvedPath = ResolvePath(config.OutroText);
                 if (resolvedPath != null && File.Exists(resolvedPath))
@@ -775,7 +775,7 @@ namespace KernelExtensions.Executables
 
         private void LoadCurrentMission()
         {
-            if (!string.IsNullOrEmpty(CurrentPhase.MissionFile))
+            if (!ConfigValue.IsNone(CurrentPhase.MissionFile))
             {
                 string missionPath = ResolvePath(CurrentPhase.MissionFile);
                 if (missionPath == null || !File.Exists(missionPath))
@@ -1130,7 +1130,7 @@ namespace KernelExtensions.Executables
             int titleHeight = Math.Max(32, (int)(40 * scale));
             int subtitleHeight = 0;
             // ... 判断副标题 ...
-            bool hasSubtitle = (CurrentPhase != null && !string.IsNullOrEmpty(CurrentPhase.Subtitle)) ||
+            bool hasSubtitle = (CurrentPhase != null && !ConfigValue.IsNone(CurrentPhase.Subtitle)) ||
                        (CurrentPhase == null && (currentState == RunState.Flickering ||
                                                  currentState == RunState.WaitAfterDestruction ||
                                                  currentState == RunState.MailIconDestroy));

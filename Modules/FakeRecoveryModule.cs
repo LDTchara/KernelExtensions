@@ -290,7 +290,7 @@ namespace KernelExtensions.Modules
 
             // 在 UpdateGuideText 方法中，已读跳过之前插入这段
             if (guideLineIndex == 0 && guideCharCount == 0 &&
-                !string.IsNullOrEmpty(config.ActionOnGuideTextStart) &&
+                !ConfigValue.IsNone(config.ActionOnGuideTextStart) &&
                 !os.Flags.HasFlag("Kernel_VMGuideActionDone_" + config.ConfigName))
             {
                 os.Flags.AddFlag("Kernel_VMGuideActionDone_" + config.ConfigName);
@@ -403,7 +403,7 @@ namespace KernelExtensions.Modules
                 successTimer -= t;
                 if (successTimer <= 0f)
                 {
-                    if (!string.IsNullOrEmpty(config.SuccessMusic))
+                    if (!ConfigValue.IsNone(config.SuccessMusic))
                     {
                         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
@@ -554,7 +554,7 @@ namespace KernelExtensions.Modules
                         Rectangle helpBtn = new(submitBtn.X, submitBtn.Y + 25, submitBtn.Width, submitBtn.Height);
                         if (Button.doButton(1003, helpBtn.X, helpBtn.Y, helpBtn.Width, helpBtn.Height, GetLocalizedHelpButton(), Color.White))
                         {
-                            if (!string.IsNullOrEmpty(config.HelpFile))
+                            if (!ConfigValue.IsNone(config.HelpFile))
                             {
                                 string helpSrc = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, config.HelpFile);
                                 string fileName = Path.GetFileName(config.HelpFile);
@@ -582,7 +582,7 @@ namespace KernelExtensions.Modules
                     Rectangle btn = new(bounds.X + 20, (int)btnTopY, 220, 30);
                     if (Button.doButton(1002, btn.X, btn.Y, btn.Width, btn.Height, config.ButtonText, Color.White))
                     {
-                        if (!string.IsNullOrEmpty(config.HelpFile))
+                        if (!ConfigValue.IsNone(config.HelpFile))
                         {
                             string helpSrc = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, config.HelpFile);
                             string fileName = Path.GetFileName(config.HelpFile);
