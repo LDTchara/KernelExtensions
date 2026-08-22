@@ -35,6 +35,8 @@ namespace KernelExtensions.Daemons
     ///   FlashOutTime   — 心形完成后白色淡出时长（秒）。默认 3.8。
     ///   OnComplete     — 序列结束后加载的 Action 文件（相对扩展根，对齐 9.36）。
     ///                     默认不执行。
+    ///   OnHeartbreak   — 开始碎心（BreakHeart 触发）时加载的 Action 文件（相对扩展根，
+    ///                     可与 OnComplete 搭配做"碎心开场/结束后收尾"）。默认不执行。
     ///   LockInput      — 心碎期间是否锁定输入/禁用顶栏按钮。默认 true（对齐原版）。
     ///   AutoOnPorthack — 是否由 porthack 破解（进度&gt;50%）自动触发心碎。默认 false。
     ///
@@ -64,6 +66,7 @@ namespace KernelExtensions.Daemons
         [XMLStorage] public float HeartDuration = 30f;
         [XMLStorage] public float FlashOutTime = 3.8f;
         [XMLStorage] public string OnComplete;
+        [XMLStorage] public string OnHeartbreak; // 开始碎心（BreakHeart 触发）时加载的 Action 文件（相对扩展根）
         [XMLStorage] public bool LockInput = true;
         [XMLStorage] public bool AutoOnPorthack = false;
 
@@ -115,6 +118,9 @@ namespace KernelExtensions.Daemons
                 try { MusicManager.transitionToSong(Music); } catch { }
             }
             try { spinDownEffect?.Play(); } catch { }
+
+            // 开始碎心：执行 OnHeartbreak Action（若有）
+            ExecuteActionFile(OnHeartbreak);
 
             os.delayer.Post(ActionDelayer.Wait(18.0), delegate
             {
@@ -239,15 +245,21 @@ namespace KernelExtensions.Daemons
 
         private void ExecuteOnComplete()
         {
-            if (string.IsNullOrEmpty(OnComplete)) return;
+            ExecuteActionFile(OnComplete);
+        }
+
+        /// <summary>执行一个 Action 文件（相对扩展根，缺失/异常 KELog.Error 不崩）。</summary>
+        private void ExecuteActionFile(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
             try
             {
                 string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
-                ActionHelper.ExecuteActionFile(os, OnComplete, extRoot);
+                ActionHelper.ExecuteActionFile(os, path, extRoot);
             }
             catch (Exception ex)
             {
-                KELog.Error($"[PorthackHeart] OnComplete failed: {ex.Message}");
+                KELog.Error($"[PorthackHeart] action failed: {ex.Message}");
             }
         }
 

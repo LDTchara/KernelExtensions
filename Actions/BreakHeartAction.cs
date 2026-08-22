@@ -32,6 +32,7 @@ namespace KernelExtensions.Actions
         [XMLStorage] public float? HeartDuration;
         [XMLStorage] public float? FlashOutTime;
         [XMLStorage] public string OnComplete;
+        [XMLStorage] public string OnHeartbreak;
         [XMLStorage] public bool? LockInput;
 
         public override void Trigger(OS os)
@@ -80,6 +81,7 @@ namespace KernelExtensions.Actions
             if (HeartDuration.HasValue) d.HeartDuration = HeartDuration.Value;
             if (FlashOutTime.HasValue) d.FlashOutTime = FlashOutTime.Value;
             if (OnComplete != null) d.OnComplete = OnComplete;
+            if (OnHeartbreak != null) d.OnHeartbreak = OnHeartbreak;
             if (LockInput.HasValue) d.LockInput = LockInput.Value;
         }
     }
