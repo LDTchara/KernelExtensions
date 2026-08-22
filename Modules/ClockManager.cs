@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Hacknet;
 using KernelExtensions.Configs;
+using KernelExtensions.Saving;
 using KernelExtensions.Utility;
 using Pathfinder.Replacements;
 using Pathfinder.Util;
@@ -39,6 +40,9 @@ namespace KernelExtensions.Modules
         private static readonly Dictionary<OS, Dictionary<string, ClockInstance>> ActiveClocks = new();
         // 每个 OS 的 Update 委托缓存：必须保存引用，否则 -= 无法匹配 lambda 实例
         private static readonly Dictionary<OS, Action<float>> UpdateHandlers = new();
+
+        /// <summary>读档暂存：由 ClockSaveExecutor 填充，OSLoaded 后重建（9.46）。</summary>
+        public static List<ClockPersistentState> PendingRestore;
 
         /// <summary>启动一个 Clock（重复启动同一 ID = 刷新：替换为新定义，计时/计数重置）。</summary>
         public static void Start(OS os, string filepath, string extensionRoot)
@@ -111,6 +115,62 @@ namespace KernelExtensions.Modules
                 ActiveClocks.Remove(os);
                 Unsubscribe(os);
             }
+        }
+
+        // ========== 持久化（9.46） ==========
+
+        /// <summary>生成当前 OS 运行中 Clock 的持久化状态（仅运行中；耗尽/手动停止已移除，天然不存）。</summary>
+        public static List<ClockPersistentState> GetPersistentState(OS os)
+        {
+            var list = new List<ClockPersistentState>();
+            if (!ActiveClocks.TryGetValue(os, out var clocks)) return list;
+            foreach (var inst in clocks.Values)
+            {
+                list.Add(new ClockPersistentState
+                {
+                    Id = inst.Def.Id,
+                    SourcePath = inst.Def.SourcePath,
+                    ExtensionRoot = inst.Def.ExtensionRoot,
+                    TimesElapsed = inst.TimesElapsed,
+                    Elapsed = (float)(OS.currentElapsedTime - inst.StartedAt),
+                    Timer = inst.Timer
+                });
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 按持久化状态重建一个 Clock（OSLoaded 后调用，9.46）。
+        /// SourcePath 重载 Clock 文件恢复定义（Actions 预加载），恢复计时/次数连续。
+        /// 文件缺失或解析失败 → Warn 跳过不复活（剧情资产被删即不恢复）。
+        /// </summary>
+        public static void Restore(OS os, ClockPersistentState state)
+        {
+            if (state == null) return;
+
+            var def = LoadDefinition(state.SourcePath, state.ExtensionRoot);
+            if (def == null)
+            {
+                KELog.Warn($"[Clock] restore skipped '{state.Id}': reload failed (file missing or parse error)");
+                return;
+            }
+
+            if (!ActiveClocks.TryGetValue(os, out var clocks))
+                ActiveClocks[os] = clocks = new Dictionary<string, ClockInstance>();
+
+            clocks[def.Id] = new ClockInstance
+            {
+                Def = def,
+                // Timer 随档保存（免推导边界问题）；异常值回退为完整间隔
+                Timer = state.Timer > 0f ? state.Timer : def.Interval,
+                TimesElapsed = state.TimesElapsed > 0 ? state.TimesElapsed : 0,
+                // StartedAt 反推：Duration 判定（now - StartedAt >= MaxDuration）连续
+                StartedAt = OS.currentElapsedTime - (state.Elapsed > 0f ? state.Elapsed : 0f)
+            };
+            Subscribe(os);
+
+            if (ConfigLoader.Debug)
+                KELog.Info($"[Clock] restored '{def.Id}' (times={state.TimesElapsed}, elapsed={state.Elapsed:F1}s)");
         }
 
         // ========== 每帧驱动 ==========

@@ -126,6 +126,8 @@ namespace KernelExtensions
             EventManager<OSLoadedEvent>.AddHandler((e) => { try { ConfigLoader.Load(); } catch { } });
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_AutoRestorePhaseSwift);
             KELog.Info("ConfigLoader handler registered.");
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_RestoreClocks);
+            KELog.Info("Clock restore handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
 
@@ -135,6 +137,9 @@ namespace KernelExtensions
             // ParseInterior：必须解析子元素（DiscoveredScene/OrigLink 等），否则读档时 Children 恒为空
             SaveLoader.RegisterExecutor<PhaseSwiftSaveExecutor>("PhaseSwiftData", ParseOption.ParseInterior);
             KELog.Info("CustomTrialSaveExecutor registered.");
+            // 9.46 Clock 持久化：解析存档 <ClockData> 节点，恢复运行中的 Clock
+            SaveLoader.RegisterExecutor<ClockSaveExecutor>("ClockData", ParseOption.ParseInterior);
+            KELog.Info("ClockSaveExecutor registered.");
 
             // 4.5 飞机Daemon相关
             Console.WriteLine("[KernelExtensions] Registering aircraft-related actions and daemons...");
@@ -272,6 +277,23 @@ namespace KernelExtensions
                 // AdminScene 不再写入存档（旧存档残留元素读档时忽略，无副作用）
 
                 e.Save.Add(psNode);
+            }
+
+            // ========== Clock 存档数据（9.46） ==========
+            // 仅存运行中的 Clock（ActiveClocks 天然排除耗尽/手动停止）
+            var clockStates = ClockManager.GetPersistentState(os);
+            if (clockStates.Count > 0)
+            {
+                var clockNode = new XElement("ClockData");
+                foreach (var c in clockStates)
+                    clockNode.Add(new XElement("Clock",
+                        new XAttribute("Id", c.Id),
+                        new XAttribute("SourcePath", c.SourcePath),
+                        new XAttribute("ExtensionRoot", c.ExtensionRoot ?? ""),
+                        new XAttribute("TimesElapsed", c.TimesElapsed),
+                        new XAttribute("Elapsed", c.Elapsed.ToString("F2")),
+                        new XAttribute("Timer", c.Timer.ToString("F2"))));
+                e.Save.Add(clockNode);
             }
         }
 
@@ -534,6 +556,18 @@ namespace KernelExtensions
             }
 
             PhaseSwiftManager.Start(overrideScene: restore?.Scene);
+        }
+
+        /// <summary>读档后按 &lt;ClockData&gt; 快照重建运行中的 Clock（9.46）。</summary>
+        private void OnOSLoaded_RestoreClocks(OSLoadedEvent e)
+        {
+            var pending = ClockManager.PendingRestore;
+            ClockManager.PendingRestore = null;
+            if (pending == null || pending.Count == 0) return;
+
+            foreach (var state in pending)
+                ClockManager.Restore(e.Os, state);
+            KELog.Info($"[Clock] restored {pending.Count} running clock(s) from save");
         }
     }
 }
