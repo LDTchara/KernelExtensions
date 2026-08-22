@@ -18,6 +18,7 @@ namespace KernelExtensions.Configs
         [XmlElement("EnableNodeDestruction")] public bool EnableNodeDestruction = true; // 是否启用节点摧毁（Flickering 期间）
         [XmlElement("StartMusic")] public string StartMusic = null;                  // 程序启动到点击按钮前的背景音乐
         [XmlElement("TrialStartMusic")] public string TrialStartMusic = null;        // 点击“开始试炼”后播放的音乐
+        [XmlElement("StartButtonText")] public string StartButtonText = null;        // “开始试炼”按钮文字（NONE/空=回退十国本地化）
         [XmlElement("OnStart")] public ActionFileRef OnStart = null;                 // 点击“开始试炼”后立即执行的动作
         [XmlElement("OnAnimationComplete")] public ActionFileRef OnAnimationComplete = null; // 所有动画完成后执行的动作
 

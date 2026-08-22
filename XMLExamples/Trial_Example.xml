@@ -30,6 +30,10 @@
 	<!-- Name displayed in the 'ps' command output (optional, defaults to "CustomTrial"). -->
 	<ProgramName>CustomTrial</ProgramName>
 
+	<!-- “开始试炼”按钮文字（可选；写 NONE 或留空 = 回退十国本地化，不写 = 默认本地化） -->
+	<!-- "Begin Trial" button text (optional; NONE or empty = fall back to the built-in ten-language localization) -->
+	<StartButtonText>START TRIAL</StartButtonText>
+
 	<!-- ==================== 动作文件引用 ==================== -->
 	<!-- ==================== Action File References ==================== -->
 

@@ -1413,6 +1413,10 @@ namespace KernelExtensions.Executables
 
         private string GetLocalizedBeginButton()
         {
+            // 9.30: 自定义按钮文字优先（NONE/空=回退十国本地化，对齐 9.48 NONE 约定）
+            if (config != null && !ConfigValue.IsNone(config.StartButtonText))
+                return config.StartButtonText;
+
             string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
             if (lang.StartsWith("zh")) return "开始试炼";
             if (lang.StartsWith("ja")) return "試験を開始";
