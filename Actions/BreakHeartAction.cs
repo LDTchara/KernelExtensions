@@ -15,9 +15,9 @@ namespace KernelExtensions.Actions
     ///   &lt;BreakHeart NodeID="heart" Music="" LockInput="false" /&gt;
     ///
     /// 参数：NodeID（必填，目标节点）；其余（Title/Music/FadeoutDelay/FadeoutDuration/
-    ///   AlignTime/HeartDuration/FlashOutTime/OnComplete/LockInput）可选覆盖——
-    ///   null/未提供 = 不覆盖（用 daemon 自身配置）；字符串空值 = 显式清空
-    ///   （如 Music="" 表示不切歌）。
+    ///   AlignTime/HeartDuration/FlashOutTime/OnComplete/OnHeartbreak/LockInput）可选覆盖——
+    ///   null/未提供 = 不覆盖（用 daemon 自身配置）；字符串项写 NONE/空 = 覆盖为禁用
+    ///   （如 Music="NONE" 表示不切歌、OnComplete="NONE" 表示不执行）。
     /// </summary>
     public class BreakHeartAction : DelayablePathfinderAction
     {

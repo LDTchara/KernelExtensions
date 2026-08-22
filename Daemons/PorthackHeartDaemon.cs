@@ -24,19 +24,20 @@ namespace KernelExtensions.Daemons
     ///         FlashOutTime="3.8" OnComplete="Actions/HeartBroken" LockInput="true"
     ///         AutoOnPorthack="false"/&gt;
     /// &lt;/Computer&gt;
-    /// ── 参数说明（均可选，带默认）────────────────────────────────────────────
-    ///   Title          — 默认态闪烁标题文字（空=不显示）。默认 "PortHack.Heart"。
-    ///   Music          — 心碎时切换的歌曲（原版 Content 路径；空=不切歌）。
+    /// ── 参数说明（均可选，带默认；字符串项支持 NONE 约定：写 NONE/留空 = 禁用该功能）──
+    ///   Title          — 默认态闪烁标题文字（NONE/空=不显示）。默认 "PortHack.Heart"。
+    ///   Music          — 心碎时切换的歌曲（原版 Content 路径；NONE/空=不切歌）。
     ///                     默认 "Music/Ambient/AmbientDrone_Clipped"。
     ///   FadeoutDelay   — 心碎后周围黑幕淡入延迟（秒）。默认 1。
     ///   FadeoutDuration— 周围黑幕淡入时长（秒）。默认 10。
     ///   AlignTime      — 立方体旋转对齐到正位时长（秒）。默认 2.5。
     ///   HeartDuration  — 心形序列总时长（秒）。默认 30。
     ///   FlashOutTime   — 心形完成后白色淡出时长（秒）。默认 3.8。
-    ///   OnComplete     — 序列结束后加载的 Action 文件（相对扩展根，对齐 9.36）。
-    ///                     默认不执行。
+    ///   OnComplete     — 序列结束后加载的 Action 文件（相对扩展根，对齐 9.36；
+    ///                     NONE/空=不执行）。默认不执行。
     ///   OnHeartbreak   — 开始碎心（BreakHeart 触发）时加载的 Action 文件（相对扩展根，
-    ///                     可与 OnComplete 搭配做"碎心开场/结束后收尾"）。默认不执行。
+    ///                     可与 OnComplete 搭配做"碎心开场/结束后收尾"；NONE/空=不执行）。
+    ///                     默认不执行。
     ///   LockInput      — 心碎期间是否锁定输入/禁用顶栏按钮。默认 true（对齐原版）。
     ///   AutoOnPorthack — 是否由 porthack 破解（进度&gt;50%）自动触发心碎。默认 false。
     ///
@@ -94,6 +95,9 @@ namespace KernelExtensions.Daemons
 
         public override string Identifier => "Porthack.Heart";
 
+        private static bool IsNone(string s)
+            => string.IsNullOrWhiteSpace(s) || s.Trim().Equals("NONE", StringComparison.OrdinalIgnoreCase);
+
         /// <summary>触发"心碎"序列（对齐原版 BreakHeart；不触发原版结局）。</summary>
         public void BreakHeart()
         {
@@ -113,7 +117,7 @@ namespace KernelExtensions.Daemons
                 os.DisableTopBarButtons = true;
             }
 
-            if (!string.IsNullOrEmpty(Music))
+            if (!IsNone(Music))
             {
                 try { MusicManager.transitionToSong(Music); } catch { }
             }
@@ -248,10 +252,10 @@ namespace KernelExtensions.Daemons
             ExecuteActionFile(OnComplete);
         }
 
-        /// <summary>执行一个 Action 文件（相对扩展根，缺失/异常 KELog.Error 不崩）。</summary>
+        /// <summary>执行一个 Action 文件（相对扩展根；NONE/空=不执行，缺失/异常 KELog.Error 不崩）。</summary>
         private void ExecuteActionFile(string path)
         {
-            if (string.IsNullOrEmpty(path)) return;
+            if (IsNone(path)) return;
             try
             {
                 string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
@@ -294,7 +298,7 @@ namespace KernelExtensions.Daemons
                     rendertarget = new RenderTarget2D(sb.GraphicsDevice, width, height);
                 }
 
-                if (!PlayingHeartbreak && !string.IsNullOrEmpty(Title))
+                if (!PlayingHeartbreak && !IsNone(Title))
                 {
                     TextItem.DrawShadow = false;
                     TextItem.doFontLabel(new Vector2(bounds.X + 6, bounds.Y + 2),
