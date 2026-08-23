@@ -129,6 +129,7 @@ namespace KernelExtensions
             EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
             KELog.Info("NodeIcon OSLoaded handler registered.");
             EventManager<OSLoadedEvent>.AddHandler((e) => { try { ConfigLoader.Load(); } catch { } });
+        EventManager<OSLoadedEvent>.AddHandler((e) => { try { KELoc.Load(); } catch { } });
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_AutoRestorePhaseSwift);
             KELog.Info("ConfigLoader handler registered.");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_RestoreClocks);
@@ -568,7 +569,7 @@ namespace KernelExtensions
                 var running = CustomTrialExe.RunningInstance;
                 if (running == null) return;
                 // 文案与 OnInitialize 兜底一致：运行中实例的 IdentifierName（可被配置 ProgramName 覆盖）
-                e.OS.write("【" + running.IdentifierName + "】已经在运行中！");
+                e.OS.write(KELoc.Format("EXECUTABLE_ALREADY_RUNNING", "{0} already running!", running.IdentifierName));
                 e.Result = ExecutionResult.Cancelled;
                 return;
             }
@@ -579,7 +580,7 @@ namespace KernelExtensions
                 // 读档 AutoRestore 启动 PS 后玩家开 exe 当控制台是合法多视图
                 var running = PhaseSwiftExe.RunningInstance;
                 if (running == null) return;
-                e.OS.write("【" + running.IdentifierName + "】已经在运行中！");
+                e.OS.write(KELoc.Format("EXECUTABLE_ALREADY_RUNNING", "{0} already running!", running.IdentifierName));
                 e.Result = ExecutionResult.Cancelled;
             }
         }

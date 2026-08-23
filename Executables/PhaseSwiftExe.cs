@@ -79,7 +79,7 @@ namespace KernelExtensions.Executables
             {
                 // 恢复第一个实例的引用（构造函数已覆盖过）
                 CurrentInstance = (PhaseSwiftExe)other;
-                os.write("【" + other.IdentifierName + "】已经在运行中！");
+                os.write(KELoc.Format("EXECUTABLE_ALREADY_RUNNING", "{0} already running!", other.IdentifierName));
                 isExiting = true;
                 _guardBlocked = true;
                 activeInstances.Remove(this);
@@ -261,7 +261,7 @@ namespace KernelExtensions.Executables
             // 完成计时器即将归零时不绘制文字，避免退出动画期间残留
             if (completeTimer <= 0.15f) return;
             string text = (config != null && !ConfigValue.IsNone(config.CompleteText))
-                ? config.CompleteText : LocaleTerms.Loc("Complete");
+                ? config.CompleteText : KELoc.Loc("PHASE_SWIFT_COMPLETE", "COMPLETE");
             Vector2 size = GuiData.font.MeasureString(text);
             Vector2 pos = new(contentRect.X + (contentRect.Width - size.X) / 2,
                               contentRect.Y + (contentRect.Height - size.Y) / 2);
@@ -270,17 +270,7 @@ namespace KernelExtensions.Executables
 
         private static string GetLocalizedLockedText()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "锁定";
-            if (lang.StartsWith("ja")) return "ロック";
-            if (lang.StartsWith("ko")) return "잠김";
-            if (lang.StartsWith("ru")) return "ЗАБЛОКИРОВАНО";
-            if (lang.StartsWith("de")) return "GESPERRT";
-            if (lang.StartsWith("fr")) return "VERROUILLÉ";
-            if (lang.StartsWith("es")) return "BLOQUEADO";
-            if (lang.StartsWith("tr")) return "KİLİTLİ";
-            if (lang.StartsWith("nl")) return "GEBLOKKEERD";
-            return "LOCKED";
+            return KELoc.Loc("PHASE_SWIFT_LOCKED", "LOCKED");
         }
 
         private void DrawLocked(Rectangle bgRect)

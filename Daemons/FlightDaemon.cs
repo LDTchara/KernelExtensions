@@ -382,20 +382,20 @@ namespace KernelExtensions.Daemons
                 sb.Draw(Utils.white, destinationRectangle, Utils.AddativeWhite * 0.4f);
             }
             Rectangle dest2 = Utils.InsetRectangle(rectangle, 1);
-            string text = (IsReloadingFirmware ? LocaleTerms.Loc("RELOADING FIRMWARE") :
-                (IsInCriticalFirmwareFailure ? LocaleTerms.Loc("CRITICAL FIRMWARE FAILURE") :
-                (PilotAlerted ? LocaleTerms.Loc("PILOT ALERTED") : LocaleTerms.Loc("FLIGHT IN PROGRESS"))));
+            string text = (IsReloadingFirmware ? KELoc.Loc("FLIGHT_RELOADING_FIRMWARE", "RELOADING FIRMWARE") :
+                (IsInCriticalFirmwareFailure ? KELoc.Loc("FLIGHT_CRITICAL_FIRMWARE_FAILURE", "CRITICAL FIRMWARE FAILURE") :
+                (PilotAlerted ? KELoc.Loc("FLIGHT_PILOT_ALERTED", "PILOT ALERTED") : KELoc.Loc("FLIGHT_IN_PROGRESS", "FLIGHT IN PROGRESS"))));
             TextItem.doCenteredFontLabel(dest2, text, GuiData.font, Color.White);
             Rectangle rectangle2 = new(dest2.X, dest2.Y + dest2.Height + 8, dest2.Width, 24);
             int num = 4;
             int num2 = (rectangle2.Width - num * 3) / 3;
             if (Button.doButton(632877701, rectangle2.X, rectangle2.Y, num2 - 20, rectangle2.Height,
-            LocaleTerms.Loc("Disconnect"), os.lockedColor))
+            KELoc.Loc("FLIGHT_DISCONNECT", "Disconnect"), os.lockedColor))
             {
                 os.runCommand("disconnect");
             }
             if (Button.doButton(632877703, rectangle2.X + num + num2 - 20, rectangle2.Y, num2 + 10 + num,
-                rectangle2.Height, LocaleTerms.Loc("Pilot Alert"), ThemeColor))
+                rectangle2.Height, KELoc.Loc("FLIGHT_PILOT_ALERT", "Pilot Alert"), ThemeColor))
             {
                 PilotAlerted = true;
                 string flag = "PilotAlerted_" + comp.idName;
@@ -407,7 +407,7 @@ namespace KernelExtensions.Daemons
             }
 
             if (Button.doButton(632877706, rectangle2.X + num * 3 + num2 * 2 - 10, rectangle2.Y, num2 + 10 + num,
-                rectangle2.Height, LocaleTerms.Loc("Reload Firmware"), os.lockedColor))
+                rectangle2.Height, KELoc.Loc("FLIGHT_RELOAD_FIRMWARE", "Reload Firmware"), os.lockedColor))
             {
                 StartReloadFirmware();
             }
@@ -415,12 +415,12 @@ namespace KernelExtensions.Daemons
             Rectangle dest3 = new(rectangle2.X + 6, rectangle2.Y + rectangle2.Height + 20,
                 rectangle2.Width - 75, 70);
             byte status = (byte)((!(currentAirspeed <= 500f)) ? ((currentAirspeed < 600f) ? 1u : 2u) : 0u);
-            DrawFieldDisplay(dest3, sb, LocaleTerms.Loc("Air Speed (kn)"), currentAirspeed.ToString("0.0"), status);
+            DrawFieldDisplay(dest3, sb, KELoc.Loc("FLIGHT_AIR_SPEED", "Air Speed (kn)"), currentAirspeed.ToString("0.0"), status);
             dest3.Y += dest3.Height + 6;
             byte status2 = (byte)((!(rateOfClimb > -0.2f)) ? ((rateOfClimb > -1f) ? 1u : 2u) : 0u);
-            DrawFieldDisplay(dest3, sb, LocaleTerms.Loc("Rate of Climb (f/s)"), rateOfClimb.ToString("0.000"), status2);
+            DrawFieldDisplay(dest3, sb, KELoc.Loc("FLIGHT_RATE_OF_CLIMB", "Rate of Climb (f/s)"), rateOfClimb.ToString("0.000"), status2);
             dest3.Y += dest3.Height + 6;
-            DrawFieldDisplay(dest3, sb, LocaleTerms.Loc("Heading (deg)"), string.Concat(67.228f), 0);
+            DrawFieldDisplay(dest3, sb, KELoc.Loc("FLIGHT_HEADING", "Heading (deg)"), string.Concat(67.228f), 0);
             dest3.Y += dest3.Height + 6;
         }
 

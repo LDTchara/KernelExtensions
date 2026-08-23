@@ -155,47 +155,17 @@ namespace KernelExtensions.Modules
 
         private static string GetLocalizedPasswordMatch()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "检测结果：完全匹配。3秒后重启...";
-            if (lang.StartsWith("ja")) return "照合結果：完全一致。3秒後に再起動します...";
-            if (lang.StartsWith("ko")) return "결과: 완전히 일치합니다. 3초 후 다시 시작...";
-            if (lang.StartsWith("ru")) return "РЕЗУЛЬТАТ: ПОЛНОЕ СОВПАДЕНИЕ. Перезапуск через 3 сек...";
-            if (lang.StartsWith("de")) return "ERGEBNIS: VOLLE ÜBEREINSTIMMUNG. Neustart in 3 Sek...";
-            if (lang.StartsWith("fr")) return "RÉSULTAT : CORRESPONDANCE PARFAITE. Redémarrage dans 3 s...";
-            if (lang.StartsWith("es")) return "RESULTADO: COINCIDENCIA EXACTA. Reiniciando en 3 seg...";
-            if (lang.StartsWith("tr")) return "SONUÇ: TAM EŞLEŞME. 3 saniye içinde yeniden başlatılıyor...";
-            if (lang.StartsWith("nl")) return "RESULTAAT: VOLLEDIGE MATCH. Herstart over 3 seconden...";
-            return "MATCH: FULL. Restarting in 3s...";
+            return KELoc.Loc("FAKE_RECOVERY_PASSWORD_MATCH", "MATCH: FULL. Restarting in 3s...");
         }
 
         private static string GetLocalizedPasswordMismatch()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "检测结果：不匹配";
-            if (lang.StartsWith("ja")) return "照合結果：不一致";
-            if (lang.StartsWith("ko")) return "결과: 일치하지 않음";
-            if (lang.StartsWith("ru")) return "РЕЗУЛЬТАТ: НЕ СОВПАДАЕТ";
-            if (lang.StartsWith("de")) return "ERGEBNIS: KEINE ÜBEREINSTIMMUNG";
-            if (lang.StartsWith("fr")) return "RÉSULTAT : NON CORRESPONDANCE";
-            if (lang.StartsWith("es")) return "RESULTADO: NO COINCIDE";
-            if (lang.StartsWith("tr")) return "SONUÇ: EŞLEŞMİYOR";
-            if (lang.StartsWith("nl")) return "RESULTAAT: GEEN MATCH";
-            return "MATCH: MISMATCH";
+            return KELoc.Loc("FAKE_RECOVERY_PASSWORD_MISMATCH", "MATCH: MISMATCH");
         }
 
         private static string GetLocalizedHelpButton()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "帮助";
-            if (lang.StartsWith("ja")) return "ヘルプ";
-            if (lang.StartsWith("ko")) return "도움말";
-            if (lang.StartsWith("ru")) return "Помощь";
-            if (lang.StartsWith("de")) return "Hilfe";
-            if (lang.StartsWith("fr")) return "Aide";
-            if (lang.StartsWith("es")) return "Ayuda";
-            if (lang.StartsWith("tr")) return "Yardım";
-            if (lang.StartsWith("nl")) return "Help";
-            return "HELP";
+            return KELoc.Loc("FAKE_RECOVERY_HELP", "HELP");
         }
 
         private void LoadLines()

@@ -154,7 +154,7 @@ namespace KernelExtensions.Executables
             var other = activeInstances.FirstOrDefault(inst => inst != this && !inst.isExiting);
             if (other != null)
             {
-                os.write("【" + other.IdentifierName + "】已经在运行中！");
+                os.write(KELoc.Format("EXECUTABLE_ALREADY_RUNNING", "{0} already running!", other.IdentifierName));
                 isExiting = true;
                 CurrentInstance = (CustomTrialExe)other;
                 activeInstances.Remove(this);
@@ -1434,96 +1434,35 @@ namespace KernelExtensions.Executables
 
         private string GetLocalizedBeginButton()
         {
-            // 9.30: 自定义按钮文字优先（NONE/空=回退十国本地化，对齐 9.48 NONE 约定）
+            // 9.30: 自定义按钮文字优先（NONE/空=回退本地化，对齐 9.48 NONE 约定）
             if (config != null && !ConfigValue.IsNone(config.StartButtonText))
                 return config.StartButtonText;
-
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "开始试炼";
-            if (lang.StartsWith("ja")) return "試験を開始";
-            if (lang.StartsWith("ko")) return "시험 시작";
-            if (lang.StartsWith("ru")) return "НАЧАТЬ ИСПЫТАНИЕ";
-            if (lang.StartsWith("de")) return "BEGINNE DIE PRÜFUNG";
-            if (lang.StartsWith("fr")) return "COMMENCER L'ÉPREUVE";
-            if (lang.StartsWith("es")) return "COMENZAR PRUEBA";
-            if (lang.StartsWith("tr")) return "DENEMEYE BAŞLA";
-            if (lang.StartsWith("nl")) return "BEGIN MET PROEF";
-            return "BEGIN TRIAL";
+            return KELoc.Loc("CUSTOM_TRIAL_BEGIN", "BEGIN TRIAL");
         }
 
         private string GetLocalizedLockedText()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "试炼已锁定";
-            if (lang.StartsWith("ja")) return "トライアルはロックされています";
-            if (lang.StartsWith("ko")) return "시험이 잠겼습니다";
-            if (lang.StartsWith("ru")) return "ИСПЫТАНИЕ ЗАБЛОКИРОВАНО";
-            if (lang.StartsWith("de")) return "PRÜFUNG GESPERRT";
-            if (lang.StartsWith("fr")) return "ÉPREUVE VERROUILLÉE";
-            if (lang.StartsWith("es")) return "PRUEBA BLOQUEADA";
-            if (lang.StartsWith("tr")) return "DENEME KİLİTLİ";
-            if (lang.StartsWith("nl")) return "PROEF GESLOTEN";
-            return "TRIAL LOCKED";
+            return KELoc.Loc("CUSTOM_TRIAL_LOCKED", "TRIAL LOCKED");
         }
 
         private string GetLocalizedInitializingText()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "正在初始化";
-            if (lang.StartsWith("ja")) return "初期化中";
-            if (lang.StartsWith("ko")) return "초기화 중";
-            if (lang.StartsWith("ru")) return "ИНИЦИАЛИЗАЦИЯ";
-            if (lang.StartsWith("de")) return "INITIALISIERUNG";
-            if (lang.StartsWith("fr")) return "INITIALISATION";
-            if (lang.StartsWith("es")) return "INICIALIZANDO";
-            if (lang.StartsWith("tr")) return "BAŞLATILIYOR";
-            if (lang.StartsWith("nl")) return "INITIALISEREN";
-            return "INITIALIZING";
+            return KELoc.Loc("CUSTOM_TRIAL_INITIALIZING", "INITIALIZING");
         }
 
         private string GetLocalizedCompleteText()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "完成";
-            if (lang.StartsWith("ja")) return "完了";
-            if (lang.StartsWith("ko")) return "완료";
-            if (lang.StartsWith("ru")) return "ЗАВЕРШЕНО";
-            if (lang.StartsWith("de")) return "ABGESCHLOSSEN";
-            if (lang.StartsWith("fr")) return "TERMINÉ";
-            if (lang.StartsWith("es")) return "COMPLETADO";
-            if (lang.StartsWith("tr")) return "TAMAMLANDI";
-            if (lang.StartsWith("nl")) return "VOLTOOID";
-            return "COMPLETE";
+            return KELoc.Loc("CUSTOM_TRIAL_COMPLETE", "COMPLETE");
         }
 
         private string GetLocalizedFailedText()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "失败";
-            if (lang.StartsWith("ja")) return "失敗";
-            if (lang.StartsWith("ko")) return "실패";
-            if (lang.StartsWith("ru")) return "ПРОВАЛ";
-            if (lang.StartsWith("de")) return "FEHLGESCHLAGEN";
-            if (lang.StartsWith("fr")) return "ÉCHEC";
-            if (lang.StartsWith("es")) return "FALLIDO";
-            if (lang.StartsWith("tr")) return "BAŞARISIZ";
-            if (lang.StartsWith("nl")) return "MISLUKT";
-            return "FAILED";
+            return KELoc.Loc("CUSTOM_TRIAL_FAILED", "FAILED");
         }
 
         private string GetLocalizedExitButton()
         {
-            string lang = Settings.ActiveLocale?.ToLowerInvariant() ?? "en-us";
-            if (lang.StartsWith("zh")) return "退出";
-            if (lang.StartsWith("ja")) return "終了";
-            if (lang.StartsWith("ko")) return "종료";
-            if (lang.StartsWith("ru")) return "ВЫХОД";
-            if (lang.StartsWith("de")) return "BEENDEN";
-            if (lang.StartsWith("fr")) return "QUITTER";
-            if (lang.StartsWith("es")) return "SALIR";
-            if (lang.StartsWith("tr")) return "ÇIKIŞ";
-            if (lang.StartsWith("nl")) return "AFSLUITEN";
-            return "EXIT";
+            return KELoc.Loc("CUSTOM_TRIAL_EXIT", "EXIT");
         }
 
         private void DrawSpinningUp(Rectangle contentRect)

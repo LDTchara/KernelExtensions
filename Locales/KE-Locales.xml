@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ==========================================================
+     KernelExtensions 内置本地化（9.27）
+     - 此文件内嵌于 KernelExtensions.dll；首次运行自动导出到扩展根目录 KE-Locales.xml
+       （文件不存在时才导出，用户可自由编辑，后续不覆盖）
+     - 外部文件存在时优先加载；删除后回退 dll 内嵌副本
+     - Language 节点 Name 跟随游戏 Settings.ActiveLocale（原版 10 语言）；
+       缺失的 key 自动回退 en-us → 调用方 fallback
+     - 扩展作者可增补 <Language Name="任意语言"> 节点或修改任意 Value
+     ========================================================== -->
+<Locale>
+  <Language Name="en-us">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGIN TRIAL" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="COMPLETE" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="EXIT" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="FAILED" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALIZING" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="TRIAL LOCKED" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} already running!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="HELP" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="MATCH: FULL. Restarting in 3s..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="MATCH: MISMATCH" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="Air Speed (kn)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="CRITICAL FIRMWARE FAILURE" />
+    <Term Key="FLIGHT_DISCONNECT" Value="Disconnect" />
+    <Term Key="FLIGHT_HEADING" Value="Heading (deg)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="FLIGHT IN PROGRESS" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="Pilot Alert" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="PILOT ALERTED" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="Rate of Climb (f/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="Reload Firmware" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="RELOADING FIRMWARE" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="COMPLETE" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="LOCKED" />
+  </Language>
+  <Language Name="zh-cn">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="开始试炼" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="完成" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="退出" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="失败" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="正在初始化" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="试炼已锁定" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} 已经在运行中！" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="帮助" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="检测结果：完全匹配。3秒后重启..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="检测结果：不匹配" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="空气速度 (kn)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="关键固件故障" />
+    <Term Key="FLIGHT_DISCONNECT" Value="断开" />
+    <Term Key="FLIGHT_HEADING" Value="航向(deg)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="正在飞行" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="飞行员警报" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="飞行员已收到警报" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="爬升速率 (f/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="重新加载固件" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="正在重新加载固件" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="完成" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="锁定" />
+  </Language>
+  <Language Name="ja-jp">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="試験を開始" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="完了" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="終了" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="失敗" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="初期化中" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="トライアルはロックされています" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} は既に実行中です！" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="ヘルプ" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="照合結果：完全一致。3秒後に再起動します..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="照合結果：不一致" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="対気速度(Kt)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="深刻なファームウェア障害" />
+    <Term Key="FLIGHT_HEADING" Value="機首方位(度)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="飛行中" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="パイロットアラート" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="パイロットアラート発動中" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="上昇率(ft/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="ファームウェア更新" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="ファームウェア更新中" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="完了" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="ロック" />
+  </Language>
+  <Language Name="ko-kr">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="시험 시작" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="완료" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="종료" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="실패" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="초기화 중" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="시험이 잠겼습니다" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} 이미 실행 중입니다!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="도움말" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="결과: 완전히 일치합니다. 3초 후 다시 시작..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="결과: 일치하지 않음" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="비행속도(kn)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="중요 펌웨어 오류" />
+    <Term Key="FLIGHT_HEADING" Value="비행방향(deg)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="진행 중인 비행" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="파일럿 경고" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="파일럿 경고됨" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="상승속도(f/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="펌웨어 리로드" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="펌웨어 리로딩 중" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="완료" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="잠김" />
+  </Language>
+  <Language Name="ru-ru">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="НАЧАТЬ ИСПЫТАНИЕ" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Выполнено" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="ВЫХОД" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="ПРОВАЛ" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="ИНИЦИАЛИЗАЦИЯ" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="ИСПЫТАНИЕ ЗАБЛОКИРОВАНО" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} УЖЕ ЗАПУЩЕНО!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="Помощь" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="РЕЗУЛЬТАТ: ПОЛНОЕ СОВПАДЕНИЕ. Перезапуск через 3 сек..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="РЕЗУЛЬТАТ: НЕ СОВПАДАЕТ" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="Скорость ветра (узл.)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="КРИТИЧЕСКАЯ ОШИБКА ПО" />
+    <Term Key="FLIGHT_DISCONNECT" Value="Отсоединиться" />
+    <Term Key="FLIGHT_HEADING" Value="Направление (град)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="В ВОЗДУХЕ" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="Напоминание пилоту" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="ПИЛОТ ПРЕДУПРЕЖДЕН" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="Скорость подъема (фут/сек)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="Перезагрузить ПО" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="ПЕРЕЗАГРУЗКА ПО" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="Выполнено" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="ЗАБЛОКИРОВАНО" />
+  </Language>
+  <Language Name="de-de">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGINNE DIE PRÜFUNG" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Weiter" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="BEENDEN" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="FEHLGESCHLAGEN" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALISIERUNG" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="PRÜFUNG GESPERRT" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} LÄUFT BEREITS!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="Hilfe" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="ERGEBNIS: VOLLE ÜBEREINSTIMMUNG. Neustart in 3 Sek..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="ERGEBNIS: KEINE ÜBEREINSTIMMUNG" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="Fluggeschwindigkeit (kn)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="KRITISCHER FIRMWARE-FEHLER" />
+    <Term Key="FLIGHT_DISCONNECT" Value="Trennen" />
+    <Term Key="FLIGHT_HEADING" Value="Kurs (Grad)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="LAUFENDER FLUG" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="Pilot benachrichtigen" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="PILOT BENACHRICHTIGT" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="Steigrate (ft/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="Firmware neu laden" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="FIRMWARE WIRD NEU GELADEN" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="Weiter" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="GESPERRT" />
+  </Language>
+  <Language Name="fr-be">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMMENCER L'ÉPREUVE" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Terminer" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="QUITTER" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="ÉCHEC" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALISATION" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="ÉPREUVE VERROUILLÉE" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} DÉJÀ EN COURS!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="Aide" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RÉSULTAT : CORRESPONDANCE PARFAITE. Redémarrage dans 3 s..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RÉSULTAT : NON CORRESPONDANCE" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="Vitesse de vol (nd)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="ÉCHEC CRITIQUE DU FIRMWARE" />
+    <Term Key="FLIGHT_DISCONNECT" Value="Déconnexion" />
+    <Term Key="FLIGHT_HEADING" Value="Cap (deg)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="VOL EN COURS" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="Alerter pilote" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="PILOTE ALERTÉ" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="Vitesse d'ascension (ft/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="Recharger le microprogramme" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="RECHARGEMENT DU FIRMWARE" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="Terminer" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="VERROUILLÉ" />
+  </Language>
+  <Language Name="es-ar">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMENZAR PRUEBA" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Completado" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="SALIR" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="FALLIDO" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INICIALIZANDO" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="PRUEBA BLOQUEADA" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} ¡YA EN EJECUCIÓN!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="Ayuda" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RESULTADO: COINCIDENCIA EXACTA. Reiniciando en 3 seg..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RESULTADO: NO COINCIDE" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="Velocidad de vuelo (kn)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="FALLO CRÍTICO EN EL FIRMWARE" />
+    <Term Key="FLIGHT_DISCONNECT" Value="Desconectar" />
+    <Term Key="FLIGHT_HEADING" Value="Rumbo (º)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="VUELO EN CURSO" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="Piloto alerta" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="PILOTO ADVERTIDO" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="Velocidad de ascenso (ft/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="Recargar firmware" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="RECARGANDO EL FIRMWARE" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="Completado" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="BLOQUEADO" />
+  </Language>
+  <Language Name="tr-tr">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="DENEMEYE BAŞLA" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Tamam" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="ÇIKIŞ" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="BAŞARISIZ" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="BAŞLATILIYOR" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="DENEME KİLİTLİ" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} ZATEN ÇALIŞIYOR!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="Yardım" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="SONUÇ: TAM EŞLEŞME. 3 saniye içinde yeniden başlatılıyor..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="SONUÇ: EŞLEŞMİYOR" />
+    <Term Key="FLIGHT_AIR_SPEED" Value="Sürat (kn)" />
+    <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="KRİTİK YAZILIM HATASI" />
+    <Term Key="FLIGHT_DISCONNECT" Value="Bağlantıyı Kes" />
+    <Term Key="FLIGHT_HEADING" Value="Bakış Yönü (der)" />
+    <Term Key="FLIGHT_IN_PROGRESS" Value="MEVCUT UÇUŞ" />
+    <Term Key="FLIGHT_PILOT_ALERT" Value="Pilotu Uyar" />
+    <Term Key="FLIGHT_PILOT_ALERTED" Value="PİLOT UYARILDI" />
+    <Term Key="FLIGHT_RATE_OF_CLIMB" Value="Tırmanma Hızı (f/s)" />
+    <Term Key="FLIGHT_RELOAD_FIRMWARE" Value="Yazılımı Yeniden Yükle" />
+    <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="YAZILIM YÜKLENİYOR" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="Tamam" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="KİLİTLİ" />
+  </Language>
+  <Language Name="nl-nl">
+    <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGIN MET PROEF" />
+    <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Voltooid" />
+    <Term Key="CUSTOM_TRIAL_EXIT" Value="AFSLUITEN" />
+    <Term Key="CUSTOM_TRIAL_FAILED" Value="MISLUKT" />
+    <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALISEREN" />
+    <Term Key="CUSTOM_TRIAL_LOCKED" Value="PROEF GESLOTEN" />
+    <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} AL BEZIG!" />
+    <Term Key="FAKE_RECOVERY_HELP" Value="Help" />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RESULTAAT: VOLLEDIGE MATCH. Herstart over 3 seconden..." />
+    <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RESULTAAT: GEEN MATCH" />
+    <Term Key="FLIGHT_DISCONNECT" Value="Verbreek verbiding" />
+    <Term Key="PHASE_SWIFT_COMPLETE" Value="Voltooid" />
+    <Term Key="PHASE_SWIFT_LOCKED" Value="GEBLOKKEERD" />
+  </Language>
+</Locale>

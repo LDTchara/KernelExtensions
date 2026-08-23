@@ -66,4 +66,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Locales\KE-Locales.xml" />
+  </ItemGroup>
+
 </Project>
