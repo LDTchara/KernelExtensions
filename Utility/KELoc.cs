@@ -25,7 +25,7 @@ namespace KernelExtensions.Utility
         private static Dictionary<string, Dictionary<string, string>> _langs = new(StringComparer.OrdinalIgnoreCase);
         private static bool _loaded = false;
 
-        /// <summary>（重新）加载语言表：内嵌 → 导出外部 → 外部优先。每次调用可热重载。</summary>
+        /// <summary>（重新）加载语言表：内嵌为基础表 + 外部文件覆盖/新增。每次调用可热重载。</summary>
         public static void Load()
         {
             _langs = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
@@ -36,52 +36,52 @@ namespace KernelExtensions.Utility
             if (extInfo != null)
                 external = Path.Combine(extInfo.FolderPath.Replace('\\', '/'), ExternalFileName);
 
-            string xmlText = null;
+            // 内嵌为基础表：保证 KE 更新后旧语言文件缺的 key 也有默认翻译
+            string embeddedXml = ReadEmbedded();
+            if (embeddedXml != null)
+            {
+                // 首次导出（供用户查看/编辑；失败静默，内嵌仍可用）
+                if (external != null && !File.Exists(external))
+                {
+                    try { File.WriteAllText(external, embeddedXml); }
+                    catch (Exception ex) { KELog.Warn($"[KELoc] export {ExternalFileName} failed: {ex.Message}"); }
+                }
+                try { ParseInto(embeddedXml, overwrite: false); }
+                catch (Exception ex) { KELog.Warn($"[KELoc] embedded parse failed: {ex.Message}"); }
+            }
+
+            // 外部覆盖：用户改过的 key 保持覆盖；KE 新增 key 由内嵌补齐
             if (external != null && File.Exists(external))
             {
-                try { xmlText = File.ReadAllText(external); }
+                try { ParseInto(File.ReadAllText(external), overwrite: true); }
                 catch (Exception ex) { KELog.Warn($"[KELoc] read {ExternalFileName} failed: {ex.Message}"); }
             }
 
-            if (xmlText == null)
-            {
-                xmlText = ReadEmbedded();
-                // 首次导出（供用户查看/编辑；失败静默，内嵌仍可用）
-                if (xmlText != null && external != null && !File.Exists(external))
-                {
-                    try { File.WriteAllText(external, xmlText); }
-                    catch (Exception ex) { KELog.Warn($"[KELoc] export {ExternalFileName} failed: {ex.Message}"); }
-                }
-            }
-
-            if (xmlText == null)
-            {
+            _loaded = _langs.Count > 0;
+            if (!_loaded)
                 KELog.Error("[KELoc] no locale data available (embedded resource missing?)");
-                return;
-            }
+        }
 
-            try
+        private static void ParseInto(string xmlText, bool overwrite)
+        {
+            var doc = XDocument.Parse(xmlText);
+            foreach (var langEl in doc.Root?.Elements("Language") ?? Enumerable.Empty<XElement>())
             {
-                var doc = XDocument.Parse(xmlText);
-                foreach (var langEl in doc.Root?.Elements("Language") ?? Enumerable.Empty<XElement>())
+                string langName = (string)langEl.Attribute("Name");
+                if (string.IsNullOrWhiteSpace(langName)) continue;
+                var lang = langName.ToLowerInvariant();
+                if (!_langs.TryGetValue(lang, out var terms))
                 {
-                    string langName = (string)langEl.Attribute("Name");
-                    if (string.IsNullOrWhiteSpace(langName)) continue;
-                    var terms = new Dictionary<string, string>(StringComparer.Ordinal);
-                    foreach (var term in langEl.Elements("Term"))
-                    {
-                        string k = (string)term.Attribute("Key");
-                        string v = (string)term.Attribute("Value");
-                        if (!string.IsNullOrEmpty(k) && v != null && !terms.ContainsKey(k))
-                            terms[k] = v;
-                    }
-                    _langs[langName.ToLowerInvariant()] = terms;
+                    terms = new Dictionary<string, string>(StringComparer.Ordinal);
+                    _langs[lang] = terms;
                 }
-                _loaded = _langs.Count > 0;
-            }
-            catch (Exception ex)
-            {
-                KELog.Warn($"[KELoc] parse failed, using fallbacks: {ex.Message}");
+                foreach (var term in langEl.Elements("Term"))
+                {
+                    string k = (string)term.Attribute("Key");
+                    string v = (string)term.Attribute("Value");
+                    if (!string.IsNullOrEmpty(k) && v != null && (overwrite || !terms.ContainsKey(k)))
+                        terms[k] = v;
+                }
             }
         }
 

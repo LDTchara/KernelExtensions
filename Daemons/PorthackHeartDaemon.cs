@@ -223,6 +223,11 @@ namespace KernelExtensions.Daemons
                     computer.disabled = true;
                     computer.daemons.Clear();
                     computer.ip = NetworkMap.generateRandomIP();
+                    // 对齐 FlightDaemon 坠机改 IP 的坑：Pathfinder 的 getComputer/connect 走
+                    // ComputerLookup 缓存（NodeLookup patch），改 IP 后必须刷新缓存，否则旧 IP
+                    // 仍可解析到该节点（原版由 OnAircraftDaemonChangeIP 自动处理，但该 patch
+                    // 绑定原版 AircraftDaemon，KE 自实现类需手动调用——2026-08-24 修复）
+                    Pathfinder.Util.ComputerLookup.RebuildLookups();
                 }
             }
             catch { }
