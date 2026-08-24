@@ -350,7 +350,7 @@ namespace KernelExtensions.Daemons
             Rectangle bounds2 = new(bounds.X, bounds.Y,
                 (int)((double)bounds.Width * 0.666), (int)((double)bounds.Height * 0.666));
             DrawHeadings(bounds2, sb);
-            AircraftAltitudeIndicator.RenderAltitudeIndicator(dest, sb,
+            KEAltitudeIndicator.RenderAltitudeIndicator(dest, sb,
                 (int)(CurrentAltitude + 0.5),
                 IsInCriticalDescent(),
                 AircraftAltitudeIndicator.GetFlashRateFromTimer(OS.currentInstance.timer));

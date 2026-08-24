@@ -20,6 +20,15 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="HELP" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="MATCH: FULL. Restarting in 3s..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="MATCH: MISMATCH" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Maximum Altitude" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Maximum Cruising Altitude" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Minimum Cruising Altitude" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="Unsafe Altitude Margin" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="Critical Failure Region" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="POINT OF NO RETURN" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="CRITICAL ERROR" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="SIGNAL LOST" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="Current Altitude" />
     <Term Key="FLIGHT_AIR_SPEED" Value="Air Speed (kn)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="CRITICAL FIRMWARE FAILURE" />
     <Term Key="FLIGHT_DISCONNECT" Value="Disconnect" />
@@ -44,6 +53,15 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="帮助" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="检测结果：完全匹配。3秒后重启..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="检测结果：不匹配" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="最大高度" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="最大巡航高度" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="最低巡航高度" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="不安全高度边际值" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="严重故障区域" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="航线临界点" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="致命错误" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="信号丢失" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="当前高度" />
     <Term Key="FLIGHT_AIR_SPEED" Value="空气速度 (kn)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="关键固件故障" />
     <Term Key="FLIGHT_DISCONNECT" Value="断开" />
@@ -68,6 +86,14 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="ヘルプ" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="照合結果：完全一致。3秒後に再起動します..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="照合結果：不一致" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="最高高度" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="最高飛行高度" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="最低飛行高度" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="危険高度マージン" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="致命的危険高度" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="帰還不能高度" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="致命的なエラー" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="現在高度" />
     <Term Key="FLIGHT_AIR_SPEED" Value="対気速度(Kt)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="深刻なファームウェア障害" />
     <Term Key="FLIGHT_HEADING" Value="機首方位(度)" />
@@ -91,6 +117,15 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="도움말" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="결과: 완전히 일치합니다. 3초 후 다시 시작..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="결과: 일치하지 않음" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="최대 고도" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="최대 순항 고도" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="최소 순항 고도" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="위험한 고도차" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="심각한 고장 부분" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="귀환 불능 지점" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="심각한 오류" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="신호 손실" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="현재 고도" />
     <Term Key="FLIGHT_AIR_SPEED" Value="비행속도(kn)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="중요 펌웨어 오류" />
     <Term Key="FLIGHT_HEADING" Value="비행방향(deg)" />
@@ -114,6 +149,15 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="Помощь" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="РЕЗУЛЬТАТ: ПОЛНОЕ СОВПАДЕНИЕ. Перезапуск через 3 сек..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="РЕЗУЛЬТАТ: НЕ СОВПАДАЕТ" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Максимальная высота" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Максимальная крейсерская высота" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Минимальная крейсерская высота" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="Малый запас высоты" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="Зона критического отказа" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="ТОЧКА НЕВОЗВРАТА" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="КРИТИЧЕСКАЯ ОШИБКА" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="СИГНАЛ ПОТЕРЯН" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="Текущая высота" />
     <Term Key="FLIGHT_AIR_SPEED" Value="Скорость ветра (узл.)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="КРИТИЧЕСКАЯ ОШИБКА ПО" />
     <Term Key="FLIGHT_DISCONNECT" Value="Отсоединиться" />
@@ -138,6 +182,14 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="Hilfe" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="ERGEBNIS: VOLLE ÜBEREINSTIMMUNG. Neustart in 3 Sek..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="ERGEBNIS: KEINE ÜBEREINSTIMMUNG" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Maximale Flughöhe" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Maximale Reiseflughöhe" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Minimale Reiseflughöhe" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="Unsichere Flughöhen" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="Kritischer Bereich" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="KRITISCHER FEHLER" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="SIGNAL VERLOREN" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="Aktuelle Flughöhe" />
     <Term Key="FLIGHT_AIR_SPEED" Value="Fluggeschwindigkeit (kn)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="KRITISCHER FIRMWARE-FEHLER" />
     <Term Key="FLIGHT_DISCONNECT" Value="Trennen" />
@@ -162,6 +214,15 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="Aide" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RÉSULTAT : CORRESPONDANCE PARFAITE. Redémarrage dans 3 s..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RÉSULTAT : NON CORRESPONDANCE" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Altitude maximale" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Altitude de croisière maximale" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Altitude de croisière minimale" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="Marge d'altitude dangereuse" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="Zone critique" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="POINT DE NON-RETOUR" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="ERREUR CRITIQUE" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="SIGNAL PERDU" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="Altitude actuelle" />
     <Term Key="FLIGHT_AIR_SPEED" Value="Vitesse de vol (nd)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="ÉCHEC CRITIQUE DU FIRMWARE" />
     <Term Key="FLIGHT_DISCONNECT" Value="Déconnexion" />
@@ -186,6 +247,15 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="Ayuda" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RESULTADO: COINCIDENCIA EXACTA. Reiniciando en 3 seg..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RESULTADO: NO COINCIDE" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Altitud máxima" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Altitud máxima de crucero" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Altitud mínima de crucero" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="Margen de seguridad de altura" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="Región de fallos críticos" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="PUNTO DE NO RETORNO" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="ERROR CRÍTICO" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="SEÑAL PERDIDA" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="Altitud actual" />
     <Term Key="FLIGHT_AIR_SPEED" Value="Velocidad de vuelo (kn)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="FALLO CRÍTICO EN EL FIRMWARE" />
     <Term Key="FLIGHT_DISCONNECT" Value="Desconectar" />
@@ -210,6 +280,15 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="Yardım" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="SONUÇ: TAM EŞLEŞME. 3 saniye içinde yeniden başlatılıyor..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="SONUÇ: EŞLEŞMİYOR" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Azami İrtifa" />
+    <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Azami Seyir İrtifası" />
+    <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Asgari Seyir İrtifası" />
+    <Term Key="FLIGHT_ALTITUDE_UNSAFE_MARGIN" Value="Tehlikeli İrtifa Aralığı" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_FAILURE_REGION" Value="Kritik Hata Kesimi" />
+    <Term Key="FLIGHT_ALTITUDE_POINT_OF_NO_RETURN" Value="DÖNÜŞÜ OLMAYAN NOKTA" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="KRİTİK HATA" />
+    <Term Key="FLIGHT_ALTITUDE_SIGNAL_LOST" Value="SİNYAL KAYBOLDU" />
+    <Term Key="FLIGHT_ALTITUDE_CURRENT" Value="Mevctu İrtifa" />
     <Term Key="FLIGHT_AIR_SPEED" Value="Sürat (kn)" />
     <Term Key="FLIGHT_CRITICAL_FIRMWARE_FAILURE" Value="KRİTİK YAZILIM HATASI" />
     <Term Key="FLIGHT_DISCONNECT" Value="Bağlantıyı Kes" />
@@ -234,6 +313,7 @@
     <Term Key="FAKE_RECOVERY_HELP" Value="Help" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RESULTAAT: VOLLEDIGE MATCH. Herstart over 3 seconden..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RESULTAAT: GEEN MATCH" />
+    <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="FATALE FOUT" />
     <Term Key="FLIGHT_DISCONNECT" Value="Verbreek verbiding" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Voltooid" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="GEBLOKKEERD" />
