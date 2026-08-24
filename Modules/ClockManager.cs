@@ -12,7 +12,7 @@ using Pathfinder.Util.XML;
 namespace KernelExtensions.Modules
 {
     /// <summary>
-    /// 9.34 Clock 定时器管理器。
+    /// Clock 定时器管理器。
     ///
     /// 定位：Clock 是**剧情资产**——内部就是 Action 序列，只是循环形式，归根结底
     /// 服务于剧情——与 Mission/动作文件同类，分散组织：每个 Clock 一个独立 XML 文件，
@@ -33,7 +33,7 @@ namespace KernelExtensions.Modules
     ///   Interval — 触发间隔（秒），必须 &gt;0
     ///   Times — 循环次数上限（0/省略/负数 = 无限），耗尽自动停止
     ///   Duration — 运行总时长上限（秒），与 Times 谁先到谁停
-    ///   OnComplete — 可选，耗尽后执行的 Action 文件（相对扩展根，对齐 9.36）
+    ///   OnComplete — 可选，耗尽后执行的 Action 文件（相对扩展根，对齐 CompleteAction）
     /// </summary>
     internal static class ClockManager
     {
@@ -41,7 +41,7 @@ namespace KernelExtensions.Modules
         // 每个 OS 的 Update 委托缓存：必须保存引用，否则 -= 无法匹配 lambda 实例
         private static readonly Dictionary<OS, Action<float>> UpdateHandlers = new();
 
-        /// <summary>读档暂存：由 ClockSaveExecutor 填充，OSLoaded 后重建（9.46）。</summary>
+        /// <summary>读档暂存：由 ClockSaveExecutor 填充，OSLoaded 后重建（Clock 持久化）。</summary>
         public static List<ClockPersistentState> PendingRestore;
 
         /// <summary>启动一个 Clock（重复启动同一 ID = 刷新：替换为新定义，计时/计数重置）。</summary>
@@ -117,7 +117,7 @@ namespace KernelExtensions.Modules
             }
         }
 
-        // ========== 持久化（9.46） ==========
+        // ========== 持久化 ==========
 
         /// <summary>生成当前 OS 运行中 Clock 的持久化状态（仅运行中；耗尽/手动停止已移除，天然不存）。</summary>
         public static List<ClockPersistentState> GetPersistentState(OS os)
@@ -140,7 +140,7 @@ namespace KernelExtensions.Modules
         }
 
         /// <summary>
-        /// 按持久化状态重建一个 Clock（OSLoaded 后调用，9.46）。
+        /// 按持久化状态重建一个 Clock（OSLoaded 后调用，Clock 持久化）。
         /// SourcePath 重载 Clock 文件恢复定义（Actions 预加载），恢复计时/次数连续。
         /// 文件缺失或解析失败 → Warn 跳过不复活（剧情资产被删即不恢复）。
         /// </summary>
@@ -199,7 +199,7 @@ namespace KernelExtensions.Modules
                 {
                     clocks.Remove(id);
                     // OnComplete 只在“耗尽自动停止”触发；移除即天然幂等。
-                    // 用 ActionHelper 一次性执行（对齐 9.36 CompleteAction，支持
+                    // 用 ActionHelper 一次性执行（对齐 CompleteAction，支持
                     // <Actions>/<ConditionalActions> 双根，如测试扩展 Clocks/done.xml）
                     if (!ConfigValue.IsNone(inst.Def.OnCompletePath))
                         ActionHelper.ExecuteActionFile(os, inst.Def.OnCompletePath, inst.Def.ExtensionRoot);
@@ -283,7 +283,7 @@ namespace KernelExtensions.Modules
                     }
                 }
 
-                // OnComplete：相对扩展根的动作文件路径（对齐 9.36 CompleteAction，
+                // OnComplete：相对扩展根的动作文件路径（对齐 CompleteAction，
                 // 支持 <Actions>/<ConditionalActions> 双根，由 ActionHelper 一次性执行；
                 // NONE/空 = 不执行（不查文件，避免 NONE 误报）
                 if (!ConfigValue.IsNone(onCompletePath))

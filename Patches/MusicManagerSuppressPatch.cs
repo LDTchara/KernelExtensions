@@ -5,7 +5,7 @@ using KernelExtensions.Modules;
 namespace KernelExtensions.Patches
 {
     /// <summary>
-    /// 9.39 MusicManager 压制 Patch。
+    /// MusicManager 压制 Patch。
     /// PS 运行时吞掉 MM 的播放入口，防止 MM 复活与原版单曲叠播。
     /// 复活源: TuneswapExe/SequencerExe（玩家可运行，不可控）、
     ///         HackerScript/MissionFunctions（扩展作者可避开）、CrashModule（系统不可控）。

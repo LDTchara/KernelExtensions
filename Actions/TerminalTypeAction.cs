@@ -26,7 +26,7 @@ namespace KernelExtensions.Actions
     ///
     /// 实现：原版 TextWriterTimed.WriteTextToTerminal 是**增量渲染**函数
     /// （按 elapsedTimeSoFar 计算应渲染到第几个字符并返回进度），不能一次性调用。
-    /// 因此用一次性实例订阅 os.UpdateSubscriptions 逐帧推进（同 9.35 FlashScreen
+    /// 因此用一次性实例订阅 os.UpdateSubscriptions 逐帧推进（同 FlashScreenAction 的做法）
     /// 模式），渲染完成后退订自清理。
     /// </summary>
     public class TerminalTypeAction : DelayablePathfinderAction

@@ -8,7 +8,7 @@ using PorthackHeartDaemon = KernelExtensions.Daemons.PorthackHeartDaemon;
 namespace KernelExtensions.Patches
 {
     /// <summary>
-    /// 9.47 AutoOnPorthack 支持：反射 patch 原版 PortHackExe.Update。
+    /// AutoOnPorthack 支持：反射 patch 原版 PortHackExe.Update。
     ///
     /// 原版触发链（PortHackExe.Update，progress&gt;0.5 时 typeof(PorthackHeartDaemon) 检测
     /// 目标 → BreakHeart）；PortHackExe 与 ExeModule 均为 internal，KE 无法编译期引用，

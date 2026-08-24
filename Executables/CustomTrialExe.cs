@@ -1434,7 +1434,7 @@ namespace KernelExtensions.Executables
 
         private string GetLocalizedBeginButton()
         {
-            // 9.30: 自定义按钮文字优先（NONE/空=回退本地化，对齐 9.48 NONE 约定）
+            // 自定义按钮文字优先（NONE/空=回退本地化，对齐 NONE 约定）
             if (config != null && !ConfigValue.IsNone(config.StartButtonText))
                 return config.StartButtonText;
             return KELoc.Loc("CUSTOM_TRIAL_BEGIN", "BEGIN TRIAL");

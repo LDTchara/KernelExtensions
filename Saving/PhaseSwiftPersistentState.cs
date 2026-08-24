@@ -20,7 +20,7 @@ namespace KernelExtensions.Saving
         /// <summary>节点 ID → 原始链接目标节点 ID 列表（跨会话安全）</summary>
         public Dictionary<string, List<string>> OriginalLinkIds = new();
 
-        /// <summary>场景索引 → 运行时黑名单节点 ID（9.8）</summary>
+        /// <summary>场景索引 → 运行时黑名单节点 ID</summary>
         public Dictionary<int, HashSet<string>> RuntimeBlocked = new();
 
     }

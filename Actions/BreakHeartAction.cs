@@ -8,7 +8,7 @@ using PorthackHeartDaemon = KernelExtensions.Daemons.PorthackHeartDaemon;
 namespace KernelExtensions.Actions
 {
     /// <summary>
-    /// 9.47 显式触发目标节点的 PorthackHeartDaemon 心碎序列（剧情触发入口）。
+    /// 显式触发目标节点的 PorthackHeartDaemon 心碎序列（剧情触发入口）。
     ///
     /// 用法（全部参数可选，缺省用 daemon 自身 XML 配置）：
     ///   &lt;BreakHeart NodeID="heart" OnComplete="Actions/HeartBroken" /&gt;

@@ -9,7 +9,7 @@ using Pathfinder.Util;
 namespace KernelExtensions.Actions
 {
     /// <summary>
-    /// 9.34 启动一个 Clock 定时器（剧情资产，分散 XML 文件）。
+    /// 启动一个 Clock 定时器（剧情资产，分散 XML 文件）。
     ///
     /// 用法：
     ///   &lt;ClockStart Filepath="Clocks/traceFlash.xml" /&gt;

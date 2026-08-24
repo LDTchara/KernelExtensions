@@ -143,7 +143,7 @@ namespace KernelExtensions
             // ParseInterior：必须解析子元素（DiscoveredScene/OrigLink 等），否则读档时 Children 恒为空
             SaveLoader.RegisterExecutor<PhaseSwiftSaveExecutor>("PhaseSwiftData", ParseOption.ParseInterior);
             KELog.Info("CustomTrialSaveExecutor registered.");
-            // 9.46 Clock 持久化：解析存档 <ClockData> 节点，恢复运行中的 Clock
+            // Clock 持久化：解析存档 <ClockData> 节点，恢复运行中的 Clock
             SaveLoader.RegisterExecutor<ClockSaveExecutor>("ClockData", ParseOption.ParseInterior);
             KELog.Info("ClockSaveExecutor registered.");
 
@@ -178,7 +178,7 @@ namespace KernelExtensions
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
 
-            // 9.47 AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
+            // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
 
             Console.ForegroundColor = ConsoleColor.Green;
@@ -232,7 +232,7 @@ namespace KernelExtensions
                 }
             }
 
-            // ========== PhaseSwift 存档数据（9.6b） ==========
+            // ========== PhaseSwift 存档数据 ==========
             // 只在 PS 运行时写入；未运行时不写（读档时无 PhaseSwift_ flag 也不会恢复）
             if (PhaseSwiftManager.IsRunning && PhaseSwiftManager.Config != null)
             {
@@ -276,7 +276,7 @@ namespace KernelExtensions
                         new XAttribute("Targets", string.Join(",", targets))));
                 }
 
-                // 运行时黑名单（9.8）
+                // 运行时黑名单
                 foreach (var kv in PhaseSwiftManager.GetRuntimeBlockedNodes())
                 {
                     if (kv.Value == null || kv.Value.Count == 0) continue;
@@ -286,13 +286,13 @@ namespace KernelExtensions
                     psNode.Add(sceneEl);
                 }
 
-                // 9.16 已废弃（2026-08-05）：Hacknet 密码机制下无法真正回收 admin，
+                // 已废弃（2026-08-05）：Hacknet 密码机制下无法真正回收 admin，
                 // AdminScene 不再写入存档（旧存档残留元素读档时忽略，无副作用）
 
                 e.Save.Add(psNode);
             }
 
-            // ========== Clock 存档数据（9.46） ==========
+            // ========== Clock 存档数据 ==========
             // 仅存运行中的 Clock（ActiveClocks 天然排除耗尽/手动停止）
             var clockStates = ClockManager.GetPersistentState(os);
             if (clockStates.Count > 0)
@@ -611,7 +611,7 @@ namespace KernelExtensions
             PhaseSwiftManager.Start(overrideScene: restore.Scene);
         }
 
-        /// <summary>读档后按 &lt;ClockData&gt; 快照重建运行中的 Clock（9.46）。</summary>
+        /// <summary>读档后按 &lt;ClockData&gt; 快照重建运行中的 Clock（Clock 持久化）。</summary>
         private void OnOSLoaded_RestoreClocks(OSLoadedEvent e)
         {
             var pending = ClockManager.PendingRestore;

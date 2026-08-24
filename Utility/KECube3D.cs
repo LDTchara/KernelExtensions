@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace KernelExtensions.Utility
 {
     /// <summary>
-    /// 9.47 原版 Cube3D（Hacknet.Effects.Cube3D，internal）的反射桥。
+    /// 原版 Cube3D（Hacknet.Effects.Cube3D，internal）的反射桥。
     /// 自实现线框立方体与原版视觉存在细微差异，改为直接反射调用原版
     /// RenderWireframe（原版 Cube3D.Initilize 已在 Game1.cs:244 游戏启动时调用，
     /// 静态缓冲就绪，反射 Invoke 即与原版渲染完全一致）。

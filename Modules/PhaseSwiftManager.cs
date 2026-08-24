@@ -496,7 +496,7 @@ private static List<float> _visSampList;
             {
                 bool inScene = _sceneVisibleIds[CurrentScene].Contains(id);
                 bool notBlocked = !_sceneBlockedIds[CurrentScene].Contains(id);
-                // 9.8: 运行时黑名单同样拦截连接
+                // 运行时黑名单同样拦截连接
                 if (_runtimeBlockedNodeIds.TryGetValue(CurrentScene, out var runtimeBlocked)
                     && runtimeBlocked.Contains(id))
                 {
@@ -704,7 +704,7 @@ private static List<float> _visSampList;
             var nodesToShow = new HashSet<string>(_sceneStartIds[sceneIdx]);
             if (_sceneDiscoveredNodeIds.TryGetValue(sceneIdx, out var prev))
                 foreach (var id in prev) nodesToShow.Add(id);
-            // 9.28: GlobalDiscovery — 其他场景发现的节点如果本场景 VisibleNodes 也含有，一并显示
+            // GlobalDiscovery — 其他场景发现的节点如果本场景 VisibleNodes 也含有，一并显示
             if (Config != null && Config.GlobalDiscovery)
             {
                 foreach (var kv in _sceneDiscoveredNodeIds)
@@ -717,7 +717,7 @@ private static List<float> _visSampList;
                     }
                 }
             }
-            // 9.8: 从 nodesToShow 中排除运行时黑名单中的节点
+            // 从 nodesToShow 中排除运行时黑名单中的节点
             if (_runtimeBlockedNodeIds.TryGetValue(sceneIdx, out var blocked))
             {
                 foreach (var id in blocked)
@@ -823,7 +823,7 @@ private static List<float> _visSampList;
         }
 
         /// <summary>
-        /// 保存前刷新内存中的发现状态与 admin 记录（9.6b）。
+        /// 保存前刷新内存中的发现状态与 admin 记录。
         /// 由 OnSaveGame 在写 PhaseSwiftData 前调用。
         /// </summary>
         public static void RefreshPersistentState()

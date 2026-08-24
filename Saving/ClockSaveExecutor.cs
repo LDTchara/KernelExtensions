@@ -8,7 +8,7 @@ using Pathfinder.Util.XML;
 namespace KernelExtensions.Saving
 {
     /// <summary>
-    /// 读取存档中的 &lt;ClockData&gt; 节点，恢复运行中的 Clock（9.46）。
+    /// 读取存档中的 &lt;ClockData&gt; 节点，恢复运行中的 Clock。
     /// 存入 ClockManager.PendingRestore 供 OSLoaded 后重建。
     /// </summary>
     // ParseInterior：必须解析子元素（&lt;Clock&gt;），否则 info.Children 恒为空

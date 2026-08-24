@@ -1,7 +1,7 @@
 namespace KernelExtensions.Saving
 {
     /// <summary>
-    /// Clock 持久化状态的数据传输对象（9.46，对齐 PhaseSwiftPersistentState 命名）。
+    /// Clock 持久化状态的数据传输对象（对齐 PhaseSwiftPersistentState 命名）。
     /// 由 ClockSaveExecutor 解析存档 XML 填充，存入 ClockManager.PendingRestore，
     /// 供 OSLoaded 后重建运行中的 Clock。
     ///

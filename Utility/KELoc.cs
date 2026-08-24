@@ -10,7 +10,7 @@ using System.Xml.Linq;
 namespace KernelExtensions.Utility
 {
     /// <summary>
-    /// KE 内置文本本地化（9.27）。
+    /// KE 内置文本本地化。
     /// 语言文件 KE-Locales.xml 内嵌于 dll（EmbeddedResource）；首次运行导出到扩展根目录
     /// （文件不存在才导出，用户可自由编辑，后续不覆盖）；外部文件存在时优先加载，
     /// 删除后回退 dll 内嵌副本。

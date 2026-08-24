@@ -55,7 +55,7 @@ namespace KernelExtensions.Saving
                     targets.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
             }
 
-            // 解析运行时黑名单（9.8）
+            // 解析运行时黑名单
             foreach (var child in info.Children)
             {
                 if (child.Name != "RuntimeBlockedScene") continue;

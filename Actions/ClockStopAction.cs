@@ -9,7 +9,7 @@ using Pathfinder.Util;
 namespace KernelExtensions.Actions
 {
     /// <summary>
-    /// 9.34 停止一个正在运行的 Clock 定时器。
+    /// 停止一个正在运行的 Clock 定时器。
     ///
     /// 用法（二选一，同时提供时优先 ClockID）：
     ///   &lt;ClockStop ClockID="traceFlash" /&gt;                — 按 ID 停止（推荐）

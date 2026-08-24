@@ -15,7 +15,7 @@ using Pathfinder.Util;
 namespace KernelExtensions.Daemons
 {
     /// <summary>
-    /// 9.47 复刻原版 PorthackHeartDaemon（可配置剧情版）。
+    /// 复刻原版 PorthackHeartDaemon（可配置剧情版）。
     ///
     /// ── 节点 XML 用法（全部参数可选）──────────────────────────────────────────
     /// &lt;Computer&gt;
@@ -33,7 +33,7 @@ namespace KernelExtensions.Daemons
     ///   AlignTime      — 立方体旋转对齐到正位时长（秒）。默认 2.5。
     ///   HeartDuration  — 心形序列总时长（秒）。默认 30。
     ///   FlashOutTime   — 心形完成后白色淡出时长（秒）。默认 3.8。
-    ///   OnComplete     — 序列结束后加载的 Action 文件（相对扩展根，对齐 9.36；
+    ///   OnComplete     — 序列结束后加载的 Action 文件（相对扩展根，对齐 CompleteAction；
     ///                     NONE/空=不执行）。默认不执行。
     ///   OnHeartbreak   — 开始碎心（BreakHeart 触发）时加载的 Action 文件（相对扩展根，
     ///                     可与 OnComplete 搭配做"碎心开场/结束后收尾"；NONE/空=不执行）。
