@@ -1,6 +1,7 @@
 using Hacknet;
 using Hacknet.Daemons.Helpers;
 using Hacknet.Gui;
+using KernelExtensions.Modules;
 using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;

@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 using HarmonyLib;
 using Hacknet.Daemons.Helpers;
 using KernelExtensions.Modules;
-using KernelExtensions.Utility;
 
 namespace KernelExtensions.Patches
 {
@@ -32,7 +31,7 @@ namespace KernelExtensions.Patches
                 __instance.fullscreen.Height - topOffset
             );
 
-            // 绘制高度计（KE 版：文字走 KELoc，9.27 方案 G；原版方法文字走 LocaleTerms 不受 KE 语言文件控制）
+            // 绘制高度计（KE 版：文字走 KELoc，本地化方案 G；原版方法文字走 LocaleTerms 不受 KE 语言文件控制）
             KEAltitudeIndicator.RenderAltitudeIndicator(
                 dest,
                 sb,

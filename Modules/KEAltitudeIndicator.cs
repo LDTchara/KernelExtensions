@@ -1,13 +1,14 @@
 using Hacknet;
 using Hacknet.Gui;
+using KernelExtensions.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Modules
 {
     /// <summary>
-    /// KE 版飞机高度计（9.27 方案 G）。
+    /// KE 版飞机高度计（本地化方案 G）。
     /// 复制原版 AircraftAltitudeIndicator.RenderAltitudeIndicator 的渲染逻辑，但 9 处文字
     /// 改为 KELoc（FLIGHT_ALTITUDE_* key，随 KE-Locales.xml 可控）；图标从原版资源路径
     /// 自加载（原版字段 private 无法复用）；GetFlashRateFromTimer 直接用原版 public 方法。
