@@ -1,6 +1,6 @@
 using System;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     /// <summary>
     /// 配置值语义工具（NONE 约定）。

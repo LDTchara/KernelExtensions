@@ -1,8 +1,8 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Hacknet;
 using Microsoft.Xna.Framework.Content;
 using KernelExtensions.Configs;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Patches;
 

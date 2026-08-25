@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Hacknet;
 using KernelExtensions.Configs;
 using KernelExtensions.Saving;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Pathfinder.Replacements;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;

@@ -2,7 +2,7 @@ using System.Globalization;
 using Hacknet;
 using KernelExtensions.Modules;
 using KernelExtensions.Patches;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Pathfinder.Action;
 using Pathfinder.Util;

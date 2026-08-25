@@ -1,11 +1,11 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Storage;
-using KernelExtensions.Utility;   // 用于节点存储
+using KernelExtensions.Utilities;   // 用于节点存储
 using KernelExtensions.Patches;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;

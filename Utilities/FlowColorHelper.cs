@@ -1,6 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     /// <summary>
     /// 提供基于时间流动的彩虹颜色计算。

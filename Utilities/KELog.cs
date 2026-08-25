@@ -1,7 +1,7 @@
-﻿using BepInEx.Logging;
+using BepInEx.Logging;
 using KernelExtensions.Configs;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     /// <summary>
     /// 统一日志。级别约定（2026-08-20 定）：

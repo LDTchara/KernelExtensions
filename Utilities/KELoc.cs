@@ -7,7 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Xml.Linq;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     /// <summary>
     /// KE 内置文本本地化。

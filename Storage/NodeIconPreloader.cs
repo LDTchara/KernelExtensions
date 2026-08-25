@@ -1,9 +1,9 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using Microsoft.Xna.Framework.Graphics;
 using KernelExtensions.Configs;
 using KernelExtensions.Patches;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Storage
 {

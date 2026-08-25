@@ -5,7 +5,7 @@ using Pathfinder.Action;
 using Pathfinder.Util;
 using KernelExtensions.Storage;
 using KernelExtensions.Patches;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Actions
 {

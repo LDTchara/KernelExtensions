@@ -1,6 +1,6 @@
-﻿using Hacknet;
+using Hacknet;
 using HarmonyLib;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 

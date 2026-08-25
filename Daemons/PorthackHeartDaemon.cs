@@ -5,7 +5,7 @@ using Hacknet.Gui;
 using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Configs;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;

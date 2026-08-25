@@ -3,7 +3,7 @@ using Pathfinder.Replacements;
 using Pathfinder.Util.XML;
 using System.Xml;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     public static class ActionHelper
     {

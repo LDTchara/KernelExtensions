@@ -1,7 +1,7 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Hacknet;
 using KernelExtensions.Patches;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Pathfinder.Action;
 using Pathfinder.Util;

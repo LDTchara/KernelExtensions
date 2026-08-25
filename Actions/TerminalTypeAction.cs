@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using Hacknet;
 using Hacknet.Effects;
 using KernelExtensions.Configs;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;

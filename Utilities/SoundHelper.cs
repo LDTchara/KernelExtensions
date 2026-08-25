@@ -2,7 +2,7 @@ using Hacknet;
 using Hacknet.Extensions;
 using Microsoft.Xna.Framework.Audio;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     public static class SoundHelper
     {

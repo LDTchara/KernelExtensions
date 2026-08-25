@@ -1,6 +1,6 @@
 using Hacknet;
 using KernelExtensions.Modules;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Pathfinder.Action;
 
 namespace KernelExtensions.Actions.Aircraft

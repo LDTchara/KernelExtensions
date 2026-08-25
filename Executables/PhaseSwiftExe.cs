@@ -1,10 +1,10 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Modules;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Pathfinder.Executable;
 

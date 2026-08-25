@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Hacknet;
 using Hacknet;
 using Hacknet.Extensions;
@@ -15,7 +15,7 @@ using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Daemon;
 using Pathfinder.Event;

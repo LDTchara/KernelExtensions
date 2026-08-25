@@ -4,7 +4,7 @@ using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     /// <summary>
     /// 原版 Cube3D（Hacknet.Effects.Cube3D，internal）的反射桥。

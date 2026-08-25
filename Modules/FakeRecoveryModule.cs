@@ -1,9 +1,9 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using Hacknet.Gui;
 using Hacknet.Localization;
 using KernelExtensions.Configs;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;

@@ -1,8 +1,7 @@
-using Hacknet;
+using KernelExtensions.Modules;
 using Pathfinder.Meta.Load;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;
-using KernelExtensions.Modules;
 
 namespace KernelExtensions.Saving
 {
@@ -51,8 +50,8 @@ namespace KernelExtensions.Saving
                 string nodeId = GetAttr(child, "NodeId", "");
                 string targets = GetAttr(child, "Targets", "");
                 if (string.IsNullOrEmpty(nodeId) || string.IsNullOrEmpty(targets)) continue;
-                state.OriginalLinkIds[nodeId] = new System.Collections.Generic.List<string>(
-                    targets.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
+                state.OriginalLinkIds[nodeId] = new List<string>(
+                    targets.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
             }
 
             // 解析运行时黑名单

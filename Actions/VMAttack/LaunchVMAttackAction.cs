@@ -1,10 +1,10 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using KernelExtensions.Configs;
 using KernelExtensions.Modules;
 using Pathfinder.Action;
 using Pathfinder.Util;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Actions.VMAttack
 {

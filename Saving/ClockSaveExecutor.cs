@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using KernelExtensions.Modules;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Pathfinder.Meta.Load;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;

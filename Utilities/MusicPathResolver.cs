@@ -1,7 +1,7 @@
 using BepInEx;
 using Hacknet.Extensions;
 
-namespace KernelExtensions.Utility
+namespace KernelExtensions.Utilities
 {
     public static class MusicPathResolver
     {

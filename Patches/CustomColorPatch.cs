@@ -1,7 +1,7 @@
-﻿using Hacknet;
+using Hacknet;
 using Hacknet.Extensions;
 using HarmonyLib;
-using KernelExtensions.Utility;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using System.Reflection;
 using System.Text.RegularExpressions;
