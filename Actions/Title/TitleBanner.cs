@@ -147,13 +147,14 @@ namespace KernelExtensions.Actions.Title
         internal static TitleBanner Instance;
         internal static string IconPath = "Images/Info.png";
         internal static string IconBgPath = "Images/InfoBG.png";
+        private static bool _drawFailedWarned;
 
-        /// <summary>弹出横幅（强调色可选，null=保持当前）。</summary>
+        /// <summary>弹出横幅（强调色可选，null=保持当前）。文本经 CleanStringToRenderable 清洗（原版行为：字体不支持的字符显示为 ?，避免 SpriteFont 抛异常）。</summary>
         internal static void Show(string title, string body, float duration, Color? accentColor)
         {
             if (Instance == null) return;
-            Instance.TitleText = title;
-            Instance.BodyText = body;
+            Instance.TitleText = Utils.CleanStringToRenderable(title);
+            Instance.BodyText = Utils.CleanStringToRenderable(body);
             Instance.Duration = duration;
             if (accentColor.HasValue) Instance.AccentColor = accentColor.Value;
             Instance.Activate();
@@ -183,19 +184,37 @@ namespace KernelExtensions.Actions.Title
         internal static void OnOSDraw(OS __instance, GameTime gameTime)
         {
             if (Instance == null || !Instance.IsActive) return;
+            bool began = false;
+            bool drawFailed = false;
             try
             {
-                // OS.Draw() 内部已结束 SpriteBatch，Postfix 需自己 Begin/End
+                // OS.Draw() 内部已结束 SpriteBatch（两次 Begin/End 配对），Postfix 需自己 Begin/End
                 GuiData.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+                began = true;
                 var fullscreen = new Rectangle(0, 0,
                     __instance.ScreenManager.GraphicsDevice.Viewport.Width,
                     __instance.ScreenManager.GraphicsDevice.Viewport.Height);
                 Instance.Draw(fullscreen, GuiData.spriteBatch);
-                GuiData.spriteBatch.End();
             }
             catch (Exception ex)
             {
-                KELog.Warn($"[TitleBanner] draw failed: {ex.Message}");
+                drawFailed = true;
+                // 节流：持续失败只警告一次，直到某帧成功才复位
+                if (!_drawFailedWarned)
+                {
+                    _drawFailedWarned = true;
+                    KELog.Warn($"[TitleBanner] draw failed: {ex.Message}");
+                }
+            }
+            finally
+            {
+                // 即使 Draw 内部异常也必须 End——否则 SpriteBatch 残留 Begin 状态，
+                // 下一帧 OS.Draw 的 GuiData.startDraw() 会抛 "Begin before End"（2026-08-25 修复）
+                if (began)
+                {
+                    try { GuiData.spriteBatch.End(); } catch { }
+                }
+                if (!drawFailed) _drawFailedWarned = false;
             }
         }
     }
