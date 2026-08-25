@@ -50,9 +50,11 @@ namespace KernelExtensions.Utilities
                 catch (Exception ex) { KELog.Warn($"[KELoc] embedded parse failed: {ex.Message}"); }
             }
 
-            // 外部覆盖：用户改过的 key 保持覆盖；KE 新增 key 由内嵌补齐
+            // 外部文件：先补齐缺失 key（物理写入，用户文件始终完整；失败回退内存合并），再覆盖加载
             if (external != null && File.Exists(external))
             {
+                try { PatchExternalFile(external, embeddedXml); }
+                catch (Exception ex) { KELog.Warn($"[KELoc] patch {ExternalFileName} failed: {ex.Message}"); }
                 try { ParseInto(File.ReadAllText(external), overwrite: true); }
                 catch (Exception ex) { KELog.Warn($"[KELoc] read {ExternalFileName} failed: {ex.Message}"); }
             }
@@ -60,6 +62,60 @@ namespace KernelExtensions.Utilities
             _loaded = _langs.Count > 0;
             if (!_loaded)
                 KELog.Error("[KELoc] no locale data available (embedded resource missing?)");
+        }
+
+        /// <summary>
+        /// 将内嵌中外部文件缺失的 key 补入外部文件（不覆盖已有值；整个语言节点缺失则复制内嵌节点）。
+        /// 补齐后外部文件 = 内嵌超集，用户文件始终完整可见。保存失败/解析失败时静默跳过（回退内存合并）。
+        /// </summary>
+        private static void PatchExternalFile(string externalPath, string embeddedXml)
+        {
+            if (embeddedXml == null) return;
+
+            var embedded = XDocument.Parse(embeddedXml);
+            var external = XDocument.Load(externalPath); // 解析失败抛异常 → 上层 catch，不写用户文件
+            bool changed = false;
+
+            foreach (var langEl in embedded.Root?.Elements("Language") ?? Enumerable.Empty<XElement>())
+            {
+                string langName = (string)langEl.Attribute("Name");
+                if (string.IsNullOrWhiteSpace(langName)) continue;
+
+                var extLang = external.Root?.Elements("Language")
+                    .FirstOrDefault(e => string.Equals((string)e.Attribute("Name"), langName, StringComparison.OrdinalIgnoreCase));
+
+                if (extLang == null)
+                {
+                    // 整个语言节点缺失 → 从内嵌复制
+                    external.Root?.Add(new XElement(langEl));
+                    changed = true;
+                    continue;
+                }
+
+                var extKeys = new HashSet<string>(extLang.Elements("Term")
+                    .Select(e => (string)e.Attribute("Key"))
+                    .Where(k => !string.IsNullOrEmpty(k)), StringComparer.Ordinal);
+
+                foreach (var term in langEl.Elements("Term"))
+                {
+                    string k = (string)term.Attribute("Key");
+                    if (string.IsNullOrEmpty(k) || extKeys.Contains(k)) continue;
+                    extLang.Add(new XElement(term));
+                    changed = true;
+                }
+            }
+
+            if (!changed) return;
+
+            // 无 BOM UTF-8 保存（XDocument.Save 默认带 BOM，与导出/内嵌格式保持一致）
+            var settings = new System.Xml.XmlWriterSettings
+            {
+                Encoding = new System.Text.UTF8Encoding(false),
+                Indent = true,
+                IndentChars = "  "
+            };
+            using (var w = System.Xml.XmlWriter.Create(externalPath, settings))
+                external.Save(w);
         }
 
         private static void ParseInto(string xmlText, bool overwrite)
