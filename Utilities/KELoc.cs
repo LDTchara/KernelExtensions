@@ -75,6 +75,7 @@ namespace KernelExtensions.Utilities
             var embedded = XDocument.Parse(embeddedXml);
             var external = XDocument.Load(externalPath); // 解析失败抛异常 → 上层 catch，不写用户文件
             bool changed = false;
+            int added = 0; // 本次补齐的词条总数（含整语言节点复制）
 
             foreach (var langEl in embedded.Root?.Elements("Language") ?? Enumerable.Empty<XElement>())
             {
@@ -88,6 +89,7 @@ namespace KernelExtensions.Utilities
                 {
                     // 整个语言节点缺失 → 从内嵌复制
                     external.Root?.Add(new XElement(langEl));
+                    added += langEl.Elements("Term").Count();
                     changed = true;
                     continue;
                 }
@@ -101,11 +103,16 @@ namespace KernelExtensions.Utilities
                     string k = (string)term.Attribute("Key");
                     if (string.IsNullOrEmpty(k) || extKeys.Contains(k)) continue;
                     extLang.Add(new XElement(term));
+                    added++;
                     changed = true;
                 }
             }
 
-            if (!changed) return;
+            if (!changed)
+            {
+                KELog.Debug($"[KELoc] {ExternalFileName} is up to date ({_langs.Count} langs)");
+                return;
+            }
 
             // 无 BOM UTF-8 保存（XDocument.Save 默认带 BOM，与导出/内嵌格式保持一致）
             var settings = new System.Xml.XmlWriterSettings
@@ -116,6 +123,8 @@ namespace KernelExtensions.Utilities
             };
             using (var w = System.Xml.XmlWriter.Create(externalPath, settings))
                 external.Save(w);
+            // 动作级结果（Info）：扩展作者可确认补齐是否发生；KELog.Debug 无缺失时确认状态
+            KELog.Info($"[KELoc] patched {ExternalFileName}: added {added} missing term(s)");
         }
 
         private static void ParseInto(string xmlText, bool overwrite)
