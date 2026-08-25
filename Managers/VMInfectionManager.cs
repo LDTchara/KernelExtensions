@@ -1,9 +1,10 @@
 using Hacknet;
 using Hacknet.Extensions;
 using KernelExtensions.Configs;
+using KernelExtensions.Modules;
 using KernelExtensions.Utilities;
 // 傻逼PowerShell给我注释全爆了，孩子们记住永远不要用ps1改东西
-namespace KernelExtensions.Modules
+namespace KernelExtensions.Managers
 {
     /// <summary>
     /// 全局 VM 攻击状态管理器，负责存储配置、控制恢复界面激活标志、执行清理。

@@ -1,6 +1,7 @@
 using Hacknet;
 using Hacknet.Extensions;
 using KernelExtensions.Configs;
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 using Pathfinder.Action;
 using Pathfinder.Util;

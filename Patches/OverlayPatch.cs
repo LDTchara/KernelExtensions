@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using HarmonyLib;
 using Hacknet.Daemons.Helpers;
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 
 namespace KernelExtensions.Patches

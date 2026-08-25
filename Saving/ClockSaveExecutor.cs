@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 using KernelExtensions.Utilities;
 using Pathfinder.Meta.Load;

@@ -10,7 +10,7 @@ using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace KernelExtensions.Modules
+namespace KernelExtensions.Managers
 {
     /// <summary>
     /// 管理 WCC（WithCustomColor）ScreenBleed 效果的计时、渲染和清理。

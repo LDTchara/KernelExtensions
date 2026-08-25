@@ -3,6 +3,7 @@ using Hacknet.Extensions;
 using Hacknet.Gui;
 using HarmonyLib;
 using KernelExtensions.Configs;
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;

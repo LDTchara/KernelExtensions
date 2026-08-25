@@ -1,5 +1,6 @@
 using System.Globalization;
 using Hacknet;
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Utilities;

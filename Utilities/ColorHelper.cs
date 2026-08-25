@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 
+using KernelExtensions.Managers;
 namespace KernelExtensions.Utilities
 {
     /// <summary>

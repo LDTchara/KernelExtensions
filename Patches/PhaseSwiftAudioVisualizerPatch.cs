@@ -1,6 +1,7 @@
 using System.Reflection;
 using Hacknet.Effects;
 using HarmonyLib;
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 using Microsoft.Xna.Framework.Media;
 

@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using KernelExtensions.Managers;
 namespace KernelExtensions.Modules
 {
     /// <summary>

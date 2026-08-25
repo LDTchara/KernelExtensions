@@ -9,7 +9,7 @@ using Pathfinder.Replacements;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
-namespace KernelExtensions.Modules
+namespace KernelExtensions.Managers
 {
     /// <summary>
     /// Clock 定时器管理器。

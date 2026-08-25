@@ -1,3 +1,4 @@
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 using Pathfinder.Meta.Load;
 using Pathfinder.Replacements;

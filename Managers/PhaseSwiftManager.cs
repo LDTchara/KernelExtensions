@@ -9,7 +9,7 @@ using KernelExtensions.Patches;
 using NVorbis;
 using System.Xml.Serialization;
 
-namespace KernelExtensions.Modules
+namespace KernelExtensions.Managers
 {
     /// <summary>
     /// PhaseSwift 核心管理器（静态类）。

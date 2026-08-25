@@ -11,6 +11,7 @@ using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Configs;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
+using KernelExtensions.Managers;
 using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;

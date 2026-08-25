@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using KernelExtensions.Managers;
 namespace KernelExtensions.Saving
 {
     /// <summary>
