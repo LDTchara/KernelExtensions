@@ -1,4 +1,3 @@
-using Hacknet;
 using Hacknet.UIUtils;
 using HarmonyLib;
 using KernelExtensions.Configs;

@@ -2,7 +2,6 @@ using Hacknet;
 using Hacknet.Effects;
 using HarmonyLib;
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 using Microsoft.Xna.Framework;
 
 namespace KernelExtensions.Patches

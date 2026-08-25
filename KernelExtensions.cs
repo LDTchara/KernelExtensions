@@ -13,7 +13,6 @@ using KernelExtensions.Configs;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
@@ -21,13 +20,13 @@ using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Daemon;
 using Pathfinder.Event;
-using System.Reflection;
 using Pathfinder.Event.Gameplay;
 using Pathfinder.Event.Loading;
 using Pathfinder.Event.Saving;
 using Pathfinder.Executable;
 using Pathfinder.Replacements;      // 提供 SaveLoader 用于注册存档加载器
 using Pathfinder.Util.XML;          // 提供 ParseOption
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
@@ -80,7 +79,7 @@ namespace KernelExtensions
             KELog.Info("CustomTrial registered.");
             ExecutableManager.RegisterExecutable<PhaseSwiftExe>("#PHASESWIFT#");
             KELog.Info("PhaseSwift registered.");
-            ExecutableManager.RegisterExecutable<EffectsPlayerExe>("#EFFECTS#"); 
+            ExecutableManager.RegisterExecutable<EffectsPlayerExe>("#EFFECTS#");
             KELog.Info("EffectsPlayer registered.");
             ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
             KELog.Info("WPTEST registered.");
@@ -106,9 +105,11 @@ namespace KernelExtensions
             ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
             KELog.Info("PhaseSwiftFadeOut action registered.");
             ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
-            ActionManager.RegisterAction<BlockNodeAction>("BlockNode");
-            ActionManager.RegisterAction<UnblockNodeAction>("UnblockNode");
             KELog.Info("PhaseSwiftMusic action registered.");
+            ActionManager.RegisterAction<BlockNodeAction>("BlockNode");
+            KELog.Info("BlockNode action registered.");
+            ActionManager.RegisterAction<UnblockNodeAction>("UnblockNode");
+            KELog.Info("UnblockNode action registered.");
             ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
             KELog.Info("SwitchToThemeKeepLayout action registered.");
             ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
@@ -136,7 +137,7 @@ namespace KernelExtensions
             EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
             KELog.Info("NodeIcon OSLoaded handler registered.");
             EventManager<OSLoadedEvent>.AddHandler((e) => { try { ConfigLoader.Load(); } catch { } });
-        EventManager<OSLoadedEvent>.AddHandler((e) => { try { KELoc.Load(); } catch { } });
+            EventManager<OSLoadedEvent>.AddHandler((e) => { try { KELoc.Load(); } catch { } });
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_AutoRestorePhaseSwift);
             KELog.Info("ConfigLoader handler registered.");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_RestoreClocks);
@@ -305,7 +306,7 @@ namespace KernelExtensions
                 // 原始链接：int 索引 → 节点 ID（跨会话安全）
                 foreach (var kv in PhaseSwiftManager.GetOriginalLinks())
                 {
-                    var targets = new System.Collections.Generic.List<string>();
+                    var targets = new List<string>();
                     foreach (var idx in kv.Value)
                     {
                         if (idx >= 0 && os != null && os.netMap != null && idx < os.netMap.nodes.Count
@@ -430,8 +431,8 @@ namespace KernelExtensions
                         try
                         {
                             string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
-                            string refPath = System.IO.Path.Combine(extRoot, config.CheckFilePattern);
-                            contentMatch = System.IO.File.Exists(refPath) && FilesMatch(checkPath, refPath);
+                            string refPath = Path.Combine(extRoot, config.CheckFilePattern);
+                            contentMatch = File.Exists(refPath) && FilesMatch(checkPath, refPath);
                             if (ConfigLoader.Debug)
                                 KELog.Debug($"[VM] CheckFilePattern: comparing with {refPath} -> {(contentMatch ? "match" : "mismatch")}");
                         }
@@ -526,51 +527,51 @@ namespace KernelExtensions
                 Console.OutputEncoding = Encoding.UTF8;
                 bool ansi = EnableAnsiColors();
 
-            string[] lines = art.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-            int maxLen = 0;
-            for (int i = 0; i < lines.Length; i++)
-                if (lines[i].Length > maxLen) maxLen = lines[i].Length;
+                string[] lines = art.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                int maxLen = 0;
+                for (int i = 0; i < lines.Length; i++)
+                    if (lines[i].Length > maxLen) maxLen = lines[i].Length;
 
-            for (int r = 0; r < lines.Length; r++)
-            {
-                string line = lines[r];
-                for (int c = 0; c < line.Length; c++)
+                for (int r = 0; r < lines.Length; r++)
                 {
-                    // 将水平位置映射到 0-1
-                    float t = maxLen <= 1 ? 0f : (float)c / (maxLen - 1);
-                    // 色相从 0° 到 360° (红→红，经过彩虹)
-                    double hue = t * 360.0;
-                    // 饱和度 1.0，亮度 0.5 产生纯色
-                    var (r_val, g_val, b_val) = HslToRgb(hue, 1.0, 0.5);
+                    string line = lines[r];
+                    for (int c = 0; c < line.Length; c++)
+                    {
+                        // 将水平位置映射到 0-1
+                        float t = maxLen <= 1 ? 0f : (float)c / (maxLen - 1);
+                        // 色相从 0° 到 360° (红→红，经过彩虹)
+                        double hue = t * 360.0;
+                        // 饱和度 1.0，亮度 0.5 产生纯色
+                        var (r_val, g_val, b_val) = HslToRgb(hue, 1.0, 0.5);
 
-                    if (ansi)
-                    {
-                        Console.Write($"\x1b[38;2;{r_val};{g_val};{b_val}m{line[c]}");
+                        if (ansi)
+                        {
+                            Console.Write($"\x1b[38;2;{r_val};{g_val};{b_val}m{line[c]}");
+                        }
+                        else
+                        {
+                            // 非 ANSI 终端：使用黑底白字反转效果
+                            Console.BackgroundColor = ConsoleColor.White;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            Console.Write(line[c]);
+                            // 非 ANSI 的简单近似
+                            /*
+                            ConsoleColor col;
+                            if (hue < 60) col = ConsoleColor.Red;
+                            else if (hue < 120) col = ConsoleColor.DarkYellow;
+                            else if (hue < 180) col = ConsoleColor.Green;
+                            else if (hue < 240) col = ConsoleColor.Cyan;
+                            else if (hue < 300) col = ConsoleColor.Blue;
+                            else col = ConsoleColor.Magenta;
+                            Console.ForegroundColor = col;
+                            Console.Write(line[c]);
+                            */
+                        }
                     }
-                    else
-                    {
-                        // 非 ANSI 终端：使用黑底白字反转效果
-                        Console.BackgroundColor = ConsoleColor.White;
-                        Console.ForegroundColor = ConsoleColor.Black;
-                        Console.Write(line[c]);
-                        // 非 ANSI 的简单近似
-                        /*
-                        ConsoleColor col;
-                        if (hue < 60) col = ConsoleColor.Red;
-                        else if (hue < 120) col = ConsoleColor.DarkYellow;
-                        else if (hue < 180) col = ConsoleColor.Green;
-                        else if (hue < 240) col = ConsoleColor.Cyan;
-                        else if (hue < 300) col = ConsoleColor.Blue;
-                        else col = ConsoleColor.Magenta;
-                        Console.ForegroundColor = col;
-                        Console.Write(line[c]);
-                        */
-                    }
+                    if (ansi) Console.Write("\x1b[0m");
+                    Console.ResetColor();
+                    Console.WriteLine();
                 }
-                if (ansi) Console.Write("\x1b[0m");
-                Console.ResetColor();
-                Console.WriteLine();
-            }
             }
             catch { /* 无控制台环境：跳过 banner */ }
         }
@@ -579,8 +580,8 @@ namespace KernelExtensions
         {
             try
             {
-                byte[] a = System.IO.File.ReadAllBytes(pathA);
-                byte[] b = System.IO.File.ReadAllBytes(pathB);
+                byte[] a = File.ReadAllBytes(pathA);
+                byte[] b = File.ReadAllBytes(pathB);
                 if (a.Length != b.Length) return false;
                 for (int i = 0; i < a.Length; i++)
                     if (a[i] != b[i]) return false;

@@ -1,8 +1,7 @@
-using System;
-using System.Reflection;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.Reflection;
 
 namespace KernelExtensions.Utilities
 {

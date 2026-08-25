@@ -3,12 +3,11 @@ using Hacknet.Extensions;
 using Hacknet.Gui;
 using Hacknet.Localization;
 using KernelExtensions.Configs;
+using KernelExtensions.Managers;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
-using KernelExtensions.Managers;
 namespace KernelExtensions.Modules
 {
     /// <summary>

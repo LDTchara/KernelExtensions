@@ -1,8 +1,7 @@
-using Hacknet;
+using KernelExtensions.Storage;
 using Pathfinder.Meta.Load;
 using Pathfinder.Replacements;      // 提供 SaveLoader.SaveExecutor 基类
 using Pathfinder.Util.XML;
-using KernelExtensions.Storage;
 
 namespace KernelExtensions.Saving
 {
@@ -29,7 +28,7 @@ namespace KernelExtensions.Saving
                 return;
 
             // 解析逗号分隔的节点索引字符串
-            var nodes = new System.Collections.Generic.List<int>();
+            var nodes = new List<int>();
             foreach (var part in nodesStr.Split(','))
             {
                 if (int.TryParse(part, out int idx))

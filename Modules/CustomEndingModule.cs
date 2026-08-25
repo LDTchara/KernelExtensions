@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Reflection;
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
@@ -9,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
+using System.Reflection;
 
 namespace KernelExtensions.Modules;
 

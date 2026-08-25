@@ -1,8 +1,7 @@
-using System.Reflection;
 using HarmonyLib;
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 using Microsoft.Xna.Framework.Media;
+using System.Reflection;
 
 namespace KernelExtensions.Patches
 {

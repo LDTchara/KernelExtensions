@@ -1,8 +1,7 @@
-using System;
-using System.Reflection;
 using Hacknet;
 using HarmonyLib;
 using KernelExtensions.Utilities;
+using System.Reflection;
 using PorthackHeartDaemon = KernelExtensions.Daemons.PorthackHeartDaemon;
 
 namespace KernelExtensions.Patches

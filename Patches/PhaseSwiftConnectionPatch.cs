@@ -1,7 +1,6 @@
 using Hacknet;
 using HarmonyLib;
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 
 namespace KernelExtensions.Patches
 {

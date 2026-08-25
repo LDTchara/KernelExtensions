@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Hacknet;
 using KernelExtensions.Configs;
 using KernelExtensions.Saving;

@@ -1,6 +1,3 @@
-using System;
-
-using KernelExtensions.Managers;
 namespace KernelExtensions.Utilities
 {
     /// <summary>

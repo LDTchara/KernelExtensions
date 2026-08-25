@@ -1,5 +1,4 @@
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 using Pathfinder.Meta.Load;
 using Pathfinder.Replacements;
 using Pathfinder.Util.XML;

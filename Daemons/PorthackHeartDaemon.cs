@@ -1,4 +1,3 @@
-using System;
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Gui;
