@@ -1,0 +1,19 @@
+#
+%SYSTEM INITIALIZED
+#
+This is a custom extension ending sequence.
+#
+Each line of text is revealed character by character.
+#
+Hash symbols create a one-second pause — like a paragraph break.
+#
+Percent symbols create a half-second pause — for shorter breaks.
+#
+#
+%CREDITS
+#
+Congratulations. You have reached the end of this custom module.
+#
+All systems are shutting down.
+#
+Goodbye.

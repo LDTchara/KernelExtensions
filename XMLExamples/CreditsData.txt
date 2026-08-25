@@ -1,0 +1,18 @@
+%
+%EXTENSION CREDITS
+%
+^Project Lead
+Your Name Here
+%
+^Development Team
+Developer One
+Developer Two
+Developer Three
+%
+^Special Thanks
+^Hacknet Original
+Matt Trobbiani
+^Pathfinder Team
+Everyone at Pathfinder
+%
+%THANK YOU FOR PLAYING
