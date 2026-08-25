@@ -41,6 +41,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="RELOADING FIRMWARE" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="COMPLETE" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="LOCKED" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="Unusable User Name" />
   </Language>
   <Language Name="zh-cn">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="开始试炼" />
@@ -74,6 +75,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="正在重新加载固件" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="完成" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="锁定" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="不可用的用户名" />
   </Language>
   <Language Name="ja-jp">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="試験を開始" />
@@ -105,6 +107,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="ファームウェア更新中" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="完了" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="ロック" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="使用できないユーザー名" />
   </Language>
   <Language Name="ko-kr">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="시험 시작" />
@@ -137,6 +140,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="펌웨어 리로딩 중" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="완료" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="잠김" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="사용할 수 없는 사용자 이름" />
   </Language>
   <Language Name="ru-ru">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="НАЧАТЬ ИСПЫТАНИЕ" />
@@ -170,6 +174,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="ПЕРЕЗАГРУЗКА ПО" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Выполнено" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="ЗАБЛОКИРОВАНО" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="НЕДОПУСТИМОЕ ИМЯ ПОЛЬЗОВАТЕЛЯ" />
   </Language>
   <Language Name="de-de">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGINNE DIE PRÜFUNG" />
@@ -202,6 +207,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="FIRMWARE WIRD NEU GELADEN" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Weiter" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="GESPERRT" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="UNZULÄSSIGER BENUTZERNAME" />
   </Language>
   <Language Name="fr-be">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMMENCER L'ÉPREUVE" />
@@ -235,6 +241,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="RECHARGEMENT DU FIRMWARE" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Terminer" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="VERROUILLÉ" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="NOM D'UTILISATEUR INUTILISABLE" />
   </Language>
   <Language Name="es-ar">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMENZAR PRUEBA" />
@@ -268,6 +275,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="RECARGANDO EL FIRMWARE" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Completado" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="BLOQUEADO" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="NOMBRE DE USUARIO NO VÁLIDO" />
   </Language>
   <Language Name="tr-tr">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="DENEMEYE BAŞLA" />
@@ -301,6 +309,7 @@
     <Term Key="FLIGHT_RELOADING_FIRMWARE" Value="YAZILIM YÜKLENİYOR" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Tamam" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="KİLİTLİ" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="KULLANILAMAZ KULLANICI ADI" />
   </Language>
   <Language Name="nl-nl">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGIN MET PROEF" />
@@ -317,5 +326,6 @@
     <Term Key="FLIGHT_DISCONNECT" Value="Verbreek verbiding" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Voltooid" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="GEBLOKKEERD" />
+    <Term Key="USERNAME_DEFAULT_REASON" Value="ONBRUIKBARE GEBRUIKERSNAAM" />
   </Language>
 </Locale>

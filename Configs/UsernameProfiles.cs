@@ -64,11 +64,11 @@ namespace KernelExtensions.Configs
         public static bool IsBanned(string username)
             => !string.IsNullOrEmpty(username) && _bans.ContainsKey(username);
 
-        /// <summary>取禁用原因（多条时随机；无则默认文案）。</summary>
+        /// <summary>取禁用原因（多条时随机；无则默认文案，走 KELoc）。</summary>
         public static string GetReason(string username)
         {
             if (!_bans.TryGetValue(username, out var list) || list.Count == 0)
-                return "Unuseable User Name";
+                return KELoc.Loc("USERNAME_DEFAULT_REASON", "Unusable User Name");
             return list[_rng.Next(list.Count)];
         }
 
