@@ -70,4 +70,10 @@
     <EmbeddedResource Include="Locales\KE-Locales.xml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 标题横幅图标（dev1 合入）：raw 内嵌，运行时 GetManifestResourceStream 提取到扩展 Images/ -->
+    <EmbeddedResource Include="Img\Info.png" />
+    <EmbeddedResource Include="Img\InfoBG.png" />
+  </ItemGroup>
+
 </Project>
