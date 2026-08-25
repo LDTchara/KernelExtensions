@@ -1,11 +1,11 @@
 using Hacknet;
 using Hacknet.Extensions;
+using KernelExtensions.Configs;
+using KernelExtensions.Patches;
+using KernelExtensions.Saving;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
-using KernelExtensions.Configs;
-using KernelExtensions.Utilities;
-using KernelExtensions.Saving;
-using KernelExtensions.Patches;
 using NVorbis;
 using System.Xml.Serialization;
 
@@ -148,7 +148,7 @@ namespace KernelExtensions.Managers
                     string resolved = MusicPathResolver.ResolveMusicPath(singleTrack, ExtensionRoot);
                     MusicManager.playSongImmediatley(resolved);
                 }
-                }
+            }
             int firstScene = overrideScene ?? Config.InitialScene;
             CurrentScene = -1;
             // AutoRestore（overrideScene 有值）无过渡直切，避免读档重进时主题/音乐闪烁
@@ -361,16 +361,16 @@ namespace KernelExtensions.Managers
                 }
                 else
                 {
-                for (int i = 0; i < _dseInstances.Length; i++)
-                {
-                    _startVolumes[i] = _dseInstances[i] != null ? _dseInstances[i].Volume : 0f;
-                    _targetVolumes[i] = (i == targetScene) ? 1f : 0f;
+                    for (int i = 0; i < _dseInstances.Length; i++)
+                    {
+                        _startVolumes[i] = _dseInstances[i] != null ? _dseInstances[i].Volume : 0f;
+                        _targetVolumes[i] = (i == targetScene) ? 1f : 0f;
+                    }
+                    float dur = fadeDurationOverride ?? Config.DefaultFadeDuration;
+                    _targetFadeDuration = dur;
+                    _fadeProgress = 0f;
+                    _isFading = true;
                 }
-                float dur = fadeDurationOverride ?? Config.DefaultFadeDuration;
-                _targetFadeDuration = dur;
-                _fadeProgress = 0f;
-                _isFading = true;
-            }
             }
 
             string theme = overrideTheme ?? Config.Scenes[targetScene].Theme;
@@ -388,8 +388,8 @@ namespace KernelExtensions.Managers
                     }
                     else
                     {
-                    CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, themeEnum, CurrentOS, null);
-                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, themeEnum);
+                        CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, themeEnum, CurrentOS, null);
+                        ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, themeEnum);
                     }
                 }
                 else
@@ -405,8 +405,8 @@ namespace KernelExtensions.Managers
                     }
                     else
                     {
-                    CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, OSTheme.Custom, CurrentOS, theme);
-                    ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, theme);
+                        CurrentOS.EffectsUpdater.StartThemeSwitch(Config.ThemeFlickerDuration, OSTheme.Custom, CurrentOS, theme);
+                        ThemeManager.setThemeOnComputer(CurrentOS.thisComputer, theme);
                     }
                 }
                 if (Config.ChangeLayout && !immediate)
@@ -486,7 +486,7 @@ namespace KernelExtensions.Managers
                 CurrentVisBands[i] = _visSampList[i];
             }
         }
-private static List<float> _visSampList;
+        private static List<float> _visSampList;
 
         public static HashSet<string> GetControlledNodeIds() { return _controlledNodeIds; }
 
@@ -600,8 +600,8 @@ private static List<float> _visSampList;
             }
             _rollingBufCount = Math.Min(_rollingBuf.Length, _rollingBufCount + read / ch);
 
-                        // 取最近 256 个连续样本（~5.8ms @ 44.1kHz），还原原版波形
-                        // 从滚动缓冲的实时采样交给 UpdateVisualization (注入器触发)
+            // 取最近 256 个连续样本（~5.8ms @ 44.1kHz），还原原版波形
+            // 从滚动缓冲的实时采样交给 UpdateVisualization (注入器触发)
             // 这里只更新 LastBandUpdateTime 标记，用于检测是否有新数据
             CurrentVisBands = Array.Empty<float>();
             LastBandUpdateTime = DateTime.UtcNow;
@@ -740,14 +740,14 @@ private static List<float> _visSampList;
             _currentVisibleNodeIds = _sceneStartIds[sceneIdx].ToHashSet();
         }
 
-        public static void OverrideOriginalLinks(Dictionary<string, System.Collections.Generic.List<string>> linkIds, OS os)
+        public static void OverrideOriginalLinks(Dictionary<string, List<string>> linkIds, OS os)
         {
             _originalLinks.Clear();
             foreach (var kv in linkIds)
             {
                 var comp = Programs.getComputer(os, kv.Key);
                 if (comp == null) continue;
-                var indices = new System.Collections.Generic.List<int>();
+                var indices = new List<int>();
                 foreach (var targetId in kv.Value)
                 {
                     var targetComp = Programs.getComputer(os, targetId);
@@ -835,29 +835,18 @@ private static List<float> _visSampList;
         {
             if (string.IsNullOrEmpty(colorStr)) return Color.Transparent;
             // 优先用 CustomColorPatch 解析动态色（LDTchara/Rainbow/预设名）
-            var dynConfig = CustomColorPatch.ParseColorString(colorStr);
+            var dynConfig = CustomColorManager.ParseColorString(colorStr);
             if (dynConfig != null)
-                return CustomColorPatch.CalcColor(dynConfig, OS.currentElapsedTime);
+                return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
             try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(colorStr) as Color? ?? Color.Transparent; }
             catch { return Color.Transparent; }
-        }
-
-        public static Color GetDynamicColor(string colorStr, Color defaultColor)
-        {
-            if (string.IsNullOrEmpty(colorStr)) return defaultColor;
-            // 每帧用 CustomColorPatch 计算动态色
-            var dynConfig = CustomColorPatch.ParseColorString(colorStr);
-            if (dynConfig != null)
-                return CustomColorPatch.CalcColor(dynConfig, OS.currentElapsedTime);
-            try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(colorStr) as Color? ?? defaultColor; }
-            catch { return defaultColor; }
         }
 
         public static void RestorePersistentState(PhaseSwiftPersistentState state)
         {
             if (state == null) return;
-            _sceneDiscoveredNodeIds = state.DiscoveredNodes ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
-            _runtimeBlockedNodeIds = state.RuntimeBlocked ?? new System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>>();
+            _sceneDiscoveredNodeIds = state.DiscoveredNodes ?? new Dictionary<int, HashSet<string>>();
+            _runtimeBlockedNodeIds = state.RuntimeBlocked ?? new Dictionary<int, HashSet<string>>();
             // 恢复音乐组：Start() 里 LoadMusicPhase 用 CurrentMusicPhase 加载对应组
             if (Config != null && state.MusicPhase >= 0 && state.MusicPhase < Config.MusicPhases.Count)
                 CurrentMusicPhase = state.MusicPhase;
@@ -865,8 +854,8 @@ private static List<float> _visSampList;
                 DefaultTheme = state.Theme;
         }
 
-        public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetSceneDiscoveredNodes() => new(_sceneDiscoveredNodeIds);
-        public static System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>> GetOriginalLinks() => new(_originalLinks);
-        public static System.Collections.Generic.Dictionary<int, System.Collections.Generic.HashSet<string>> GetRuntimeBlockedNodes() => new(_runtimeBlockedNodeIds);
+        public static Dictionary<int, HashSet<string>> GetSceneDiscoveredNodes() => new(_sceneDiscoveredNodeIds);
+        public static Dictionary<string, List<int>> GetOriginalLinks() => new(_originalLinks);
+        public static Dictionary<int, HashSet<string>> GetRuntimeBlockedNodes() => new(_runtimeBlockedNodeIds);
     }
 }

@@ -14,6 +14,7 @@ using Pathfinder.Executable;
 using System.Xml.Serialization;
 using Module = Hacknet.Module;   // 消除与 System.Reflection.Module 的歧义
 
+using KernelExtensions.Managers;
 namespace KernelExtensions.Executables
 {
     /// <summary>
@@ -1127,9 +1128,9 @@ namespace KernelExtensions.Executables
                 return defaultColor;
 
             // 检查是否为动态色（预设/渐变/彩虹）
-            var dynConfig = CustomColorPatch.ParseColorString(colorStr);
+            var dynConfig = CustomColorManager.ParseColorString(colorStr);
             if (dynConfig != null)
-                return CustomColorPatch.CalcColor(dynConfig, OS.currentElapsedTime);
+                return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
 
             // 静态色解析
             Color parsed = ParseColor(colorStr);

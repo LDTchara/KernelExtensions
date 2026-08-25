@@ -1,6 +1,5 @@
 using HarmonyLib;
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 
 namespace KernelExtensions.Patches
 {
@@ -17,7 +16,7 @@ namespace KernelExtensions.Patches
                 PhaseSwiftManager.Stop("none");
 
             // 清理 CustomColor 预设缓存，使下次加载扩展时重新读取
-            Patches.CustomColorPatch.ResetPresets();
+            Managers.CustomColorManager.ResetPresets();
         }
     }
 }

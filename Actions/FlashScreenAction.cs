@@ -8,6 +8,7 @@ using Pathfinder.Util;
 using Pathfinder.Util.XML;
 using XColor = Microsoft.Xna.Framework.Color; // 嵌套类内 Color 会与外层 XMLStorage 字段重名，用别名
 
+using KernelExtensions.Managers;
 namespace KernelExtensions.Actions
 {
     /// <summary>
@@ -76,13 +77,13 @@ namespace KernelExtensions.Actions
             }
         }
 
-        private static (XColor staticColor, CustomColorPatch.DynColorConfig dynConfig) ParseColor(OS os, string raw)
+        private static (XColor staticColor, CustomColorManager.DynColorConfig dynConfig) ParseColor(OS os, string raw)
         {
             if (string.IsNullOrWhiteSpace(raw))
                 return (os.defaultHighlightColor, null);
 
             // 动态色：LDTchara/Rainbow/Gradient/预设
-            var dyn = CustomColorPatch.ParseColorString(raw);
+            var dyn = CustomColorManager.ParseColorString(raw);
             if (dyn != null)
                 return (XColor.White, dyn);
 
@@ -106,11 +107,11 @@ namespace KernelExtensions.Actions
             private readonly OS os;
             private readonly float duration;
             private readonly XColor staticColor;
-            private readonly CustomColorPatch.DynColorConfig dynConfig;
+            private readonly CustomColorManager.DynColorConfig dynConfig;
             private float timer;
             private bool cancelled;
 
-            public FlashFade(OS os, XColor staticColor, CustomColorPatch.DynColorConfig dynConfig, float duration)
+            public FlashFade(OS os, XColor staticColor, CustomColorManager.DynColorConfig dynConfig, float duration)
             {
                 this.os = os;
                 this.staticColor = staticColor;
@@ -145,7 +146,7 @@ namespace KernelExtensions.Actions
             private void Apply(float t)
             {
                 XColor current = dynConfig != null
-                    ? CustomColorPatch.CalcColor(dynConfig, OS.currentElapsedTime)
+                    ? CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime)
                     : staticColor;
                 os.highlightColor = XColor.Lerp(os.defaultHighlightColor, current, t);
                 os.moduleColorSolid = XColor.Lerp(os.moduleColorSolidDefault, current, t);

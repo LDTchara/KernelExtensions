@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using Hacknet;
 using Hacknet.Effects;
-using Hacknet.Extensions;
 using Hacknet.Gui;
-using KernelExtensions.Configs;
 using KernelExtensions.Patches;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
@@ -156,9 +152,9 @@ namespace KernelExtensions.Managers
         private static Color GetColor(string raw, Color fallback)
         {
             if (string.IsNullOrWhiteSpace(raw)) return fallback;
-            var dynConfig = CustomColorPatch.ParseColorString(raw);
+            var dynConfig = CustomColorManager.ParseColorString(raw);
             if (dynConfig != null)
-                return CustomColorPatch.CalcColor(dynConfig, OS.currentElapsedTime);
+                return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
 
             // 兜底：数值 RGB (255,0,0) / RGBA (255,0,0,128) 和命名色
             try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(raw) as Color? ?? fallback; }

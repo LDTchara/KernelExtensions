@@ -1,7 +1,6 @@
 using System.Globalization;
 using Hacknet;
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
@@ -81,9 +80,9 @@ namespace KernelExtensions.Actions
             if (string.IsNullOrWhiteSpace(raw))
                 return fallback;
 
-            var dynConfig = CustomColorPatch.ParseColorString(raw);
+            var dynConfig = CustomColorManager.ParseColorString(raw);
             if (dynConfig != null)
-                return CustomColorPatch.CalcColor(dynConfig, OS.currentElapsedTime);
+                return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
 
             if (raw.StartsWith("#"))
             {

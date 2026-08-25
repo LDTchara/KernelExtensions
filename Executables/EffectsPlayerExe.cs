@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
 
+using KernelExtensions.Managers;
 namespace KernelExtensions.Executables
 {
     public class EffectsPlayerExe : GameExecutable
@@ -29,7 +30,7 @@ namespace KernelExtensions.Executables
         private MovingBarsEffect _movingBars;
         private RaindropsEffect _raindrops;
         private DepthDotGridEffect _depthDot;
-        private Patches.CustomColorPatch.DynColorConfig _rainbowConfig;
+        private Managers.CustomColorManager.DynColorConfig _rainbowConfig;
 
         public EffectsPlayerExe() : base()
         {
@@ -53,7 +54,7 @@ namespace KernelExtensions.Executables
             _raindrops = new RaindropsEffect();
             _raindrops.Init(os.content);
             _depthDot = new DepthDotGridEffect(os.content);
-            _rainbowConfig = Patches.CustomColorPatch.ParseColorString("LDTchara");
+            _rainbowConfig = Managers.CustomColorManager.ParseColorString("LDTchara");
         }
 
         private void LoadEffects()
@@ -193,7 +194,7 @@ namespace KernelExtensions.Executables
         private Color GetRainbowColor()
         {
             if (_rainbowConfig != null)
-                return Patches.CustomColorPatch.CalcColor(_rainbowConfig, OS.currentElapsedTime);
+                return Managers.CustomColorManager.CalcColor(_rainbowConfig, OS.currentElapsedTime);
             return Color.Cyan;
         }
     }

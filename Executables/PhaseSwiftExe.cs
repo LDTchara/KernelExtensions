@@ -4,7 +4,6 @@ using Hacknet.Gui;
 using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Managers;
-using KernelExtensions.Modules;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Pathfinder.Executable;
@@ -198,7 +197,7 @@ namespace KernelExtensions.Executables
             Rectangle bgRect = new(bounds.X + 2, bounds.Y + Module.PANEL_HEIGHT + 10, bounds.Width - 4, bounds.Height - (Module.PANEL_HEIGHT + 6));
 
             Color bgColor = config != null
-                ? PhaseSwiftManager.GetDynamicColor(config.BackgroundColor, os.highlightColor)
+                ? CustomColorManager.GetDynamicColor(config.BackgroundColor, os.highlightColor)
                 : os.highlightColor;
             Hacknet.Effects.ZoomingDotGridEffect.Render(contentRect, spriteBatch, os.timer, bgColor * 0.4f);
 

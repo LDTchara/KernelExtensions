@@ -7,12 +7,13 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 
+using KernelExtensions.Managers;
 namespace KernelExtensions.Actions.Title
 {
     /// <summary>
     /// 标题横幅（dev1 标题系统合并版）——原 CustomInfoTitle/CustomWarningTitle 结构相同
     /// （仅默认色/时长差异），合并为单类。强调色支持 CustomColor（Hex/名称/CC 预设/动态，
-    /// 经 PhaseSwiftManager.GetDynamicColor），图标路径可配（默认 Images/Info.png）。
+    /// 经 CustomColorManager.GetDynamicColor），图标路径可配（默认 Images/Info.png）。
     /// </summary>
     internal class TitleBanner
     {

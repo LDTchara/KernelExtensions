@@ -35,9 +35,9 @@ namespace KernelExtensions.Actions.Title
             if (!isWarning && !type.Equals("info", StringComparison.OrdinalIgnoreCase))
                 KELog.Warn($"[ShowTitle] unknown type '{type}', using info");
 
-            // 默认色按 type；color 覆盖（NONE/空=默认，走 KE 动态色入口支持 CC）
+            // 默认色按 type；color 覆盖（NONE/空=默认，走 CustomColorManager 动态色入口支持 CC）
             Color defaultColor = isWarning ? WARNING_YELLOW : INFO_BLUE;
-            Color accent = PhaseSwiftManager.GetDynamicColor(color, defaultColor);
+            Color accent = CustomColorManager.GetDynamicColor(color, defaultColor);
 
             // 图标路径（NONE/空=默认）
             string iconPath = ConfigValue.IsNone(icon) ? "Images/Info.png" : icon;
