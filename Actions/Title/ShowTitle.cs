@@ -1,5 +1,4 @@
 using Hacknet;
-using KernelExtensions.Managers;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Pathfinder.Action;
@@ -35,9 +34,9 @@ namespace KernelExtensions.Actions.Title
             if (!isWarning && !type.Equals("info", StringComparison.OrdinalIgnoreCase))
                 KELog.Warn($"[ShowTitle] unknown type '{type}', using info");
 
-            // 默认色按 type；color 覆盖（NONE/空=默认，走 CustomColorManager 动态色入口支持 CC）
+            // 默认色按 type；color 是 CC 关键字/Hex/名称（NONE/空=默认色）——
+            // 动态色由 TitleBanner 每帧经 CustomColorManager 刷新，不在触发时定格（2026-08-25 修复）
             Color defaultColor = isWarning ? WARNING_YELLOW : INFO_BLUE;
-            Color accent = CustomColorManager.GetDynamicColor(color, defaultColor);
 
             // 图标路径（NONE/空=默认）
             string iconPath = ConfigValue.IsNone(icon) ? "Images/Info.png" : icon;
@@ -45,7 +44,7 @@ namespace KernelExtensions.Actions.Title
 
             TitleBannerHooks.IconPath = iconPath;
             TitleBannerHooks.IconBgPath = iconBgPath;
-            TitleBannerHooks.Show(title, body.Replace(" \\n ", "\n"), time, accent);
+            TitleBannerHooks.Show(title, body.Replace(" \\n ", "\n"), time, color, defaultColor);
         }
     }
 }

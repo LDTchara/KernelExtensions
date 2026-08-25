@@ -17,8 +17,14 @@ namespace KernelExtensions.Actions.Title
     /// </summary>
     internal class TitleBanner
     {
-        /// <summary>强调色（条纹/标题/图标 tint），默认信息蓝。</summary>
+        /// <summary>强调色（条纹/标题/图标 tint），默认信息蓝。每帧经 CustomColorManager 按 AccentColorKey 刷新（CC 动态色持续变化）。</summary>
         public Color AccentColor = new(100, 180, 255);
+
+        /// <summary>CC 颜色关键字/Hex/名称；NONE/空=用 DefaultAccentColor（type 预设色）。</summary>
+        public string AccentColorKey = "";
+
+        /// <summary>无 color 覆盖时的默认强调色（由 ShowTitle 的 type 决定）。</summary>
+        public Color DefaultAccentColor = new(100, 180, 255);
 
         public float Duration = 5f;
         public bool IsActive { get; private set; }
@@ -71,6 +77,10 @@ namespace KernelExtensions.Actions.Title
         public void Draw(Rectangle dest, SpriteBatch sb)
         {
             if (!IsActive) return;
+
+            // CC 动态色每帧刷新——AccentColorKey 为动态关键字（彩虹/渐变/预设）时
+            // 按 OS.currentElapsedTime 持续变化；Hex/名称/NONE 则每帧结果不变（2026-08-25 修复定格）
+            AccentColor = CustomColorManager.GetDynamicColor(AccentColorKey, DefaultAccentColor);
 
             float t = timeElapsed;
             float fadeInDuration = 0.2f;
@@ -149,14 +159,15 @@ namespace KernelExtensions.Actions.Title
         internal static string IconBgPath = "Images/InfoBG.png";
         private static bool _drawFailedWarned;
 
-        /// <summary>弹出横幅（强调色可选，null=保持当前）。文本经 CleanStringToRenderable 清洗（原版行为：字体不支持的字符显示为 ?，避免 SpriteFont 抛异常）。</summary>
-        internal static void Show(string title, string body, float duration, Color? accentColor)
+        /// <summary>弹出横幅。colorKey=CC 颜色关键字/Hex/名称（NONE/空=用 defaultColor）；强调色每帧刷新，动态色不定格。</summary>
+        internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor)
         {
             if (Instance == null) return;
             Instance.TitleText = Utils.CleanStringToRenderable(title);
             Instance.BodyText = Utils.CleanStringToRenderable(body);
             Instance.Duration = duration;
-            if (accentColor.HasValue) Instance.AccentColor = accentColor.Value;
+            Instance.AccentColorKey = colorKey ?? "";
+            Instance.DefaultAccentColor = defaultColor;
             Instance.Activate();
         }
 
