@@ -7,6 +7,7 @@ using KernelExtensions.Actions;
 using KernelExtensions.Actions.Aircraft;
 using KernelExtensions.Actions.CustomTrial;
 using KernelExtensions.Actions.PhaseSwift;
+using KernelExtensions.Actions.Title;
 using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Configs;
 using KernelExtensions.Daemons;
@@ -20,6 +21,7 @@ using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Daemon;
 using Pathfinder.Event;
+using System.Reflection;
 using Pathfinder.Event.Gameplay;
 using Pathfinder.Event.Loading;
 using Pathfinder.Event.Saving;
@@ -56,10 +58,14 @@ namespace KernelExtensions
 |⠀⠀⠀⠈⢿⣄⠀⠈⠻⣿⣿⣿⣿⣶⣶⣶⣿⣿⣿⡿⠋⠀⠀⣰⡟⠁⠀⠀ ██╔══╝   ██╔██╗    ██║   ██╔══╝  ██║╚██╗██║╚════██║██║██║   ██║██║╚██╗██║╚════██║ |
 |⠀⠀⠀⠀⠀⠙⢷⣄⡀⠀⠉⠛⠻⠿⠿⠿⠛⠋⠉⠀⢀⣠⡾⠋⠀⠀⠀⠀ ███████╗██╔╝ ██╗   ██║   ███████╗██║ ╚████║███████║██║╚██████╔╝██║ ╚████║███████║ |
 |⠀⠀⠀⠀⠀⠀⠀⠉⠻⢶⣦⣄⠀⠀⠀⠀⠀⠀⢠⡶⠛⠉⠀⠀⠀⠀⠀⠀ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝ |
-|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                  Version-0.7.0                                    |
+|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                       LDTchara (C) 2026      Version-0.7.0                        |
 #===============================================================================================================#
 ";
 
+
+        /// <summary>Extra Pack 可用性：SROS 插件存在时不注册本包功能（dev1 三合一防冲突）。</summary>
+        internal static bool CanExtraPackUse =>
+            HacknetChainloader.Instance?.Plugins?.ContainsKey("com.SRToolKitExtra.SROS") == false;
 
         public override bool Load()
         {
@@ -174,10 +180,21 @@ namespace KernelExtensions
             ActionManager.RegisterAction<BreakHeartAction>("BreakHeart");
             KELog.Info("BreakHeart action registered.");
 
+            // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
+            if (CanExtraPackUse)
+            {
+                ExtractImages();
+                ActionManager.RegisterAction<ShowTitle>("ShowTitle");
+                KELog.Info("ShowTitle action registered.");
+                ActionManager.RegisterAction<StartEnding>("StartEnding");
+                KELog.Info("StartEnding action registered.");
+            }
+
             // 5. 加载 Harmony 补丁
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
+            PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
 
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
@@ -198,6 +215,30 @@ namespace KernelExtensions
             _harmony?.UnpatchSelf();
             _harmony = null;
             return base.Unload();
+        }
+
+        /// <summary>把内嵌的标题横幅图标提取到扩展 Images/（首次，存在不覆盖）。</summary>
+        private static void ExtractImages()
+        {
+            try
+            {
+                string root = ExtensionLoader.ActiveExtensionInfo.FolderPath;
+                string dir = Path.Combine(root, "Images");
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                WriteEmbedded("KernelExtensions.Img.Info.png", Path.Combine(dir, "Info.png"));
+                WriteEmbedded("KernelExtensions.Img.InfoBG.png", Path.Combine(dir, "InfoBG.png"));
+            }
+            catch (Exception ex) { KELog.Warn($"[KernelExtensions] image extract failed: {ex.Message}"); }
+        }
+
+        private static void WriteEmbedded(string resourceName, string targetPath)
+        {
+            if (File.Exists(targetPath)) return; // 用户已有不覆盖
+            using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+            if (s == null) { KELog.Warn($"[KernelExtensions] embedded resource missing: {resourceName}"); return; }
+            using var fs = File.Create(targetPath);
+            s.CopyTo(fs);
+            KELog.Info($"[KernelExtensions] extracted {targetPath}");
         }
 
         /// <summary>
