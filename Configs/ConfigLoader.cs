@@ -68,6 +68,9 @@ namespace KernelExtensions.Configs
                         .Where(v => !string.IsNullOrEmpty(v))
                         .ToList();
                 }
+
+                // 禁用用户名段（dev1 用户名系统 XML 化，热重载）
+                UsernameProfiles.Apply(rootEl.Element("BannedUsernames"));
             }
             catch (Exception ex)
             {
@@ -97,6 +100,19 @@ namespace KernelExtensions.Configs
         <Image>Images/MyIcon.png</Image>
         <Image>Images/AnotherIcon.png</Image>
     </CustomImages>
+
+    <!-- ============ 禁用用户名（可选，不写则无禁用） ============ -->
+    <!-- 创建新账号时拦截禁用用户名并显示原因。
+         Reason=直接原因；ReasonBlock=从下方 Reasons 块随机选一条；同名 Ban 多条=多原因随机。 -->
+    <BannedUsernames>
+        <Reasons>
+            <Block Name=""Test1"">
+                <Reason>该名称已被占用，再试一遍也没用。</Reason>
+            </Block>
+        </Reasons>
+        <Ban Name=""admin"" Reason=""保留用户名"" />
+        <Ban Name=""root"" ReasonBlock=""Test1"" />
+    </BannedUsernames>
 </KEConfig>";
         }
     }
