@@ -1,8 +1,8 @@
 # Contributing Guide / 贡献指南
 
-Thanks for your interest in contributing to **KernelExtensions**! This guide collects the project's real engineering conventions so you can write code that fits in. The authoritative source for these rules is `AGENTS.md` at the repository root — if the two ever disagree, `AGENTS.md` wins.
+Thanks for your interest in contributing to **KernelExtensions**! This guide collects the project's real engineering conventions so you can write code that fits in. When in doubt, follow the existing code and this guide — the maintainer keeps the authoritative convention reference internally.
 
-欢迎为 **KernelExtensions** 贡献代码！本文汇总了项目真实的工程约定，请按此提交代码。权威约定见仓库根目录 `AGENTS.md`——两者冲突时以 `AGENTS.md` 为准。
+欢迎为 **KernelExtensions** 贡献代码！本文汇总了项目真实的工程约定，请按此提交代码。如有疑问，以现有代码与本文为准——维护者内部另有权威约定记录。
 
 ---
 
