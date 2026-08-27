@@ -48,10 +48,12 @@ All detailed documentation, configuration guides, and action references have mov
   Custom node icons from images or built-in presets.
 - **动态颜色系统 (CustomColor)** – 在主题与配置的颜色字段中使用彩虹、渐变与预设关键字。  
   Rainbow, gradient, and preset keywords for color fields in themes and configs.
-- **多语言本地化 (Localisation)** – 内置 10 种语言的 KE-Locales 系统，缺失条目自动补齐。  
-  A 10-language KE-Locales system with automatic missing-key completion.
-- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – 终端交互、音效、标题横幅、自定义结局等 20 余种能力。  
-  20+ capabilities including terminal interaction, sound effects, title banners, and custom endings.
+- **多语言本地化 (Localisation)** – 内置 10 种语言的 KE-Locales 系统，支持外部文件覆盖与缺失条目自动补齐。  
+  A 10-language KE-Locales system with external-file overrides and automatic missing-key completion.
+- **用户名管理 (Username Management)** – 通过 KE-Config.xml 的 `BannedUsernames` 段阻止禁用用户名创建账号，禁用原因可配（直接/随机块）。  
+  Block account creation with banned usernames via the `BannedUsernames` section of KE-Config.xml, with configurable (direct/random-pool) rejection reasons.
+- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – 终端交互、音效、标题横幅、自定义结局等 30 余种能力。  
+  30+ capabilities including terminal interaction, sound effects, title banners, and custom endings.
 
 → 完整介绍请参阅 [Wiki 主页](https://github.com/LDTchara/KernelExtensions/wiki)。  
 → See the [Wiki home](https://github.com/LDTchara/KernelExtensions/wiki) for full details.
