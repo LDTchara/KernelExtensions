@@ -43,7 +43,7 @@ KernelExtensions/
 ├── Modules/          # 界面/渲染模块（CustomEndingModule 等）
 ├── Patches/          # Harmony 补丁
 ├── Saving/           # 存档相关
-├── Storage/          # 存储
+├── Storage/          # 跨会话数据层：全局内存态（试炼被摧毁节点索引、节点图标）经存档事件桥接到存档 XML
 ├── Utilities/        # 工具类（KELog、ConfigValue、MusicPathResolver 等）
 └── KernelExtensions.cs  # 主入口（注册 + PatchAll + 事件）
 ```
@@ -89,7 +89,7 @@ Conventional Commits format: `type(scope): description` — description may be C
 
 - Types: `feat` / `fix` / `refactor` (no behavior change) / `docs` / `style` / `test` / `chore` / `build` / `ci` / `perf` / `revert`.
 - Scope = module name, written in **full** (`customcolor`, not `color`): e.g. `aircraft`, `config`, `storage`, `utils`, `patches`, `examples`, `naming`, `log`, `wiki`, `meta`, `title`, `ending`, `username`, `stuxnet`, `res`, `localization`.
-- Do **not** reference internal plan IDs (9.XX) in commit messages; they are internal planning references.
+- Do **not** reference internal plan/ticket IDs in commit messages. If you keep your own internal plan (e.g. a numbered feature list), leave those identifiers out of public commits.
 
 Examples:
 ```
@@ -108,7 +108,7 @@ refactor(config): Config→Configs 全复数
 
 - User-facing features need Wiki pages (Chinese + English, see the `KEwiki/` side repo) and, where applicable, XML doc comments with usage examples in the code.
 - The wiki tracks the stable `main` branch; it is not pushed until `dev` is merged to `main`.
-- Internal planning (`plans-v2.txt`, `devlog.txt`) stays internal — never referenced from commit messages or public docs.
+- Keep private planning notes out of public commits and docs — for example, if you maintain an internal numbered plan, do not mention your internal IDs in commit messages or Wiki pages.
 
 ## 8. Review Checklist
 
@@ -140,7 +140,7 @@ KernelExtensions/
 ├── Modules/          # 界面/渲染模块（CustomEndingModule 等）
 ├── Patches/          # Harmony 补丁
 ├── Saving/           # 存档相关
-├── Storage/          # 存储
+├── Storage/          # 跨会话数据层：全局内存态（试炼被摧毁节点索引、节点图标）经存档事件桥接到存档 XML
 ├── Utilities/        # 工具类（KELog、ConfigValue、MusicPathResolver 等）
 └── KernelExtensions.cs  # 主入口（注册 + PatchAll + 事件）
 ```
@@ -186,7 +186,7 @@ dotnet build KernelExtensions.csproj --no-restore
 
 - 类型：`feat` / `fix` / `refactor`（不改行为）/ `docs` / `style` / `test` / `chore` / `build` / `ci` / `perf` / `revert`
 - 作用域 = 模块名，**写全称**（`customcolor` 不写 `color`）：如 `aircraft`、`config`、`storage`、`utils`、`patches`、`examples`、`naming`、`log`、`wiki`、`meta`、`title`、`ending`、`username`、`stuxnet`、`res`、`localization`
-- **不得引用内部计划编号（9.XX）**——那是内部计划文档，不对外
+- 不得在提交信息中引用内部计划/工单编号。如果你有自己的内部计划（例如编号功能列表），请让这些标识符远离公开提交。
 
 示例：
 ```
@@ -205,7 +205,7 @@ refactor(config): Config→Configs 全复数
 
 - 面向用户的功能需要 Wiki 页面（中英双语，见 `KEwiki/` 侧仓库），并在代码里补带用法示例的 XML 注释。
 - Wiki 与稳定版 `main` 对齐，`dev` 合并到 `main` 前不推送。
-- 内部计划（`plans-v2.txt`、`devlog.txt`）保持内部——提交信息与公开文档中不得引用。
+- 内部计划笔记不要进入公开提交与文档——例如你用内部编号体系管理功能计划，不要在提交信息或 Wiki 中提及你的内部编号。
 
 ## 8. 审查清单
 

@@ -1,7 +1,7 @@
 # KernelExtensions
 
-> **KernelExtensions** 是一个使用 Pathfinder API 的 Hacknet 模组，旨在为扩展作者提供可配置的试炼、场景切换、虚拟机攻击、飞机守护进程、心脏守护进程以及一系列自定义动作，全部由 XML 驱动。  
-> **KernelExtensions** is a Hacknet mod using the Pathfinder API, providing configurable trials, scene switching, VM attacks, aircraft daemons, a heart daemon, and a collection of XML-driven custom actions for extension authors.
+> **KernelExtensions** 是一个面向 Hacknet 扩展作者的"开箱即用"组件库：把原版风格的完整系统（自定义试炼、场景切换、飞机、心脏结局、定时器、本地化、动态颜色……）封装为 **XML 可配置**的组件，扩展作者无需编写 C# 即可搭建复杂剧情。基于 Pathfinder API 深度集成（Harmony 补丁、存档钩子、多语言）。  
+> **KernelExtensions** is a drop-in component library for Hacknet extension authors: complete vanilla-styled systems (custom trials, scene switching, aircraft, heart finale, timers, localisation, dynamic colors, ...) packaged as **XML-configurable** components, so you can build rich storylines without writing C#. Deeply integrated with the Pathfinder API (Harmony patches, save hooks, multi-language).
 
 **当前版本 / Current Version**: 0.7.0
 
@@ -32,8 +32,8 @@ All detailed documentation, configuration guides, and action references have mov
 
 ## 🧩 主要功能概览 / Feature Overview
 
-- **自定义试炼 (Custom Trial)** – XML 驱动的多阶段挑战，支持特效、计时器、节点摧毁与存档持久化。  
-  XML-driven multi-stage challenges with effects, timers, node destruction, and save persistence.
+- **自定义试炼 (Custom Trial)** – XML 驱动的多阶段挑战，支持特效、计时器、节点摧毁，以及**跨存档恢复被摧毁的节点**。  
+  XML-driven multi-stage challenges with effects, timers, node destruction, and **cross-save restoration of destroyed nodes**.
 - **PhaseSwift 场景切换 (PhaseSwift Scene Switching)** – 多场景瞬间切换，带音乐相位、动态背景与读档恢复。  
   Instant multi-scene switching with music phases, dynamic backgrounds, and save-restore support.
 - **虚拟机攻击 (VM Attack)** – 可配置的崩溃攻击，强制玩家与文件系统交互以解除锁定。  
