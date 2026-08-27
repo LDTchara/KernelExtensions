@@ -36,16 +36,16 @@ All detailed documentation, configuration guides, and action references have mov
   XML-driven multi-stage challenges with effects, timers, node destruction, and **cross-save restoration of destroyed nodes**.
 - **PhaseSwift 场景切换 (PhaseSwift Scene Switching)** – 多场景瞬间切换，带音乐相位、动态背景与读档恢复。  
   Instant multi-scene switching with music phases, dynamic backgrounds, and save-restore support.
-- **虚拟机攻击 (VM Attack)** – 可配置的崩溃攻击，强制玩家与文件系统交互以解除锁定。  
-  Configurable crash attacks that force players to interact with the file system to recover.
+- **虚拟机攻击 (VM Attack)** – 可配置恢复方式的崩溃攻击（文件删除/文件校验等），强制玩家与文件系统交互以解除锁定。  
+  Configurable crash attacks with multiple recovery modes (file deletion / file verification), forcing players to interact with the file system to recover.
 - **飞机守护进程 (Aircraft Daemon)** – 可配置坠落时长与修复/坠毁动作的飞机系统，带全局高度计覆盖层。  
   An aircraft system with configurable fall duration and repair/crash actions, plus a global altimeter overlay.
 - **心脏守护进程 (PorthackHeart Daemon)** – 原版碎心结局复刻，动画节奏全参数可配，剧情由 Action 无缝衔接。  
   A vanilla-faithful heartbreak finale with fully configurable animation timing, handed off to your story via Actions.
-- **定时器 (Clock)** – 可配置的倒计时器，支持多实例与存档持久化。  
-  Configurable countdown timers with multi-instance and save persistence.
-- **节点图标系统 (Node Icon System)** – 自定义图片或内置预设的节点图标。  
-  Custom node icons from images or built-in presets.
+- **定时器 (Clock)** – 按固定间隔**循环执行 Action 序列**的叙事时钟：可配触发次数/时长上限，耗尽时执行 OnComplete，支持多实例与存档持久化。  
+  A story clock that **repeatedly executes Action sequences at a fixed interval** — with trigger-count/runtime limits, an exhaustion `OnComplete`, multi-instance support, and save persistence.
+- **节点图标系统 (Node Icon System)** – 自定义图片或内置预设的节点图标，可恢复原始图标并随存档保存。  
+  Custom node icons from images or built-in presets, with restore-to-original and save persistence.
 - **动态颜色系统 (CustomColor)** – 在主题与配置的颜色字段中使用彩虹、渐变与预设关键字。  
   Rainbow, gradient, and preset keywords for color fields in themes and configs.
 - **多语言本地化 (Localisation)** – 内置 10 种语言的 KE-Locales 系统，支持外部文件覆盖与缺失条目自动补齐。  
