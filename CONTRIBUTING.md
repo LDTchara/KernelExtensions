@@ -35,17 +35,17 @@ Thanks for your interest in contributing to **KernelExtensions**! This guide col
 
 ```
 KernelExtensions/
-├── Actions/          # Pathfinder Actions（含 Title/ 等子目录）
-├── Configs/          # 配置解析（UsernameProfiles 等）
-├── Daemons/          # 自定义 Daemon（FlightDaemon、PorthackHeartDaemon）
-├── Executables/      # 自定义可执行程序（CustomTrialExe、PhaseSwiftExe）
-├── Managers/         # 全局服务（ClockManager、PhaseSwiftManager、CustomColorManager）
-├── Modules/          # 界面/渲染模块（CustomEndingModule 等）
-├── Patches/          # Harmony 补丁
-├── Saving/           # 存档相关
-├── Storage/          # 跨会话数据层：全局内存态（试炼被摧毁节点索引、节点图标）经存档事件桥接到存档 XML
-├── Utilities/        # 工具类（KELog、ConfigValue、MusicPathResolver 等）
-└── KernelExtensions.cs  # 主入口（注册 + PatchAll + 事件）
+├── Actions/          # Pathfinder Actions (subfolders like Title/)
+├── Configs/          # Config parsing (UsernameProfiles, etc.)
+├── Daemons/          # Custom daemons (FlightDaemon, PorthackHeartDaemon)
+├── Executables/      # Custom executables (CustomTrialExe, PhaseSwiftExe)
+├── Managers/         # Global services (ClockManager, PhaseSwiftManager, CustomColorManager)
+├── Modules/          # UI / render modules (CustomEndingModule, etc.)
+├── Patches/          # Harmony patches
+├── Saving/           # Save-load bridge: SaveLoader executors that parse save-XML sections into persistent-state DTOs (PendingRestore) for OSLoaded restore
+├── Storage/          # Cross-session data layer: global in-memory state (destroyed-trial node indices, node icons) bridged to save XML via save/load events
+├── Utilities/        # Helpers (KELog, ConfigValue, MusicPathResolver, etc.)
+└── KernelExtensions.cs  # Main entry (registration + PatchAll + events)
 ```
 
 All source is UTF-8. The `csproj` enables `<ImplicitUsings>`, so `System`/`System.Linq`/`System.Collections.Generic` are globally available.
@@ -93,9 +93,9 @@ Conventional Commits format: `type(scope): description` — description may be C
 
 Examples:
 ```
-feat(clock): 新增 Clock 定时器
-fix(title): TitleBanner 绘制异常——文本清洗 + try/finally 保证 SpriteBatch End
-refactor(config): Config→Configs 全复数
+feat(clock): add Clock timer action
+fix(title): TitleBanner draw failure - text sanitising + guaranteed SpriteBatch End
+refactor(config): Config renamed to Configs (plural)
 ```
 
 ## 6. Git Discipline
@@ -139,7 +139,7 @@ KernelExtensions/
 ├── Managers/         # 全局服务（ClockManager、PhaseSwiftManager、CustomColorManager）
 ├── Modules/          # 界面/渲染模块（CustomEndingModule 等）
 ├── Patches/          # Harmony 补丁
-├── Saving/           # 存档相关
+├── Saving/           # 存档读写桥：SaveLoader 注册的 Executor 解析存档 XML 各段为持久化状态 DTO（PendingRestore），供 OSLoaded 后恢复（试炼删节点/PS 场景/运行中 Clock）
 ├── Storage/          # 跨会话数据层：全局内存态（试炼被摧毁节点索引、节点图标）经存档事件桥接到存档 XML
 ├── Utilities/        # 工具类（KELog、ConfigValue、MusicPathResolver 等）
 └── KernelExtensions.cs  # 主入口（注册 + PatchAll + 事件）
