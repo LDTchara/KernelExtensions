@@ -10,7 +10,6 @@ using KernelExtensions.Actions.PhaseSwift;
 using KernelExtensions.Actions.Title;
 using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Configs;
-using KernelExtensions.ConnectControl;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Managers;
@@ -66,12 +65,7 @@ namespace KernelExtensions
         /// <summary>Extra Pack 可用性：SROS 插件存在时不注册本包功能（dev1 三合一防冲突）。</summary>
         internal static bool CanExtraPackUse =>
             HacknetChainloader.Instance?.Plugins?.ContainsKey("com.SRToolKitExtra.SROS") == false;
-        public static Dictionary<Computer,List<Computer>> Computer_OrgLinkdComps= new ();
 
-        /// <summary>读档暂存：存档 &lt;OrgLinks&gt; 的 idName 列表。电脑逐台加载时可能尚未全部进 netMap.nodes，
-        /// 推迟到 OSLoaded 统一解析成对象，避免加载顺序导致链接丢失。</summary>
-        private static readonly Dictionary<Computer, List<string>> pendingOrgLinkIds = new Dictionary<Computer, List<string>>();
-        private const string AllSavedMarker = "ALLSAVED";
         public override bool Load()
         {
             // 0. 绑定 BepInEx 配置
@@ -203,12 +197,12 @@ namespace KernelExtensions
             _harmony.PatchAll();
             PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
 
-            // 9.25 ConnectControl
-
-            EventManager<SaveComputerLoadedEvent>.AddHandler(LoadOrgLinkedComps);
-            EventManager<OSLoadedEvent>.AddHandler(SaveOrgLinkedComps);
-            EventManager<SaveComputerEvent>.AddHandler(SaveOrgsTofile);
+            // 9.25 ConnectControl：节点连接控制（org 基线跨会话，存档钩子内聚在 Action 静态方法）
             ActionManager.RegisterAction<ConnectionControlAction>("ConnectControl");
+            KELog.Info("ConnectControl action registered.");
+            EventManager<SaveComputerEvent>.AddHandler(ConnectionControlAction.OnSaveComputer);
+            EventManager<SaveComputerLoadedEvent>.AddHandler(ConnectionControlAction.OnLoadComputer);
+            EventManager<OSLoadedEvent>.AddHandler(ConnectionControlAction.OnOSLoaded);
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
 
@@ -217,116 +211,6 @@ namespace KernelExtensions
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;
-        }
-
-        private void SaveOrgsTofile(SaveComputerEvent e)
-        {
-            XElement ele = e.Element;
-            string id = e.Comp?.idName;
-            if (string.IsNullOrEmpty(id)) return;
-
-            // 每次保存都把字典（org 基线）写入标签，附带 ALLSAVED 标记
-            string content = AllSavedMarker;
-            if (Computer_OrgLinkdComps.TryGetValue(e.Comp, out var list) && list.Count > 0)
-            {
-                content = string.Join(",", CompsToLID(list)) + "," + AllSavedMarker;
-            }
-            ele.Add(new XElement("OrgLinks", content));
-        }
-
-        private List<string> CompsToLID(List<Computer> lc)
-        {
-            List<string> result = new List<string>();
-            foreach(Computer comp in lc)
-            {
-                result.Add(comp.idName);
-
-            }
-            return result;
-        }
-        private List<Computer> IDToComps(OS os,List<string> ls)
-        {
-            List<Computer> result = new List<Computer>();
-            foreach (string s in ls)
-            {
-                result.Add(Programs.getComputer(os,s));
-
-            }
-            return result;
-        }
-        private void SaveOrgLinkedComps(OSLoadedEvent e)
-        {
-            // 先解析读档暂存的 <OrgLinks>（此时所有电脑已加载，无顺序依赖）
-            foreach (var pending in pendingOrgLinkIds)
-            {
-                if (!Computer_OrgLinkdComps.ContainsKey(pending.Key))
-                {
-                    Computer_OrgLinkdComps[pending.Key] = IDToComps(e.Os, pending.Value);
-                }
-            }
-            pendingOrgLinkIds.Clear();
-
-            for(int i = 0;i<e.Os.netMap.nodes.Count;i++)
-            {
-                Computer c = e.Os.netMap.nodes[i];
-
-                // 读档场景：字典已按存档 <OrgLinks> 恢复，有同 idName 记录的不覆盖（保留标签基线）
-                bool hasBaseline = false;
-                foreach (var key in Computer_OrgLinkdComps.Keys)
-                {
-                    if (key != null && key.idName != null && key.idName == c.idName)
-                    {
-                        hasBaseline = true;
-                        break;
-                    }
-                }
-                if (hasBaseline) continue;
-
-                // 新游戏：用当前 links（内容 XML 定义的连接 = 组织基线）建字典
-                List<Computer> neighbors = new List<Computer>();
-                foreach (int link in c.links)
-                {
-                    if (link >= 0 && link < e.Os.netMap.nodes.Count)
-                    {
-                        neighbors.Add(e.Os.netMap.nodes[link]);
-                    }
-                }
-                Computer_OrgLinkdComps[c] = neighbors;
-            }
-        }
-
-        public static List<int> ComputersToNodeIndexes(OS os, List<Computer> computers)
-        {
-            return computers
-                .Select(comp => os.netMap.nodes.IndexOf(comp))
-                .Where(idx => idx >= 0)          // IndexOf 找不到会返回 -1，过滤掉
-                .ToList();
-        }
-
-        private void LoadOrgLinkedComps(SaveComputerLoadedEvent e)
-        {
-            Computer c = e.Comp;
-            ElementInfo ele = e.Info;
-
-            // 找到 <OrgLinks> 子元素（没有就跳过）
-            ElementInfo orgLinks = ele.Children.GetElement("OrgLinks");   // 框架扩展方法
-            if (orgLinks == null) return;
-
-            string raw = orgLinks.Content ?? "";
-
-            // 拆分文本 "name1,name2,name3" 为列表（过滤 ALLSAVED 标记）
-            List<string> linkedNames = raw
-                .Split(',')
-                .Select(s => s.Trim())
-                .Where(s => s.Length > 0 && s != AllSavedMarker)
-                .ToList();
-
-            // 暂存 idName，推迟到 OSLoaded 统一解析（此时所有电脑已加载，无顺序依赖）
-            pendingOrgLinkIds[c] = linkedNames;
-
-
-
-
         }
 
         public override bool Unload()
