@@ -72,8 +72,10 @@ Contributions of all kinds are welcome: features, fixes, docs, or feedback.
 
 ## ❤️ 致谢 / Thanks
 
-- **April_Crystal** – 飞机 Daemon 和自定义节点图标的核心实现与大量改进建议（以及大量的麻烦），KE 早期开发者之一。  
-  Core implementation of the Aircraft Daemon and node icons, plus lots of improvement suggestions (and lots of trouble). One of KE's earliest developers.
+- **LDTchara** - 感谢我自己的小脑袋瓜，想出来一大堆奇怪的点子并实现了它们。  
+  Thanks to my own little brain for coming up with a bunch of weird ideas and implementing them.
+- **April_Crystal** – 飞机 Daemon 和自定义节点图标的核心实现与大量改进建议 *（以及大量的麻烦）*，KE 早期开发者之一。  
+  Core implementation of the Aircraft Daemon and node icons, plus lots of improvement suggestions *(and lots of trouble)*. One of KE's earliest developers.
 - **ZQG** – 第一个使用 KE 的扩展作者，提供了宝贵的测试反馈。  
   The first extension author to use KE, providing invaluable testing feedback.
 - **HN 扩展小屋的各位朋友** – 测试、反馈与支持。  
