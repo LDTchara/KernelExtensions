@@ -189,9 +189,13 @@ namespace KernelExtensions.FileEditor
                     string dir = Path.Combine(Path.GetTempPath(), "KernelExtensions");
                     Directory.CreateDirectory(dir);
                     string path = Path.Combine(dir, "cimgui.dll");
-                    using (var fs = File.Create(path))
+                    // 已存在（本进程此前提取并 LoadLibrary 过，句柄占用无法覆盖）→ 不覆盖，直接加载同一文件
+                    if (!File.Exists(path))
                     {
-                        stream.CopyTo(fs);
+                        using (var fs = File.Create(path))
+                        {
+                            stream.CopyTo(fs);
+                        }
                     }
                     IntPtr handle = LoadLibrary(path);
                     if (handle == IntPtr.Zero)
