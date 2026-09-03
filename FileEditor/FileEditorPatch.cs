@@ -152,6 +152,11 @@ namespace KernelExtensions.FileEditor
                 .FirstOrDefault(d => File.Exists(Path.Combine(d, "cimgui.dll")));
             if (dir == null)
             {
+                // 外部文件不存在 → 尝试从嵌入资源提取（嵌入式单 dll 分发，2026-09-03）
+                if (TryLoadEmbeddedCImgui())
+                {
+                    return true;
+                }
                 KELog.Error($"[FileEditor] cimgui.dll NOT found in: {string.Join(" | ", candidates.Where(d => !string.IsNullOrEmpty(d)))} — deploy it into the Plugins folder beside KernelExtensions.dll");
                 return false;
             }
@@ -167,6 +172,43 @@ namespace KernelExtensions.FileEditor
 
             KELog.Info($"[FileEditor] cimgui.dll preloaded from: {cimguiPath}");
             return true;
+        }
+
+        /// <summary>从嵌入资源提取 cimgui.dll 到临时目录并预加载（嵌入式分发：无需外部文件）。</summary>
+        private static bool TryLoadEmbeddedCImgui()
+        {
+            try
+            {
+                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("KernelExtensions.libs.cimgui.dll"))
+                {
+                    if (stream == null)
+                    {
+                        KELog.Warn("[FileEditor] embedded cimgui.dll resource not found");
+                        return false;
+                    }
+                    string dir = Path.Combine(Path.GetTempPath(), "KernelExtensions");
+                    Directory.CreateDirectory(dir);
+                    string path = Path.Combine(dir, "cimgui.dll");
+                    using (var fs = File.Create(path))
+                    {
+                        stream.CopyTo(fs);
+                    }
+                    IntPtr handle = LoadLibrary(path);
+                    if (handle == IntPtr.Zero)
+                    {
+                        int err = Marshal.GetLastWin32Error();
+                        KELog.Error($"[FileEditor] embedded cimgui.dll failed to load (Win32 0x{err:X8})");
+                        return false;
+                    }
+                    KELog.Info($"[FileEditor] cimgui.dll preloaded from embedded resource ({path})");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                KELog.Error($"[FileEditor] embedded cimgui.dll extract failed: {ex.Message}");
+                return false;
+            }
         }
 
         // ================= 每帧驱动 =================

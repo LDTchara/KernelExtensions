@@ -65,10 +65,6 @@
     </Reference>
   </ItemGroup>
 
-  <Target Name="CopyCImGui" AfterTargets="Build">
-    <!-- 拷贝 cimgui.dll（ImGui.NET 原生层，x86）到输出目录；缺失会抛 DllNotFoundException -->
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\libs\cimgui.dll" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-  </Target>
 
   <ItemGroup>
     <PackageReference Include="NVorbis" Version="0.10.5" />
@@ -85,6 +81,8 @@
     <!-- 标题横幅图标（dev1 合入）：raw 内嵌，运行时 GetManifestResourceStream 提取到扩展 Images/ -->
     <EmbeddedResource Include="Img\Info.png" />
     <EmbeddedResource Include="Img\InfoBG.png" />
+    <!-- cimgui.dll（ImGui.NET 原生层）：嵌入资源，运行时提取到临时目录预加载（单 dll 分发） -->
+    <EmbeddedResource Include="libs\cimgui.dll" />
   </ItemGroup>
 
 
