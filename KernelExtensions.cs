@@ -17,6 +17,8 @@ using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
 using KernelExtensions.Utilities;
+using KernelExtensions.FileEditor;
+using KernelExtensions.ThemeColorChanger;
 using Pathfinder.Action;
 using Pathfinder.Daemon;
 using Pathfinder.Event;
@@ -195,6 +197,10 @@ namespace KernelExtensions
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
+
+            // 9.19 ThemeColorChanger（AC 贡献）：临时主题色修改 Action
+            ActionManager.RegisterAction<ThemeColorChangerAction>("ChangeThemeColor");
+            KELog.Info("ChangeThemeColor action registered.");
             PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
 
             // 9.25 ConnectControl：节点连接控制（org 基线跨会话，存档钩子内聚在 Action 静态方法）
@@ -203,6 +209,10 @@ namespace KernelExtensions
             EventManager<SaveComputerEvent>.AddHandler(ConnectionControlAction.OnSaveComputer);
             EventManager<SaveComputerLoadedEvent>.AddHandler(ConnectionControlAction.OnLoadComputer);
             EventManager<OSLoadedEvent>.AddHandler(ConnectionControlAction.OnOSLoaded);
+
+            // FileEditor（AC 贡献）：ImGui 文本编辑器（#FE#，ramCost=0）
+            ExecutableManager.RegisterExecutable<FileEditorEXE>("#FE#");
+            KELog.Info("FileEditor registered.");
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
 

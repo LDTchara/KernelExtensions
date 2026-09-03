@@ -57,7 +57,18 @@
       <HintPath>libs\PathfinderAPI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="ImGui.NET">
+      <!-- 使用 libs 下的 ImGui.NET（1.90.0.1，与 cimgui.dll 原生层版本配套），
+           由 Costura 织入嵌入程序集，运行时不再依赖外部 ImGui.NET.dll。 -->
+      <HintPath>libs\ImGui.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
+
+  <Target Name="CopyCImGui" AfterTargets="Build">
+    <!-- 拷贝 cimgui.dll（ImGui.NET 原生层，x86）到输出目录；缺失会抛 DllNotFoundException -->
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\libs\cimgui.dll" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="NVorbis" Version="0.10.5" />
@@ -75,5 +86,6 @@
     <EmbeddedResource Include="Img\Info.png" />
     <EmbeddedResource Include="Img\InfoBG.png" />
   </ItemGroup>
+
 
 </Project>

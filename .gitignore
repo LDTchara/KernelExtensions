@@ -8,3 +8,4 @@ riderModule.iml
 vs/
 .vs/
 *.user
+.codewhale/
