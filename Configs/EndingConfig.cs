@@ -7,12 +7,10 @@ namespace KernelExtensions.Configs
 {
     /// <summary>
     /// 自定义结局配置（EndingConfig）。
-    /// 来源：
-    ///   · 独立结局文件（StartEnding 的 File 属性指向，根元素 &lt;Ending&gt;，属性名与 StartEnding 一致）
-    ///   · 旧用法兼容：直接由 StartEnding 的 [XMLStorage] 属性构造（不写 File 时）
+    /// 来源：StartEnding 的 File 属性指向的独立结局文件（根元素 &lt;Ending&gt;）。
     /// 字段语义（字符串配置遵循 NONE 约定：NONE/空 = 该字段默认）：
     ///   Title/EndingText/OnCreditMusic/AfterMusic/AfterAction —— 文本与音乐，空 = 用原版/不执行
-    ///   SpeechFile/TextFile/CreditsFile —— 资源路径，NONE/空 = 默认 Docs/ 下对应文件
+    ///   SpeechFile/TextFile/CreditsFile —— 资源路径（相对扩展根任意子目录），NONE/空 = 默认 Docs/ 下
     ///   SpeechTime（float，默认 -1）：
     ///     -1/缺省 —— 有语音跟随音频时长；无语音静默 30s 兜底（Warn）
     ///      0      —— 跳过演讲阶段，直接进入报幕
@@ -45,12 +43,10 @@ namespace KernelExtensions.Configs
         private const string DefaultCreditsFile = "Docs/CreditsData.txt";
 
         /// <summary>从独立结局 XML（&lt;Ending&gt; 根）加载。缺失/解析失败返回 null（调用方报错）。</summary>
-        public static EndingConfig Load(string filePath, string extensionRoot = null)
+        public static EndingConfig Load(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath)) return null;
-            string full = extensionRoot != null
-                ? Path.Combine(extensionRoot, filePath)
-                : Path.Combine(ExtensionLoader.ActiveExtensionInfo?.FolderPath ?? "", filePath);
+            string full = Path.Combine(ExtensionLoader.ActiveExtensionInfo?.FolderPath ?? "", filePath);
             if (!File.Exists(full))
             {
                 KELog.Error($"[Ending] config file not found: {full}");
@@ -84,22 +80,6 @@ namespace KernelExtensions.Configs
                 KELog.Error($"[Ending] config parse failed ({full}): {ex.Message}");
                 return null;
             }
-        }
-
-        /// <summary>旧用法兼容：由 StartEnding 的 [XMLStorage] 属性构造（不写 File 时的路径）。</summary>
-        public static EndingConfig FromAction(StartEnding action)
-        {
-            var cfg = new EndingConfig();
-            cfg.Title = ConfigValue.IsNone(action.Title) ? cfg.Title : action.Title;
-            cfg.EndingText = ConfigValue.IsNone(action.EndingText) ? cfg.EndingText : action.EndingText;
-            cfg.OnCreditMusic = action.OnCreditMusic ?? "";
-            cfg.AfterMusic = action.AfterMusic ?? "";
-            cfg.AfterAction = action.AfterAction ?? "";
-            cfg.SpeechFile = Resolve(action.SpeechFile, DefaultSpeechFile);
-            cfg.TextFile = Resolve(action.TextFile, DefaultTextFile);
-            cfg.CreditsFile = Resolve(action.CreditsFile, DefaultCreditsFile);
-            cfg.SpeechTime = action.SpeechTime;
-            return cfg;
         }
 
         // ===== 解析辅助 =====

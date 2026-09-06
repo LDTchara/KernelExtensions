@@ -8,38 +8,24 @@ using Pathfinder.Util;
 namespace KernelExtensions.Actions
 {
     /// <summary>
-    /// 触发自定义结局序列（EndingConfig 版）。
+    /// 触发自定义结局序列（EndingConfig 文件模式）。
     ///
     /// XML 用法：
-    ///   A. 独立结局文件（推荐）：&lt;StartEnding File="Endings/myEnding.xml" /&gt;
-    ///      File 相对扩展根，指向 &lt;Ending&gt; 根元素配置文件（属性见 Configs/EndingConfig）。
-    ///      File 为唯一配置源——需要调整请直接改结局 XML（结局期间无其他操作，临时覆盖无意义）。
-    ///   B. 旧属性用法（兼容）：&lt;StartEnding SpeechTime="-1" Title="..." SpeechFile="Docs/EndingSpeech.ogg"
-    ///      TextFile="..." CreditsFile="..." AfterAction="..." /&gt;
+    ///   &lt;StartEnding File="Endings/myEnding.xml" /&gt;
+    /// File 必填，相对扩展根，指向 &lt;Ending&gt; 根元素配置文件（属性见 Configs/EndingConfig）。
+    /// 路径不限定文件夹（任意相对子目录均可）。需要调整配置请直接改结局 XML
+    /// （结局期间无其他操作，不做属性临时覆盖）。
     ///
-    /// SpeechTime 语义（仅 B 用法 / Ending XML 属性，默认 -1）：
-    ///   -1/缺省 —— 有语音跟随音频时长；无语音静默 30s 兜底
-    ///    0      —— 跳过演讲直接报幕
-    ///    &gt;0    —— 演讲上限 N 秒（音频先完提前进报幕）
-    ///
-    /// 语音格式：.wav（SoundEffect）或 .ogg（NVorbis 解码，体积 ~1/10，波形自绘）。
-    /// 注册名与属性名冻结（XML 兼容）。
+    /// 配置内容（Ending XML 属性，全部可选带默认）：
+    ///   Title / EndingText / OnCreditMusic / AfterMusic / AfterAction /
+    ///   SpeechFile / TextFile / CreditsFile / SpeechTime
+    /// SpeechTime 语义（默认 -1）：-1 跟随音频时长（无语音 30s 兜底）；0 跳过演讲直接报幕；
+    ///   N&gt;0 演讲上限 N 秒。语音支持 .wav 与 .ogg（NVorbis 解码，体积 ~1/10，波形自绘）。
     /// </summary>
     public class StartEnding : PathfinderAction
     {
-        // ---- 新用法：结局配置文件（相对扩展根；NONE/空 = 用下方旧属性）----
+        /// <summary>结局配置文件路径（必填，相对扩展根）。</summary>
         [XMLStorage] public string File = "";
-
-        // ---- 旧用法兼容（File 为空时生效；与 Ending XML 属性同名同语义）----
-        [XMLStorage] public float SpeechTime = -1f;
-        [XMLStorage] public string Title = "Hacknet";
-        [XMLStorage] public string EndingText = "Thanks For Playing";
-        [XMLStorage] public string OnCreditMusic = "";
-        [XMLStorage] public string AfterMusic = "";
-        [XMLStorage] public string AfterAction = "";
-        [XMLStorage] public string SpeechFile = "";
-        [XMLStorage] public string TextFile = "";
-        [XMLStorage] public string CreditsFile = "";
 
         /// <summary>由 CustomEndingModule 在报幕完成后调用。</summary>
         internal Action OnCompleteCallback;
@@ -48,13 +34,16 @@ namespace KernelExtensions.Actions
         {
             OS os = (OS)os_obj;
 
-            // ---- 配置来源：File 文件（唯一源）或旧属性（兼容）----
-            EndingConfig cfg = ConfigValue.IsNone(File)
-                ? EndingConfig.FromAction(this)
-                : EndingConfig.Load(File);
+            if (ConfigValue.IsNone(File))
+            {
+                KELog.Error("[StartEnding] File attribute is required (path to an <Ending> config XML, relative to the extension root).");
+                return;
+            }
+
+            EndingConfig cfg = EndingConfig.Load(File);
             if (cfg == null)
             {
-                KELog.Error($"[StartEnding] failed to load ending config (File='{File}').");
+                KELog.Error($"[StartEnding] failed to load ending config: {File}");
                 return;
             }
 
