@@ -2,11 +2,11 @@
   ExampleEnding.xml — 自定义结局配置示例（StartEnding 的 File 属性引用）
   =========================================================================
   用法：
-    <StartEnding File="Endings/ExampleEnding.xml" />
+    <StartEnding File="ExampleEnding.xml" />
 
   路径规则（重要）：
     · File 与下方所有资源路径均为「相对扩展根目录」的相对路径——可放在任意
-      子目录，不强制 Docs/ 或 Endings/（本例放 Endings/ 只是组织习惯）
+      子目录，不强制 Docs/（本例与示例资源同放 XMLExamples 根）
     · 不写某子元素 = 用默认值；写了 NONE/空 = 显式禁用/用默认
     · 语音支持 .wav（SoundEffect）与 .ogg（NVorbis 解码，体积约 1/10，波形自绘）
 
