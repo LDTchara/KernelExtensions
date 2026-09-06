@@ -15,6 +15,7 @@ using KernelExtensions.Actions.PhaseSwift;
 using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Compat.Stuxnet;
 using KernelExtensions.Configs;
+using KernelExtensions.CustomPortPublicCracker;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Managers;
@@ -242,6 +243,12 @@ namespace KernelExtensions
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
             PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
+
+            // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
+            RegisterActionWithFallback<PortControlAction>("PortControl");
+
+            // PublicCracker（#PC#）：端口破解工具箱的可执行程序
+            ExecutableManager.RegisterExecutable<PublicCracker>("#PC#");
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
             // RAM 显示：RamModule internal，同样需运行时反射 patch
@@ -267,7 +274,11 @@ namespace KernelExtensions
                 return true;
             }
         }
-
+        // 添加公共静态方法用于注册端口
+        public static void LoadActionPorts(string protocol, string displayName, int portNum)
+        {
+            Pathfinder.Port.PortManager.RegisterPort(protocol, displayName, portNum);
+        }
         public override bool Unload()
         {
             // 结局模块可能把全局音乐音量停在渐弱值（0）上——卸载前先恢复，
