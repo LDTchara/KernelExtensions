@@ -1,0 +1,32 @@
+<!-- =========================================================================
+  ExampleEnding.xml — 自定义结局配置文件示例（StartEnding 的 File 属性引用）
+  =========================================================================
+  用法：
+    <StartEnding File="Endings/ExampleEnding.xml" />
+
+  路径规则（重要）：
+    · File 与下方所有资源路径均为「相对扩展根目录」的相对路径——可放在任意
+      子目录，不强制 Docs/ 或 Endings/（本例放 Endings/ 只是组织习惯）
+    · 不写资源属性 = 用默认 Docs/ 下的对应文件；写了就用自己的路径
+    · 语音支持 .wav（SoundEffect）与 .ogg（NVorbis 解码，体积约 1/10，波形自绘）
+
+  SpeechTime 语义：
+    -1 / 不写 —— 有语音跟随音频时长；无语音静默 30s 兜底
+     0        —— 跳过演讲阶段，直接进入报幕
+     N (>0)   —— 演讲上限 N 秒（音频先播完则提前进报幕，N 先到则截断）
+
+  资源文件格式：
+    SpeechFile — 语音（wav/ogg，可选）
+    TextFile   — 演讲文本：#=停顿1s、%=停顿0.5s（显示时被过滤）
+    CreditsFile— 报幕名单：^ 灰小字 / % 大标题行 / $ 小号灰字（每行一条）
+  ========================================================================= -->
+
+<Ending Title="THE END"
+         EndingText="Thanks for playing"
+         OnCreditMusic=""
+         AfterMusic=""
+         AfterAction=""
+         SpeechTime="-1"
+         SpeechFile="EndingSpeech.wav"
+         TextFile="Speech.txt"
+         CreditsFile="CreditsData.txt" />
