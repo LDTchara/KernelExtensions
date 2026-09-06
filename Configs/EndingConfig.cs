@@ -1,5 +1,4 @@
 using Hacknet.Extensions;
-using KernelExtensions.Actions;
 using KernelExtensions.Utilities;
 using System.Xml.Linq;
 
@@ -95,9 +94,6 @@ namespace KernelExtensions.Configs
             var v = (string)root.Attribute(attr);
             return ConfigValue.IsNone(v) ? defaultPath : v.Trim();
         }
-
-        private static string Resolve(string value, string defaultPath)
-            => ConfigValue.IsNone(value) ? defaultPath : value.Trim();
 
         private static float GetFloat(XElement root, string attr, float fallback)
         {
