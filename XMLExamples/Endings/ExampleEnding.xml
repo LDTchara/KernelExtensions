@@ -1,5 +1,5 @@
 <!-- =========================================================================
-  ExampleEnding.xml — 自定义结局配置文件示例（StartEnding 的 File 属性引用）
+  ExampleEnding.xml — 自定义结局配置示例（StartEnding 的 File 属性引用）
   =========================================================================
   用法：
     <StartEnding File="Endings/ExampleEnding.xml" />
@@ -7,7 +7,7 @@
   路径规则（重要）：
     · File 与下方所有资源路径均为「相对扩展根目录」的相对路径——可放在任意
       子目录，不强制 Docs/ 或 Endings/（本例放 Endings/ 只是组织习惯）
-    · 不写资源属性 = 用默认 Docs/ 下的对应文件；写了就用自己的路径
+    · 不写某子元素 = 用默认值；写了 NONE/空 = 显式禁用/用默认
     · 语音支持 .wav（SoundEffect）与 .ogg（NVorbis 解码，体积约 1/10，波形自绘）
 
   SpeechTime 语义：
@@ -21,12 +21,31 @@
     CreditsFile— 报幕名单：^ 灰小字 / % 大标题行 / $ 小号灰字（每行一条）
   ========================================================================= -->
 
-<Ending Title="THE END"
-         EndingText="Thanks for playing"
-         OnCreditMusic=""
-         AfterMusic=""
-         AfterAction=""
-         SpeechTime="-1"
-         SpeechFile="EndingSpeech.wav"
-         TextFile="Speech.txt"
-         CreditsFile="CreditsData.txt" />
+<EndingConfig>
+    <!-- 报幕大标题（可选，默认 "Hacknet"） -->
+    <Title>THE END</Title>
+
+    <!-- 报幕末尾提示行（可选，默认 "Thanks For Playing"） -->
+    <EndingText>Thanks for playing</EndingText>
+
+    <!-- 报幕阶段音乐（可选，空 = 原版 Music\Bit(Ending)） -->
+    <OnCreditMusic></OnCreditMusic>
+
+    <!-- 回游戏后音乐（可选，空 = 原版 Music\Bit(Ending)） -->
+    <AfterMusic></AfterMusic>
+
+    <!-- 报幕完成后执行的动作文件（可选，NONE/空 = 不执行） -->
+    <AfterAction file="Actions/AfterCredits.xml" />
+
+    <!-- 演讲计时（可选，默认 -1：见上方 SpeechTime 语义） -->
+    <SpeechTime>-1</SpeechTime>
+
+    <!-- 语音文件（可选，wav/ogg；相对扩展根任意子目录，空 = 默认 Docs/EndingSpeech.wav） -->
+    <SpeechFile>EndingSpeech.wav</SpeechFile>
+
+    <!-- 演讲文本（可选，空 = 默认 Docs/Speech.txt） -->
+    <TextFile>Speech.txt</TextFile>
+
+    <!-- 报幕名单（可选，空 = 默认 Docs/CreditsData.txt） -->
+    <CreditsFile>CreditsData.txt</CreditsFile>
+</EndingConfig>
