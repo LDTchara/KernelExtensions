@@ -2,7 +2,7 @@
 
 # KernelExtensions
 
-![Release](https://img.shields.io/badge/Release-0.7.0-brightgreen?logo=github&link=https%3A%2F%2Fgithub.com%2FLDTchara%2FKernelExtensions%2Freleases)
+[![Release](https://img.shields.io/badge/Release-0.7.0-brightgreen?logo=github)](https://github.com/LDTchara/KernelExtensions/releases)
 [![Nightly Build (dev)](https://github.com/LDTchara/KernelExtensions/actions/workflows/nightly.yml/badge.svg?branch=dev)](https://github.com/LDTchara/KernelExtensions/actions/workflows/nightly.yml)
 
 > **KernelExtensions** 是一个面向 Hacknet 扩展作者的"开箱即用"组件库：把原版风格的完整系统（自定义试炼、场景切换、飞机、心脏结局、定时器、本地化、动态颜色……）封装为 **XML 可配置**的组件，扩展作者无需编写 C# 即可搭建复杂剧情。基于 Pathfinder API 深度集成（Harmony 补丁、存档钩子、多语言）。  
