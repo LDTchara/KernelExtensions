@@ -8,7 +8,8 @@
 > **KernelExtensions** 是一个面向 Hacknet 扩展作者的"开箱即用"组件库：把原版风格的完整系统（自定义试炼、场景切换、飞机、心脏结局、定时器、本地化、动态颜色……）封装为 **XML 可配置**的组件，扩展作者无需编写 C# 即可搭建复杂剧情。基于 Pathfinder API 深度集成（Harmony 补丁、存档钩子、多语言）。  
 > **KernelExtensions** is a drop-in component library for Hacknet extension authors: complete vanilla-styled systems (custom trials, scene switching, aircraft, heart finale, timers, localisation, dynamic colors, ...) packaged as **XML-configurable** components, so you can build rich storylines without writing C#. Deeply integrated with the Pathfinder API (Harmony patches, save hooks, multi-language).
 
-> [!WARNING] 本项目部分文档与代码由 AI 辅助生成，可能存在不准确或不完整之处，请在使用前自行评估；若发现问题，欢迎通过 Issue 或 PR 指出，我们会及时修正。  
+> [!WARNING] 
+> 本项目部分文档与代码由 AI 辅助生成，可能存在不准确或不完整之处，请在使用前自行评估；若发现问题，欢迎通过 Issue 或 PR 指出，我们会及时修正。  
 > This project uses AI-assisted generation for parts of its documentation and code, which may be inaccurate or incomplete. Please evaluate before use, and feel free to report any issues via Issue or PR — we will fix them promptly.
 
 **当前版本 / Current Version**: 0.7.0
