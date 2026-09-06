@@ -73,13 +73,13 @@
     <!-- English: Whether changing the theme also changes node layout (default false, color-only) -->
     <ChangeLayout>false</ChangeLayout>
     <!--
-         双轨音乐开关（默认 true）
+         多轨音乐开关（默认 true；DSEI 每场景一轨同时播放，字段名沿用历史命名）
          true  — DSEI 流式解码 + 交叉淡化 + 自制可视化（需要 MusicPhases）
          false — 用 MusicManager 播放单曲，不使用 DSEI 和交叉淡化。
                  此时 MusicPhases 留空，用 <SingleTrack> 指定音乐即可。
     -->
     <!-- English:
-         Dual-track music toggle (default true)
+         Multi-track music toggle (default true; one DSEI track per scene, field name kept from legacy naming)
          true  — DSEI streaming decode + crossfade + custom visualization (requires MusicPhases)
          false — Use MusicManager for single-track playback without DSEI or crossfade.
                  Leave MusicPhases empty and use <SingleTrack> to specify the music.
