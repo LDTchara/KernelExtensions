@@ -10,15 +10,16 @@ using KernelExtensions.Actions.PhaseSwift;
 using KernelExtensions.Actions.Title;
 using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Configs;
+using KernelExtensions.CustomPortCreaker;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
+using KernelExtensions.FileEditor;
 using KernelExtensions.Managers;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
-using KernelExtensions.Utilities;
-using KernelExtensions.FileEditor;
 using KernelExtensions.ThemeColorChanger;
+using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Daemon;
 using Pathfinder.Event;
@@ -210,6 +211,13 @@ namespace KernelExtensions
             EventManager<SaveComputerLoadedEvent>.AddHandler(ConnectionControlAction.OnLoadComputer);
             EventManager<OSLoadedEvent>.AddHandler(ConnectionControlAction.OnOSLoaded);
 
+
+            // PortReg
+
+            Pathfinder.Action.ActionManager.RegisterAction<PortControlAction>("PortControl");
+
+            // PublicCustomCracker
+            ExecutableManager.RegisterExecutable<PublicCracker>("#PC#");
             // FileEditor（AC 贡献）：ImGui 文本编辑器（#FE#，ramCost=0）
             ExecutableManager.RegisterExecutable<FileEditorEXE>("#FE#");
             KELog.Info("FileEditor registered.");
@@ -222,7 +230,11 @@ namespace KernelExtensions
             PrintGradientAscii(KEArt);
             return true;
         }
-
+        // 添加公共静态方法用于注册端口
+        public static void LoadActionPorts(string protocol, string displayName, int portNum)
+        {
+            Pathfinder.Port.PortManager.RegisterPort(protocol, displayName, portNum);
+        }
         public override bool Unload()
         {
             PhaseSwiftExe.CleanupAll();

@@ -1402,7 +1402,8 @@ namespace KernelExtensions.Executables
             // 文字和按钮仍基于内容区域（或也可以基于 bgRect，但通常居中）
             Rectangle textRect = new(bgRect.X + 10, bgRect.Y + bgRect.Height / 2 - btnHeight / 2, bgRect.Width - 20, btnHeight);
             spriteBatch.Draw(Utils.white, textRect, Color.Black * 0.6f * fade);
-            TextItem.doCenteredFontLabel(textRect, lockText, GuiData.font, Color.White * fade, false);
+            // 统一走 DrawLabelCenteredFit：长文本也不会触发引擎 doCenteredFontLabel 的贴左 fallback
+            DrawLabelCenteredFit(textRect, lockText, Color.White * fade);
 
             // 退出按钮（右下角）
             int exitBtnWidth = 60;
@@ -1561,55 +1562,135 @@ namespace KernelExtensions.Executables
             if (string.IsNullOrEmpty(titleText))
                 return;
 
-            int titleHeight = Math.Max(32, (int)(40 * scale));
-            int subtitleHeight = string.IsNullOrEmpty(subtitleText) ? 0 : Math.Max(18, (int)(22 * scale));
-            int totalTextHeight = titleHeight + subtitleHeight;
-
+            // ============ 自适应标题布局：预算驱动、分级压缩、保证留白 ============
+            // 窗口高度恒等于 ramCost（ExeModule.Update 每帧强制 bounds.Height = ramCost），
+            // 当 DynamicRamReduction=false 时窗口会一直缩到最小 84px。旧实现用固定下限
+            // Math.Max(32 / 18) 计算主副标题文本框高度，灰色横幅总高超出可用区后，上界会被
+            // 顶进顶部 RAM/Panel 区域。这里改为“预算驱动”：先按期望尺寸（保留可读舒适下限）
+            // 布局；放不下时逐级压缩——计时条间距 → 横幅内边距 → 副标题 → 主标题 → 上下留白
+            // → 等比兜底，每一级都停在各自下限。因此横幅上界永远 ≥ 内容区顶 + 上留白，
+            // 下界永远 ≤ 窗口底 - 下留白，主副标题文字由 doFontLabelToSize 随文本框缩放。
             bool hasGlobalTimer = globalTimerActive && config.EnableGlobalTimer && globalTimerRemaining > 0;
             bool hasPhaseTimer = phaseTimerActive && config.EnablePhaseTimer && phaseTimerRemaining > 0 && CurrentPhase != null;
             bool hasAnyTimer = hasGlobalTimer || hasPhaseTimer;
 
-            // 计算计时条区域总高度（与 Draw 中累加的 timerY 增量一致）
+            // 计时条区域总高度（与 Draw 中累加的 timerY 增量一致）
             int timerTotalHeight = 0;
             if (hasGlobalTimer) timerTotalHeight += (int)(30 * scale);
             if (hasPhaseTimer) timerTotalHeight += (int)(30 * scale);
 
-            // 计算标题组与计时条之间的间距（固定值，比如 12 像素）
-            int spacing = hasAnyTimer ? 12 : 0;
+            // 是否有副标题（沿用原判断）
+            bool hasSubtitle = !string.IsNullOrEmpty(subtitleText);
 
-            // 整个内容块的高度 = 标题组 + 间距 + 计时条区域
-            int contentBlockHeight = totalTextHeight + spacing + timerTotalHeight;
+            // ---- 文本框期望高度（随 scale 缩放，但保留舒适下限）----
+            // 主标题：舒适下限 28px，满窗(scale≈1)时 40px（与原 40*scale 一致）
+            float titleWanted = Math.Max(28f, 40f * scale);
+            // 副标题：舒适下限 16px，满窗时 22px
+            float subWanted = hasSubtitle ? Math.Max(16f, 22f * scale) : 0f;
+            // 极端压缩下的可读硬下限（字号会偏小，但保证几何不出界）
+            const float titleFloor = 16f;
+            const float subFloor = 10f;
 
-            // 内容区域可用高度（排除顶部 Panel 和底部留白）
-            int usableHeight = bounds.Height - Module.PANEL_HEIGHT - 20;
+            // 灰色横幅内部上下内边距（正常 5px，紧张时收至 2px）
+            float padInner = 5f;
+            // 横幅与计时条的间距（正常 12px，紧张时收至 6px）
+            float gapTimer = hasAnyTimer ? 12f : 0f;
+            // 内容区上/下最小留白（紧张时收至 4px）
+            float padTop = 6f;
+            float padBottom = 6f;
 
-            // 居中整个内容块
-            int blockStartY = bounds.Y + Module.PANEL_HEIGHT + (usableHeight - contentBlockHeight) / 2;
-
-            // 标题组起始 Y
-            int groupY = blockStartY;
-
-            // 绘制全宽背景
-            Rectangle groupRect = new(contentRect.X, groupY - 5, contentRect.Width, totalTextHeight + 10);
-            spriteBatch.Draw(Utils.white, groupRect, Color.Black * 0.6f * fade);
-
-            // 标题
-            Rectangle titleRect = new(groupRect.X, groupRect.Y + 5, groupRect.Width, titleHeight);
-            TextItem.doFontLabelToSize(titleRect, titleText, GuiData.font, (titleColor ?? Color.White) * fade, true, false);
-
-            // 副标题
-            if (!string.IsNullOrEmpty(subtitleText))
+            // ---- 分级压缩：预算不足时按“次要元素先让位”次序逐级收紧 ----
+            float titleH = titleWanted;
+            float subH = subWanted;
+            int shrinkStage = 0; // 0 间距 → 1 内边距 → 2 副标题 → 3 主标题 → 4 外留白 → 5 等比兜底
+            while (shrinkStage < 6)
             {
-                Rectangle subtitleRect = new(groupRect.X, titleRect.Bottom, groupRect.Width, subtitleHeight);
-                TextItem.doFontLabelToSize(subtitleRect, subtitleText, GuiData.font, (Utils.AddativeWhite * 0.9f) * fade, true, false);
+                // 内容区预算 = 窗口高 - 顶栏(Panel) - 上下留白
+                float availBlock = bounds.Height - Module.PANEL_HEIGHT - padTop - padBottom;
+                float blockNeed = titleH + subH + padInner * 2f + timerTotalHeight + gapTimer;
+                if (blockNeed <= availBlock) break;
+
+                float over = blockNeed - availBlock;
+                switch (shrinkStage)
+                {
+                    case 0: // 1) 计时条间距 12 -> 6
+                        if (hasAnyTimer && gapTimer > 6f) gapTimer = 6f;
+                        break;
+                    case 1: // 2) 横幅内边距 5 -> 2
+                        padInner = 2f;
+                        break;
+                    case 2: // 3) 副标题压到硬下限（次要元素先让位）
+                        if (subH > subFloor) subH = Math.Max(subFloor, subH - over);
+                        break;
+                    case 3: // 4) 主标题压到硬下限
+                        if (titleH > titleFloor) titleH = Math.Max(titleFloor, titleH - over);
+                        break;
+                    case 4: // 5) 上下留白 6 -> 4
+                        padTop = 4f;
+                        padBottom = 4f;
+                        break;
+                    default: // 6) 极端兜底：剩余空间等比分配给两行文本（极少触发）
+                        float room = bounds.Height - Module.PANEL_HEIGHT - padTop - padBottom
+                                     - padInner * 2f - timerTotalHeight - gapTimer;
+                        float sum = titleH + subH;
+                        if (sum > 0f && room < sum)
+                        {
+                            float ratio = Math.Max(0f, room) / sum;
+                            titleH *= ratio;
+                            subH *= ratio;
+                        }
+                        break;
+                }
+                shrinkStage++;
             }
 
-            // 保存计时条的起始 Y 坐标，供 Draw 方法使用（通过字段传递）
-            // 我们可以在类中添加一个字段：private float timerStartY;
-            // 但为了避免改动过大，可以直接在 Draw 方法中基于相同逻辑重新计算 timerY。
-            // 因此这里不需要额外操作，只需在 Draw 中使用相同公式。
-            // 计算计时条起始 Y
-            timerStartY = groupY + totalTextHeight + spacing;
+            // ---- 用最终尺寸定位并绘制 ----
+            // 整块（横幅 + 间距 + 计时条）在可用区内垂直居中；预算已保证其不越界
+            float availBlockFinal = bounds.Height - Module.PANEL_HEIGHT - padTop - padBottom;
+            float blockTotal = titleH + subH + padInner * 2f + timerTotalHeight + gapTimer;
+            float blockStartY = bounds.Y + Module.PANEL_HEIGHT + padTop
+                                + Math.Max(0f, (availBlockFinal - blockTotal) / 2f);
+
+            // 灰色横幅底板（全宽，高度只由文本高度 + 内边距决定，随压缩动态变矮）
+            Rectangle groupRect = new(contentRect.X, (int)blockStartY, contentRect.Width,
+                (int)(titleH + subH + padInner * 2f));
+            spriteBatch.Draw(Utils.white, groupRect, Color.Black * 0.6f * fade);
+
+            // 主标题文本框（文字由 DrawLabelCenteredFit 等比缩放并绝对居中，避免左偏）
+            int textTop = groupRect.Y + (int)padInner;
+            Rectangle titleRect = new(groupRect.X, textTop, groupRect.Width, (int)titleH);
+            DrawLabelCenteredFit(titleRect, titleText, (titleColor ?? Color.White) * fade);
+
+            // 副标题文本框
+            if (hasSubtitle)
+            {
+                Rectangle subtitleRect = new(groupRect.X, titleRect.Bottom, groupRect.Width, (int)subH);
+                DrawLabelCenteredFit(subtitleRect, subtitleText, Utils.AddativeWhite * 0.9f * fade);
+            }
+
+            // 计时条起始 Y（供 Draw 方法使用；无计时器时该值不影响绘制）
+            timerStartY = blockStartY + titleH + subH + padInner * 2f + gapTimer;
+        }
+
+        /// <summary>
+        /// 在矩形内绘制文本：等比缩放（只缩不放）并始终水平/垂直居中。
+        /// TextItem.doFontLabelToSize 在文本宽度接近或超过文本框宽度时会贴左绘制
+        /// （其水平补偿按放大后的文本计算，而 doNotOversize 又把绘制缩回 1:1），
+        /// 导致横幅标题视觉左偏；这里手动测量 + 绝对居中，任何尺寸都不再偏移。
+        /// </summary>
+        private void DrawLabelCenteredFit(Rectangle rect, string text, Color color)
+        {
+            if (string.IsNullOrEmpty(text) || rect.Width <= 0 || rect.Height <= 0)
+                return;
+            Vector2 raw = GuiData.font.MeasureString(text);
+            if (raw.X <= 0f || raw.Y <= 0f)
+                return;
+            float s = Math.Min(Math.Min(rect.Width / raw.X, rect.Height / raw.Y), 1f); // 只缩小，不放大
+            Vector2 pos = new Vector2(
+                rect.X + (rect.Width - raw.X * s) / 2f,
+                rect.Y + (rect.Height - raw.Y * s) / 2f);
+            pos = Utils.ClipVec2ForTextRendering(pos);
+            spriteBatch.DrawString(GuiData.font, text, pos, color, 0f, Vector2.Zero, s, SpriteEffects.None, 0.55f);
         }
 
         private void DrawImpactEffects()
