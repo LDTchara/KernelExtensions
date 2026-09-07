@@ -57,7 +57,7 @@ KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展
 
 ## Harmony 补丁
 
-模组通过 Harmony 补丁对原版游戏做了若干增强，所有补丁均在加载时注入、卸载时自动移除。详细列表请参阅 **[Harmony补丁](./../../en/components/harmony.md)** 页面。
+模组通过 Harmony 补丁对原版游戏做了若干增强，所有补丁均在加载时注入、卸载时自动移除。详细列表请参阅 **[Harmony补丁](./../components/harmony.md)** 页面。
 
 主要补丁包括：
 - `MainMenuWatermarkPatch`：主菜单彩虹水印。
@@ -82,4 +82,4 @@ KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展
 - [Misc (English)](./../../en/guides/misc.md) – 英文版
 - [自定义Action](./../components/actions.md) – 全部自定义动作详细参数
 - [工具类](./../components/utility.md) – 工具类使用指南
-- [Harmony补丁](./../../en/components/harmony.md) – 补丁列表与技术细节
+- [Harmony补丁](./../components/harmony.md) – 补丁列表与技术细节
