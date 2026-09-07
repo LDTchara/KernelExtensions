@@ -1,0 +1,82 @@
+site_name: KernelExtensions
+site_description: KernelExtensions — Hacknet extension component library (docs for 0.6 / main)
+site_url: https://ldtchara.github.io/KernelExtensions/
+repo_url: https://github.com/LDTchara/KernelExtensions
+repo_name: LDTchara/KernelExtensions
+copyright: Copyright &copy; 2026 LDTchara
+
+theme:
+  name: material
+  language: zh
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - toc.integrate
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - 简体中文:
+      - 首页: zh/index.md
+      - 系统:
+          - 自定义试炼系统: zh/custom-trial.md
+          - VM 攻击系统: zh/vm-attack.md
+          - 飞机 Daemon 系统: zh/aircraft.md
+      - 组件:
+          - 自定义 Action: zh/actions.md
+          - 可执行程序: zh/executables.md
+          - 自定义 Daemon: zh/daemons.md
+          - 配置文件: zh/configuration.md
+          - 工具类: zh/utility.md
+          - Harmony 补丁: zh/harmony.md
+      - 指南与杂项:
+          - 扩展作者指南: zh/author-guide.md
+          - 安装与卸载: zh/installation.md
+          - 更新日志: zh/changelog.md
+          - 杂项: zh/misc.md
+  - English:
+      - Home: en/index.md
+      - Systems:
+          - Custom Trial System: en/custom-trial.md
+          - VM Attack System: en/vm-attack.md
+          - Aircraft Daemon System: en/aircraft.md
+      - Components:
+          - Actions: en/actions.md
+          - Executables: en/executables.md
+          - Daemons: en/daemons.md
+          - Configuration Files: en/configuration.md
+          - Utility Classes: en/utility.md
+          - Patches & Harmony: en/harmony.md
+      - Guides & Misc:
+          - Extension Author Guide: en/author-guide.md
+          - Installation: en/installation.md
+          - Changelog: en/changelog.md
+          - Misc: en/misc.md
