@@ -194,5 +194,5 @@
 
 ## See Also
 
-- [Home](./index.md) – Return to main index
-- [更新日志 (中文)](./../zh/changelog.md) – Chinese version
+- [Home](./../index.md) – Return to main index
+- [更新日志 (中文)](./../../zh/guides/changelog.md) – Chinese version

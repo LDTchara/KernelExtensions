@@ -47,8 +47,8 @@ KernelExtensions 提供了一系列自定义 Action，可在任何动作文件�
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Actions (English)](./../en/actions.md) – 英文版
-- [自定义试炼系统](./custom-trial.md)  
-- [VM攻击系统](./vm-attack.md)  
-- [飞机Daemon系统](./aircraft.md)
+- [首页](./../index.md) – 返回主索引
+- [Actions (English)](./../../en/components/actions.md) – 英文版
+- [自定义试炼系统](./../systems/custom-trial.md)  
+- [VM攻击系统](./../systems/vm-attack.md)  
+- [飞机Daemon系统](./../systems/aircraft.md)

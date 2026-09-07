@@ -30,5 +30,5 @@ KernelExtensions 提供了一组静态工具类，供扩展开发者在代码中
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Utility Classes (English)](./../en/utility.md) – 英文版
+- [首页](./../index.md) – 返回主索引
+- [Utility Classes (English)](./../../en/components/utility.md) – 英文版

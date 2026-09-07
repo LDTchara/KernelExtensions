@@ -44,7 +44,7 @@ The system loads `VMATK/<ConfigName>.xml` and triggers the attack. The Flag is m
 
 ### Aircraft Daemon
 
-No extra Flags are required. Just add `<FlightDaemon>` to the target computer's XML (see [Aircraft Daemon System](./aircraft.md)). Attack and repair are triggered via `AttackAircraft` and `UploadAircraftSysFile` actions.
+No extra Flags are required. Just add `<FlightDaemon>` to the target computer's XML (see [Aircraft Daemon System](./../systems/aircraft.md)). Attack and repair are triggered via `AttackAircraft` and `UploadAircraftSysFile` actions.
 
 ---
 
@@ -132,11 +132,11 @@ Language‑file‑based localisation is planned for a future release, which will
 
 ## 9. Quick Reference Links
 
-- [Custom Trial System](./custom-trial.md)
-- [VM Attack System](./vm-attack.md)
-- [Aircraft Daemon System](./aircraft.md)
-- [Actions](./actions.md)
-- [Configuration Files](./configuration.md)
+- [Custom Trial System](./../systems/custom-trial.md)
+- [VM Attack System](./../systems/vm-attack.md)
+- [Aircraft Daemon System](./../systems/aircraft.md)
+- [Actions](./../components/actions.md)
+- [Configuration Files](./../components/configuration.md)
 
 ---
 

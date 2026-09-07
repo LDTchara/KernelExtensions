@@ -189,7 +189,7 @@ Language‑file‑based localisation will be added in the future.
 
 ## See Also
 
-- [Home](./index.md) – Return to main index
-- [自定义试炼系统 (中文) ](./../zh/custom-trial.md) – 中文版
-- [Misc](./misc.md) – Other things not mentioned on the major system pages
-- [Configuration Files](./configuration.md) – Collection of all configuration files
+- [Home](./../index.md) – Return to main index
+- [自定义试炼系统 (中文) ](./../../zh/systems/custom-trial.md) – 中文版
+- [Misc](./../guides/misc.md) – Other things not mentioned on the major system pages
+- [Configuration Files](./../components/configuration.md) – Collection of all configuration files

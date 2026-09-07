@@ -40,5 +40,5 @@ A: The main menu watermark displays `+ KernelExtensions x.x.x`, matching the DLL
 
 ## See Also
 
-- [Home](./index.md) – Return to main index
-- [安装与卸载 (中文)](./../zh/installation.md) – Chinese version
+- [Home](./../index.md) – Return to main index
+- [安装与卸载 (中文)](./../../zh/guides/installation.md) – Chinese version

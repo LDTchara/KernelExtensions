@@ -218,5 +218,5 @@
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Changelog (English)](./../en/changelog.md) – 英文版
+- [首页](./../index.md) – 返回主索引
+- [Changelog (English)](./../../en/guides/changelog.md) – 英文版

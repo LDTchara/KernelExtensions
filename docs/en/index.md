@@ -8,29 +8,29 @@
 
 | System | Page |
 |--------|------|
-| Custom Trial | [Custom Trial System](./custom-trial.md) |
-| VM Attack | [VM Attack System](./vm-attack.md) |
-| Aircraft Daemon | [Aircraft Daemon System](./aircraft.md) |
-| Misc | [Misc](./misc.md) |
+| Custom Trial | [Custom Trial System](./systems/custom-trial.md) |
+| VM Attack | [VM Attack System](./systems/vm-attack.md) |
+| Aircraft Daemon | [Aircraft Daemon System](./systems/aircraft.md) |
+| Misc | [Misc](./guides/misc.md) |
 
 ## 🧩 Component Index
 
 | Category | Page |
 |----------|------|
-| Actions | [Actions](./actions.md) |
-| Executables | [Executables](./executables.md) |
-| Daemons | [Daemons](./daemons.md) |
-| Configuration Files | [Configuration-Files](./configuration.md) |
-| Utility Classes | [Utility-Classes](./utility.md) |
-| Patches & Harmony | [Patches-and-Harmony](./harmony.md) |
+| Actions | [Actions](./components/actions.md) |
+| Executables | [Executables](./components/executables.md) |
+| Daemons | [Daemons](./components/daemons.md) |
+| Configuration Files | [Configuration-Files](./components/configuration.md) |
+| Utility Classes | [Utility-Classes](./components/utility.md) |
+| Patches & Harmony | [Patches-and-Harmony](./components/harmony.md) |
 
 ## 📚 Other
 
 | Page | Description |
 |------|-------------|
-| [Extension Author Guide](./author-guide.md) | Guide for extension authors |
-| [Installation](./installation.md) | Install instructions |
-| [Changelog](./changelog.md) | Release history |
+| [Extension Author Guide](./guides/author-guide.md) | Guide for extension authors |
+| [Installation](./guides/installation.md) | Install instructions |
+| [Changelog](./guides/changelog.md) | Release history |
 
 ## ⚙️ Prerequisites
 

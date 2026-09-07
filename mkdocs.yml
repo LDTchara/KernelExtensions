@@ -47,36 +47,36 @@ nav:
   - 简体中文:
       - 首页: zh/index.md
       - 系统:
-          - 自定义试炼系统: zh/custom-trial.md
-          - VM 攻击系统: zh/vm-attack.md
-          - 飞机 Daemon 系统: zh/aircraft.md
+          - 自定义试炼系统: zh/systems/custom-trial.md
+          - VM 攻击系统: zh/systems/vm-attack.md
+          - 飞机 Daemon 系统: zh/systems/aircraft.md
       - 组件:
-          - 自定义 Action: zh/actions.md
-          - 可执行程序: zh/executables.md
-          - 自定义 Daemon: zh/daemons.md
-          - 配置文件: zh/configuration.md
-          - 工具类: zh/utility.md
-          - Harmony 补丁: zh/harmony.md
+          - 自定义 Action: zh/components/actions.md
+          - 可执行程序: zh/components/executables.md
+          - 自定义 Daemon: zh/components/daemons.md
+          - 配置文件: zh/components/configuration.md
+          - 工具类: zh/components/utility.md
+          - Harmony 补丁: zh/components/harmony.md
       - 指南与杂项:
-          - 扩展作者指南: zh/author-guide.md
-          - 安装与卸载: zh/installation.md
-          - 更新日志: zh/changelog.md
-          - 杂项: zh/misc.md
+          - 扩展作者指南: zh/guides/author-guide.md
+          - 安装与卸载: zh/guides/installation.md
+          - 更新日志: zh/guides/changelog.md
+          - 杂项: zh/guides/misc.md
   - English:
       - Home: en/index.md
       - Systems:
-          - Custom Trial System: en/custom-trial.md
-          - VM Attack System: en/vm-attack.md
-          - Aircraft Daemon System: en/aircraft.md
+          - Custom Trial System: en/systems/custom-trial.md
+          - VM Attack System: en/systems/vm-attack.md
+          - Aircraft Daemon System: en/systems/aircraft.md
       - Components:
-          - Actions: en/actions.md
-          - Executables: en/executables.md
-          - Daemons: en/daemons.md
-          - Configuration Files: en/configuration.md
-          - Utility Classes: en/utility.md
-          - Patches & Harmony: en/harmony.md
+          - Actions: en/components/actions.md
+          - Executables: en/components/executables.md
+          - Daemons: en/components/daemons.md
+          - Configuration Files: en/components/configuration.md
+          - Utility Classes: en/components/utility.md
+          - Patches & Harmony: en/components/harmony.md
       - Guides & Misc:
-          - Extension Author Guide: en/author-guide.md
-          - Installation: en/installation.md
-          - Changelog: en/changelog.md
-          - Misc: en/misc.md
+          - Extension Author Guide: en/guides/author-guide.md
+          - Installation: en/guides/installation.md
+          - Changelog: en/guides/changelog.md
+          - Misc: en/guides/misc.md

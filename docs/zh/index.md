@@ -8,29 +8,29 @@
 
 | 系统 | 页面 |
 |------|------|
-| 自定义试炼 | [自定义试炼系统](./custom-trial.md) |
-| 虚拟机攻击 | [VM攻击系统](./vm-attack.md) |
-| 飞机 Daemon | [飞机Daemon系统](./aircraft.md) |
-| 杂项 | [杂项](./misc.md) |
+| 自定义试炼 | [自定义试炼系统](./systems/custom-trial.md) |
+| 虚拟机攻击 | [VM攻击系统](./systems/vm-attack.md) |
+| 飞机 Daemon | [飞机Daemon系统](./systems/aircraft.md) |
+| 杂项 | [杂项](./guides/misc.md) |
 
 ## 🧩 组件种类索引
 
 | 分类 | 页面 |
 |------|------|
-| Actions / 自定义Action | [自定义Action](./actions.md) |
-| 可执行程序 | [可执行程序](./executables.md) |
-| 守护进程 | [自定义Daemon](./daemons.md) |
-| 配置文件 | [配置文件](./configuration.md) |
-| 工具类 | [工具类](./utility.md) |
-| 补丁与 Harmony | [Harmony补丁](./harmony.md) |
+| Actions / 自定义Action | [自定义Action](./components/actions.md) |
+| 可执行程序 | [可执行程序](./components/executables.md) |
+| 守护进程 | [自定义Daemon](./components/daemons.md) |
+| 配置文件 | [配置文件](./components/configuration.md) |
+| 工具类 | [工具类](./components/utility.md) |
+| 补丁与 Harmony | [Harmony补丁](./components/harmony.md) |
 
 ## 📚 其他
 
 | 页面 | 说明 |
 |------|------|
-| [扩展作者指南](./author-guide.md) | 扩展开发指引 |
-| [安装与卸载](./installation.md) | 安装说明 |
-| [更新日志](./changelog.md) | 版本历史 |
+| [扩展作者指南](./guides/author-guide.md) | 扩展开发指引 |
+| [安装与卸载](./guides/installation.md) | 安装说明 |
+| [更新日志](./guides/changelog.md) | 版本历史 |
 
 ## ⚙️ 前置要求
 

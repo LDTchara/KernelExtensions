@@ -20,7 +20,7 @@
 
 ## 通用自定义 Action
 
-以下 Action 并非专属于某个系统，可随时在动作文件中调用。详细用法及参数说明请参阅 **[自定义Action](./actions.md)** 页面。
+以下 Action 并非专属于某个系统，可随时在动作文件中调用。详细用法及参数说明请参阅 **[自定义Action](./../components/actions.md)** 页面。
 
 | 动作 | 功能简述 |
 |------|----------|
@@ -44,7 +44,7 @@
 
 ## 工具类
 
-KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展作者在代码中调用。详细说明请参阅 **[工具类](./utility.md)** 页面。
+KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展作者在代码中调用。详细说明请参阅 **[工具类](./../components/utility.md)** 页面。
 
 | 工具类 | 用途 |
 |--------|------|
@@ -57,7 +57,7 @@ KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展
 
 ## Harmony 补丁
 
-模组通过 Harmony 补丁对原版游戏做了若干增强，所有补丁均在加载时注入、卸载时自动移除。详细列表请参阅 **[Harmony补丁](./../en/harmony.md)** 页面。
+模组通过 Harmony 补丁对原版游戏做了若干增强，所有补丁均在加载时注入、卸载时自动移除。详细列表请参阅 **[Harmony补丁](./../../en/components/harmony.md)** 页面。
 
 主要补丁包括：
 - `MainMenuWatermarkPatch`：主菜单彩虹水印。
@@ -70,16 +70,16 @@ KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展
 
 以下组件原本属于杂项范畴，但现在已有专属页面，请直接访问对应页面：
 
-- 自定义试炼相关动作：`FailTrial`、`RestoreCustomTrialNodes` → 见 **[自定义试炼系统](./custom-trial.md)**
-- 虚拟机攻击动作：`LaunchVMAttack` → 见 **[VM攻击系统](./vm-attack.md)**
-- 飞机相关动作：`AttackAircraft`、`UploadAircraftSysFile`、`ShowAircraftOverlay`、`HideAircraftOverlay` → 见 **[飞机Daemon系统](./aircraft.md)**
+- 自定义试炼相关动作：`FailTrial`、`RestoreCustomTrialNodes` → 见 **[自定义试炼系统](./../systems/custom-trial.md)**
+- 虚拟机攻击动作：`LaunchVMAttack` → 见 **[VM攻击系统](./../systems/vm-attack.md)**
+- 飞机相关动作：`AttackAircraft`、`UploadAircraftSysFile`、`ShowAircraftOverlay`、`HideAircraftOverlay` → 见 **[飞机Daemon系统](./../systems/aircraft.md)**
 
 ---
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Misc (English)](./../en/misc.md) – 英文版
-- [自定义Action](./actions.md) – 全部自定义动作详细参数
-- [工具类](./utility.md) – 工具类使用指南
-- [Harmony补丁](./../en/harmony.md) – 补丁列表与技术细节
+- [首页](./../index.md) – 返回主索引
+- [Misc (English)](./../../en/guides/misc.md) – 英文版
+- [自定义Action](./../components/actions.md) – 全部自定义动作详细参数
+- [工具类](./../components/utility.md) – 工具类使用指南
+- [Harmony补丁](./../../en/components/harmony.md) – 补丁列表与技术细节

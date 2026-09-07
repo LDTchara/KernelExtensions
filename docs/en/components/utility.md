@@ -30,5 +30,5 @@ KernelExtensions provides a set of static utility classes for use by extension d
 
 ## See Also
 
-- [Home](./index.md) – Return to main index
-- [工具类 (中文)](./../zh/utility.md) – Chinese version
+- [Home](./../index.md) – Return to main index
+- [工具类 (中文)](./../../zh/components/utility.md) – Chinese version

@@ -20,5 +20,5 @@ KernelExtensions 通过 Harmony 进行了几项轻量级补丁，以增强原版
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Patches & Harmony (English)](./../en/harmony.md) – 英文版
+- [首页](./../index.md) – 返回主索引
+- [Patches & Harmony (English)](./../../en/components/harmony.md) – 英文版

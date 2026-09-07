@@ -40,5 +40,5 @@
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Installation (English)](./../en/installation.md) – 英文版
+- [首页](./../index.md) – 返回主索引
+- [Installation (English)](./../../en/guides/installation.md) – 英文版

@@ -119,10 +119,10 @@ Button labels (e.g., "Disconnect", "Pilot Alert", "Reload Firmware") use the gam
 
 ## See Also
 
-- [Home](./index.md) – Return to main index
-- [飞机Daemon系统 (中文)](./../zh/aircraft.md) – Chinese version
-- [Misc](./misc.md) – Other things not covered in the major system pages
-- [Actions](./actions.md) – Full list of custom actions
+- [Home](./../index.md) – Return to main index
+- [飞机Daemon系统 (中文)](./../../zh/systems/aircraft.md) – Chinese version
+- [Misc](./../guides/misc.md) – Other things not covered in the major system pages
+- [Actions](./../components/actions.md) – Full list of custom actions
 
 ---
 

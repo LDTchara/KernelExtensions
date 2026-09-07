@@ -189,7 +189,7 @@
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Custom-Trial-System (English)](./../en/custom-trial.md) – 英文版
-- [杂项 (Misc)](./misc.md) – 其他未在各大系统页面提到的东西
-- [配置文件](./configuration.md) – 所有配置文件的集合
+- [首页](./../index.md) – 返回主索引
+- [Custom-Trial-System (English)](./../../en/systems/custom-trial.md) – 英文版
+- [杂项 (Misc)](./../guides/misc.md) – 其他未在各大系统页面提到的东西
+- [配置文件](./../components/configuration.md) – 所有配置文件的集合

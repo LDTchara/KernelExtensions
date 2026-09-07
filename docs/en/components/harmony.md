@@ -20,5 +20,5 @@ KernelExtensions applies several lightweight Harmony patches to enhance the vani
 
 ## See Also
 
-- [Home](./index.md) – Return to main index
+- [Home](./../index.md) – Return to main index
 - [Harmony补丁 (中文)](./harmony.md) – Chinese version

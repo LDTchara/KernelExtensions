@@ -47,8 +47,8 @@ If `Delay` is 0 or negative, the action runs immediately.
 
 ## See Also
 
-- [Home](./index.md) – Return to main index
-- [自定义Action (中文)](./../zh/actions.md) – Chinese version
-- [Custom Trial System](./custom-trial.md)  
-- [VM Attack System](./vm-attack.md)  
-- [Aircraft Daemon System](./aircraft.md)
+- [Home](./../index.md) – Return to main index
+- [自定义Action (中文)](./../../zh/components/actions.md) – Chinese version
+- [Custom Trial System](./../systems/custom-trial.md)  
+- [VM Attack System](./../systems/vm-attack.md)  
+- [Aircraft Daemon System](./../systems/aircraft.md)

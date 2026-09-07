@@ -44,7 +44,7 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 
 ### 飞机 Daemon
 
-无需额外的 Flag，只需在目标计算机的 XML 中添加 `<FlightDaemon>` 即可（详见 [飞机Daemon系统](./aircraft.md)）。相应的攻击、修复动作通过 `AttackAircraft` 和 `UploadAircraftSysFile` 触发。
+无需额外的 Flag，只需在目标计算机的 XML 中添加 `<FlightDaemon>` 即可（详见 [飞机Daemon系统](./../systems/aircraft.md)）。相应的攻击、修复动作通过 `AttackAircraft` 和 `UploadAircraftSysFile` 触发。
 
 ---
 
@@ -132,11 +132,11 @@ KernelExtensions 目前对按钮和提示文字做了硬编码多语言（中文
 
 ## 九、快速参考链接
 
-- [自定义试炼系统](./custom-trial.md)
-- [VM攻击系统](./vm-attack.md)
-- [飞机Daemon系统](./aircraft.md)
-- [自定义Action](./actions.md)
-- [配置文件](./configuration.md)
+- [自定义试炼系统](./../systems/custom-trial.md)
+- [VM攻击系统](./../systems/vm-attack.md)
+- [飞机Daemon系统](./../systems/aircraft.md)
+- [自定义Action](./../components/actions.md)
+- [配置文件](./../components/configuration.md)
 
 ---
 

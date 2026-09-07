@@ -119,10 +119,10 @@
 
 ## 另请参阅
 
-- [首页](./index.md) – 返回主索引
-- [Aircraft-Daemon-System (English)](./../en/aircraft.md) – 英文版
-- [杂项 (Misc)](./misc.md) – 其他未在各大系统页面提到的东西
-- [自定义Action](./actions.md) – 全部自定义动作列表
+- [首页](./../index.md) – 返回主索引
+- [Aircraft-Daemon-System (English)](./../../en/systems/aircraft.md) – 英文版
+- [杂项 (Misc)](./../guides/misc.md) – 其他未在各大系统页面提到的东西
+- [自定义Action](./../components/actions.md) – 全部自定义动作列表
 
 ---
 
