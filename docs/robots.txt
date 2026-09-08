@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ldtchara.github.io/KernelExtensions/sitemap.xml
