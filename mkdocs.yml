@@ -1,0 +1,107 @@
+site_name: KernelExtensions
+site_description: KernelExtensions — Hacknet extension component library (docs for 0.6 / main)
+site_url: https://ldtchara.github.io/KernelExtensions/
+repo_url: https://github.com/LDTchara/KernelExtensions
+repo_name: LDTchara/KernelExtensions
+copyright: Copyright &copy; 2026 LDTchara
+
+theme:
+  name: material
+  language: zh
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - toc.integrate
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js
+
+extra_css:
+  - https://unpkg.com/mermaid@10.9.1/dist/mermaid.css
+
+nav:
+  - Home: index.md
+  - 简体中文:
+      - 首页: zh/index.md
+      - 系统:
+          - 自定义试炼系统: zh/systems/custom-trial.md
+          - VM 攻击系统: zh/systems/vm-attack.md
+          - 飞机 Daemon 系统: zh/systems/aircraft.md
+      - 组件:
+          - 自定义 Action: zh/components/actions.md
+          - 可执行程序: zh/components/executables.md
+          - 自定义 Daemon: zh/components/daemons.md
+          - 配置文件: zh/components/configuration.md
+          - 工具类: zh/components/utility.md
+          - Harmony 补丁: zh/components/harmony.md
+      - 指南与杂项:
+          - 扩展作者指南: zh/guides/author-guide.md
+          - 安装与卸载: zh/guides/installation.md
+          - 更新日志: zh/guides/changelog.md
+          - 杂项: zh/guides/misc.md
+  - English:
+      - Home: en/index.md
+      - Systems:
+          - Custom Trial System: en/systems/custom-trial.md
+          - VM Attack System: en/systems/vm-attack.md
+          - Aircraft Daemon System: en/systems/aircraft.md
+      - Components:
+          - Actions: en/components/actions.md
+          - Executables: en/components/executables.md
+          - Daemons: en/components/daemons.md
+          - Configuration Files: en/components/configuration.md
+          - Utility Classes: en/components/utility.md
+          - Patches & Harmony: en/components/harmony.md
+      - Guides & Misc:
+          - Extension Author Guide: en/guides/author-guide.md
+          - Installation: en/guides/installation.md
+          - Changelog: en/guides/changelog.md
+          - Misc: en/guides/misc.md
