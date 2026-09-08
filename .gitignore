@@ -1,3 +1,4 @@
+.codewhale/
 bin/
 obj/
 /packages/
@@ -8,4 +9,4 @@ riderModule.iml
 vs/
 .vs/
 *.user
-.codewhale/
+site/
