@@ -11,6 +11,9 @@
 | 自定义试炼 | [自定义试炼系统](./systems/custom-trial.md) |
 | 虚拟机攻击 | [VM攻击系统](./systems/vm-attack.md) |
 | 飞机 Daemon | [飞机Daemon系统](./systems/aircraft.md) |
+| 定时器 | [自定义定时器系统（Clock）](./systems/clock.md) |
+| 节点图标 | [自定义节点图标系统](./systems/node-icon.md) |
+| 全屏警告 | [自定义全屏警告特效（ScreenBleed）](./systems/screen-bleed.md) |
 | 杂项 | [杂项](./guides/misc.md) |
 
 ## 🧩 组件种类索引

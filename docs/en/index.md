@@ -11,6 +11,9 @@
 | Custom Trial | [Custom Trial System](./systems/custom-trial.md) |
 | VM Attack | [VM Attack System](./systems/vm-attack.md) |
 | Aircraft Daemon | [Aircraft Daemon System](./systems/aircraft.md) |
+| Timer | [Custom Timer System (Clock)](./systems/clock.md) |
+| Node Icons | [Custom Node Icon System](./systems/node-icon.md) |
+| Full-screen Alert | [Custom ScreenBleed Effect](./systems/screen-bleed.md) |
 | Misc | [Misc](./guides/misc.md) |
 
 ## 🧩 Component Index

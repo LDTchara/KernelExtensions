@@ -75,6 +75,9 @@ nav:
           - 自定义试炼系统: zh/systems/custom-trial.md
           - VM 攻击系统: zh/systems/vm-attack.md
           - 飞机 Daemon 系统: zh/systems/aircraft.md
+          - 自定义定时器系统（Clock）: zh/systems/clock.md
+          - 自定义节点图标系统: zh/systems/node-icon.md
+          - 自定义全屏警告特效（ScreenBleed）: zh/systems/screen-bleed.md
       - 组件:
           - 自定义 Action: zh/components/actions.md
           - 可执行程序: zh/components/executables.md
@@ -93,6 +96,9 @@ nav:
           - Custom Trial System: en/systems/custom-trial.md
           - VM Attack System: en/systems/vm-attack.md
           - Aircraft Daemon System: en/systems/aircraft.md
+          - Custom Timer System (Clock): en/systems/clock.md
+          - Custom Node Icon System: en/systems/node-icon.md
+          - Custom ScreenBleed Effect: en/systems/screen-bleed.md
       - Components:
           - Actions: en/components/actions.md
           - Executables: en/components/executables.md
