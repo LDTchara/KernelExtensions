@@ -13,9 +13,17 @@ It replaces the original hardcoded DLC trial and provides fully configurable vis
 
 ---
 
+## Running & Mutual Exclusion
+
+- The trial program is started by a flag (`CustomTrial_<configName>`), which is removed automatically once the trial succeeds
+- **Duplicate launches are rejected**: triggering the same trial again while it is already running does not create a second instance (aligned with vanilla KaguyaTrial; the UI does not stack)
+- Config fields follow the `NONE` convention: a string field set to `NONE` or left empty = disabled / default fallback; omitting the element = use the default value
+
+---
+
 ## Basic XML Structure
 
-Below is a short example configuration file. For a more complete configuration file, please refer to [ExampleTrial.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/ExampleTrial.xml).
+Below is a short example configuration file. For a more complete configuration file, please refer to [Trial_Example.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/Trial_Example.xml).
 
 ```xml
 <TrialConfig>
@@ -61,7 +69,7 @@ Below is a short example configuration file. For a more complete configuration f
 | `EnableTrialCompleteFocus` | `true` | Whether to show the terminal focus overlay when the trial is completed. |
 | `ThemeToSwitch` | `null` | A preset theme name to switch to (e.g. `HacknetMint`) or a custom theme file path. |
 | `ThemeFlickerDuration` | `2` | Flicker duration when switching themes (seconds). |
-| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | Custom colours (supports names, `#RRGGBB`, or put my name in there). |
+| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | Colour configuration; accepts `#RRGGBB` / `#AARRGGBB`, numeric RGB/RGBA, and CustomColor dynamic colours (e.g. `LDTchara`, `Rainbow`, preset names). |
 | `RamReductionDelay` | `5` | Delay in seconds before RAM reduction begins after phases start. |
 | `RamReductionDuration` | `3` | Total duration of the RAM reduction process (seconds). |
 | `DynamicRamReduction` | `false` | If true, `RamReductionDelay` and `RamReductionDuration` are ignored; `ramCost` is dynamically adjusted based on the height of currently displayed UI controls. It is recommended to set this to `true` to avoid potential visual issues. |
@@ -70,6 +78,7 @@ Below is a short example configuration file. For a more complete configuration f
 | `OnGlobalFail` | `null` | Action file to execute when the global timer runs out. |
 | `StartMusic` | `null` | Background music played before clicking "Begin Trial". |
 | `TrialStartMusic` | `null` | Music played after clicking "Begin Trial". |
+| `StartButtonText` | `null` | Text of the "Begin Trial" button; set text = fixed label, `NONE` / empty = fall back to the built-in ten-language localisation. |
 | `OnStart` | `null` | Action file to execute immediately after clicking "Begin Trial". |
 | `OnAnimationComplete` | `null` | Action file to execute after all opening animations are completed. |
 | `OnComplete` | `null` | Action file to execute after all phases are successfully completed. |
@@ -181,9 +190,9 @@ All hooks specify the path to the action file via the `file` attribute (relative
 
 ## Multi‑language Support
 
-Buttons and labels (such as "Begin Trial", "Trial Locked", "Initializing", "Complete", "Failed", "Exit") are dynamically switched based on `Settings.ActiveLocale`.  
+Buttons and labels (such as "Begin Trial", "Trial Locked", "Initializing", "Complete", "Failed", "Exit") are dynamically switched based on `Settings.ActiveLocale`; the "Begin Trial" button can be fixed to custom text with `StartButtonText` (`NONE` / empty = keep using localisation).  
 Currently supported languages: Chinese, Japanese, Korean, Russian, German, French, Spanish, Turkish, Dutch, English.  
-Language‑file‑based localisation will be added in the future.
+Text strings are provided by the built-in locale file (KELoc) and can be overridden externally.
 
 ---
 

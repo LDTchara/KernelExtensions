@@ -15,7 +15,7 @@
 
 ## 基本 XML 结构
 
-以下为简短的示例配置文件。完整示例请参阅 [MyAttack.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/MyAttack.xml)。
+以下为简短的示例配置文件。完整示例请参阅 [MyAttack_Example.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/MyAttack_Example.xml)。
 
 ```xml
 <VMAttackConfig>
@@ -65,6 +65,9 @@
 | `FakeFiles` | `null` | 攻击触发时在存档基础目录下生成的虚假文件列表。 |
 | `CheckFilePath` | `null` | 文件检测模式下的目标路径（相对于存档基础目录）。 |
 | `CheckFilePattern` | `null` | 文件存在模式下可选的附加内容正则校验（文件内容需匹配）。 |
+
+!!! note "NONE 约定"
+    字符串配置项遵循 `NONE` 约定：写 `NONE` 或留空 = 禁用 / 回退默认，不写该元素 = 使用默认值。
 
 ---
 

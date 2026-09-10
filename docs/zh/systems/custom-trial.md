@@ -13,9 +13,17 @@
 
 ---
 
+## 运行与互斥
+
+- 试炼程序由 Flag 触发启动（`CustomTrial_<配置名>`），成功后自动移除该 Flag
+- **重复启动会被拒绝**：同一试炼已在运行时再次触发，不会创建新实例（对齐原版 KaguyaTrial 的行为，界面不会叠加）
+- 配置项遵循 `NONE` 约定：字符串字段写 `NONE` 或留空 = 禁用 / 回退默认，不写该元素 = 使用默认值
+
+---
+
 ## 基本 XML 结构
 
-以下为简短的示例配置文件。更完整的配置文件请参阅 [ExampleTrial.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/ExampleTrial.xml)。
+以下为简短的示例配置文件。更完整的配置文件请参阅 [Trial_Example.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/Trial_Example.xml)。
 
 ```xml
 <TrialConfig>
@@ -61,15 +69,16 @@
 | `EnableTrialCompleteFocus` | `true` | 试炼完成时是否显示终端聚焦覆盖层。 |
 | `ThemeToSwitch` | `null` | 切换至的预设主题名称（如 `HacknetMint`）或自定义主题文件路径。 |
 | `ThemeFlickerDuration` | `2` | 主题切换时的闪烁时长（秒）。 |
-| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | 自定义颜色（支持名称、`#RRGGBB` 或把我的名字填进去）。 |
+| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | 颜色配置，支持 `#RRGGBB` / `#AARRGGBB`、数值 RGB/RGBA 与 CustomColor 动态色（如 `LDTchara`、`Rainbow`、预设名）。 |
 | `RamReductionDelay` | `5` | 阶段开始后延迟多少秒开始减少内存占用。 |
 | `RamReductionDuration` | `3` | 内存缩减过程的总时长（秒）。 |
-| `DynamicRamReduction` | `false` | 若为 true，则RamReductionDelay与RamReductionDuration将被忽略，ramCost 会根据当前显示的 UI 控件高度动态调整。建议设为`true`以避免潜在的视觉问题。 |
+| `DynamicRamReduction` | `false` | 若为 `true`，则忽略 `RamReductionDelay` 与 `RamReductionDuration`，内存占用按当前显示的 UI 控件高度动态调整。建议设为 `true` 以避免潜在的视觉问题。 |
 | `GlobalTimeout` | `0` | 整个试炼的总时限（秒）。0 表示无限制。 |
 | `EnableGlobalTimer` | `false` | 是否显示全局倒计时条。 |
 | `OnGlobalFail` | `null` | 全局超时时执行的动作文件。 |
 | `StartMusic` | `null` | 点击“开始试炼”前播放的背景音乐。 |
 | `TrialStartMusic` | `null` | 点击“开始试炼”后播放的音乐。 |
+| `StartButtonText` | `null` | “开始试炼”按钮文字；写文本 = 固定显示，写 `NONE` / 留空 = 回退内置十语言本地化。 |
 | `OnStart` | `null` | 点击“开始试炼”后立即执行的动作文件。 |
 | `OnAnimationComplete` | `null` | 所有开场动画完成后执行的动作文件。 |
 | `OnComplete` | `null` | 所有阶段成功完成后执行的动作文件。 |
@@ -181,9 +190,9 @@
 
 ## 多语言支持
 
-按钮和标签（如“开始试炼”、“试炼已锁定”、“正在初始化”、“完成”、“失败”、“退出”）会根据 `Settings.ActiveLocale` 动态切换。  
+按钮和标签（如“开始试炼”、“试炼已锁定”、“正在初始化”、“完成”、“失败”、“退出”）会根据 `Settings.ActiveLocale` 动态切换；其中“开始试炼”按钮可用 `StartButtonText` 固定为自定义文字（`NONE` / 留空 = 继续使用本地化）。  
 目前支持的语言：中文、日语、韩语、俄语、德语、法语、西班牙语、土耳其语、荷兰语、英语。  
-未来会加入基于语言文件的多语言支持。
+文本词条由内置语言文件（KELoc）提供，扩展作者可外部覆盖。
 
 ---
 

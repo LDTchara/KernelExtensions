@@ -15,7 +15,7 @@ It is triggered by the custom action `<LaunchVMAttack>` and its configuration is
 
 ## Basic XML Structure
 
-Below is a short example. See [MyAttack.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/MyAttack.xml) for a full example.
+Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara/KernelExtensions/blob/main/XMLExamples/MyAttack_Example.xml) for a full example.
 
 ```xml
 <VMAttackConfig>
@@ -65,6 +65,9 @@ Below is a short example. See [MyAttack.xml](https://github.com/LDTchara/KernelE
 | `FakeFiles` | `null` | List of fake files generated in the save base directory when the attack triggers. |
 | `CheckFilePath` | `null` | Target path for file‑check modes (relative to the save base directory). |
 | `CheckFilePattern` | `null` | Optional regex; in FileExists mode the file content must match this pattern. |
+
+!!! note "NONE convention"
+    String config fields follow the `NONE` convention: `NONE` or an empty value = disabled / default fallback; omitting the element = use the default value.
 
 ---
 
