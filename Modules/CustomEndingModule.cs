@@ -573,18 +573,10 @@ public class CustomEndingModule : EndingSequenceModule
 
     private new void CompleteAndReturnToMenu()
     {
+        // 结局只管自己的收尾（断开连接、恢复状态、存档、音乐、AfterAction）；
+        // heart 节点清理由 PorthackHeartDaemon 负责——谁的事谁干，本模块是通用结局，
+        // 不假设存在 porthackHeart 节点（旧代码在此做删除/禁用/换 IP 属越界且重复）。
         try { Programs.disconnect(Array.Empty<string>(), os); } catch { }
-        try
-        {
-            var heart = Programs.getComputer(os, "porthackHeart");
-            if (heart != null)
-            {
-                os.netMap.visibleNodes.Remove(os.netMap.nodes.IndexOf(heart));
-                heart.disabled = true; heart.daemons.Clear();
-                heart.ip = NetworkMap.generateRandomIP();
-            }
-        }
-        catch { }
         os.terminal.inputLocked = false; os.ram.inputLocked = false;
         os.netMap.inputLocked = false; os.DisableTopBarButtons = false;
         os.canRunContent = true;
