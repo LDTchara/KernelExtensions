@@ -13,6 +13,7 @@
 | 飞机 Daemon | [飞机Daemon系统](./systems/aircraft.md) |
 | 定时器 | [自定义定时器系统（Clock）](./systems/clock.md) |
 | 节点图标 | [自定义节点图标系统](./systems/node-icon.md) |
+| 结局 | [自定义结局系统（StartEnding）](./systems/custom-ending.md) |
 | 全屏警告 | [自定义全屏警告特效（ScreenBleed）](./systems/screen-bleed.md) |
 | 杂项 | [杂项](./guides/misc.md) |
 
