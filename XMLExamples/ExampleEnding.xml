@@ -15,14 +15,14 @@
     · 语音支持 .wav（SoundEffect）与 .ogg（NVorbis 解码，体积约 1/10，波形自绘）
 
   SpeechTime 语义：
-    -1 / 不写 —— 有语音跟随音频时长；无语音静默 30s 兜底
+    负数 / 无效值 / 不写 —— 有语音跟随音频时长；无语音静默 30s 兜底
      0        —— 跳过演讲阶段，直接进入报幕
      N (>0)   —— 演讲上限 N 秒（音频先播完则提前进报幕，N 先到则截断）
 
   资源文件格式：
-    SpeechFile — 语音（wav/ogg，可选）
-    TextFile   — 演讲文本：#=停顿1s、%=停顿0.5s（显示时被过滤）
-    CreditsFile— 报幕名单：^ 灰小字 / % 大标题行 / $ 小号灰字（每行一条）
+    SpeechFile     — 语音（wav/ogg，可选）
+    SpeechTextFile — 演讲文本：#=停顿1s、%=停顿0.5s（显示时被过滤）
+    CreditsFile    — 报幕名单：^ 灰小字 / % 大标题行 / $ 小号灰字（每行一条）
   ========================================================================= -->
 
 <EndingConfig>
@@ -48,7 +48,7 @@
     <SpeechFile>EndingSpeech.wav</SpeechFile>
 
     <!-- 演讲文本（可选，空 = 默认 Docs/Speech.txt） -->
-    <TextFile>Speech.txt</TextFile>
+    <SpeechTextFile>Speech.txt</SpeechTextFile>
 
     <!-- 报幕名单（可选，空 = 默认 Docs/CreditsData.txt） -->
     <CreditsFile>CreditsData.txt</CreditsFile>

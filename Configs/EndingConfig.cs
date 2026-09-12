@@ -10,9 +10,9 @@ namespace KernelExtensions.Configs
     /// 风格对齐 TrialConfig/PhaseSwiftConfig）。
     /// 字段语义（字符串配置遵循 NONE 约定：NONE/空 = 该字段默认）：
     ///   Title/EndingText/OnCreditMusic/AfterMusic/AfterAction —— 文本与音乐，空 = 用原版/不执行
-    ///   SpeechFile/TextFile/CreditsFile —— 资源路径（相对扩展根任意子目录），NONE/空 = 默认 Docs/ 下
+    ///   SpeechFile/SpeechTextFile/CreditsFile —— 资源路径（相对扩展根任意子目录），NONE/空 = 默认 Docs/ 下
     ///   SpeechTime（float，默认 -1）：
-    ///     -1/缺省 —— 有语音跟随音频时长；无语音静默 30s 兜底（Warn）
+    ///     负数/无效值/缺省 —— 有语音跟随音频时长；无语音静默 30s 兜底（Warn）
     ///      0      —— 跳过演讲阶段，直接进入报幕
     ///      &gt;0    —— 演讲上限 N 秒：音频先播完则提前进报幕，N 先到则截断
     /// XML 结构：
@@ -39,15 +39,15 @@ namespace KernelExtensions.Configs
 
         // ===== 资源路径（相对扩展根；NONE/空 = 默认 Docs/ 下）=====
         public string SpeechFile = "Docs/EndingSpeech.wav";
-        public string TextFile = "Docs/Speech.txt";
+        public string SpeechTextFile = "Docs/Speech.txt";
         public string CreditsFile = "Docs/CreditsData.txt";
 
-        // ===== 演讲计时（默认 -1 = 跟随音频时长；0 = 跳过演讲；&gt;0 = 上限秒数）=====
+        // ===== 演讲计时（负数/无效/缺省 = 跟随音频时长；0 = 跳过演讲；>0 = 上限秒数）=====
         public float SpeechTime = -1f;
 
         // ===== 默认资源路径（NONE/空回退目标）=====
         private const string DefaultSpeechFile = "Docs/EndingSpeech.wav";
-        private const string DefaultTextFile = "Docs/Speech.txt";
+        private const string DefaultSpeechTextFile = "Docs/Speech.txt";
         private const string DefaultCreditsFile = "Docs/CreditsData.txt";
 
         /// <summary>从独立结局 XML（&lt;EndingConfig&gt; 根）加载。缺失/解析失败返回 null（调用方报错）。</summary>
@@ -78,7 +78,7 @@ namespace KernelExtensions.Configs
                 cfg.AfterMusic = GetString(root, "AfterMusic", cfg.AfterMusic);
                 cfg.AfterAction = GetActionFile(root, "AfterAction", cfg.AfterAction);
                 cfg.SpeechFile = ResolvePath(root, "SpeechFile", DefaultSpeechFile);
-                cfg.TextFile = ResolvePath(root, "TextFile", DefaultTextFile);
+                cfg.SpeechTextFile = ResolvePath(root, "SpeechTextFile", DefaultSpeechTextFile);
                 cfg.CreditsFile = ResolvePath(root, "CreditsFile", DefaultCreditsFile);
                 cfg.SpeechTime = GetFloat(root, "SpeechTime", -1f);
                 return cfg;

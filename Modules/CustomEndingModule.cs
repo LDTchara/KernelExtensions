@@ -110,14 +110,14 @@ public class CustomEndingModule : EndingSequenceModule
         onCreditMusic = config.OnCreditMusic;
         afterMusic = config.AfterMusic;
         SpeechFile = config.SpeechFile;
-        TextFile = config.TextFile;
+        SpeechTextFile = config.SpeechTextFile;
         CreditsFile = config.CreditsFile;
         ConfigureSpeechTiming(config.SpeechTime);
     }
 
     /// <summary>演讲计时配置（路径可配，供 StartEnding 阶段前决定跳/跟/限）。</summary>
     public string SpeechFile = "Docs/EndingSpeech.wav";
-    public string TextFile = "Docs/Speech.txt";
+    public string SpeechTextFile = "Docs/Speech.txt";
     public string CreditsFile = "Docs/CreditsData.txt";
 
     // ========================================================================
@@ -145,8 +145,10 @@ public class CustomEndingModule : EndingSequenceModule
 
     private void ConfigureSpeechTiming(float speechTime)
     {
-        if (speechTime == 0f) timingMode = SpeechTiming.SkipSpeech;
-        else if (speechTime < 0f) timingMode = SpeechTiming.FollowAudio;
+        // 负数 / 无效值（NaN、Infinity）/ 缺省 → 跟随音频；0 → 跳过演讲；正数 → 上限
+        if (float.IsNaN(speechTime) || float.IsInfinity(speechTime) || speechTime < 0f)
+            timingMode = SpeechTiming.FollowAudio;
+        else if (speechTime == 0f) timingMode = SpeechTiming.SkipSpeech;
         else timingMode = SpeechTiming.FixedLimit;
         if (timingMode == SpeechTiming.FixedLimit) speechLimit = speechTime;
         else speechLimit = 30f; // FollowAudio 无语音时的兜底（加载后可能被 Warn 覆盖）
@@ -190,7 +192,7 @@ public class CustomEndingModule : EndingSequenceModule
         string ext = ExtensionLoader.ActiveExtensionInfo.GetFullFolderPath();
 
         // ---- 演讲文本 ----
-        string speechPath = Path.Combine(ext, TextFile);
+        string speechPath = Path.Combine(ext, SpeechTextFile);
         if (File.Exists(speechPath))
         {
             bitSpeechText = File.ReadAllText(speechPath);

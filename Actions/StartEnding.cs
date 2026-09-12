@@ -18,7 +18,7 @@ namespace KernelExtensions.Actions
     ///
     /// 配置内容（Ending XML 属性，全部可选带默认）：
     ///   Title / EndingText / OnCreditMusic / AfterMusic / AfterAction /
-    ///   SpeechFile / TextFile / CreditsFile / SpeechTime
+    ///   SpeechFile / SpeechTextFile / CreditsFile / SpeechTime
     /// SpeechTime 语义（默认 -1）：-1 跟随音频时长（无语音 30s 兜底）；0 跳过演讲直接报幕；
     ///   N&gt;0 演讲上限 N 秒。语音支持 .wav 与 .ogg（NVorbis 解码，体积 ~1/10，波形自绘）。
     /// </summary>
