@@ -68,9 +68,14 @@ namespace KernelExtensions
 
         public override bool Load()
         {
-            // 0. 绑定 BepInEx 配置
-            // 1. 注册自定义可执行程序
+            // ============================================================
+            //  0. 日志初始化（必须最先——后续注册都会写 KELog）
+            // ============================================================
             KELog.Init();
+
+            // ============================================================
+            //  1. 可执行程序
+            // ============================================================
             // 无痕互斥 handler 必须先于 ExecutableManager 注册（RegisterExecutable 触发其静态
             // 构造 → OnExeExecute 事件 handler 注册；InvokeAll 按注册顺序稳定执行）
             EventManager<ExecutableExecuteEvent>.AddHandler(OnExecutableExecute_Mutex);
@@ -84,34 +89,38 @@ namespace KernelExtensions
             ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
             KELog.Info("WPTEST registered.");
 
-            // 2. 注册各 Action
+            // ============================================================
+            //  2. Action 注册（按系统分组）
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Registering actions...");
+
+            // 2.1 自定义试炼
             ActionManager.RegisterAction<FailTrialAction>("FailTrial");
             KELog.Info("FailTrial action registered.");
+            ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
+            KELog.Info("RestoreCustomTrialNodes action registered.");
+
+            // 2.2 VM 攻击
             ActionManager.RegisterAction<LaunchVMAttackAction>("LaunchVMAttack");
             KELog.Info("LaunchVMAttack action registered.");
-            ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
-            KELog.Info("PlaySound action registered.");
 
-            ActionManager.RegisterAction<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
-            KELog.Info("StartScreenBleedEffectWCC action registered.");
-
-            ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
-            KELog.Info("PhaseSwiftScene action registered.");
+            // 2.3 PhaseSwift
             ActionManager.RegisterAction<PhaseSwiftInitAction>("PhaseSwiftInit");
             KELog.Info("PhaseSwiftInit action registered.");
+            ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
+            KELog.Info("PhaseSwiftScene action registered.");
+            ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
+            KELog.Info("PhaseSwiftMusic action registered.");
             ActionManager.RegisterAction<PhaseSwiftStopAction>("PhaseSwiftStop");
             KELog.Info("PhaseSwiftStop action registered.");
             ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
             KELog.Info("PhaseSwiftFadeOut action registered.");
-            ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
-            KELog.Info("PhaseSwiftMusic action registered.");
             ActionManager.RegisterAction<BlockNodeAction>("BlockNode");
             KELog.Info("BlockNode action registered.");
             ActionManager.RegisterAction<UnblockNodeAction>("UnblockNode");
             KELog.Info("UnblockNode action registered.");
-            ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
-            KELog.Info("SwitchToThemeKeepLayout action registered.");
+
+            // 2.4 终端与节点
             ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
             KELog.Info("TerminalFocus action registered.");
             ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
@@ -120,14 +129,59 @@ namespace KernelExtensions
             KELog.Info("TerminalType action registered.");
             ActionManager.RegisterAction<RenameNodeAction>("RenameNode");
             KELog.Info("RenameNode action registered.");
-            ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
-            KELog.Info("RestoreCustomTrialNodes action registered.");
-
-            // 2.5 注册节点图标 Action
             ActionManager.RegisterAction<SetNodeIconAction>("SetNodeIcon");
             KELog.Info("SetNodeIcon action registered.");
+            ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
+            KELog.Info("SwitchToThemeKeepLayout action registered.");
 
-            // 3. 注册各事件处理器
+            // 2.5 通用特效与 UI
+            ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
+            KELog.Info("PlaySound action registered.");
+            ActionManager.RegisterAction<FlashScreenAction>("FlashScreen");
+            KELog.Info("FlashScreen action registered.");
+            ActionManager.RegisterAction<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
+            KELog.Info("StartScreenBleedEffectWCC action registered.");
+
+            // 2.6 Clock 定时器
+            ActionManager.RegisterAction<ClockStartAction>("ClockStart");
+            KELog.Info("ClockStart action registered.");
+            ActionManager.RegisterAction<ClockStopAction>("ClockStop");
+            KELog.Info("ClockStop action registered.");
+
+            // 2.7 飞机（Daemon 本体在 5 节注册）
+            ActionManager.RegisterAction<AttackAircraftAction>("AttackAircraft");
+            KELog.Info("AttackAircraft action registered.");
+            ActionManager.RegisterAction<UploadAircraftSysFileAction>("UploadAircraftSysFile");
+            KELog.Info("UploadAircraftSysFile action registered.");
+            ActionManager.RegisterAction<ShowAircraftOverlayAction>("ShowAircraftOverlay");
+            KELog.Info("ShowAircraftOverlay action registered.");
+            ActionManager.RegisterAction<HideAircraftOverlayAction>("HideAircraftOverlay");
+            KELog.Info("HideAircraftOverlay action registered.");
+
+            // 2.8 Porthack 心脏
+            ActionManager.RegisterAction<BreakHeartAction>("BreakHeart");
+            KELog.Info("BreakHeart action registered.");
+
+            // 2.9 ConnectControl：节点连接控制（org 基线跨会话，事件钩子内聚在 Action 静态方法）
+            ActionManager.RegisterAction<ConnectionControlAction>("ConnectControl");
+            KELog.Info("ConnectControl action registered.");
+            EventManager<SaveComputerEvent>.AddHandler(ConnectionControlAction.OnSaveComputer);
+            EventManager<SaveComputerLoadedEvent>.AddHandler(ConnectionControlAction.OnLoadComputer);
+            EventManager<OSLoadedEvent>.AddHandler(ConnectionControlAction.OnOSLoaded);
+
+            // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
+            if (CanExtraPackUse)
+            {
+                ExtractImages();
+                ActionManager.RegisterAction<ShowTitle>("ShowTitle");
+                KELog.Info("ShowTitle action registered.");
+                ActionManager.RegisterAction<StartEnding>("StartEnding");
+                KELog.Info("StartEnding action registered.");
+            }
+
+            // ============================================================
+            //  3. 事件处理器
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Registering event handlers...");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_CheckVMInfection);
             KELog.Info("OSLoaded event handler registered.");
@@ -145,7 +199,9 @@ namespace KernelExtensions
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
 
-            // 4. 注册自定义存档加载器（用于从存档中读取删除节点）
+            // ============================================================
+            //  4. 存档加载器
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Registering save loaders...");
             SaveLoader.RegisterExecutor<CustomTrialSaveExecutor>("CustomTrialData");
             // ParseInterior：必须解析子元素（DiscoveredScene/OrigLink 等），否则读档时 Children 恒为空
@@ -155,59 +211,28 @@ namespace KernelExtensions
             SaveLoader.RegisterExecutor<ClockSaveExecutor>("ClockData", ParseOption.ParseInterior);
             KELog.Info("ClockSaveExecutor registered.");
 
-            // 4.5 飞机Daemon相关
-            Console.WriteLine("[KernelExtensions] Registering aircraft-related actions and daemons...");
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("[KernelExtensions] Thanks for April_Crystal");
-            Console.ResetColor();
-            ActionManager.RegisterAction<HideAircraftOverlayAction>("HideAircraftOverlay");
-            KELog.Info("HideAircraftOverlay action registered.");
-            ActionManager.RegisterAction<ShowAircraftOverlayAction>("ShowAircraftOverlay");
-            KELog.Info("ShowAircraftOverlay action registered.");
+            // ============================================================
+            //  5. Daemon 注册
+            // ============================================================
             DaemonManager.RegisterDaemon<FlightDaemon>();
             KELog.Info("FlightDaemon registered.");
             DaemonManager.RegisterDaemon<global::KernelExtensions.Daemons.PorthackHeartDaemon>();
             KELog.Info("PorthackHeartDaemon registered.");
-            ActionManager.RegisterAction<UploadAircraftSysFileAction>("UploadAircraftSysFile");
-            KELog.Info("UploadAircraftSysFile action registered.");
-            ActionManager.RegisterAction<AttackAircraftAction>("AttackAircraft");
-            KELog.Info("AttackAircraft action registered.");
-            ActionManager.RegisterAction<FlashScreenAction>("FlashScreen");
-            KELog.Info("FlashScreen action registered.");
-            ActionManager.RegisterAction<ClockStartAction>("ClockStart");
-            KELog.Info("ClockStart action registered.");
-            ActionManager.RegisterAction<ClockStopAction>("ClockStop");
-            KELog.Info("ClockStop action registered.");
-            ActionManager.RegisterAction<BreakHeartAction>("BreakHeart");
-            KELog.Info("BreakHeart action registered.");
 
-            // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
-            if (CanExtraPackUse)
-            {
-                ExtractImages();
-                ActionManager.RegisterAction<ShowTitle>("ShowTitle");
-                KELog.Info("ShowTitle action registered.");
-                ActionManager.RegisterAction<StartEnding>("StartEnding");
-                KELog.Info("StartEnding action registered.");
-            }
-
-            // 5. 加载 Harmony 补丁
+            // ============================================================
+            //  6. Harmony 补丁（PatchAll 之后才能装需要实例的补丁）
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
             PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
-
-            // 9.25 ConnectControl：节点连接控制（org 基线跨会话，存档钩子内聚在 Action 静态方法）
-            ActionManager.RegisterAction<ConnectionControlAction>("ConnectControl");
-            KELog.Info("ConnectControl action registered.");
-            EventManager<SaveComputerEvent>.AddHandler(ConnectionControlAction.OnSaveComputer);
-            EventManager<SaveComputerLoadedEvent>.AddHandler(ConnectionControlAction.OnLoadComputer);
-            EventManager<OSLoadedEvent>.AddHandler(ConnectionControlAction.OnOSLoaded);
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine("[KernelExtensions] Thanks for April_Crystal ZQG ChronoVert");
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;
