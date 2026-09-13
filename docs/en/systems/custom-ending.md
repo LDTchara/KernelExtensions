@@ -90,7 +90,8 @@ Both render a **waveform** during the speech stage (custom drawing, no vanilla r
 
 ### Speech text (`SpeechTextFile`)
 
-Typed out character by character at the bottom of the screen, **up to 5 lines** (older lines fade). Inline control characters:
+Typed out character by character at the **bottom-left** of the screen, showing **at most the latest 5 lines**: the newest line is opaque and older lines higher up are progressively more transparent (each line ×0.6 alpha); the 6th line and beyond are not drawn at all.  
+**Line breaks come from the file's own newlines** (there is no automatic wrapping), so keep each line short enough yourself. Inline control characters:
 
 | Character | Meaning |
 |-----------|---------|
