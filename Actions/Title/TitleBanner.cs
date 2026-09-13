@@ -163,8 +163,10 @@ namespace KernelExtensions.Actions.Title
         internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor)
         {
             if (Instance == null) return;
+            // Title 用 titlefont（Kremlin）——官方无中文版，必须清洗以防 MeasureString/DrawString 抛异常；
+            // Body 用 GuiData.font（中文环境下为官方 zh-cn_Font23），保留原文以正常显示中文。
             Instance.TitleText = Utils.CleanStringToRenderable(title);
-            Instance.BodyText = Utils.CleanStringToRenderable(body);
+            Instance.BodyText = body;
             Instance.Duration = duration;
             Instance.AccentColorKey = colorKey ?? "";
             Instance.DefaultAccentColor = defaultColor;

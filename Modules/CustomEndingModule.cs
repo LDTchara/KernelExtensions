@@ -515,9 +515,15 @@ public class CustomEndingModule : EndingSequenceModule
                 else if (raw.StartsWith("%")) { txt = raw.Substring(1); font = GuiData.titlefont; lh = 90f; }
                 else if (raw.StartsWith("$")) { txt = raw.Substring(1); col = Color.Gray * 0.6f; font = GuiData.smallfont; }
 
+                // 仅 titlefont（Kremlin）需要清洗：官方本地化为提供其中文版，
+                // 中文在 MeasureString / DrawString 会抛 ArgumentException。
+                // 其余字体（font/smallfont，中文环境下为官方 zh-cn_FontXX）含中文字形，
+                // 保留原文以正常显示中文——清洗必须放在测量之前。
+                if (font == GuiData.titlefont)
+                    txt = Utils.CleanStringToRenderable(txt);
+
                 var sz = font.MeasureString(txt);
                 var dp = vector + new Vector2(os.fullscreen.Width / 2f - sz.X / 2f, 0f);
-                txt = Utils.CleanStringToRenderable(txt);
                 spriteBatch.DrawString(font, txt, dp, col);
                 vector.Y += lh;  // 第 1 次：内容行距
             }
