@@ -127,13 +127,10 @@ No prefix = regular body text.
 !!! note "Credits duration cannot be predetermined"
     The length of the credits stage depends on the number and content of lines in `CreditsFile` (it scrolls until the **closing line reaches the centre of the screen**); there is **no configurable fixed duration**. Plan any follow-up pacing accordingly.
 
-!!! warning "`%` heading lines and banner titles do not support non-ASCII characters"
-    These use the game's title font (`Kremlin`), for which **no localised version exists** (it has no CJK glyphs even in a Chinese locale), so non-ASCII characters render as `?`:
+!!! warning "Title font does not support non-ASCII characters (in any language)"
+    The `%` **heading lines** in the credits list and the banner (ShowTitle) **title** use the game's title font (`Kremlin`). Hacknet only ships **localised versions of the body/UI fonts** (e.g. `zh-cn_FontXX`, `ja-jp_FontXX`, ...); the title font contains **ASCII glyphs only in every language**, so **non-ASCII characters** (Chinese, Japanese, Russian, ...) in those places render as `?`.
 
-    - **Heading lines** starting with `%` in the credits list
-    - The **title** text of the banner (ShowTitle)
-
-    **Everything else is unaffected**: credits body and `^` / `$` lines, banner body, and speech text (`SpeechTextFile`) use the game's localised fonts (`zh-cn_FontXX`) in a Chinese locale, so Chinese displays normally.
+    **Everything else is unaffected**: credits body and `^` / `$` lines, banner body, and speech text (`SpeechTextFile`) use the localised fonts and follow the active game language.
 
 ---
 
