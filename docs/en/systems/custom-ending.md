@@ -127,11 +127,9 @@ No prefix = regular body text.
 !!! note "Credits duration cannot be predetermined"
     The length of the credits stage depends on the number and content of lines in `CreditsFile` (it scrolls until the **closing line reaches the centre of the screen**); there is **no configurable fixed duration**. Plan any follow-up pacing accordingly.
 
-!!! note "Displaying Chinese and other non-ASCII characters"
-    Credits and banner text goes through a character-set filter before drawing:
-
-    - **Without a CJK font mod** (such as HacknetFontReplace), characters the current font does not support render as `?` — so you can immediately see that a glyph is unavailable
-    - **With one installed**, rendering is taken over by a dynamic font and Chinese, Japanese, etc. display normally
+!!! warning "Credits and banners do not support non-ASCII characters (Chinese/Japanese become `?`)"
+    Credits and banner text goes through the vanilla character filter (an ASCII whitelist) before drawing, so **non-ASCII characters such as Chinese or Japanese render as `?`**.  
+    Speech text (`SpeechTextFile`) is **not affected** and can display Chinese normally (font permitting). This is a known limitation — avoid non-ASCII characters in credits and banner areas.
 
 ---
 
