@@ -198,7 +198,7 @@ public class CustomEndingModule : EndingSequenceModule
             bitSpeechText = File.ReadAllText(speechPath);
             KELog.Info($"[CustomEndingModule] Speech.txt loaded ({bitSpeechText.Length} chars).");
         }
-        else { bitSpeechText = ""; }
+        else { bitSpeechText = ""; KELog.Warn($"[CustomEndingModule] Speech text not found: {speechPath}"); }
 
         // ---- 报幕数据 ----
         string creditsPath = Path.Combine(ext, CreditsFile);
@@ -208,7 +208,7 @@ public class CustomEndingModule : EndingSequenceModule
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             KELog.Info($"[CustomEndingModule] CreditsData.txt loaded ({creditsData.Length} lines).");
         }
-        else { creditsData = Array.Empty<string>(); }
+        else { creditsData = Array.Empty<string>(); KELog.Warn($"[CustomEndingModule] Credits data not found: {creditsPath} — credits stage will be empty."); }
 
         // ---- 语音（.wav / .ogg 分流）----
         string voicePath = Path.Combine(ext, SpeechFile);
