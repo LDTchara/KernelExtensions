@@ -119,6 +119,22 @@ No prefix = regular body text.
 
 ---
 
+## Music & Display
+
+!!! warning "AfterMusic always replays"
+    When the ending finishes, **`AfterMusic` is replayed unconditionally — whether or not it is the same track as `OnCreditMusic`**. If both point at the same song, it simply restarts from the beginning. To avoid that "replay feel", point `AfterMusic` at a different track, or leave it empty to use the vanilla `Music\Bit(Ending)`.
+
+!!! note "Credits duration cannot be predetermined"
+    The length of the credits stage depends on the number and content of lines in `CreditsFile` (it scrolls until the **closing line reaches the centre of the screen**); there is **no configurable fixed duration**. Plan any follow-up pacing accordingly.
+
+!!! note "Displaying Chinese and other non-ASCII characters"
+    Credits and banner text goes through a character-set filter before drawing:
+
+    - **Without a CJK font mod** (such as HacknetFontReplace), characters the current font does not support render as `?` — so you can immediately see that a glyph is unavailable
+    - **With one installed**, rendering is taken over by a dynamic font and Chinese, Japanese, etc. display normally
+
+---
+
 ## What Happens When It Ends
 
 Once the ending finishes (credits scrolled through), it automatically:
