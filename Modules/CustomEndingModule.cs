@@ -515,12 +515,9 @@ public class CustomEndingModule : EndingSequenceModule
                 else if (raw.StartsWith("%")) { txt = raw.Substring(1); font = GuiData.titlefont; lh = 90f; }
                 else if (raw.StartsWith("$")) { txt = raw.Substring(1); col = Color.Gray * 0.6f; font = GuiData.smallfont; }
 
-                // 仅 titlefont（Kremlin）需要清洗：官方本地化为提供其中文版，
-                // 中文在 MeasureString / DrawString 会抛 ArgumentException。
-                // 其余字体（font/smallfont，中文环境下为官方 zh-cn_FontXX）含中文字形，
-                // 保留原文以正常显示中文——清洗必须放在测量之前。
-                if (font == GuiData.titlefont)
-                    txt = Utils.CleanStringToRenderable(txt);
+                // 按该字体实际字符集清洗（本地化字体保留本语言字形，Kremlin 等非 ASCII 替换为 '?'），
+                // 必须放在 MeasureString 之前——否则测量阶段就会抛 ArgumentException。
+                txt = TextHelper.CleanStringForFont(font, txt);
 
                 var sz = font.MeasureString(txt);
                 var dp = vector + new Vector2(os.fullscreen.Width / 2f - sz.X / 2f, 0f);
