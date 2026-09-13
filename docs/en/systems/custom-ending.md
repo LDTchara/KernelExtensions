@@ -61,6 +61,10 @@ ExtensionRoot/
 | `SpeechFile` | `Docs/EndingSpeech.wav` | Speech voice path (`.wav` or `.ogg`, optional) |
 | `SpeechTextFile` | `Docs/Speech.txt` | Speech text path |
 | `CreditsFile` | `Docs/CreditsData.txt` | Credits list path |
+| `TitleFreezeTime` | `10` | Seconds the title stays frozen at the start (no scrolling) |
+| `EndingPauseTime` | `5` | Seconds to pause after the closing line reaches the screen centre |
+| `ScrollSpeed` | `65` | Credits scroll speed at full speed (pixels per second) |
+| `ScrollAccelTime` | `8` | Seconds to accelerate from rest to full speed (`0` = instant) |
 
 **Path rules**: all of the above are **relative to the extension root** and may live in any subfolder. `NONE` or an empty value = use the default path; omitting the element = use the default value.
 

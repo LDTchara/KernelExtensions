@@ -61,6 +61,10 @@ ExtensionRoot/
 | `SpeechFile` | `Docs/EndingSpeech.wav` | 演讲语音路径（`.wav` 或 `.ogg`，可选） |
 | `SpeechTextFile` | `Docs/Speech.txt` | 演讲文本路径 |
 | `CreditsFile` | `Docs/CreditsData.txt` | 报幕名单路径 |
+| `TitleFreezeTime` | `10` | 报幕开始时标题停留秒数（此期间不滚动） |
+| `EndingPauseTime` | `5` | 结尾提示行到达屏幕中央后的停顿秒数 |
+| `ScrollSpeed` | `65` | 报幕滚动满速（像素/秒） |
+| `ScrollAccelTime` | `8` | 从静止加速到满速所需秒数（`0` = 立即满速） |
 
 **路径规则**：以上路径均**相对扩展根目录**，可放在任意子目录。写 `NONE` 或留空 = 用默认路径；不写该子元素 = 用默认值。
 
