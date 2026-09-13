@@ -258,7 +258,6 @@ namespace KernelExtensions
                 string dir = Path.Combine(root, "Images");
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
                 WriteEmbedded("KernelExtensions.Img.Info.png", Path.Combine(dir, "Info.png"));
-                WriteEmbedded("KernelExtensions.Img.InfoBG.png", Path.Combine(dir, "InfoBG.png"));
             }
             catch (Exception ex) { KELog.Warn($"[KernelExtensions] image extract failed: {ex.Message}"); }
         }

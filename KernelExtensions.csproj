@@ -19,6 +19,12 @@
     <FileVersion>0.7.0</FileVersion>
     <AssemblyVersion>0.7.0</AssemblyVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="site\**" />
+    <EmbeddedResource Remove="site\**" />
+    <None Remove="site\**" />
+  </ItemGroup>
     
   <ItemGroup>
     <Reference Include="0Harmony">
@@ -73,7 +79,6 @@
   <ItemGroup>
     <!-- 标题横幅图标（dev1 合入）：raw 内嵌，运行时 GetManifestResourceStream 提取到扩展 Images/ -->
     <EmbeddedResource Include="Img\Info.png" />
-    <EmbeddedResource Include="Img\InfoBG.png" />
   </ItemGroup>
 
 </Project>
