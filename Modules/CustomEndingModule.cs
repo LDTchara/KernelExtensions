@@ -517,7 +517,7 @@ public class CustomEndingModule : EndingSequenceModule
 
                 var sz = font.MeasureString(txt);
                 var dp = vector + new Vector2(os.fullscreen.Width / 2f - sz.X / 2f, 0f);
-                txt = TextHelper.CleanForDisplay(font, txt);
+                txt = Utils.CleanStringToRenderable(txt);
                 spriteBatch.DrawString(font, txt, dp, col);
                 vector.Y += lh;  // 第 1 次：内容行距
             }
