@@ -127,9 +127,13 @@ No prefix = regular body text.
 !!! note "Credits duration cannot be predetermined"
     The length of the credits stage depends on the number and content of lines in `CreditsFile` (it scrolls until the **closing line reaches the centre of the screen**); there is **no configurable fixed duration**. Plan any follow-up pacing accordingly.
 
-!!! warning "Credits and banners do not support non-ASCII characters (Chinese/Japanese become `?`)"
-    Credits and banner text goes through the vanilla character filter (an ASCII whitelist) before drawing, so **non-ASCII characters such as Chinese or Japanese render as `?`**.  
-    Speech text (`SpeechTextFile`) is **not affected** and can display Chinese normally (font permitting). This is a known limitation — avoid non-ASCII characters in credits and banner areas.
+!!! warning "`%` heading lines and banner titles do not support non-ASCII characters"
+    These use the game's title font (`Kremlin`), for which **no localised version exists** (it has no CJK glyphs even in a Chinese locale), so non-ASCII characters render as `?`:
+
+    - **Heading lines** starting with `%` in the credits list
+    - The **title** text of the banner (ShowTitle)
+
+    **Everything else is unaffected**: credits body and `^` / `$` lines, banner body, and speech text (`SpeechTextFile`) use the game's localised fonts (`zh-cn_FontXX`) in a Chinese locale, so Chinese displays normally.
 
 ---
 
