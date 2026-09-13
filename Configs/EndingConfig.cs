@@ -11,6 +11,7 @@ namespace KernelExtensions.Configs
     /// 字段语义（字符串配置遵循 NONE 约定：NONE/空 = 该字段默认）：
     ///   Title/EndingText/OnCreditMusic/AfterMusic/AfterAction —— 文本与音乐，空 = 用原版/不执行
     ///   SpeechFile/SpeechTextFile/CreditsFile —— 资源路径（相对扩展根任意子目录），NONE/空 = 默认 Docs/ 下
+    ///   TitleFreezeTime/EndingPauseTime/ScrollSpeed/ScrollAccelTime —— 报幕节奏（可选，不写 = 原行为）
     ///   SpeechTime（float，默认 -1）：
     ///     负数/无效值/缺省 —— 有语音跟随音频时长；无语音静默 30s 兜底（Warn）
     ///      0      —— 跳过演讲阶段，直接进入报幕
@@ -44,6 +45,12 @@ namespace KernelExtensions.Configs
 
         // ===== 演讲计时（负数/无效/缺省 = 跟随音频时长；0 = 跳过演讲；>0 = 上限秒数）=====
         public float SpeechTime = -1f;
+
+        // ===== 报幕节奏（可选；默认值与原硬编码一致，不写即不变）=====
+        public float TitleFreezeTime = 10f;   // 标题停留秒数（此期间不滚动）
+        public float EndingPauseTime = 5f;    // 结尾提示行到达屏幕中央后的停顿秒数
+        public float ScrollSpeed = 65f;       // 滚动满速（像素/秒）
+        public float ScrollAccelTime = 8f;    // 加速斜坡时长（秒；0 = 立即满速）
 
         // ===== 默认资源路径（NONE/空回退目标）=====
         private const string DefaultSpeechFile = "Docs/EndingSpeech.wav";
@@ -81,6 +88,10 @@ namespace KernelExtensions.Configs
                 cfg.SpeechTextFile = ResolvePath(root, "SpeechTextFile", DefaultSpeechTextFile);
                 cfg.CreditsFile = ResolvePath(root, "CreditsFile", DefaultCreditsFile);
                 cfg.SpeechTime = GetFloat(root, "SpeechTime", -1f);
+                cfg.TitleFreezeTime = GetFloat(root, "TitleFreezeTime", 10f);
+                cfg.EndingPauseTime = GetFloat(root, "EndingPauseTime", 5f);
+                cfg.ScrollSpeed = GetFloat(root, "ScrollSpeed", 65f);
+                cfg.ScrollAccelTime = GetFloat(root, "ScrollAccelTime", 8f);
                 return cfg;
             }
             catch (Exception ex)

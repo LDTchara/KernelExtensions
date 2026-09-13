@@ -85,9 +85,10 @@ public class CustomEndingModule : EndingSequenceModule
     private new float creditsScroll;
     private float hacknetTitleFreezeTime = 10f;
     private new float creditsPixelsScrollPerSecond = 65f;
+    private float scrollAccelTime = 8f;       // 加速斜坡时长（由 EndingConfig.ScrollAccelTime 注入；0 = 立即满速）
     private bool endingTextReachedCenter = false;
     private float endingPauseTimer = 0f;
-    private const float EndingPauseDuration = 5f;
+    private float endingPauseDuration = 5f;   // 结尾提示行停顿（由 EndingConfig.EndingPauseTime 注入）
     private const float EndingTextBottomOffset = 350f;
 
     // ========================================================================
@@ -114,6 +115,12 @@ public class CustomEndingModule : EndingSequenceModule
         SpeechTextFile = config.SpeechTextFile;
         CreditsFile = config.CreditsFile;
         ConfigureSpeechTiming(config.SpeechTime);
+
+        // 报幕节奏（可选配置；不写时与旧硬编码一致）
+        hacknetTitleFreezeTime = config.TitleFreezeTime;
+        endingPauseDuration = config.EndingPauseTime;
+        creditsPixelsScrollPerSecond = config.ScrollSpeed;
+        scrollAccelTime = config.ScrollAccelTime;
     }
 
     /// <summary>演讲计时配置（路径可配，供 StartEnding 阶段前决定跳/跟/限）。</summary>
@@ -527,7 +534,7 @@ public class CustomEndingModule : EndingSequenceModule
             // 停止滚动，elapsedTime 继续走以保持 _ 闪烁，等待暂停时长后结束
             elapsedTime += t;
             endingPauseTimer += t;
-            if (endingPauseTimer >= EndingPauseDuration)
+            if (endingPauseTimer >= endingPauseDuration)
                 CompleteAndReturnToMenu();
             return;
         }
@@ -535,7 +542,9 @@ public class CustomEndingModule : EndingSequenceModule
         elapsedTime += t;
         if (elapsedTime > hacknetTitleFreezeTime)
         {
-            float speed = Math.Min(1f, (elapsedTime - hacknetTitleFreezeTime) / 8f);
+            float speed = scrollAccelTime <= 0f
+                ? 1f
+                : Math.Min(1f, (elapsedTime - hacknetTitleFreezeTime) / scrollAccelTime);
             creditsScroll -= t * creditsPixelsScrollPerSecond * speed;
         }
     }
