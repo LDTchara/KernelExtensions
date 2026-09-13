@@ -565,7 +565,7 @@ public class CustomEndingModule : EndingSequenceModule
 
         os.delayer.Post(ActionDelayer.Wait(1.0), () =>
         {
-            string creditSong = string.IsNullOrEmpty(onCreditMusic) ? "Music\\Bit(Ending)" : onCreditMusic;
+            string creditSong = ResolveSong(onCreditMusic, "Music\\Bit(Ending)");
             try { MusicManager.playSongImmediatley(creditSong); MediaPlayer.IsRepeating = false; }
             catch { }
         });
@@ -587,12 +587,23 @@ public class CustomEndingModule : EndingSequenceModule
 
         try { os.threadedSaveExecute(); } catch { }
         MediaPlayer.IsRepeating = true;
-        string afterSong = string.IsNullOrEmpty(afterMusic) ? "Music\\Bit(Ending)" : afterMusic;
+        string afterSong = ResolveSong(afterMusic, "Music\\Bit(Ending)");
         try { MusicManager.playSongImmediatley(afterSong); } catch { }
 
         try { OnCompleteCallback?.Invoke(); }
         catch (Exception ex) { KELog.Warn($"[CustomEndingModule] OnCompleteCallback error: {ex.Message}"); }
 
         KELog.Info("[CustomEndingModule] Complete.");
+    }
+
+    /// <summary>
+    /// 解析音乐路径：NONE/空 = 原版兜底（Music\Bit(Ending)）；否则走 MusicPathResolver
+    /// （扩展根相对路径，支持扩展内 ogg/wav——与 CustomTrial/PhaseSwift/FakeRecovery 一致）。
+    /// </summary>
+    private static string ResolveSong(string configured, string vanillaFallback)
+    {
+        if (ConfigValue.IsNone(configured)) return vanillaFallback;
+        string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
+        return string.IsNullOrEmpty(extRoot) ? configured : MusicPathResolver.ResolveMusicPath(configured, extRoot);
     }
 }
