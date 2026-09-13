@@ -163,8 +163,8 @@ namespace KernelExtensions.Actions.Title
         internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor)
         {
             if (Instance == null) return;
-            Instance.TitleText = Utils.CleanStringToRenderable(title);
-            Instance.BodyText = Utils.CleanStringToRenderable(body);
+            Instance.TitleText = TextHelper.CleanStringForFont(GuiData.titlefont, title);
+            Instance.BodyText = TextHelper.CleanStringForFont(GuiData.font, body);
             Instance.Duration = duration;
             Instance.AccentColorKey = colorKey ?? "";
             Instance.DefaultAccentColor = defaultColor;
