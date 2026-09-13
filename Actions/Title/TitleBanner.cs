@@ -34,29 +34,43 @@ namespace KernelExtensions.Actions.Title
 
         private float timeElapsed;
         private Texture2D infoIcon;
-        private Texture2D infoBg;
         private SoundEffect sound1;
         private SoundEffect sound2;
 
-        /// <summary>加载纹理（图标路径相对扩展根，可配）和音效。OS 就绪后调用。</summary>
-        public void LoadContent(OS osInstance, string iconPath, string iconBgPath)
-        {
-            string folder = ExtensionLoader.ActiveExtensionInfo.FolderPath;
-            var gd = Game1.getSingleton().GraphicsDevice;
+        /// <summary>当前已加载的图标路径（用于 Show 时比较，变化才重载）。</summary>
+        public string CurrentIconPath { get; private set; } = "";
 
-            // 图标缺失不崩（Warn 提示，横幅仍显示但无图标）
+        /// <summary>加载音效与默认图标。OS 就绪后调用一次。</summary>
+        public void LoadContent(OS osInstance, string iconPath)
+        {
+            ReloadIcon(iconPath);
+            sound1 = osInstance.content.Load<SoundEffect>("SFX/DoomShock");
+            sound2 = osInstance.content.Load<SoundEffect>("SFX/BrightFlash");
+        }
+
+        /// <summary>
+        /// 加载/重载图标（路径相对扩展根）。失败仅 Warn，横幅继续无图标显示。
+        /// 修复：icon 参数此前只在 OS.LoadContent 首次生效（后续 ShowTitle 换图标不会重载）。
+        /// </summary>
+        public void ReloadIcon(string iconPath)
+        {
+            try { infoIcon?.Dispose(); } catch { }
+            infoIcon = null;
+
             try
             {
-                using (var s = File.OpenRead(Path.Combine(folder, iconPath))) infoIcon = Texture2D.FromStream(gd, s);
-                using (var s = File.OpenRead(Path.Combine(folder, iconBgPath))) infoBg = Texture2D.FromStream(gd, s);
+                // 扩展信息 / GraphicsDevice 也放在 try 内：二者异常时不应抛出（横幅降级为无图标）
+                string folder = ExtensionLoader.ActiveExtensionInfo.FolderPath;
+                var gd = Game1.getSingleton().GraphicsDevice;
+
+                using (var s = File.OpenRead(Path.Combine(folder, iconPath)))
+                    infoIcon = Texture2D.FromStream(gd, s);
+                CurrentIconPath = iconPath;
             }
             catch (Exception ex)
             {
-                KELog.Warn($"[TitleBanner] icon load failed ({iconPath}/{iconBgPath}): {ex.Message}");
+                KELog.Warn($"[TitleBanner] icon load failed ({iconPath}): {ex.Message}");
             }
-
-            sound1 = osInstance.content.Load<SoundEffect>("SFX/DoomShock");
-            sound2 = osInstance.content.Load<SoundEffect>("SFX/BrightFlash");
         }
 
         public void Activate()
@@ -140,7 +154,6 @@ namespace KernelExtensions.Actions.Title
             int iconY2 = (int)(blockCenterY + (titleH + 8 + bodyH - iconSz) / 2f);
 
             var iconRect = new Rectangle(iconX2, iconY2, iconSz, iconSz);
-            if (infoBg != null) sb.Draw(infoBg, iconRect, Color.White * alpha);
             if (infoIcon != null)
             {
                 int inset = 3;
@@ -156,13 +169,15 @@ namespace KernelExtensions.Actions.Title
     {
         internal static TitleBanner Instance;
         internal static string IconPath = "Images/Info.png";
-        internal static string IconBgPath = "Images/InfoBG.png";
         private static bool _drawFailedWarned;
 
         /// <summary>弹出横幅。colorKey=CC 颜色关键字/Hex/名称（NONE/空=用 defaultColor）；强调色每帧刷新，动态色不定格。</summary>
-        internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor)
+        internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor, string iconPath)
         {
             if (Instance == null) return;
+            // 图标路径变化才重载（修复：此前 icon 参数仅在 OS.LoadContent 首次生效，后续换图标无效）
+            if (!string.IsNullOrEmpty(iconPath) && Instance.CurrentIconPath != iconPath)
+                Instance.ReloadIcon(iconPath);
             // 各按自身字体的字符集清洗：titlefont(Kremlin) 无本地化版 → 非 ASCII 降级为 '?'；
             // Body 用 GuiData.font（官方本地化字体，含本语言字形）→ 中文/日文/韩文等原样保留。
             Instance.TitleText = TextHelper.CleanStringForFont(GuiData.titlefont, title);
@@ -179,7 +194,7 @@ namespace KernelExtensions.Actions.Title
         {
             if (Instance != null) return;
             var banner = new TitleBanner();
-            banner.LoadContent(__instance, IconPath, IconBgPath);
+            banner.LoadContent(__instance, IconPath);
             Instance = banner;
             KELog.Debug("[TitleBanner] initialized");
         }
