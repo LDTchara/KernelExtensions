@@ -94,14 +94,16 @@ Workarounds:
 
 ## ❤️ 致谢 / Thanks
 
-- **LDTchara** - 感谢我自己的小脑袋瓜，想出来一大堆奇怪的点子并实现了它们。  
-  Thanks to my own little brain for coming up with a bunch of weird ideas and implementing them.
-- **April_Crystal** – 飞机 Daemon 和自定义节点图标的核心实现与大量改进建议 *（以及大量的麻烦）*，KE 早期开发者之一。  
-  Core implementation of the Aircraft Daemon and node icons, plus lots of improvement suggestions *(and lots of trouble)*. One of KE's earliest developers.
+- **LDTchara** - 感谢我自己的小脑袋瓜，想出来一大堆奇怪的点子并实现了它们。负责整体 KE 的整体设计、核心功能实现、文档编写与维护。  
+  Thanks to my own little brain for coming up with a bunch of weird ideas and implementing them. Responsible for the overall design of KE, core feature implementation, and documentation writing and maintenance.
+- **April_Crystal** – 部分功能的初版核心实现（包括但不限于飞机 Daemon、自定义节点图标、自定义结局模块、自定义破解器、可配置的横幅等。）与大量改进建议 *（以及大量的麻烦）*，KE 核心开发者之一。  
+  Initial core implementation of some features (including but not limited to Aircraft Daemon, custom node icons, custom ending module, custom cracker, configurable banners, etc.) and many improvement suggestions *(and a lot of trouble)*; one of the core KE developers.
 - **ZQG** – 第一个使用 KE 的扩展作者，提供了宝贵的测试反馈。  
   The first extension author to use KE, providing invaluable testing feedback.
+- **ChronoVert** - 提供了节点IP自替换符的想法和初版功能。  
+  Provided the idea and initial implementation for node IP self-replacement.
 - **HN 扩展小屋的各位朋友** – 测试、反馈与支持。  
-  Friends in the HN extension community – testing, feedback, and support.
+  Members in the HN 扩展小屋 – testing, feedback, and support.
 
 ---
 
