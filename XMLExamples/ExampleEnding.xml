@@ -21,8 +21,16 @@
 
   资源文件格式：
     SpeechFile     — 语音（wav/ogg，可选）
-    SpeechTextFile — 演讲文本：#=停顿1s、%=停顿0.5s（显示时被过滤）
+    SpeechTextFile — 演讲文本：标记 ||Px.x||=停顿x.x秒 / ||Sx.x||=逐字变速 / ||SR||=复位；
+                     简写 #=停顿1s、%=停顿0.5s（标记显示时被过滤）
     CreditsFile    — 报幕名单：^ 灰小字 / % 大标题行 / $ 小号灰字（每行一条）
+
+  报幕节奏（可选，不写 = 默认值）：
+    TitleFreezeTime — 标题停留秒数（默认 10，此期间不滚动）
+    EndingPauseTime — 结尾提示行到达屏幕中央后的停顿（默认 5）
+    ScrollSpeed     — 滚动满速 px/s（默认 65）
+    ScrollAccelTime — 加速斜坡秒数（默认 8；0 = 立即满速）
+    参考：满速下每行约 +0.62s（普通行）/ +2.77s（% 标题行）；无名单时约 33s（1080p）
   ========================================================================= -->
 
 <EndingConfig>
@@ -52,4 +60,10 @@
 
     <!-- 报幕名单（可选，空 = 默认 Docs/CreditsData.txt） -->
     <CreditsFile>CreditsData.txt</CreditsFile>
+
+    <!-- 报幕节奏（可选，不写 = 默认值；影响结局总时长） -->
+    <TitleFreezeTime>10</TitleFreezeTime>
+    <EndingPauseTime>5</EndingPauseTime>
+    <ScrollSpeed>65</ScrollSpeed>
+    <ScrollAccelTime>8</ScrollAccelTime>
 </EndingConfig>
