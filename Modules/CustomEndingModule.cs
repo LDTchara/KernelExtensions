@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using NVorbis;
+using System.Text;
 
 namespace KernelExtensions.Modules;
 
@@ -373,10 +374,38 @@ public class CustomEndingModule : EndingSequenceModule
 
     private bool hasVoiceStarted = false;
 
+    private float currentCharDelay = SpeechTextCharDelay;   // 可被 ||Sx.x|| 修改，||SR|| 复位
+
     private void AdvanceSpeechText(float t)
     {
         if (speechTextIndex >= bitSpeechText.Length) return;
         speechTextTimer += t;
+
+        // ---- ||...|| 指令标记：P=停顿任意秒 / S=逐字速度 / SR=恢复默认 ----
+        // 语法与假恢复模块的引导文本一致（||P0.5|| 等），解决演讲阶段只有 #(1s)/%(0.5s) 两档的问题
+        if (IsMarkerStart(speechTextIndex, out int markerEnd))
+        {
+            string cmd = bitSpeechText.Substring(speechTextIndex + 2, markerEnd - speechTextIndex - 2);
+            if (cmd == "SR")
+            {
+                currentCharDelay = SpeechTextCharDelay;
+                speechTextIndex = markerEnd + 2;
+                return;
+            }
+            if (cmd.Length > 1 && cmd[0] == 'P' && TryParseInvariant(cmd.Substring(1), out float pauseSec) && pauseSec >= 0f)
+            {
+                if (speechTextTimer >= pauseSec) { speechTextTimer -= pauseSec; speechTextIndex = markerEnd + 2; }
+                return;
+            }
+            if (cmd.Length > 1 && cmd[0] == 'S' && TryParseInvariant(cmd.Substring(1), out float charDelay) && charDelay > 0f)
+            {
+                currentCharDelay = charDelay;
+                speechTextIndex = markerEnd + 2;
+                return;
+            }
+            // 未识别标记：按普通字符处理（不吞掉，避免误伤正文中的 "||"）
+        }
+
         char c = bitSpeechText[speechTextIndex];
         if (c == '#')
         {
@@ -390,10 +419,48 @@ public class CustomEndingModule : EndingSequenceModule
         }
         else
         {
-            if (speechTextTimer >= SpeechTextCharDelay)
-            { speechTextTimer -= SpeechTextCharDelay; speechTextIndex++; }
+            if (speechTextTimer >= currentCharDelay)
+            { speechTextTimer -= currentCharDelay; speechTextIndex++; }
         }
     }
+
+    /// <summary>
+    /// 显示前剥离行内标记：<c>||Px.x||</c> / <c>||Sx.x||</c> / <c>||SR||</c> 整体移除，
+    /// <c>#</c>（1s）、<c>%</c>（0.5s）单字符停顿移除。
+    /// </summary>
+    private static string StripSpeechMarkers(string s)
+    {
+        var sb = new StringBuilder(s.Length);
+        int i = 0;
+        while (i < s.Length)
+        {
+            if (i + 1 < s.Length && s[i] == '|' && s[i + 1] == '|')
+            {
+                int e = s.IndexOf("||", i + 2, StringComparison.Ordinal);
+                if (e > i + 2) { i = e + 2; continue; }
+            }
+            char c = s[i];
+            if (c != '#' && c != '%') sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>当前位置是否为一个完整的 ||...|| 标记（返回结束处索引）。</summary>
+    private bool IsMarkerStart(int i, out int endIdx)
+    {
+        endIdx = -1;
+        if (i + 1 >= bitSpeechText.Length) return false;
+        if (bitSpeechText[i] != '|' || bitSpeechText[i + 1] != '|') return false;
+        int e = bitSpeechText.IndexOf("||", i + 2, StringComparison.Ordinal);
+        if (e <= i + 2) return false;
+        endIdx = e;
+        return true;
+    }
+
+    private static bool TryParseInvariant(string s, out float value)
+        => float.TryParse(s, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out value);
 
     private void DrawSpeech()
     {
@@ -409,8 +476,7 @@ public class CustomEndingModule : EndingSequenceModule
 
         if (!string.IsNullOrEmpty(bitSpeechText) && speechTextIndex > 0)
         {
-            string[] lines = bitSpeechText.Substring(0, speechTextIndex)
-                .Replace("#", "").Replace("%", "")
+            string[] lines = StripSpeechMarkers(bitSpeechText.Substring(0, speechTextIndex))
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             var pos = new Vector2(os.fullscreen.X + 150f,
                 os.fullscreen.Y + os.fullscreen.Height - 100f);
