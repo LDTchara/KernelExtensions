@@ -20,7 +20,7 @@
 ## 基本用法
 
 ```xml
-<ShowTitle title="WARNING" preset="warning" duration="6" icon="default">
+<ShowTitle Title="WARNING" Preset="warning" Duration="6" Icon="default">
 已离开 LDTchara VPN
 预计 60 秒后将被追踪
 请尽快回到 VPN
@@ -35,38 +35,38 @@
 
 | 属性 | 必填 | 默认值 | 说明 |
 |------|:----:|--------|------|
-| `title` | ❌ | 空 | 横幅标题（⚠️ **仅支持 ASCII**，见下） |
-| `preset` | ❌ | `info` | 强调色预设：`info` = 主题高亮基色（`defaultHighlightColor`）；`warning` = 主题警告色（`warningColor`） |
-| `duration` | ❌ | `5` | 横幅显示秒数 |
-| `color` | ❌ | 空 | CustomColor 覆盖强调色（CC 预设 / 动态色）；`NONE` / 空 = 用 `preset` 的主题色 |
-| `icon` | ❌ | 空 | 图标：空 / `NONE` = **不显示**；`default` = 内置默认图标；其他 = 相对扩展根路径 |
-| `icontint` | ❌ | 空 | 图标染色：空 = **自动**（`default` 染色 / 自定义原色）；`true` / `false` = 强制；其他值 = 自动 + 警告 |
+| `Title` | ❌ | 空 | 横幅标题（⚠️ **仅支持 ASCII**，见下） |
+| `Preset` | ❌ | `info` | 强调色预设：`info` = 主题高亮基色（`defaultHighlightColor`）；`warning` = 主题警告色（`warningColor`） |
+| `Duration` | ❌ | `5` | 横幅显示秒数 |
+| `AccentColor` | ❌ | 空 | CustomColor 覆盖强调色（CC 预设 / 动态色）；`NONE` / 空 = 用 `Preset` 的主题色 |
+| `Icon` | ❌ | 空 | 图标：空 / `NONE` = **不显示**；`default` = 内置默认图标；其他 = 相对扩展根路径 |
+| `IconTint` | ❌ | 空 | 图标染色：空 = **自动**（`default` 染色 / 自定义原色）；`true` / `false` = 强制；其他值 = 自动 + 警告 |
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作；⚠️ **属性名大小写敏感**，须与字段名一致（`Delay` 不能写成 `delay`） |
 
 ---
 
 ## 颜色取值
 
-`color` 与 `StartScreenBleedEffectWCC` 走同一条解析链，命中即用：
+`AccentColor` 与 `StartScreenBleedEffectWCC` 走同一条解析链，命中即用：
 
 1. **CustomColor 动态色**：`LDTchara:0.1`、`Rainbow`、预设名（`CustomColor/*.xml`）——逐帧刷新，不定格
 2. **十六进制**：`#RRGGBB` 或 `#AARRGGBB`
 3. **数值 RGB/RGBA**：如 `255,0,0` / `255,0,0,128`
-4. **兜底**：回退到 `preset` 主题色
+4. **兜底**：回退到 `Preset` 主题色
 
 !!! tip "默认跟随主题"
-    不写 `color` 时，强调色取自**当前游戏主题**：`info` 用 `defaultHighlightColor`（主题高亮基色，不会被警告闪烁临时改色污染），`warning` 用 `warningColor`（主题警告色）。玩家切换主题时横幅配色自动跟随。
+    不写 `AccentColor` 时，强调色取自**当前游戏主题**：`info` 用 `defaultHighlightColor`（主题高亮基色，不会被警告闪烁临时改色污染），`warning` 用 `warningColor`（主题警告色）。玩家切换主题时横幅配色自动跟随。
 
 !!! warning "HEX 颜色暂不可用（已知问题）"
-    当前颜色解析链**不含 Hex 解析**（`#RRGGBB` 会静默回退到 `preset` 主题色），也不含 XNA 命名色表（如 `Red`）。二者将在后续颜色解析统一（9.50）中一并补齐。目前请使用 **CustomColor 预设或动态色**。
+    当前颜色解析链**不含 Hex 解析**（`#RRGGBB` 会静默回退到 `Preset` 主题色），也不含 XNA 命名色表（如 `Red`）。二者将在后续颜色解析统一（9.50）中一并补齐。目前请使用 **CustomColor 预设或动态色**。
 
 ---
 
 ## 图标
 
-`icon` 与 `icontint` 共同决定图标的表现：
+`Icon` 与 `IconTint` 共同决定图标的表现：
 
-| `icon` | `icontint` | 结果 |
+| `Icon` | `IconTint` | 结果 |
 |---|---|---|
 | 不写 / 空 / `NONE` | — | **不显示图标** |
 | `default` | 不写 | 内置图标，**染色**（跟随强调色） |
@@ -76,7 +76,7 @@
 | 无效路径 / 加载失败 | 任意 | **回退内置图标**（染色）+ `KELog.Warn` |
 
 - 内置图标来自模组内嵌资源，**不会写入你的扩展目录**
-- `icontint` 写其他值（如 `yes`） → 按**自动**规则处理，并记一条 `KELog.Warn`
+- `IconTint` 写其他值（如 `yes`） → 按**自动**规则处理，并记一条 `KELog.Warn`
 
 ---
 

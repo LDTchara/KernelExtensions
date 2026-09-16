@@ -20,7 +20,7 @@
 ## Basic usage
 
 ```xml
-<ShowTitle title="WARNING" preset="warning" duration="6" icon="default">
+<ShowTitle Title="WARNING" Preset="warning" Duration="6" Icon="default">
 Left the LDTchara VPN
 Tracking begins in 60 seconds
 Get back to the VPN ASAP
@@ -35,38 +35,38 @@ The body sits between the opening and closing tags, and **newlines are line brea
 
 | Attribute | Required | Default | Description |
 |-----------|:--------:|---------|-------------|
-| `title` | ❌ | empty | Banner title (⚠️ **ASCII only**, see below) |
-| `preset` | ❌ | `info` | Accent preset: `info` = theme highlight base (`defaultHighlightColor`); `warning` = theme warning colour (`warningColor`) |
-| `duration` | ❌ | `5` | Seconds the banner stays on screen |
-| `color` | ❌ | empty | CustomColor override for the accent (preset / dynamic); `NONE` / empty = use the `preset` theme colour |
-| `icon` | ❌ | empty | Icon: empty / `NONE` = **no icon**; `default` = built-in default icon; anything else = path relative to the extension root |
-| `icontint` | ❌ | empty | Icon tinting: empty = **auto** (`default` tinted / custom not tinted); `true` / `false` = force; any other value = auto + warning |
+| `Title` | ❌ | empty | Banner title (⚠️ **ASCII only**, see below) |
+| `Preset` | ❌ | `info` | Accent preset: `info` = theme highlight base (`defaultHighlightColor`); `warning` = theme warning colour (`warningColor`) |
+| `Duration` | ❌ | `5` | Seconds the banner stays on screen |
+| `AccentColor` | ❌ | empty | CustomColor override for the accent (preset / dynamic); `NONE` / empty = use the `Preset` theme colour |
+| `Icon` | ❌ | empty | Icon: empty / `NONE` = **no icon**; `default` = built-in default icon; anything else = path relative to the extension root |
+| `IconTint` | ❌ | empty | Icon tinting: empty = **auto** (`default` tinted / custom not tinted); `true` / `false` = force; any other value = auto + warning |
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder delayable action; ⚠️ **attribute names are case-sensitive** (`Delay`, not `delay`) |
 
 ---
 
 ## Colour resolution
 
-`color` uses the same chain as `StartScreenBleedEffectWCC`, first match wins:
+`AccentColor` uses the same chain as `StartScreenBleedEffectWCC`, first match wins:
 
 1. **CustomColor dynamic** — `LDTchara:0.1`, `Rainbow`, preset names (`CustomColor/*.xml`) — refreshed every frame, never frozen
 2. **Hex** — `#RRGGBB` or `#AARRGGBB`
 3. **Numeric RGB/RGBA** — e.g. `255,0,0` / `255,0,0,128`
-4. **Fallback** — the `preset` theme colour
+4. **Fallback** — the `Preset` theme colour
 
 !!! tip "Follows the theme by default"
-    Without `color`, the accent comes from the **active game theme**: `info` uses `defaultHighlightColor` (the theme's highlight base — it is not polluted by the temporary warning flash), `warning` uses `warningColor` (the theme's warning colour). When the player switches themes, the banner follows automatically.
+    Without `AccentColor`, the accent comes from the **active game theme**: `info` uses `defaultHighlightColor` (the theme's highlight base — it is not polluted by the temporary warning flash), `warning` uses `warningColor` (the theme's warning colour). When the player switches themes, the banner follows automatically.
 
 !!! warning "HEX colours are currently unavailable (known issue)"
-    The colour parser has **no Hex support** (`#RRGGBB` silently falls back to the `preset` theme colour) and no XNA named-colour table (e.g. `Red`). Both will be added by the colour-parsing unification (9.50). For now use **CustomColor presets or dynamic colours**.
+    The colour parser has **no Hex support** (`#RRGGBB` silently falls back to the `Preset` theme colour) and no XNA named-colour table (e.g. `Red`). Both will be added by the colour-parsing unification (9.50). For now use **CustomColor presets or dynamic colours**.
 
 ---
 
 ## Icon
 
-`icon` and `icontint` together decide how the icon appears:
+`Icon` and `IconTint` together decide how the icon appears:
 
-| `icon` | `icontint` | Result |
+| `Icon` | `IconTint` | Result |
 |---|---|---|
 | omitted / empty / `NONE` | — | **No icon** |
 | `default` | omitted | Built-in icon, **tinted** (follows the accent colour) |
@@ -76,7 +76,7 @@ The body sits between the opening and closing tags, and **newlines are line brea
 | invalid path / load failure | any | **Falls back to the built-in icon** (tinted) + `KELog.Warn` |
 
 - The built-in icon comes from the mod's embedded resources and is **never written into your extension folder**
-- Any other `icontint` value (e.g. `yes`) falls back to **auto** and logs a `KELog.Warn`
+- Any other `IconTint` value (e.g. `yes`) falls back to **auto** and logs a `KELog.Warn`
 
 ---
 
