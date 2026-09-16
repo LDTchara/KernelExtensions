@@ -127,7 +127,7 @@ namespace KernelExtensions.Executables
         private Color _staticPhaseTimerColor = Color.Transparent;
         private Color _staticSpinUpColor = Color.Transparent;
 
-        // 原先的ResolveMusicPath已变为Utility中的公共静态方法，现在直接调用 MusicPathResolver.ResolveMusicPath 来解析音乐路径，无需再定义一个新的 ResolvePath 方法。
+        // 原先的ResolveMusicPath已变为Utilities中的公共静态方法，现在直接调用 MusicPathResolver.ResolveMusicPath 来解析音乐路径，无需再定义一个新的 ResolvePath 方法。
 
         // ---------- 构造函数 ----------
         public CustomTrialExe() : base()
