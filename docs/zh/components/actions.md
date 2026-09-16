@@ -36,6 +36,18 @@ KernelExtensions 提供了一系列自定义 Action，可在任何动作文件�
 
 ---
 
+## 节点连接控制相关动作
+
+| 动作 | 描述 | 示例 |
+|------|------|------|
+| `LinkControlReset` | 把指定电脑的链接恢复为组织基线（丢弃运行时所有临时增删）。 | `<LinkControlReset SourceComp="playerComp" />` |
+| `LinkControlAdd` | 运行时临时添加一条链接（不写入基线）。 | `<LinkControlAdd SourceComp="playerComp" TargetComp="jmail" />` |
+| `LinkControlRemove` | 运行时临时删除一条链接（不写入基线）。 | `<LinkControlRemove SourceComp="playerComp" TargetComp="jmail" />` |
+
+> 三者共享 org 基线（内容 XML 的 `dlink` 与 `<OrgLinks>` 在开局快照）；`Add`/`Remove` 只改运行时 links，可用 `Reset` 还原；属性名**大小写敏感**。
+
+---
+
 ## 延迟执行
 
 大多数动作支持 `Delay` 和 `DelayHost` 属性用于延迟执行。  

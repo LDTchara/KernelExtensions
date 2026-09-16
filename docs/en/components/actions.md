@@ -36,6 +36,18 @@ KernelExtensions provides a set of custom Actions that can be invoked in any act
 
 ---
 
+## Node Link Control Actions
+
+| Action | Description | Example |
+|--------|-------------|---------|
+| `LinkControlReset` | Restore the computer's links to the org baseline (discards all runtime add/remove). | `<LinkControlReset SourceComp="playerComp" />` |
+| `LinkControlAdd` | Temporarily add a link at runtime (does not write to the baseline). | `<LinkControlAdd SourceComp="playerComp" TargetComp="jmail" />` |
+| `LinkControlRemove` | Temporarily remove a link at runtime (does not write to the baseline). | `<LinkControlRemove SourceComp="playerComp" TargetComp="jmail" />` |
+
+> All three share the org baseline (a snapshot of the content XML `dlink` / `<OrgLinks>` taken at game start); `Add`/`Remove` only change runtime links and can be undone with `Reset`. Attribute names are **case-sensitive**.
+
+---
+
 ## Delayed Execution
 
 Most actions support `Delay` and `DelayHost` attributes for delayed execution.  
