@@ -4,7 +4,7 @@ using Pathfinder.Action;
 using Pathfinder.Util;
 using PorthackHeartDaemon = KernelExtensions.Daemons.PorthackHeartDaemon;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 显式触发目标节点的 PorthackHeartDaemon 心碎序列（剧情触发入口）。

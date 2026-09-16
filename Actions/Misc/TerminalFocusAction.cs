@@ -5,7 +5,7 @@ using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 终端聚焦特效：全屏变暗（除终端外）+ 终端边框扩散发光。

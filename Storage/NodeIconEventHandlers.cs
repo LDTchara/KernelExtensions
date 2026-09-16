@@ -2,7 +2,7 @@ using System.Xml.Linq;
 using Hacknet;
 using Pathfinder.Event.Loading;
 using Pathfinder.Event.Saving;
-using KernelExtensions.Actions;
+using KernelExtensions.Actions.Node;
 
 namespace KernelExtensions.Storage
 {

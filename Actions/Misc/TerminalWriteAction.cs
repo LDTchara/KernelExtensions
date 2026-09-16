@@ -3,7 +3,7 @@ using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 向终端写入一行文本。

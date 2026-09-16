@@ -5,7 +5,7 @@ using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Ending
 {
     /// <summary>
     /// 触发自定义结局序列（EndingConfig 文件模式）。

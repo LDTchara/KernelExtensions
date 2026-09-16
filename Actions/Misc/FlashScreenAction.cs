@@ -9,7 +9,7 @@ using Pathfinder.Util.XML;
 using XColor = Microsoft.Xna.Framework.Color; // 嵌套类内 Color 会与外层 XMLStorage 字段重名，用别名
 
 using KernelExtensions.Managers;
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// UI 闪烁 —— 修改 os.highlightColor / os.moduleColorSolid 为指定色并渐隐回默认。

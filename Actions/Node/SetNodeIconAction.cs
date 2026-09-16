@@ -7,7 +7,7 @@ using KernelExtensions.Storage;
 using KernelExtensions.Patches;
 using KernelExtensions.Utilities;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Node
 {
     public class SetNodeIconAction : KEAction
     {

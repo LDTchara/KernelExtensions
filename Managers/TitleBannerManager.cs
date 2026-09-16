@@ -1,29 +1,33 @@
 using Hacknet;
 using Hacknet.Extensions;
 using Hacknet.Gui;
-using HarmonyLib;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 
-using KernelExtensions.Managers;
-namespace KernelExtensions.Actions.Title
+namespace KernelExtensions.Managers
 {
     /// <summary>
-    /// 标题横幅（dev1 标题系统合并版）——原 CustomInfoTitle/CustomWarningTitle 结构相同
-    /// （仅默认色/时长差异），合并为单类。强调色支持 CustomColor（Hex/名称/CC 预设/动态，
-    /// 经 CustomColorManager.GetDynamicColor），图标路径可配（默认 Images/Info.png）。
+    /// 标题横幅的**绘制组件**（ShowTitle 的可视部分）——原 CustomInfoTitle/CustomWarningTitle 结构相同
+    /// （仅默认色/时长差异），合并为单类。由 <c>Patches/TitleBannerPatches</c> 驱动：
+    /// OS.LoadContent 时创建单例，OS.Update 推进计时，OS.Draw 时调用 <see cref="Draw"/>。
+    ///
+    /// 强调色支持 CustomColor（CC 预设/动态，经 <c>CustomColorManager.GetDynamicColor</c>，每帧刷新不定格）；
+    /// 图标支持内置（内嵌资源）/ 扩展路径 / 不显示三态，染色由 ShowTitle 的 IconTint 决定。
     /// </summary>
     internal class TitleBanner
     {
-        /// <summary>强调色（条纹/标题/图标 tint），默认信息蓝。每帧经 CustomColorManager 按 AccentColorKey 刷新（CC 动态色持续变化）。</summary>
+        /// <summary>icon="default" 的内部标记（与扩展路径区分；ShowTitle 与 Patch 共用）。</summary>
+        internal const string DefaultIconMarker = "\u0001default";
+
+        /// <summary>强调色（条纹/标题/图标 tint）。每帧经 CustomColorManager 按 AccentColorKey 刷新（CC 动态色持续变化）。</summary>
         public Color AccentColor = new(100, 180, 255);
 
-        /// <summary>CC 颜色关键字/Hex/名称；NONE/空=用 DefaultAccentColor（type 预设色）。</summary>
+        /// <summary>CC 颜色关键字/动态色；NONE/空=用 DefaultAccentColor（preset 主题色）。</summary>
         public string AccentColorKey = "";
 
-        /// <summary>无 color 覆盖时的默认强调色（由 ShowTitle 的 type 决定）。</summary>
+        /// <summary>无 color 覆盖时的默认强调色（由 ShowTitle 的 preset 决定）。</summary>
         public Color DefaultAccentColor = new(100, 180, 255);
 
         public float Duration = 5f;
@@ -49,7 +53,7 @@ namespace KernelExtensions.Actions.Title
         }
 
         /// <summary>
-        /// 按 ShowTitle 的 icon / icontint 设置图标。
+        /// 按 ShowTitle 的 Icon / IconTint 设置图标。
         /// iconArg：null = 不显示；DefaultIconMarker = 内置默认图标；其他 = 扩展相对路径（失败回退内置 + Warn）。
         /// tintOverride：null = 自动（内置图标染色 / 自定义图标原色）；true / false = 强制。
         /// </summary>
@@ -69,7 +73,7 @@ namespace KernelExtensions.Actions.Title
             }
 
             bool usedEmbedded = false;
-            if (iconArg == TitleBannerHooks.DefaultIconMarker)
+            if (iconArg == DefaultIconMarker)
             {
                 infoIcon = LoadEmbeddedIcon();
                 usedEmbedded = true;
@@ -81,7 +85,7 @@ namespace KernelExtensions.Actions.Title
                 usedEmbedded = true;
             }
 
-            // 自动规则：内置图标染色（跟随强调色）、自定义图标原色；显式 icontint 优先
+            // 自动规则：内置图标染色（跟随强调色）、自定义图标原色；显式 IconTint 优先
             tintIcon = tintOverride ?? usedEmbedded;
         }
 
@@ -208,95 +212,9 @@ namespace KernelExtensions.Actions.Title
             {
                 int inset = 3;
                 var iconInner = new Rectangle(iconRect.X + inset, iconRect.Y + inset, iconRect.Width - inset * 2, iconRect.Height - inset * 2);
-                // 染色仅当 tintIcon：内置图标默认染色（跟随强调色），自定义图标原色；可由 icontint 覆盖
+                // 染色仅当 tintIcon：内置图标默认染色（跟随强调色），自定义图标原色；可由 IconTint 覆盖
                 Color iconColor = tintIcon ? Color.Lerp(AccentColor, Color.White, 0.3f) : Color.White;
                 sb.Draw(infoIcon, iconInner, iconColor * alpha);
-            }
-        }
-    }
-
-    /// <summary>Harmony 钩子：OS.LoadContent 初始化单例、OS.Update/Draw 驱动横幅。</summary>
-    [HarmonyPatch]
-    internal static class TitleBannerHooks
-    {
-        internal static TitleBanner Instance;
-
-        /// <summary>icon="default" 的内部标记（与扩展路径区分）。</summary>
-        internal const string DefaultIconMarker = "\u0001default";
-
-        private static bool _drawFailedWarned;
-
-        /// <summary>弹出横幅。colorKey=CC 颜色关键字/Hex/名称（NONE/空=用 defaultColor）；强调色每帧刷新，动态色不定格。
-        /// iconArg=null 时不显示图标；tintOverride=null 时按自动规则（内置图标染色 / 自定义图标原色）。</summary>
-        internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor, string iconArg, bool? tintOverride)
-        {
-            if (Instance == null) return;
-            Instance.SetIcon(iconArg, tintOverride);
-            // 各按自身字体的字符集清洗：titlefont(Kremlin) 无本地化版 → 非 ASCII 降级为 '?'；
-            // Body 用 GuiData.font（官方本地化字体，含本语言字形）→ 中文/日文/韩文等原样保留。
-            Instance.TitleText = TextHelper.CleanStringForFont(GuiData.titlefont, title);
-            Instance.BodyText = TextHelper.CleanStringForFont(GuiData.font, body);
-            Instance.Duration = duration;
-            Instance.AccentColorKey = colorKey ?? "";
-            Instance.DefaultAccentColor = defaultColor;
-            Instance.Activate();
-        }
-
-        [HarmonyPatch(typeof(OS), nameof(OS.LoadContent))]
-        [HarmonyPostfix]
-        internal static void OnOSLoadContent(OS __instance)
-        {
-            if (Instance != null) return;
-            var banner = new TitleBanner();
-            banner.LoadContent(__instance);
-            Instance = banner;
-            KELog.Debug("[TitleBanner] initialized");
-        }
-
-        [HarmonyPatch(typeof(OS), nameof(OS.Update))]
-        [HarmonyPostfix]
-        internal static void OnOSUpdate(OS __instance, GameTime gameTime, bool otherScreenHasFocus, bool coveredByOtherScreen)
-        {
-            if (Instance == null) return;
-            Instance.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-        }
-
-        [HarmonyPatch(typeof(OS), nameof(OS.Draw))]
-        [HarmonyPostfix]
-        internal static void OnOSDraw(OS __instance, GameTime gameTime)
-        {
-            if (Instance == null || !Instance.IsActive) return;
-            bool began = false;
-            bool drawFailed = false;
-            try
-            {
-                // OS.Draw() 内部已结束 SpriteBatch（两次 Begin/End 配对），Postfix 需自己 Begin/End
-                GuiData.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
-                began = true;
-                var fullscreen = new Rectangle(0, 0,
-                    __instance.ScreenManager.GraphicsDevice.Viewport.Width,
-                    __instance.ScreenManager.GraphicsDevice.Viewport.Height);
-                Instance.Draw(fullscreen, GuiData.spriteBatch);
-            }
-            catch (Exception ex)
-            {
-                drawFailed = true;
-                // 节流：持续失败只警告一次，直到某帧成功才复位
-                if (!_drawFailedWarned)
-                {
-                    _drawFailedWarned = true;
-                    KELog.Warn($"[TitleBanner] draw failed: {ex.Message}");
-                }
-            }
-            finally
-            {
-                // 即使 Draw 内部异常也必须 End——否则 SpriteBatch 残留 Begin 状态，
-                // 下一帧 OS.Draw 的 GuiData.startDraw() 会抛 "Begin before End"（2026-08-25 修复）
-                if (began)
-                {
-                    try { GuiData.spriteBatch.End(); } catch { }
-                }
-                if (!drawFailed) _drawFailedWarned = false;
             }
         }
     }

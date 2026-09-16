@@ -5,7 +5,7 @@ using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Clock
 {
     /// <summary>
     /// 停止一个正在运行的 Clock 定时器。

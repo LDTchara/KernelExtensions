@@ -1,4 +1,6 @@
 using Hacknet;
+using KernelExtensions.Managers;
+using KernelExtensions.Patches;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Pathfinder.Action;
@@ -60,7 +62,7 @@ namespace KernelExtensions.Actions.Title
             // 图标：空/NONE = 不显示；"default" = 内置；其他 = 路径
             string iconArg;
             if (ConfigValue.IsNone(Icon)) iconArg = null;
-            else if (Icon.Trim().Equals("default", StringComparison.OrdinalIgnoreCase)) iconArg = TitleBannerHooks.DefaultIconMarker;
+            else if (Icon.Trim().Equals("default", StringComparison.OrdinalIgnoreCase)) iconArg = TitleBanner.DefaultIconMarker;
             else iconArg = Icon.Trim();
 
             // 图标染色三态：空 = 自动（default 染色 / 自定义不染色）；true/false = 强制；其他值 = 自动 + Warn
@@ -73,7 +75,7 @@ namespace KernelExtensions.Actions.Title
                 else KELog.Warn($"[ShowTitle] unknown icontint '{IconTint}'; falling back to auto");
             }
 
-            TitleBannerHooks.Show(Title, NormalizeBody(Body), Duration, AccentColor, defaultColor, iconArg, tintOverride);
+            TitleBannerPatches.Show(Title, NormalizeBody(Body), Duration, AccentColor, defaultColor, iconArg, tintOverride);
         }
 
         /// <summary>规范化元素内容：统一换行、去首尾空行、去各行公共缩进（允许作者自由排版）。</summary>

@@ -4,7 +4,7 @@ using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 切换主题，不改变面板布局。

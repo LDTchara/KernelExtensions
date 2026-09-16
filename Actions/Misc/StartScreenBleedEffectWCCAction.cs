@@ -8,7 +8,7 @@ using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 管理 WCC（WithCustomColor）ScreenBleed 效果的计时、渲染和清理。

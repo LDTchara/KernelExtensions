@@ -5,7 +5,7 @@ using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Clock
 {
     /// <summary>
     /// 启动一个 Clock 定时器（剧情资产，分散 XML 文件）。

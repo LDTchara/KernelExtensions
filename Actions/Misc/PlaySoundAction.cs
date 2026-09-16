@@ -4,7 +4,7 @@ using Pathfinder.Action;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
-namespace KernelExtensions.Actions
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 播放扩展目录下的 WAV 音效文件。
