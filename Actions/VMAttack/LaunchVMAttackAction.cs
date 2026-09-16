@@ -9,7 +9,7 @@ using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Actions.VMAttack
 {
-    public class LaunchVMAttackAction : DelayablePathfinderAction
+    public class LaunchVMAttackAction : KEAction
     {
         [XMLStorage]
         public string ConfigName;

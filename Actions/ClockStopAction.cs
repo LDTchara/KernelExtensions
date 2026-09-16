@@ -17,7 +17,7 @@ namespace KernelExtensions.Actions
     /// 手动停止不触发 OnComplete（OnComplete 只在 Times/Duration 耗尽自动停止时执行）。
     /// 停止未知 ID/路径 → 静默忽略。
     /// </summary>
-    public class ClockStopAction : DelayablePathfinderAction
+    public class ClockStopAction : KEAction
     {
         [XMLStorage] public string ClockID;
         [XMLStorage] public string Filepath;

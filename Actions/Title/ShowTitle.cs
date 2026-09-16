@@ -26,7 +26,7 @@ namespace KernelExtensions.Actions.Title
     ///   · ⚠️ title **仅支持 ASCII**：标题用游戏标题字体（Kremlin），官方未提供任何语言的
     ///     本地化版本，非 ASCII 字符（中文/日文/俄文…）会显示为 `?`。正文不受此限制。
     /// </summary>
-    public class ShowTitle : DelayablePathfinderAction
+    public class ShowTitle : KEAction
     {
         [XMLStorage] public string Title = "";
         /// <summary>正文（元素内容，支持多行）。</summary>

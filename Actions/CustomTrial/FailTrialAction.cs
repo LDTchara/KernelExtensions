@@ -8,7 +8,7 @@ namespace KernelExtensions.Actions.CustomTrial
     /// 用法：<FailTrial />或<FailTrial Delay="3.0" DelayHost="delayhost" />
     /// 支持 Delay 和 DelayHost 属性进行延迟执行。
     /// </summary>
-    public class FailTrialAction : DelayablePathfinderAction
+    public class FailTrialAction : KEAction
     {
         public override void Trigger(OS os)
         {

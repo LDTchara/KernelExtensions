@@ -22,7 +22,7 @@ namespace KernelExtensions.Actions
     /// SpeechTime 语义（默认 -1）：-1 跟随音频时长（无语音 30s 兜底）；0 跳过演讲直接报幕；
     ///   N&gt;0 演讲上限 N 秒。语音支持 .wav 与 .ogg（NVorbis 解码，体积 ~1/10，波形自绘）。
     /// </summary>
-    public class StartEnding : PathfinderAction
+    public class StartEnding : KEAction
     {
         /// <summary>结局配置文件路径（必填，相对扩展根）。</summary>
         [XMLStorage] public string File = "";
@@ -30,10 +30,8 @@ namespace KernelExtensions.Actions
         /// <summary>由 CustomEndingModule 在报幕完成后调用。</summary>
         internal Action OnCompleteCallback;
 
-        public override void Trigger(object os_obj)
+        public override void Trigger(OS os)
         {
-            OS os = (OS)os_obj;
-
             if (ConfigValue.IsNone(File))
             {
                 KELog.Error("[StartEnding] File attribute is required (path to an <Ending> config XML, relative to the extension root).");

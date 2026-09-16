@@ -9,7 +9,7 @@ using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Actions
 {
-    public class SetNodeIconAction : DelayablePathfinderAction
+    public class SetNodeIconAction : KEAction
     {
         public const string RESET_MARKER = "#RESET#";
 

@@ -11,7 +11,7 @@ namespace KernelExtensions.Actions
     /// 用法：<PlaySound Path="Sounds/Click.wav" />
     /// 路径必须包含 .wav 扩展名。
     /// </summary>
-    public class PlaySoundAction : DelayablePathfinderAction
+    public class PlaySoundAction : KEAction
     {
         [XMLStorage] public string Path;
         [XMLStorage] public float Volume = 0.5f;

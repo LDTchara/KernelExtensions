@@ -18,7 +18,7 @@ namespace KernelExtensions.Actions
     ///       &lt;Actions&gt;...&lt;/Actions&gt;
     ///   &lt;/Clock&gt;
     /// </summary>
-    public class ClockStartAction : DelayablePathfinderAction
+    public class ClockStartAction : KEAction
     {
         [XMLStorage] public string Filepath;
 

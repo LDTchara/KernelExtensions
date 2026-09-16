@@ -29,7 +29,7 @@ namespace KernelExtensions.Actions
     /// 因此用一次性实例订阅 os.UpdateSubscriptions 逐帧推进（同 FlashScreenAction 的做法）
     /// 模式），渲染完成后退订自清理。
     /// </summary>
-    public class TerminalTypeAction : DelayablePathfinderAction
+    public class TerminalTypeAction : KEAction
     {
         [XMLStorage] public string Text;
         [XMLStorage] public float CharDelay = 0.04f;

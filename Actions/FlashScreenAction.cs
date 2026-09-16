@@ -34,7 +34,7 @@ namespace KernelExtensions.Actions
     ///   - 无 Manager/常驻状态：每次触发创建一次性实例，订阅 os.UpdateSubscriptions
     ///     驱动渐变，结束后退订自清理
     /// </summary>
-    public class FlashScreenAction : DelayablePathfinderAction
+    public class FlashScreenAction : KEAction
     {
         [XMLStorage] public string Color;
         [XMLStorage] public float Duration = 2.0f;

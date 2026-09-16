@@ -21,7 +21,7 @@ namespace KernelExtensions.Actions.PhaseSwift
     /// 用法：<PhaseSwiftStop />
     ///       <PhaseSwiftStop FinishMode="full" />
     /// </summary>
-    public class PhaseSwiftStopAction : DelayablePathfinderAction
+    public class PhaseSwiftStopAction : KEAction
     {
         /// <summary>完成后的节点处理模式。none=全隐 full=全留 scene_N=留场景N。不填则用Config设置。</summary>
         [XMLStorage]

@@ -15,7 +15,7 @@ namespace KernelExtensions.Actions.Link
     /// TargetComp：目标电脑的 idName（必填）。
     /// 临时改动可用 LinkControlReset 恢复；存档时 links 由原版处理。
     /// </summary>
-    public class LinkControlRemoveAction : DelayablePathfinderAction
+    public class LinkControlRemoveAction : KEAction
     {
         [XMLStorage] public string SourceComp;
         [XMLStorage] public string TargetComp;

@@ -28,7 +28,7 @@ namespace KernelExtensions.Actions
     /// 颜色值支持 CustomColor 预设，Hex (#RRGGBB) 和命名色 (Monochrome)。
     /// 支持动态颜色 (Rainbow, Rainbow:0.5:0.3) 等。
     /// </summary>
-    public class StartScreenBleedEffectWCCAction : DelayablePathfinderAction
+    public class StartScreenBleedEffectWCCAction : KEAction
     {
         [XMLStorage] public string AlertTitle = "EMERGENCY";
         [XMLStorage] public string CompleteAction;

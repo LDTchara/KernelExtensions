@@ -9,7 +9,7 @@ namespace KernelExtensions.Actions
     /// 修改指定节点的名称，并持久化到存档。
     /// 用法：<RenameNode NodeID="dhs" NewName="新名称" />
     /// </summary>
-    public class RenameNodeAction : DelayablePathfinderAction
+    public class RenameNodeAction : KEAction
     {
         [XMLStorage]
         public string NodeID;   // 目标节点的 idName

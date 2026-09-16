@@ -14,7 +14,7 @@ namespace KernelExtensions.Actions
     ///   带延迟：
     ///   <TerminalWrite text="延迟消息" Delay="1.5" />
     /// </summary>
-    public class TerminalWriteAction : DelayablePathfinderAction
+    public class TerminalWriteAction : KEAction
     {
         public string Text;
 

@@ -18,7 +18,7 @@ namespace KernelExtensions.Actions
     ///   - DarkenAlpha: 遮罩的最大透明度（0~1），默认 0.8。
     ///   - ExpandAmount: 边框向外扩展的最大像素量，默认 200。
     /// </summary>
-    public class TerminalFocusAction : DelayablePathfinderAction
+    public class TerminalFocusAction : KEAction
     {
         public float Duration = 2.0f;
         public float BorderDuration = -1f;      // -1 表示使用 Duration

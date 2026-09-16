@@ -33,7 +33,7 @@ namespace KernelExtensions.Actions
     ///   Delay             (float, 可选)  延迟执行秒数
     ///   DelayHost         (string, 可选) 延迟宿主节点 ID
     /// </summary>
-    public class SwitchThemeAction : DelayablePathfinderAction
+    public class SwitchThemeAction : KEAction
     {
         [XMLStorage] public string ThemePathOrName;
         [XMLStorage] public float FlickerInDuration = 2f;

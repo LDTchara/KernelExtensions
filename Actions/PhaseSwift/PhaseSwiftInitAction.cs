@@ -17,7 +17,7 @@ namespace KernelExtensions.Actions.PhaseSwift
     ///   配置文件位于 ExtensionRoot/PhaseSwift/{ConfigName}.xml
     /// </summary>
 
-    public class PhaseSwiftInitAction : DelayablePathfinderAction
+    public class PhaseSwiftInitAction : KEAction
     {
         [XMLStorage] public string ConfigName = "Default";
 

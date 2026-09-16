@@ -18,7 +18,7 @@ namespace KernelExtensions.Actions
     ///   null/未提供 = 不覆盖（用 daemon 自身配置）；字符串项写 NONE/空 = 覆盖为禁用
     ///   （如 Music="NONE" 表示不切歌、OnComplete="NONE" 表示不执行）。
     /// </summary>
-    public class BreakHeartAction : DelayablePathfinderAction
+    public class BreakHeartAction : KEAction
     {
         [XMLStorage] public string NodeID;
 

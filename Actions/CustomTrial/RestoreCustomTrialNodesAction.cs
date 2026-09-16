@@ -11,7 +11,7 @@ namespace KernelExtensions.Actions.CustomTrial
     /// 自定义 Action：恢复指定试炼配置中被删除的节点。
     /// 用法：<RestoreCustomTrialNodes ConfigName="MyTrial" />
     /// </summary>
-    public class RestoreCustomTrialNodesAction : DelayablePathfinderAction
+    public class RestoreCustomTrialNodesAction : KEAction
     {
         [XMLStorage]
         public string ConfigName;   // 试炼配置名（必须与删除时使用的配置名一致）
