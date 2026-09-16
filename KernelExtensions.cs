@@ -172,7 +172,6 @@ namespace KernelExtensions
             // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
             if (CanExtraPackUse)
             {
-                ExtractImages();
                 ActionManager.RegisterAction<ShowTitle>("ShowTitle");
                 KELog.Info("ShowTitle action registered.");
                 ActionManager.RegisterAction<StartEnding>("StartEnding");
@@ -247,29 +246,6 @@ namespace KernelExtensions
             _harmony?.UnpatchSelf();
             _harmony = null;
             return base.Unload();
-        }
-
-        /// <summary>把内嵌的标题横幅图标提取到扩展 Images/（首次，存在不覆盖）。</summary>
-        private static void ExtractImages()
-        {
-            try
-            {
-                string root = ExtensionLoader.ActiveExtensionInfo.FolderPath;
-                string dir = Path.Combine(root, "Images");
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                WriteEmbedded("KernelExtensions.Img.Info.png", Path.Combine(dir, "Info.png"));
-            }
-            catch (Exception ex) { KELog.Warn($"[KernelExtensions] image extract failed: {ex.Message}"); }
-        }
-
-        private static void WriteEmbedded(string resourceName, string targetPath)
-        {
-            if (File.Exists(targetPath)) return; // 用户已有不覆盖
-            using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
-            if (s == null) { KELog.Warn($"[KernelExtensions] embedded resource missing: {resourceName}"); return; }
-            using var fs = File.Create(targetPath);
-            s.CopyTo(fs);
-            KELog.Info($"[KernelExtensions] extracted {targetPath}");
         }
 
         /// <summary>

@@ -20,7 +20,9 @@ namespace KernelExtensions.Actions.Title
     ///   · preset：info（默认，强调色取 os.defaultHighlightColor 主题高亮基色）
     ///              warning（强调色取 os.warningColor 主题警告色）
     ///   · color：CustomColor 覆盖（Hex/名称/CC 预设/动态），NONE/空 = 用 preset 的主题色
-    ///   · icon：图标路径（相对扩展根，默认 Images/Info.png；NONE/空 = 默认）
+    ///   · icon：空/NONE = 不显示图标；"default" = 内置默认图标；其他 = 相对扩展根路径
+    ///           （路径无效/加载失败 → 回退内置图标 + KELog.Warn）
+    ///   · icontint：空 = 自动（default 图标染色、自定义图标原色）；true/false = 强制；其他值 = 自动 + Warn
     ///   · ⚠️ title **仅支持 ASCII**：标题用游戏标题字体（Kremlin），官方未提供任何语言的
     ///     本地化版本，非 ASCII 字符（中文/日文/俄文…）会显示为 `?`。正文不受此限制。
     /// </summary>
@@ -29,12 +31,16 @@ namespace KernelExtensions.Actions.Title
         [XMLStorage] public string title = "";
         /// <summary>正文（元素内容，支持多行）。</summary>
         [XMLStorage(IsContent = true)] public string body = "";
-        [XMLStorage] public float time = 5f;
+        /// <summary>显示秒数（默认 5）。</summary>
+        [XMLStorage] public float duration = 5f;
         /// <summary>info | warning（强调色预设，分别取主题 defaultHighlightColor / warningColor）。</summary>
         [XMLStorage] public string preset = "info";
         /// <summary>CustomColor 覆盖；NONE/空 = 用 preset 的主题色。</summary>
         [XMLStorage] public string color = "";
-        [XMLStorage] public string icon = "Images/Info.png";
+        /// <summary>图标：空/NONE = 不显示；"default" = 内置默认图标；其他 = 相对扩展根路径（加载失败回退内置 + Warn）。</summary>
+        [XMLStorage] public string icon = "";
+        /// <summary>图标染色：空 = 自动（default 图标染色、自定义图标原色）；true/false = 强制；其他值 = 自动 + Warn。</summary>
+        [XMLStorage] public string icontint = "";
 
         public override void Trigger(OS os)
         {
@@ -51,10 +57,23 @@ namespace KernelExtensions.Actions.Title
             if (!IsAscii(title))
                 KELog.Warn("[ShowTitle] title contains non-ASCII characters; the title font only supports ASCII, they will render as '?'. Put such text in the body instead.");
 
-            // 图标路径（NONE/空=默认）
-            string iconPath = ConfigValue.IsNone(icon) ? "Images/Info.png" : icon;
+            // 图标：空/NONE = 不显示；"default" = 内置；其他 = 路径
+            string iconArg;
+            if (ConfigValue.IsNone(icon)) iconArg = null;
+            else if (icon.Trim().Equals("default", StringComparison.OrdinalIgnoreCase)) iconArg = TitleBannerHooks.DefaultIconMarker;
+            else iconArg = icon.Trim();
 
-            TitleBannerHooks.Show(title, NormalizeBody(body), time, color, defaultColor, iconPath);
+            // 图标染色三态：空 = 自动（default 染色 / 自定义不染色）；true/false = 强制；其他值 = 自动 + Warn
+            bool? tintOverride = null;
+            string tintStr = icontint == null ? "" : icontint.Trim();
+            if (tintStr.Length > 0)
+            {
+                if (tintStr.Equals("true", StringComparison.OrdinalIgnoreCase)) tintOverride = true;
+                else if (tintStr.Equals("false", StringComparison.OrdinalIgnoreCase)) tintOverride = false;
+                else KELog.Warn($"[ShowTitle] unknown icontint '{icontint}'; falling back to auto");
+            }
+
+            TitleBannerHooks.Show(title, NormalizeBody(body), duration, color, defaultColor, iconArg, tintOverride);
         }
 
         /// <summary>规范化元素内容：统一换行、去首尾空行、去各行公共缩进（允许作者自由排版）。</summary>

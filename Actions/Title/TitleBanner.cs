@@ -34,42 +34,92 @@ namespace KernelExtensions.Actions.Title
 
         private float timeElapsed;
         private Texture2D infoIcon;
+        private bool tintIcon = true;          // 当前图标是否染色（由 SetIcon 决定）
         private SoundEffect sound1;
         private SoundEffect sound2;
 
-        /// <summary>当前已加载的图标路径（用于 Show 时比较，变化才重载）。</summary>
+        /// <summary>当前图标标识（"iconArg|tint"，用于 Show 时比较，变化才重载）。</summary>
         public string CurrentIconPath { get; private set; } = "";
 
-        /// <summary>加载音效与默认图标。OS 就绪后调用一次。</summary>
-        public void LoadContent(OS osInstance, string iconPath)
+        /// <summary>加载音效。OS 就绪后调用一次（图标由 SetIcon 按需加载）。</summary>
+        public void LoadContent(OS osInstance)
         {
-            ReloadIcon(iconPath);
             sound1 = osInstance.content.Load<SoundEffect>("SFX/DoomShock");
             sound2 = osInstance.content.Load<SoundEffect>("SFX/BrightFlash");
         }
 
         /// <summary>
-        /// 加载/重载图标（路径相对扩展根）。失败仅 Warn，横幅继续无图标显示。
-        /// 修复：icon 参数此前只在 OS.LoadContent 首次生效（后续 ShowTitle 换图标不会重载）。
+        /// 按 ShowTitle 的 icon / icontint 设置图标。
+        /// iconArg：null = 不显示；DefaultIconMarker = 内置默认图标；其他 = 扩展相对路径（失败回退内置 + Warn）。
+        /// tintOverride：null = 自动（内置图标染色 / 自定义图标原色）；true / false = 强制。
         /// </summary>
-        public void ReloadIcon(string iconPath)
+        public void SetIcon(string iconArg, bool? tintOverride)
         {
+            string key = (iconArg ?? "\u0000none") + "|" + (tintOverride.HasValue ? tintOverride.Value.ToString() : "auto");
+            if (CurrentIconPath == key) return;   // 未变化不重载
+
             try { infoIcon?.Dispose(); } catch { }
             infoIcon = null;
+            CurrentIconPath = key;
 
+            if (iconArg == null)
+            {
+                tintIcon = false;                 // 不显示图标
+                return;
+            }
+
+            bool usedEmbedded = false;
+            if (iconArg == TitleBannerHooks.DefaultIconMarker)
+            {
+                infoIcon = LoadEmbeddedIcon();
+                usedEmbedded = true;
+            }
+            else if (!TryLoadFromExtension(iconArg))
+            {
+                KELog.Warn($"[TitleBanner] icon load failed ({iconArg}); falling back to built-in default icon");
+                infoIcon = LoadEmbeddedIcon();
+                usedEmbedded = true;
+            }
+
+            // 自动规则：内置图标染色（跟随强调色）、自定义图标原色；显式 icontint 优先
+            tintIcon = tintOverride ?? usedEmbedded;
+        }
+
+        /// <summary>从扩展目录加载图标；失败返回 false（不抛）。</summary>
+        private bool TryLoadFromExtension(string iconPath)
+        {
             try
             {
-                // 扩展信息 / GraphicsDevice 也放在 try 内：二者异常时不应抛出（横幅降级为无图标）
                 string folder = ExtensionLoader.ActiveExtensionInfo.FolderPath;
                 var gd = Game1.getSingleton().GraphicsDevice;
-
                 using (var s = File.OpenRead(Path.Combine(folder, iconPath)))
                     infoIcon = Texture2D.FromStream(gd, s);
-                CurrentIconPath = iconPath;
+                return infoIcon != null;
             }
             catch (Exception ex)
             {
                 KELog.Warn($"[TitleBanner] icon load failed ({iconPath}): {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>从程序集内嵌资源加载内置默认图标（不依赖扩展目录）。</summary>
+        private static Texture2D LoadEmbeddedIcon()
+        {
+            try
+            {
+                var gd = Game1.getSingleton().GraphicsDevice;
+                using (var s = typeof(TitleBanner).Assembly
+                    .GetManifestResourceStream("KernelExtensions.Img.Info.png"))
+                {
+                    if (s == null) { KELog.Warn("[TitleBanner] embedded default icon not found"); return null; }
+                    return Texture2D.FromStream(gd, s);
+                }
+            }
+            catch (Exception ex)
+            {
+                KELog.Warn($"[TitleBanner] embedded icon load failed: {ex.Message}");
+                return null;
             }
         }
 
@@ -158,7 +208,9 @@ namespace KernelExtensions.Actions.Title
             {
                 int inset = 3;
                 var iconInner = new Rectangle(iconRect.X + inset, iconRect.Y + inset, iconRect.Width - inset * 2, iconRect.Height - inset * 2);
-                sb.Draw(infoIcon, iconInner, Color.Lerp(AccentColor, Color.White, 0.3f) * alpha);
+                // 染色仅当 tintIcon：内置图标默认染色（跟随强调色），自定义图标原色；可由 icontint 覆盖
+                Color iconColor = tintIcon ? Color.Lerp(AccentColor, Color.White, 0.3f) : Color.White;
+                sb.Draw(infoIcon, iconInner, iconColor * alpha);
             }
         }
     }
@@ -168,16 +220,18 @@ namespace KernelExtensions.Actions.Title
     internal static class TitleBannerHooks
     {
         internal static TitleBanner Instance;
-        internal static string IconPath = "Images/Info.png";
+
+        /// <summary>icon="default" 的内部标记（与扩展路径区分）。</summary>
+        internal const string DefaultIconMarker = "\u0001default";
+
         private static bool _drawFailedWarned;
 
-        /// <summary>弹出横幅。colorKey=CC 颜色关键字/Hex/名称（NONE/空=用 defaultColor）；强调色每帧刷新，动态色不定格。</summary>
-        internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor, string iconPath)
+        /// <summary>弹出横幅。colorKey=CC 颜色关键字/Hex/名称（NONE/空=用 defaultColor）；强调色每帧刷新，动态色不定格。
+        /// iconArg=null 时不显示图标；tintOverride=null 时按自动规则（内置图标染色 / 自定义图标原色）。</summary>
+        internal static void Show(string title, string body, float duration, string colorKey, Color defaultColor, string iconArg, bool? tintOverride)
         {
             if (Instance == null) return;
-            // 图标路径变化才重载（修复：此前 icon 参数仅在 OS.LoadContent 首次生效，后续换图标无效）
-            if (!string.IsNullOrEmpty(iconPath) && Instance.CurrentIconPath != iconPath)
-                Instance.ReloadIcon(iconPath);
+            Instance.SetIcon(iconArg, tintOverride);
             // 各按自身字体的字符集清洗：titlefont(Kremlin) 无本地化版 → 非 ASCII 降级为 '?'；
             // Body 用 GuiData.font（官方本地化字体，含本语言字形）→ 中文/日文/韩文等原样保留。
             Instance.TitleText = TextHelper.CleanStringForFont(GuiData.titlefont, title);
@@ -194,7 +248,7 @@ namespace KernelExtensions.Actions.Title
         {
             if (Instance != null) return;
             var banner = new TitleBanner();
-            banner.LoadContent(__instance, IconPath);
+            banner.LoadContent(__instance);
             Instance = banner;
             KELog.Debug("[TitleBanner] initialized");
         }
