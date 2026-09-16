@@ -11,6 +11,8 @@ namespace KernelExtensions.Actions
 {
     /// <summary>
     /// 向终端逐字打印文本（支持原版 #宏# 替换）。
+    /// **不自动换行**：从当前光标处逐字追加，语义与 HackerScript 的 write 相近——
+    /// 可用多条 TerminalType 在同一行内分段输出（各自不同速度），或用 \n 自行控制换行。
     /// 支持 Delay 和 DelayHost 属性。
     ///
     /// 用法：
@@ -88,11 +90,9 @@ namespace KernelExtensions.Actions
 
             public void Start()
             {
-                // 输出前先换行，从新行开始逐字；文本本身以 \n 开头时交给
-                // TextWriterTimed 处理（避免双空行）。与原版 TextWriterTimed
-                // 的换行处理一致（os.write(" ")）。
-                if (text.Length > 0 && text[0] != '\n')
-                    os.write(" ");
+                // 不自动换行：从当前光标处开始逐字追加，语义与 HackerScript 的 write 一致。
+                // 需要换行时由作者在文本中写 \n，或用 TerminalWrite 另起一行。
+                // （2026-09-16 变更：此前会先 os.write(" ") 强制另起一行，导致无法行内追加）
                 os.UpdateSubscriptions += Update;
             }
 

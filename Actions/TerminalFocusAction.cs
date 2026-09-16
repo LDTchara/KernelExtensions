@@ -2,6 +2,7 @@ using Hacknet;
 using Hacknet.Gui;
 using Microsoft.Xna.Framework;
 using Pathfinder.Action;
+using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
 namespace KernelExtensions.Actions
@@ -20,11 +21,11 @@ namespace KernelExtensions.Actions
     /// </summary>
     public class TerminalFocusAction : KEAction
     {
-        public float Duration = 2.0f;
-        public float BorderDuration = -1f;      // -1 表示使用 Duration
-        public float FadeInDuration = -1f;      // -1 表示使用 Duration
-        public float DarkenAlpha = 0.8f;
-        public float ExpandAmount = 200f;
+        [XMLStorage] public float Duration = 2.0f;
+        [XMLStorage] public float BorderDuration = -1f;   // -1 表示使用 Duration
+        [XMLStorage] public float FadeInDuration = -1f;   // -1 表示使用 Duration
+        [XMLStorage] public float DarkenAlpha = 0.8f;
+        [XMLStorage] public float ExpandAmount = 200f;
 
         public override void Trigger(OS os)
         {
@@ -36,19 +37,8 @@ namespace KernelExtensions.Actions
             anim.Start();
         }
 
-        public override void LoadFromXml(ElementInfo info)
-        {
-            if (info.Attributes.TryGetValue("Duration", out string durStr))
-                float.TryParse(durStr, out Duration);
-            if (info.Attributes.TryGetValue("BorderDuration", out string borderStr))
-                float.TryParse(borderStr, out BorderDuration);
-            if (info.Attributes.TryGetValue("FadeInDuration", out string fadeStr))
-                float.TryParse(fadeStr, out FadeInDuration);
-            if (info.Attributes.TryGetValue("DarkenAlpha", out string darkStr))
-                float.TryParse(darkStr, out DarkenAlpha);
-            if (info.Attributes.TryGetValue("ExpandAmount", out string expStr))
-                float.TryParse(expStr, out ExpandAmount);
-        }
+        // 参数由 [XMLStorage] 统一解析（基类 KEAction → DelayablePathfinderAction 负责 Delay/DelayHost）；
+        // 早前版本在此手写 LoadFromXml 且未调用 base，导致 Delay/DelayHost 实际不生效（2026-09-16 修复）。
 
         private class TerminalFocusAnimation
         {
