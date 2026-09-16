@@ -65,7 +65,8 @@ namespace KernelExtensions.Actions
             {
                 timer = 0f;
                 active = true;
-                os.postFXDrawActions += Draw;
+                // 注意：os.postFXDrawActions 被 OS 调用后**立即置 null**（OS.cs:1257-1258，一次性语义），
+                // 所以不能只挂一次——改为在 Update 里每帧重新挂（见下）。
                 os.UpdateSubscriptions += Update;
             }
 
@@ -76,9 +77,11 @@ namespace KernelExtensions.Actions
                 if (timer >= totalDuration)
                 {
                     active = false;
-                    os.postFXDrawActions -= Draw;
                     os.UpdateSubscriptions -= Update;
+                    return;
                 }
+                // 每帧重新挂（OS 调用后会自动清空）；用 Combine 避免覆盖其他模组/守护进程挂的委托
+                os.postFXDrawActions = (Action)Delegate.Combine(os.postFXDrawActions, (Action)Draw);
             }
 
             private void Draw()
