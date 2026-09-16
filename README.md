@@ -105,6 +105,10 @@ Workarounds:
 - **HN 扩展小屋的各位朋友** – 测试、反馈与支持。  
   Members in the HN 扩展小屋 – testing, feedback, and support.
 
+> [!TIP] 
+> *有关 April_Crystal 那句“大量的麻烦”是他自己加的。*  
+> *The "a lot of trouble" part about April_Crystal was added by himself.*
+
 ---
 
 ## 📥 下载与反馈 / Download & Feedback
