@@ -28,8 +28,9 @@ namespace KernelExtensions.Actions
     ///   · 保存 —— 基线写入存档 &lt;OrgLinks&gt; 标签（附 ALLSAVED 标记，读取时过滤）；
     ///   · 读档 —— SaveComputerLoadedEvent 暂存、OSLoaded 统一恢复（避免逐台加载顺序丢链接）。
     ///   基线 key 用 idName（大小写不敏感），跨存档稳定；读档后 reset 按 idName 重新解析目标。
+    ///   Delay/DelayHost：继承 DelayablePathfinderAction（⚠️ 属性名大小写敏感；需 DelayHost 指向带 FastActionHost 的节点）
     /// </summary>
-    public class ConnectionControlAction : PathfinderAction
+    public class ConnectionControlAction : DelayablePathfinderAction
     {
         [XMLStorage] public string sourceComp;
         [XMLStorage] public string targetComp;
@@ -41,9 +42,8 @@ namespace KernelExtensions.Actions
         private static readonly Dictionary<string, List<string>> _pendingOrgLinkIds = new(StringComparer.OrdinalIgnoreCase);
         private const string AllSavedMarker = "ALLSAVED";
 
-        public override void Trigger(object os_obj)
+        public override void Trigger(OS os)
         {
-            OS os = (OS)os_obj;
             if (string.IsNullOrWhiteSpace(sourceComp))
             {
                 KELog.Error("[ConnectControl] sourceComp is required.");
