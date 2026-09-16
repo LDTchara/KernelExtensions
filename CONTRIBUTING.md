@@ -82,6 +82,10 @@ Must finish with **0 errors and 0 warnings**. `GenerateDocumentationFile` is on,
   - `internal` types (e.g. vanilla `PortHackExe`) or conditional installs (e.g. the Stuxnet plugin) → manual `harmony.Patch`, wired centrally in the main entry (see `PorthackAutoPatch`).
 - **Refactoring**: class/file/namespace names may change, but **XML registration strings are frozen** (`RegisterAction`/`RegisterExecutable`/`RegisterDaemon` arguments). Existing extensions must not break.
 - **Dynamic colors** go through `Managers/CustomColorManager.GetDynamicColor` — never route through PhaseSwift for color.
+- **Action conventions**:
+  - **One action, one job** — when a parameter would switch between fundamentally different operations (e.g. `add` / `remove` / `reset`), split them into separate actions (like `ClockStart` / `ClockStop`). A parameter that only changes *appearance* (e.g. `Preset="info|warning"`) is fine.
+  - Prefer `DelayablePathfinderAction` over `PathfinderAction`, so extension authors get `Delay` / `DelayHost`.
+  - **XML attribute names are PascalCase and case-sensitive** — `[XMLStorage]` matches the field name exactly (write `Delay`, never `delay`; a mismatched case is silently ignored). Avoid field names that collide with XNA types (use `AccentColor`, not `Color`).
 
 ## 5. Commit Messages
 
@@ -179,6 +183,10 @@ dotnet build KernelExtensions.csproj --no-restore
   - internal 类型（如原版 `PortHackExe`）或条件安装（如 Stuxnet 插件存在才装）→ 手动 `harmony.Patch`，集中在主入口统一调用（参照 `PorthackAutoPatch`）
 - **重构原则**：类名/文件名/命名空间可改，但 **XML 注册字符串冻结**（`RegisterAction`/`RegisterExecutable`/`RegisterDaemon` 的字符串参数），已有扩展零破坏。
 - **动态颜色**统一走 `Managers/CustomColorManager.GetDynamicColor`——不要借道 PhaseSwift 取色。
+- **Action 编写约定**：
+  - **一个 Action 干一件事**——若某个参数会在**本质不同的操作**间切换（如 `add` / `remove` / `reset`），请拆分为多个 Action（参照 `ClockStart` / `ClockStop`）；只改变**外观**的参数（如 `Preset="info|warning"`）无需拆分。
+  - 优先继承 `DelayablePathfinderAction`（而非 `PathfinderAction`），以便扩展作者获得 `Delay` / `DelayHost`。
+  - **XML 属性名用 PascalCase 且大小写敏感**——`[XMLStorage]` 按字段名精确匹配（必须写 `Delay`，写 `delay` 会被静默忽略）。字段名避免与 XNA 类型同名（用 `AccentColor`，不要用 `Color`）。
 
 ## 5. 提交信息
 
