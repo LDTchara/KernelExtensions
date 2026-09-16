@@ -8,7 +8,7 @@ KernelExtensions 提供了一系列自定义 Action，可在任何动作文件�
 |------|------|------|
 | `PlaySound` | 播放扩展目录下的 WAV 音效文件。 | `<PlaySound Path="Sounds/beep.wav" Volume="1" Pitch="0" Delay="1.5" DelayHost="cheat"/>` |
 | `TerminalWrite` | 向终端输出一行文本。 | `<TerminalWrite text="Hello, World!" />` |
-| `TerminalType` | 向终端逐字打印文本。 | `<TerminalType text="逐字显示的消息" CharDelay="0.04" />` |
+| `TerminalType` | 向终端逐字打印文本——**不自动换行**，从当前光标处追加（语义近 HackerScript 的 `write`；可用多条在同一行分段输出不同速度）。 | `<TerminalType Text="逐字显示的消息" CharDelay="0.04" />` |
 | `TerminalFocus` | 播放终端聚焦特效（全屏变暗 + 边框扩展）。 | `<TerminalFocus Duration="5.0" BorderDuration="2.0" FadeInDuration="0.5" />` |
 | `RenameNode` | 按节点 ID 重命名节点，修改即时生效并持久化到存档。 | `<RenameNode NodeID="dhs" NewName="秘密基地" />` |
 

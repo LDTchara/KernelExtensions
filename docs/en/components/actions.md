@@ -8,7 +8,7 @@ KernelExtensions provides a set of custom Actions that can be invoked in any act
 |--------|------------|---------|
 | `PlaySound` | Plays a WAV sound effect from the extension directory. | `<PlaySound Path="Sounds/beep.wav" Volume="1" Pitch="0" Delay="1.5" DelayHost="cheat"/>` |
 | `TerminalWrite` | Outputs a line of text to the terminal. | `<TerminalWrite text="Hello, World!" />` |
-| `TerminalType` | Types text character‑by‑character into the terminal. | `<TerminalType text="A message typed out" CharDelay="0.04" />` |
+| `TerminalType` | Types text character‑by‑character into the terminal — **no automatic newline**; appends at the current cursor (like HackerScript's `write`, so several calls can share one line). | `<TerminalType Text="A message typed out" CharDelay="0.04" />` |
 | `TerminalFocus` | Plays a terminal focus effect (full‑screen darken + expanding border). | `<TerminalFocus Duration="5.0" BorderDuration="2.0" FadeInDuration="0.5" />` |
 | `RenameNode` | Renames a node by its ID; the change takes effect immediately and persists in saves. | `<RenameNode NodeID="dhs" NewName="Secret Base" />` |
 
