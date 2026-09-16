@@ -6,6 +6,7 @@ using HarmonyLib;
 using KernelExtensions.Actions;
 using KernelExtensions.Actions.Aircraft;
 using KernelExtensions.Actions.CustomTrial;
+using KernelExtensions.Actions.Link;
 using KernelExtensions.Actions.PhaseSwift;
 using KernelExtensions.Actions.Title;
 using KernelExtensions.Actions.VMAttack;
@@ -162,12 +163,16 @@ namespace KernelExtensions
             ActionManager.RegisterAction<BreakHeartAction>("BreakHeart");
             KELog.Info("BreakHeart action registered.");
 
-            // 2.9 ConnectControl：节点连接控制（org 基线跨会话，事件钩子内聚在 Action 静态方法）
-            ActionManager.RegisterAction<ConnectionControlAction>("ConnectControl");
-            KELog.Info("ConnectControl action registered.");
-            EventManager<SaveComputerEvent>.AddHandler(ConnectionControlAction.OnSaveComputer);
-            EventManager<SaveComputerLoadedEvent>.AddHandler(ConnectionControlAction.OnLoadComputer);
-            EventManager<OSLoadedEvent>.AddHandler(ConnectionControlAction.OnOSLoaded);
+            // 2.9 LinkControl：节点连接控制（org 基线跨会话；共享状态与事件钩子内聚在 Storage/OrgLinksStorage）
+            ActionManager.RegisterAction<LinkControlResetAction>("LinkControlReset");
+            KELog.Info("LinkControlReset action registered.");
+            ActionManager.RegisterAction<LinkControlAddAction>("LinkControlAdd");
+            KELog.Info("LinkControlAdd action registered.");
+            ActionManager.RegisterAction<LinkControlRemoveAction>("LinkControlRemove");
+            KELog.Info("LinkControlRemove action registered.");
+            EventManager<SaveComputerEvent>.AddHandler(OrgLinksStorage.OnSaveComputer);
+            EventManager<SaveComputerLoadedEvent>.AddHandler(OrgLinksStorage.OnLoadComputer);
+            EventManager<OSLoadedEvent>.AddHandler(OrgLinksStorage.OnOSLoaded);
 
             // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
             if (CanExtraPackUse)

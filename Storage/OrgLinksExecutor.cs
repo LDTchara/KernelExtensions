@@ -9,7 +9,7 @@ namespace KernelExtensions.Storage
     /// <summary>
     /// 内容加载时解析电脑 XML 的 &lt;OrgLinks&gt; 子元素（逗号分隔 idName），并入 links。
     /// 内容侧定义组织基线（ConnectControl reset 的恢复对象）；读档侧基线由存档 &lt;OrgLinks&gt; 恢复
-    /// （Actions/ConnectionControlAction 的存档钩子处理）。
+    /// （Storage/OrgLinksStorage 的存档钩子处理）。
     /// 使用 [ComputerExecutor] 特性自动注册，无需手动调用（对齐 NodeIconComputerExecutor 模式）。
     /// </summary>
     [ComputerExecutor("OrgLinks")]
