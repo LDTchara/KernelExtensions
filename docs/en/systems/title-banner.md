@@ -20,7 +20,7 @@
 ## Basic usage
 
 ```xml
-<ShowTitle title="WARNING" preset="warning" time="6" icon="Images/Warn.png">
+<ShowTitle title="WARNING" preset="warning" duration="6" icon="default">
 Left the LDTchara VPN
 Tracking begins in 60 seconds
 Get back to the VPN ASAP
@@ -37,10 +37,11 @@ The body sits between the opening and closing tags, and **newlines are line brea
 |-----------|:--------:|---------|-------------|
 | `title` | ❌ | empty | Banner title (⚠️ **ASCII only**, see below) |
 | `preset` | ❌ | `info` | Accent preset: `info` = theme highlight base (`defaultHighlightColor`); `warning` = theme warning colour (`warningColor`) |
-| `time` | ❌ | `5` | Seconds the banner stays on screen |
-| `color` | ❌ | empty | CustomColor override for the accent (hex / preset / dynamic); `NONE` / empty = use the `preset` theme colour |
-| `icon` | ❌ | `Images/Info.png` | Icon path (relative to the extension root); `NONE` / empty = default |
-| `Delay` / `DelayHost` | ❌ | — | Inherited from the Pathfinder delayable action mechanism |
+| `duration` | ❌ | `5` | Seconds the banner stays on screen |
+| `color` | ❌ | empty | CustomColor override for the accent (preset / dynamic); `NONE` / empty = use the `preset` theme colour |
+| `icon` | ❌ | empty | Icon: empty / `NONE` = **no icon**; `default` = built-in default icon; anything else = path relative to the extension root |
+| `icontint` | ❌ | empty | Icon tinting: empty = **auto** (`default` tinted / custom not tinted); `true` / `false` = force; any other value = auto + warning |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayable action; ⚠️ **attribute names are case-sensitive** (`Delay`, not `delay`) |
 
 ---
 
@@ -56,16 +57,26 @@ The body sits between the opening and closing tags, and **newlines are line brea
 !!! tip "Follows the theme by default"
     Without `color`, the accent comes from the **active game theme**: `info` uses `defaultHighlightColor` (the theme's highlight base — it is not polluted by the temporary warning flash), `warning` uses `warningColor` (the theme's warning colour). When the player switches themes, the banner follows automatically.
 
-!!! warning "Named colours are currently unavailable"
-    The colour parser does not include the XNA named-colour table (e.g. `Red`); named colours fall back to the default. Use hex or CustomColor presets instead.
+!!! warning "HEX colours are currently unavailable (known issue)"
+    The colour parser has **no Hex support** (`#RRGGBB` silently falls back to the `preset` theme colour) and no XNA named-colour table (e.g. `Red`). Both will be added by the colour-parsing unification (9.50). For now use **CustomColor presets or dynamic colours**.
 
 ---
 
 ## Icon
 
-- Default is `Images/Info.png` (relative to the extension root)
-- A missing or failing icon **never crashes**: the banner still shows and a single `KELog.Warn` is logged
-- When different `ShowTitle` calls in the same extension use different icons, the icon is reloaded on demand
+`icon` and `icontint` together decide how the icon appears:
+
+| `icon` | `icontint` | Result |
+|---|---|---|
+| omitted / empty / `NONE` | — | **No icon** |
+| `default` | omitted | Built-in icon, **tinted** (follows the accent colour) |
+| `default` | `false` | Built-in icon, original colours |
+| valid path | omitted | That icon, **original colours** (no tint) |
+| valid path | `true` | That icon, **tinted** |
+| invalid path / load failure | any | **Falls back to the built-in icon** (tinted) + `KELog.Warn` |
+
+- The built-in icon comes from the mod's embedded resources and is **never written into your extension folder**
+- Any other `icontint` value (e.g. `yes`) falls back to **auto** and logs a `KELog.Warn`
 
 ---
 
