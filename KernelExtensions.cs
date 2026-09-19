@@ -239,8 +239,8 @@ namespace KernelExtensions
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("[KernelExtensions] Thanks for April_Crystal ZQG ChronoVert");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("[KernelExtensions] Thanks for April_Crystal");
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;

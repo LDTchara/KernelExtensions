@@ -100,10 +100,8 @@ Workarounds:
   Initial core implementation of some features (including but not limited to Aircraft Daemon, custom node icons, custom ending module, custom cracker, configurable banners, etc.) and many improvement suggestions *(and a lot of trouble)*; one of the core KE developers.
 - **ZQG** – 第一个使用 KE 的扩展作者，提供了宝贵的测试反馈。  
   The first extension author to use KE, providing invaluable testing feedback.
-- **ChronoVert** - 提供了节点IP自替换符的想法和初版功能。  
-  Provided the idea and initial implementation for node IP self-replacement.
-- **HN 扩展小屋的各位朋友** – 测试、反馈与支持。  
-  Members in the HN 扩展小屋 – testing, feedback, and support.
+- **HN 扩展小屋的各位朋友** – 部分灵感来源、测试、反馈与支持。  
+  Members in the HN 扩展小屋 – Sources of some inspiration, testing, feedback, and support.
 
 > [!TIP] 
 > *有关 April_Crystal 那句“大量的麻烦”是他自己加的。*  
