@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions.Title
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 显示标题横幅（重制自原版 IncomingConnectionOverlay「本机被外部连接」覆盖层）。

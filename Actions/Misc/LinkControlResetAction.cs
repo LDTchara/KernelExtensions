@@ -3,7 +3,7 @@ using KernelExtensions.Storage;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions.Link
+namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
     /// 重置节点链接为 org 基线（丢弃运行时所有临时增删）。
