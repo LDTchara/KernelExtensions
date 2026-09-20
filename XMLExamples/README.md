@@ -83,10 +83,12 @@
 - 颜色字段：省略或留空 = 使用当前主题对应颜色。
 - 动作引用：省略 = 不执行。
 - 字符串可选字段（按钮文字等）：**写 `NONE` 或留空 = 显式禁用 / 回退内置本地化；不写该元素 = 使用默认值**。`NONE` 大小写不敏感。
+- **数值型「用默认」：写负数 = 使用默认 / 继承 / 无限**（如 `FadeDuration="-1"` = 用配置默认、`FallDuration="-1"` = 用 Daemon 自身的坠落时长）；**NaN / Infinity 视同无效值，同样回退默认**。
   - Omit the element = module default. Numeric: omit or `0` = disabled. Boolean: omit or `false` = disabled.
   - Music/file path: omit or empty per module — most treat it as no-play / no-action; a few fields have a **built-in fallback path** (e.g. Ending `SpeechFile` empty = `Docs/EndingSpeech.wav`).
   - Color: omit or empty = current theme color.
   - String fields: **`NONE` or empty = explicitly disabled / falls back to built-in localisation; element absent = default value**. `NONE` is case-insensitive.
+  - Numeric fields that support "use default": **a negative value means default / inherit / unlimited** (e.g. `FadeDuration="-1"` = the config default). **NaN / Infinity count as invalid and also fall back to the default.**
 
 ### 7. 颜色格式 / Color Formats
 

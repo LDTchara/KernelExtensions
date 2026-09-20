@@ -22,8 +22,8 @@ namespace KernelExtensions.Actions.Misc
     public class TerminalFocusAction : KEAction
     {
         [XMLStorage] public float Duration = 2.0f;
-        [XMLStorage] public float BorderDuration = -1f;   // -1 表示使用 Duration
-        [XMLStorage] public float FadeInDuration = -1f;   // -1 表示使用 Duration
+        [XMLStorage] public float BorderDuration = -1f;   // 负数 / 无效值 = 使用 Duration
+        [XMLStorage] public float FadeInDuration = -1f;   // 负数 / 无效值 = 使用 Duration
         [XMLStorage] public float DarkenAlpha = 0.8f;
         [XMLStorage] public float ExpandAmount = 200f;
 
@@ -31,8 +31,9 @@ namespace KernelExtensions.Actions.Misc
         {
             if (os.terminal == null) return;
 
-            float actualBorder = BorderDuration >= 0 ? BorderDuration : Duration;
-            float actualFadeIn = FadeInDuration >= 0 ? FadeInDuration : Duration;
+            // 9.55 约定：负数 / NaN / Infinity 均视为「使用默认（= Duration）」
+            float actualBorder = (float.IsNaN(BorderDuration) || float.IsInfinity(BorderDuration) || BorderDuration < 0f) ? Duration : BorderDuration;
+            float actualFadeIn = (float.IsNaN(FadeInDuration) || float.IsInfinity(FadeInDuration) || FadeInDuration < 0f) ? Duration : FadeInDuration;
             var anim = new TerminalFocusAnimation(os, Duration, actualBorder, actualFadeIn, DarkenAlpha, ExpandAmount);
             anim.Start();
         }

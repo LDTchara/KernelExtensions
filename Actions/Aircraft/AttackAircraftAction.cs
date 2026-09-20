@@ -47,21 +47,18 @@ namespace KernelExtensions.Actions.Aircraft
                 }
             }
 
-            // 处理 CrashDelay
-            if (CrashDelay == -1)
+            // 处理 CrashDelay —— 9.55 约定：负数 = 使用默认（Daemon 自身配置）；
+            // NaN / Infinity 视为无效值，同样回退默认（此前会落入 throw，与「负数 = 默认」的约定相反）
+            if (float.IsNaN(CrashDelay) || float.IsInfinity(CrashDelay) || CrashDelay < 0f)
                 d.H = d.FallDuration; // 使用 Daemon 自身配置的默认坠落时长
-            else if (CrashDelay == 0)
+            else if (CrashDelay == 0f)
             {
                 d.CurrentAltitude = 0;
                 d.CrashAircraft();
                 return;
             }
-            else if (CrashDelay > 0)
-                d.H = CrashDelay;
             else
-            {
-                throw new Exception($"Invalid CrashDelay: {CrashDelay}. Use -1 for default, 0 for instant, or a positive number of seconds.");
-            }
+                d.H = CrashDelay; // 正数：覆盖 Daemon 的 FallDuration
             StartAttack(os, d);
         }
 
