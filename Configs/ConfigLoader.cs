@@ -12,6 +12,8 @@ namespace KernelExtensions.Configs
     {
         public static bool Debug { get; private set; }
         public static bool SkipVanillaIRCLogs { get; private set; }
+        /// <summary>主菜单水印（“+ KernelExtensions &lt;版本&gt;”）是否显示；默认 true。KE-Config.xml 的 &lt;Watermark&gt; 控制。</summary>
+        public static bool Watermark { get; private set; } = true;
         public static List<string> CustomImages { get; private set; } = new();
 
         /// <summary>
@@ -22,6 +24,7 @@ namespace KernelExtensions.Configs
             // 每次读取前重置
             Debug = false;
             SkipVanillaIRCLogs = false;
+            Watermark = true;
             CustomImages = new List<string>();
 
             var extInfo = ExtensionLoader.ActiveExtensionInfo;
@@ -56,6 +59,10 @@ namespace KernelExtensions.Configs
                 if (skip != null && bool.TryParse(skip.Value, out bool sv))
                     SkipVanillaIRCLogs = sv;
 
+                var wm = rootEl.Element("Watermark");
+                if (wm != null && bool.TryParse(wm.Value, out bool wmv))
+                    Watermark = wmv;
+
                 var images = rootEl.Element("CustomImages");
                 if (images != null)
                 {
@@ -89,6 +96,9 @@ namespace KernelExtensions.Configs
 
     <!-- 是否跳过原版 BashLogs.txt IRC 日志，只加载 CustomIRCLogs.txt。false=同时加载 -->
     <SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>
+
+    <!-- 主菜单水印（+ KernelExtensions 版本号，彩虹流动 + 逐字晃动）。true=显示（默认），false=隐藏 -->
+    <Watermark>true</Watermark>
 
     <!-- 自定义图标图片列表，用于 SetNodeIcon Action（自动注册为 @文件名） -->
     <!-- 以扩展根目录为基准，建议尺寸 128x128 -->
