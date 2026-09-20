@@ -17,6 +17,8 @@ namespace KernelExtensions.Configs
         [XmlElement("ShowSceneNumber")] public bool ShowSceneNumber = true;
         [XmlElement("CompleteText")] public string CompleteText = null;
         [XmlElement("FinishMode")] public string FinishMode = "none";
+        /// <summary>Stop 时的拓扑处理：restore（缺省，恢复 PS 启动时备份的原始链接）/ scene_N（原始链接 + 场景 N 的 Topology）/ merge（清除受控节点间链接后合并全部场景拓扑）。</summary>
+        [XmlElement("TopologyMode")] public string TopologyMode = "restore";
         [XmlElement("UseDualTrackMusic")] public bool UseDualTrackMusic = true;
         [XmlElement("RestoreThemeOnStop")] public bool RestoreThemeOnStop = true;
         [XmlElement("SingleTrack")] public string SingleTrack = null;

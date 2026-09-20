@@ -18,8 +18,15 @@ namespace KernelExtensions.Actions.PhaseSwift
     ///     "full"    — 全保留：所有场景的节点保持可见。
     ///     "scene_N" — 保留场景 N 的节点可见（如 scene_2）。
     ///
+    ///   TopologyMode (string, 可选) 完成后的拓扑处理方式，优先级大于配置文件中的模式。
+    ///     不填 → 使用 Config 中的 TopologyMode 设置（缺省 restore）。
+    ///     "restore" — 恢复 PS 启动时备份的原始链接。
+    ///     "scene_N" — 恢复原始链接后叠加场景 N 的 Topology（如 scene_2）。
+    ///     "merge"   — 清除受控节点间链接后合并全部场景的 Topology（会打通后续场景的路径）。
+    ///
     /// 用法：<PhaseSwiftStop />
     ///       <PhaseSwiftStop FinishMode="full" />
+    ///       <PhaseSwiftStop FinishMode="scene_2" TopologyMode="scene_2" />
     /// </summary>
     public class PhaseSwiftStopAction : KEAction
     {
@@ -27,16 +34,21 @@ namespace KernelExtensions.Actions.PhaseSwift
         [XMLStorage]
         public string FinishMode = null;
 
+        /// <summary>完成后的拓扑处理模式。restore=恢复原始 scene_N=原始+场景N merge=合并全部场景。不填则用Config设置。</summary>
+        [XMLStorage]
+        public string TopologyMode = null;
+
         public override void Trigger(OS os)
         {
             string mode = FinishMode ?? PhaseSwiftManager.Config?.FinishMode ?? "none";
+            string topologyMode = string.IsNullOrEmpty(TopologyMode) ? PhaseSwiftManager.Config?.TopologyMode : TopologyMode;
             // 结束剧情：移除 PhaseSwift_{ConfigName} flag，防止读档后 AutoRestore 误恢复 PS。
             // 只在这里清 —— 其他 Stop 调用（exe 被杀/扩展卸载）是清理而非剧情结束，
             // 清理它们会破坏"杀 exe 后读档剧情继续"的语义。
             string psFlag = os.Flags.GetFlagStartingWith("PhaseSwift_");
             if (!string.IsNullOrEmpty(psFlag))
                 os.Flags.RemoveFlag(psFlag);
-            PhaseSwiftManager.Stop(mode);
+            PhaseSwiftManager.Stop(mode, topologyMode);
             // 让 Exe 进入 Completing 状态，显示 3 秒完成文本后自动退出
             if (PhaseSwiftExe.CurrentInstance != null && !PhaseSwiftExe.CurrentInstance.isExiting)
             {

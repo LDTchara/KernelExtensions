@@ -16,28 +16,48 @@
     <!-- English: Default active scene index on startup (0-based) -->
     <InitialScene>0</InitialScene>
     <!--
-         PS 完成/退出后的节点处理模式（FinishMode）
+         PS 完成/退出后的「节点可见性」处理模式（FinishMode）
          三种模式：
-           none   — 完全清理：恢复原始链接，隐藏所有受控节点，恢复主题。默认。
-           full   — 全整合：恢复原始链接，但保留所有场景已发现的节点可见，恢复主题。
-           scene_0~N — 仅保留指定场景的节点可见（如 scene_2 保留场景 2），恢复主题+链接。
+           none   — 完全清理：隐藏所有受控节点，恢复主题。默认。
+           full   — 全整合：保留所有场景已发现的节点可见，恢复主题。
+           scene_0~N — 仅保留指定场景的节点可见（如 scene_2 保留场景 2），恢复主题。
 
-         不论哪种模式，受控节点的原始链接都会恢复。
-         因为 PS 每个场景的 <Topology> 会覆盖节点原先的邻居关系，
-         不恢复的话节点间的连接会永久偏离初始配置。
+         结束后的拓扑（链接）由下面的 TopologyMode 单独控制，两者相互独立。
     -->
     <!-- English:
-         FinishMode — How nodes are handled when PS completes/exits.
+         FinishMode — How node VISIBILITY is handled when PS completes/exits.
          Three modes:
-           none   — Full cleanup: restore original links, hide all managed nodes, restore theme. Default.
-           full   — Full integration: restore original links, but keep all discovered nodes visible, restore theme.
-           scene_0~N — Keep only the specified scene's nodes visible (e.g. scene_2), restore theme + links.
+           none   — Full cleanup: hide all managed nodes, restore theme. Default.
+           full   — Full integration: keep all discovered nodes visible, restore theme.
+           scene_0~N — Keep only the specified scene's nodes visible (e.g. scene_2), restore theme.
 
-         Regardless of mode, original links of managed nodes are always restored.
-         Since each scene's <Topology> overwrites the original neighbor relationships,
-         not restoring them would permanently alter node connections from the initial config.
+         The topology (links) left behind is controlled separately by TopologyMode below; the two are independent.
     -->
     <FinishMode>none</FinishMode>
+
+    <!--
+         PS 完成/退出后的「拓扑」处理模式（TopologyMode）
+         三种模式：
+           restore  — 恢复 PS 启动时备份的原始链接。默认。
+           scene_0~N — 先恢复原始链接，再叠加场景 N 的 <Topology>（等同于运行期停在该场景的状态）。
+           merge    — 清除受控节点之间的链接后，把所有场景的 <Topology> 合并叠加（按 from→to 单向去重）。
+
+         注意：merge 会连通「后续场景」的路径，玩家可能提前抵达尚未经历的场景，
+               建议只在剧情线已全部走完、要交还自由探索时使用。
+         注意：scene_N 的 N 超出场景数量时回退 restore 并输出 Warn。
+    -->
+    <!-- English:
+         TopologyMode — How the TOPOLOGY (links) is handled when PS completes/exits.
+         Three modes:
+           restore  — Restore the original links snapshotted at PS startup. Default.
+           scene_0~N — Restore original links, then overlay scene N's <Topology> (same as staying on that scene at runtime).
+           merge    — Clear links between managed nodes, then merge every scene's <Topology> (deduplicated per from-to pair).
+
+         NOTE: merge connects paths from LATER scenes, letting players reach scenes not yet experienced.
+               Use it only after the story line is fully finished and free exploration is restored.
+         NOTE: An out-of-range N in scene_N falls back to restore and logs a Warn.
+    -->
+    <TopologyMode>restore</TopologyMode>
 
     <!-- ============================================================
          文本局部化

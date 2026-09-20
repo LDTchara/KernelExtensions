@@ -156,12 +156,19 @@ namespace KernelExtensions.Managers
             IsRunning = true;
         }
 
-        public static void Stop(string finishMode = "none")
+        /// <summary>
+        /// 停止 PhaseSwift 并清理全部运行时状态。
+        /// finishMode — 结束后的节点可见性：none（全隐藏）/ full（全保留）/ scene_N（留场景 N）。
+        /// topologyMode — 结束后的拓扑处理：restore（恢复 PS 启动时备份的原始链接，缺省）/
+        ///                scene_N（原始链接 + 场景 N 的 Topology，与运行期切到该场景一致）/
+        ///                merge（清除受控节点间链接后合并全部场景拓扑）。传 null 或空按 restore 处理。
+        /// </summary>
+        public static void Stop(string finishMode = "none", string topologyMode = null)
         {
             if (!IsInitialized) return;
 
             CleanupAudio();
-            RestoreOriginalLinks();
+            ApplyTopologyMode(topologyMode);
 
             // 根据 FinishMode 处理节点可见性
             if (finishMode == "full")
@@ -667,7 +674,14 @@ namespace KernelExtensions.Managers
 
         private static void ApplyTopology(int sceneIdx)
         {
-            var scene = Config.Scenes[sceneIdx];
+            RemoveControlledLinks();
+            foreach (var link in Config.Scenes[sceneIdx].Topology)
+                AddLink(link.From, link.To);
+        }
+
+        /// <summary>清除受控节点「之间」的全部链接（受控节点与非受控节点的连接不受影响）。</summary>
+        private static void RemoveControlledLinks()
+        {
             foreach (var id in _controlledNodeIds)
             {
                 var comp = Programs.getComputer(CurrentOS, id);
@@ -678,15 +692,74 @@ namespace KernelExtensions.Managers
                     return _controlledNodeIds.Contains(CurrentOS.netMap.nodes[idx].idName);
                 });
             }
-            foreach (var link in scene.Topology)
+        }
+
+        /// <summary>添加一条有向链接（节点缺失或链接已存在则跳过）。</summary>
+        private static void AddLink(string from, string to)
+        {
+            var fromComp = Programs.getComputer(CurrentOS, from);
+            var toComp = Programs.getComputer(CurrentOS, to);
+            if (fromComp == null || toComp == null) return;
+            int toIndex = CurrentOS.netMap.nodes.IndexOf(toComp);
+            if (toIndex >= 0 && !fromComp.links.Contains(toIndex))
+                fromComp.links.Add(toIndex);
+        }
+
+        /// <summary>
+        /// Stop 时的拓扑处理（来源：Config.TopologyMode 或 PhaseSwiftStop 的 TopologyMode 参数）：
+        ///   restore / 空 / 未知值 — 恢复 PS 启动时备份的原始链接
+        ///   scene_N               — 恢复原始链接后再叠加场景 N 的 Topology（与运行期切到该场景的语义一致）
+        ///   merge                 — 清除受控节点间链接，再叠加全部场景的 Topology（按 from 到 to 单向去重）
+        /// 无效或未知值一律回退 restore 并补 Warn，不静默。
+        /// </summary>
+        private static void ApplyTopologyMode(string mode)
+        {
+            if (string.IsNullOrEmpty(mode) || mode.Equals("restore", StringComparison.OrdinalIgnoreCase))
             {
-                var fromComp = Programs.getComputer(CurrentOS, link.From);
-                var toComp = Programs.getComputer(CurrentOS, link.To);
-                if (fromComp != null && toComp != null)
+                RestoreOriginalLinks();
+                return;
+            }
+
+            if (mode.StartsWith("scene_", StringComparison.OrdinalIgnoreCase))
+            {
+                if (int.TryParse(mode.Substring(6), out int sceneIdx) && sceneIdx >= 0 && sceneIdx < Config.Scenes.Count)
                 {
-                    int toIndex = CurrentOS.netMap.nodes.IndexOf(toComp);
-                    if (toIndex >= 0 && !fromComp.links.Contains(toIndex))
-                        fromComp.links.Add(toIndex);
+                    RestoreOriginalLinks();
+                    ApplyTopology(sceneIdx);
+                }
+                else
+                {
+                    KELog.Warn($"[PhaseSwift] TopologyMode 场景索引无效：{mode}（有效范围 0~{Config.Scenes.Count - 1}），回退 restore");
+                    RestoreOriginalLinks();
+                }
+                return;
+            }
+
+            if (mode.Equals("merge", StringComparison.OrdinalIgnoreCase))
+            {
+                ApplyMergedTopology();
+                return;
+            }
+
+            KELog.Warn($"[PhaseSwift] TopologyMode 未知：{mode}，回退 restore");
+            RestoreOriginalLinks();
+        }
+
+        /// <summary>
+        /// 合并全部场景的 Topology 后应用（按 from 到 to 单向去重）。
+        /// 注意：会叠加后续场景的路径，可能让玩家提前抵达尚未经历的场景 ——
+        /// 建议在「剧情线全部走完、交还自由探索」时使用。
+        /// </summary>
+        private static void ApplyMergedTopology()
+        {
+            RemoveControlledLinks();
+            var seen = new HashSet<(string From, string To)>();
+            foreach (var scene in Config.Scenes)
+            {
+                foreach (var link in scene.Topology)
+                {
+                    if (seen.Add((link.From, link.To)))
+                        AddLink(link.From, link.To);
                 }
             }
         }
