@@ -85,7 +85,7 @@ Must finish with **0 errors and 0 warnings**. `GenerateDocumentationFile` is on,
 - **Action conventions**:
   - **One action, one job** — when a parameter would switch between fundamentally different operations (e.g. `add` / `remove` / `reset`), split them into separate actions (like `ClockStart` / `ClockStop`). A parameter that only changes *appearance* (e.g. `Preset="info|warning"`) is fine.
   - Prefer `DelayablePathfinderAction` over `PathfinderAction`, so extension authors get `Delay` / `DelayHost`.
-  - **XML attribute names are PascalCase and case-sensitive** — `[XMLStorage]` matches the field name exactly (write `Delay`, never `delay`; a mismatched case is silently ignored). Avoid field names that collide with XNA types (use `AccentColor`, not `Color`).
+  - **XML attribute names are PascalCase for consistency** — through the `KEAction` base class they are **case-insensitive** at parse time (both `Delay` and `delay` resolve), but always write PascalCase; giving the same attribute twice in different casings has unpredictable precedence. Avoid field names that collide with XNA types (use `AccentColor`, not `Color`).
   - **Never hand-write `LoadFromXml` to read attributes** — always use an `[XMLStorage]` field. Hand-written loading has produced two bugs:
     ① forgetting `base.LoadFromXml(info)` → `Delay`/`DelayHost` silently stop working (`TerminalFocus`);
     ② hard-coding an attribute name (e.g. `GetString("text", …)`) → authors writing `Text=` get silent no-ops (`TerminalWrite`).
@@ -190,7 +190,7 @@ dotnet build KernelExtensions.csproj --no-restore
 - **Action 编写约定**：
   - **一个 Action 干一件事**——若某个参数会在**本质不同的操作**间切换（如 `add` / `remove` / `reset`），请拆分为多个 Action（参照 `ClockStart` / `ClockStop`）；只改变**外观**的参数（如 `Preset="info|warning"`）无需拆分。
   - 优先继承 `DelayablePathfinderAction`（而非 `PathfinderAction`），以便扩展作者获得 `Delay` / `DelayHost`。
-  - **XML 属性名用 PascalCase 且大小写敏感**——`[XMLStorage]` 按字段名精确匹配（必须写 `Delay`，写 `delay` 会被静默忽略）。字段名避免与 XNA 类型同名（用 `AccentColor`，不要用 `Color`）。
+  - **XML 属性名统一用 PascalCase**——经 `KEAction` 基类处理后解析期**大小写不敏感**（`Delay` 与 `delay` 都能命中），但仍请一律写 PascalCase；同一元素里两种大小写混写时哪个生效不可预测。字段名避免与 XNA 类型同名（用 `AccentColor`，不要用 `Color`）。
   - **不要手写 `LoadFromXml` 去读属性**——一律用 `[XMLStorage]` 字段。手写会出现两类 bug：
     ① 忘记调 `base.LoadFromXml(info)` → `Delay`/`DelayHost` 静默失效（`TerminalFocus` 曾如此）；
     ② 硬编码属性名（如 `GetString("text", …)`）→ 作者写 `Text=` 时静默无输出（`TerminalWrite` 曾如此）。

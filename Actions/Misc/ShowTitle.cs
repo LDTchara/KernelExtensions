@@ -17,7 +17,7 @@ namespace KernelExtensions.Actions.Misc
     ///   第二行正文
     ///   &lt;/ShowTitle&gt;
     ///
-    /// 说明（⚠️ 属性名大小写敏感，须与字段名一致）：
+    /// 说明（属性名大小写不敏感，KEAction 基类统一处理；推荐按字段名书写）：
     ///   · 正文 = **元素内容**（真正的换行符；首尾空行与公共缩进会自动去除，可自由排版）
     ///   · Preset：info（默认，强调色取 os.defaultHighlightColor 主题高亮基色）
     ///              warning（强调色取 os.warningColor 主题警告色）

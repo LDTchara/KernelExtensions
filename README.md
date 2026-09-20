@@ -18,10 +18,13 @@
 
 ## 📖 完整文档 / Full Documentation
 
-所有详细文档、配置指南和动作列表已迁移至 **GitHub Wiki**（中英双语页面）。  
-All detailed documentation, configuration guides, and action references have moved to the **GitHub Wiki** (bilingual Chinese/English pages).
+所有详细文档、配置指南和动作列表已迁移至**主仓库文档站**（MkDocs Material，中英双语页面）。  
+All detailed documentation, configuration guides, and action references live on the **documentation site** (MkDocs Material, bilingual Chinese/English pages).
 
-👉 **[前往 Wiki / Go to Wiki](https://github.com/LDTchara/KernelExtensions/wiki)** 👈
+👉 **[前往文档站 / Go to Docs](https://ldtchara.github.io/KernelExtensions/)** 👈
+
+> GitHub Wiki（`KernelExtensions.wiki`）自 0.7 起**已退役**，内容迁入主仓库 `docs/`。  
+> The GitHub Wiki has been **retired** as of 0.7; its content moved into `docs/` in the main repository.
 
 ---
 
@@ -64,8 +67,8 @@ All detailed documentation, configuration guides, and action references have mov
 - **自定义 Action 与可执行程序 (Custom Actions & Executables)** – 终端交互、音效、标题横幅、自定义结局等 30 余种能力。  
   30+ capabilities including terminal interaction, sound effects, title banners, and custom endings.
 
-→ 完整介绍请参阅 [Wiki 主页](https://github.com/LDTchara/KernelExtensions/wiki)。  
-→ See the [Wiki home](https://github.com/LDTchara/KernelExtensions/wiki) for full details.
+→ 完整介绍请参阅[文档站](https://ldtchara.github.io/KernelExtensions/)。  
+→ See the [documentation site](https://ldtchara.github.io/KernelExtensions/) for full details.
 
 ---
 

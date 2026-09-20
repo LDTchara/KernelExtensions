@@ -19,7 +19,7 @@ namespace KernelExtensions.Actions.Misc
     ///   &lt;TerminalType Text="消息内容" CharDelay="0.04" /&gt;
     ///   &lt;TerminalType text="旧写法兼容" /&gt;
     ///
-    /// 属性（正式名 = 字段名，大小写敏感）：
+    /// 属性（正式名 = 字段名；大小写不敏感，KEAction 基类统一处理）：
     ///   Text      — 必填。打印的文本（支持 #宏# 替换）
     ///   CharDelay — 每个字符输出间隔（秒），默认 0.04（与原版 TextWriterTimed 一致）
     ///   Delay / DelayHost — 由 DelayablePathfinderAction 提供

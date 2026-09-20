@@ -11,7 +11,7 @@ namespace KernelExtensions.Actions.Misc
     /// XML 用法：
     ///   &lt;LinkControlReset SourceComp="playerComp" /&gt;
     ///
-    /// SourceComp：被操作电脑的 idName（必填，大小写敏感）。
+    /// SourceComp：被操作电脑的 idName（必填）。
     /// org 基线见 Storage/OrgLinksStorage（内容 XML 的 dlink 与 &lt;OrgLinks&gt; 在 OSLoaded 时快照）。
     /// </summary>
     public class LinkControlResetAction : KEAction

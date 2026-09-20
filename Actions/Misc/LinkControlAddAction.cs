@@ -11,7 +11,7 @@ namespace KernelExtensions.Actions.Misc
     /// XML 用法：
     ///   &lt;LinkControlAdd SourceComp="playerComp" TargetComp="jmail" /&gt;
     ///
-    /// SourceComp：被操作电脑的 idName（必填，大小写敏感）；
+    /// SourceComp：被操作电脑的 idName（必填）；
     /// TargetComp：目标电脑的 idName（必填）。
     /// 临时改动可用 LinkControlReset 恢复；存档时 links 由原版处理。
     /// </summary>
