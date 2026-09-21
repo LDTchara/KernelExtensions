@@ -1,6 +1,6 @@
 # Executables
 
-KernelExtensions provides four custom executables (all registered automatically by KE on load; `#name#` is each program's self-replacement token — there is **no** need to place anything in the player's `bin/` folder):
+KernelExtensions provides four custom executables. KE registers them against the corresponding `#name#` self-replacement tokens on load:
 
 | Program | Registration | Purpose |
 |---------|--------------|---------|
@@ -8,6 +8,18 @@ KernelExtensions provides four custom executables (all registered automatically 
 | `PhaseSwift` | `#PHASESWIFT#` | Phase Swift: multi-scene topology + multi-track music |
 | `EffectsPlayer` | `#EFFECTS#` | Plays vanilla effects standalone |
 | `WPTEST` | `#WPTEST#` | Dynamic wallpaper test program |
+
+!!! warning "The file must actually exist before it can be run"
+    Registration **only** makes the token resolvable — it does **not** put the file into the node.
+    For players to run these programs, the corresponding file must already exist in their own `bin/` folder;
+    declare it in the content XML:
+
+    ```xml
+    <file path="bin" name="CustomTrial.exe">#CUSTOMTRIAL#</file>
+    ```
+
+    The save generator replaces `#CUSTOMTRIAL#` with the real program content, which is what makes it runnable;
+    a missing file means it cannot be run at all.
 
 - **CustomTrial**: uses a Flag starting with `CustomTrial_` to specify the configuration (e.g. `CustomTrial_MyTrial`).
   For detailed usage, configuration, and available effects, see the **[Custom Trial System](./../systems/custom-trial.md)** page.
