@@ -62,6 +62,7 @@ KernelExtensions provides a set of custom Actions that can be invoked in any act
 | `BreakHeart` | Explicitly triggers the PorthackHeartDaemon heartbreak sequence on a node. | `<BreakHeart NodeID="heart" OnComplete="Actions/HeartBroken" />` |
 | `BlockNode` | Adds a runtime-blocklisted node to the current (or a specified) PhaseSwift scene. | `<BlockNode NodeId="A" SceneIndex="0" />` |
 | `UnblockNode` | Removes a runtime-blocklisted node. | `<UnblockNode NodeId="A" />` |
+| `PhaseSwiftInit` / `Scene` / `Music` / `Stop` / `FadeOut` | Starting, scene switching, music-phase switching and exiting the Phase Swift system. | See [Phase Swift System](./../systems/phase-swift.md) |
 
 - `FlashScreen` takes Hex, numeric RGB, named colours, or dynamic colours (e.g. `LDTchara`) in `Color`; `Duration` defaults to `2.0` (non-positive = restore defaults immediately); `PlaySound="true"` plays the warning beep alongside the flash. Re-triggering **refreshes** rather than stacking.
 - `SwitchToThemeKeepLayout` changes colours only; use vanilla `SASwitchToTheme` if you need the layout changed too.
@@ -82,6 +83,7 @@ If `Delay` is 0 or negative, the action runs immediately.
 
 - [Home](./../index.md) – Return to main index
 - [自定义Action (中文)](./../../zh/components/actions.md) – Chinese version
+- [Phase Swift System](./../systems/phase-swift.md)
 - [Custom Trial System](./../systems/custom-trial.md)  
 - [VM Attack System](./../systems/vm-attack.md)  
 - [Aircraft Daemon System](./../systems/aircraft.md)

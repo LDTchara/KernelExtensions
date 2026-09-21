@@ -61,6 +61,7 @@ KernelExtensions 提供了一系列自定义 Action，可在任何动作文件�
 | `BreakHeart` | 显式触发目标节点 PorthackHeartDaemon 的心碎序列。 | `<BreakHeart NodeID="heart" OnComplete="Actions/HeartBroken" />` |
 | `BlockNode` | 向当前（或指定）PhaseSwift 场景添加运行时黑名单节点。 | `<BlockNode NodeId="A" SceneIndex="0" />` |
 | `UnblockNode` | 移除运行时黑名单节点。 | `<UnblockNode NodeId="A" />` |
+| `PhaseSwiftInit` / `Scene` / `Music` / `Stop` / `FadeOut` | 相位穿梭系统的启动、切场景、切音乐组与退出。 | 见[相位穿梭系统](./../systems/phase-swift.md) |
 
 - `FlashScreen` 的 `Color` 支持 Hex、数值 RGB、命名色与动态色（如 `LDTchara`）；`Duration` 默认 `2.0`（非正值 = 立即恢复默认色）；`PlaySound="true"` 可在闪烁同时播放警告音效。重复触发为**刷新**语义，不叠加。
 - `SwitchToThemeKeepLayout` 只改颜色不动布局；需要连布局一起改请用原版 `SASwitchToTheme`。
@@ -81,6 +82,7 @@ KernelExtensions 提供了一系列自定义 Action，可在任何动作文件�
 
 - [首页](./../index.md) – 返回主索引
 - [Actions (English)](./../../en/components/actions.md) – 英文版
+- [相位穿梭系统（PhaseSwift）](./../systems/phase-swift.md)
 - [自定义试炼系统](./../systems/custom-trial.md)  
 - [VM攻击系统](./../systems/vm-attack.md)  
 - [飞机Daemon系统](./../systems/aircraft.md)

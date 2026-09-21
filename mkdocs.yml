@@ -76,6 +76,7 @@ nav:
   - 简体中文:
       - 首页: zh/index.md
       - 系统:
+          - 相位穿梭系统（PhaseSwift）: zh/systems/phase-swift.md
           - 自定义试炼系统: zh/systems/custom-trial.md
           - VM 攻击系统: zh/systems/vm-attack.md
           - 飞机 Daemon 系统: zh/systems/aircraft.md
@@ -99,6 +100,7 @@ nav:
   - English:
       - Home: en/index.md
       - Systems:
+          - Phase Swift System (PhaseSwift): en/systems/phase-swift.md
           - Custom Trial System: en/systems/custom-trial.md
           - VM Attack System: en/systems/vm-attack.md
           - Aircraft Daemon System: en/systems/aircraft.md

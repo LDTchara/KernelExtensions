@@ -8,6 +8,7 @@
 
 | System | Page |
 |--------|------|
+| Phase Swift | [Phase Swift System (PhaseSwift)](./systems/phase-swift.md) |
 | Custom Trial | [Custom Trial System](./systems/custom-trial.md) |
 | VM Attack | [VM Attack System](./systems/vm-attack.md) |
 | Aircraft Daemon | [Aircraft Daemon System](./systems/aircraft.md) |
