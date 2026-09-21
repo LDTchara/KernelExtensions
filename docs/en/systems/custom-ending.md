@@ -132,6 +132,8 @@ No prefix = regular body text.
 
     In addition, if `AfterMusic` is configured **and** a closing line (`EndingText`) is present, the credits end with a **two-stage fade**: during the pause after the closing line reaches the screen centre, the first `CreditsFadeOutTime` seconds fade the music to silence and the remainder stays silent (a held beat) before the switch. To lengthen the silent part, set `EndingPauseTime` higher than `CreditsFadeOutTime` (e.g. 8 and 5 → 5s fade + 3s silence).
 
+    **After a two-stage fade the switch becomes an immediate cut** (`playSongImmediatley`) instead of the `transitionToSong` fade — the credits track has already been faded to silence, and stacking another fade on top produces an audible "silent, then suddenly loud again, then fade" seam.
+
     ⚠️ Without `EndingText` the two-stage fade does not trigger — that ending path only uses the `transitionToSong` fade.
 
     Leaving it empty or writing `NONE` = **no music switch at all**: the credits track keeps playing, so there is no "replay feel". To use the vanilla ending track, write `Music/Bit(Ending)` explicitly.
@@ -143,7 +145,7 @@ No prefix = regular body text.
 | Desired ending-music behaviour | `OnCreditMusic` | `AfterMusic` | `CreditsFadeOutTime` |
 |--------------------------------|-----------------|--------------|----------------------|
 | Credits play A, then **keep playing A** (no cut, no fade) | `A` | **empty / `NONE`** | anything (no effect) |
-| Credits play A, then switch to B (with a fade) | `A` | `B` | `> 0` (default 5) |
+| Credits play A, then **cut to B** after A fades to silence | `A` | `B` | `> 0` (default 5) |
 | Credits play A, then **restart A from the beginning** | `A` | `A` | anything |
 | Credits use the vanilla track, then keep playing | empty | empty / `NONE` | anything |
 
