@@ -1,8 +1,8 @@
-# 🔧 KernelExtensions Wiki (English)
+# 🔧 KernelExtensions Documentation (English)
 
 **KernelExtensions** is a Hacknet mod using the **Pathfinder API**, providing highly configurable trials, VM attacks, an aircraft daemon, and a collection of custom actions for extension authors.
 
-> This documentation corresponds to **KernelExtensions 0.6**.
+> This documentation corresponds to **KernelExtensions 0.7**.
 
 ## 📖 System Navigation
 

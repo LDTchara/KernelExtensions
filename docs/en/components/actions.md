@@ -7,7 +7,7 @@ KernelExtensions provides a set of custom Actions that can be invoked in any act
 | Action | Description | Example |
 |--------|------------|---------|
 | `PlaySound` | Plays a WAV sound effect from the extension directory. | `<PlaySound Path="Sounds/beep.wav" Volume="1" Pitch="0" Delay="1.5" DelayHost="cheat"/>` |
-| `TerminalWrite` | Outputs a line of text to the terminal. | `<TerminalWrite text="Hello, World!" />` |
+| `TerminalWrite` | Outputs a line of text to the terminal. | `<TerminalWrite Text="Hello, World!" />` |
 | `TerminalType` | Types text character‑by‑character into the terminal — **no automatic newline**; appends at the current cursor (like HackerScript's `write`, so several calls can share one line). | `<TerminalType Text="A message typed out" CharDelay="0.04" />` |
 | `TerminalFocus` | Plays a terminal focus effect (full‑screen darken + expanding border). | `<TerminalFocus Duration="5.0" BorderDuration="2.0" FadeInDuration="0.5" />` |
 | `RenameNode` | Renames a node by its ID; the change takes effect immediately and persists in saves. | `<RenameNode NodeID="dhs" NewName="Secret Base" />` |
@@ -44,7 +44,28 @@ KernelExtensions provides a set of custom Actions that can be invoked in any act
 | `LinkControlAdd` | Temporarily add a link at runtime (does not write to the baseline). | `<LinkControlAdd SourceComp="playerComp" TargetComp="jmail" />` |
 | `LinkControlRemove` | Temporarily remove a link at runtime (does not write to the baseline). | `<LinkControlRemove SourceComp="playerComp" TargetComp="jmail" />` |
 
-> All three share the org baseline (a snapshot of the content XML `dlink` / `<OrgLinks>` taken at game start); `Add`/`Remove` only change runtime links and can be undone with `Reset`. Attribute names are **case-sensitive**.
+> All three share the org baseline: a snapshot of the computer's links taken **at game start**
+> (content XML `<dlink>` enters the baseline this way), persisted to the save as `<OrgLinks>`.
+> `Add`/`Remove` only change runtime links and can be undone with `Reset`.
+> Attribute names are **case-insensitive** (handled by the `KEAction` base class; PascalCase is still recommended).
+> Missing nodes or a missing `TargetComp` are logged as errors and skipped — never a crash.
+> Note: `<OrgLinks>` only ever appears in saves; to declare initial links in content XML, use vanilla `<dlink>`.
+
+---
+
+## Other Actions
+
+| Action | Description | Example |
+|--------|-------------|---------|
+| `FlashScreen` | UI flash: pulses the interface with a colour and fades back to the current theme's default. | `<FlashScreen Color="Red" Duration="2.0" />` |
+| `SwitchToThemeKeepLayout` | Switches theme while **keeping the panel layout** (colour only). | `<SwitchToThemeKeepLayout ThemePathOrName="HacknetMint" FlickerInDuration="1.5" />` |
+| `BreakHeart` | Explicitly triggers the PorthackHeartDaemon heartbreak sequence on a node. | `<BreakHeart NodeID="heart" OnComplete="Actions/HeartBroken" />` |
+| `BlockNode` | Adds a runtime-blocklisted node to the current (or a specified) PhaseSwift scene. | `<BlockNode NodeId="A" SceneIndex="0" />` |
+| `UnblockNode` | Removes a runtime-blocklisted node. | `<UnblockNode NodeId="A" />` |
+
+- `FlashScreen` takes Hex, numeric RGB, named colours, or dynamic colours (e.g. `LDTchara`) in `Color`; `Duration` defaults to `2.0` (non-positive = restore defaults immediately); `PlaySound="true"` plays the warning beep alongside the flash. Re-triggering **refreshes** rather than stacking.
+- `SwitchToThemeKeepLayout` changes colours only; use vanilla `SASwitchToTheme` if you need the layout changed too.
+- Every `BreakHeart` parameter except `NodeID` is an **override**: omit it to use the daemon's own config, or write `NONE` / leave it empty to explicitly disable (e.g. `Music="NONE"` skips the track change).
 
 ---
 
@@ -64,3 +85,7 @@ If `Delay` is 0 or negative, the action runs immediately.
 - [Custom Trial System](./../systems/custom-trial.md)  
 - [VM Attack System](./../systems/vm-attack.md)  
 - [Aircraft Daemon System](./../systems/aircraft.md)
+- [Custom Timer System (Clock)](./../systems/clock.md)
+- [Custom Title Banner (ShowTitle)](./../systems/title-banner.md)
+- [Custom ScreenBleed Effect](./../systems/screen-bleed.md)
+- [Custom Ending System (StartEnding)](./../systems/custom-ending.md)

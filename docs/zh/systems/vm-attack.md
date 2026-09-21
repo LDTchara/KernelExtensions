@@ -50,7 +50,7 @@
 | 元素 | 默认值 | 描述 |
 |------|--------|------|
 | `ConfigName` | 必须 | 配置名称，需与文件名（不含扩展名）及 Flag 后缀一致。 |
-| `Mode` | 必须 | 恢复模式：`FileDeletion`（删除文件）、`FileExists`（创建文件）、`Password`（输入密码）。 |
+| `Mode` | ❌ | 恢复模式：`FileDeletion`（删除文件，缺省）、`FileExists`（创建文件）、`Password`（输入密码）。 |
 | `Password` | `null` | 密码模式下需要的密码。 |
 | `EnableHelpButton` | `false` | 密码模式下是否显示“帮助”按钮。 |
 | `ErrorMessage` | `"ERROR: Critical boot error loading \"VMBootloaderTrap.dll\""` | 崩溃时显示的自定义错误消息。 |
@@ -62,9 +62,9 @@
 | `ButtonText` | `"Proceed"` | 交互按钮上显示的文本。 |
 | `HelpFile` | `null` | 帮助文件路径，点击按钮时复制到存档目录并打开。 |
 | `SuccessMusic` | `null` | 成功解除攻击后播放的音乐。 |
-| `FakeFiles` | `null` | 攻击触发时在存档基础目录下生成的虚假文件列表。 |
+| `FakeFiles` | `null` | 攻击触发时在存档基础目录下生成的虚假文件列表。每项属性：`Path`（相对存档基础目录的路径）、`Size`（生成零字节文件的大小）、`Source`（可选，改为从扩展目录复制该文件）。 |
 | `CheckFilePath` | `null` | 文件检测模式下的目标路径（相对于存档基础目录）。 |
-| `CheckFilePattern` | `null` | 文件存在模式下可选的附加内容正则校验（文件内容需匹配）。 |
+| `CheckFilePattern` | `null` | 文件存在模式下可选：填**扩展目录下参考文件的相对路径**，要求目标文件与该参考文件**逐字节一致**（不是正则）。 |
 
 !!! note "NONE 约定"
     字符串配置项遵循 `NONE` 约定：写 `NONE` 或留空 = 禁用 / 回退默认，不写该元素 = 使用默认值。

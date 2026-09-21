@@ -3,10 +3,10 @@
 **KernelExtensions** 是一个基于 **Pathfinder API** 的 Hacknet 模组，为扩展作者提供高度可配置的试炼、虚拟机攻击、飞机守护进程以及一系列自定义动作。  
 **KernelExtensions** is a Hacknet mod built on the **Pathfinder API**, providing highly configurable trials, VM attacks, an aircraft daemon, and a collection of custom actions for extension authors.
 
-> **当前文档对应 0.6 版本（`main` 分支）。**  
-> **This documentation corresponds to version 0.6 (`main` branch).**  
-> 0.7 开发版文档见 `dev` 分支的 `docs/`。  
-> Docs for the 0.7 development line live in `docs/` on the `dev` branch.
+> **当前文档对应 0.7 版本。**  
+> **This documentation corresponds to version 0.7.**  
+> 站点源码位于主仓库 `docs/`（在 `docs-0.7` 分支开发，完成后合入 `dev` → `main`）。  
+> The site sources live in `docs/` of the main repository (developed on `docs-0.7`, merged into `dev` → `main`).
 
 ---
 

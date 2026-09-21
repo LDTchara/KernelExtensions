@@ -50,7 +50,7 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 | Element | Default | Description |
 |---------|---------|-------------|
 | `ConfigName` | required | Configuration name; must match the file name (without extension) and Flag suffix. |
-| `Mode` | required | Recovery mode: `FileDeletion`, `FileExists`, or `Password`. |
+| `Mode` | ❌ | Recovery mode: `FileDeletion` (default), `FileExists`, or `Password`. |
 | `Password` | `null` | Password required in Password mode. |
 | `EnableHelpButton` | `false` | Whether to show a "Help" button in Password mode. |
 | `ErrorMessage` | `"ERROR: Critical boot error loading \"VMBootloaderTrap.dll\""` | Custom error message displayed during the crash. |
@@ -62,9 +62,9 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 | `ButtonText` | `"Proceed"` | Text displayed on the interaction button. |
 | `HelpFile` | `null` | Path to a help file; when the button is clicked it is copied to the save directory and opened. |
 | `SuccessMusic` | `null` | Music played after the attack is successfully removed. |
-| `FakeFiles` | `null` | List of fake files generated in the save base directory when the attack triggers. |
+| `FakeFiles` | `null` | List of fake files generated in the save base directory when the attack triggers. Each entry takes: `Path` (relative to the save base directory), `Size` (byte size of the generated zero-filled file), `Source` (optional; copy this file from the extension instead). |
 | `CheckFilePath` | `null` | Target path for file‑check modes (relative to the save base directory). |
-| `CheckFilePattern` | `null` | Optional regex; in FileExists mode the file content must match this pattern. |
+| `CheckFilePattern` | `null` | Optional, in FileExists mode: a **path relative to the extension root of a reference file**; the target file must match it **byte for byte** (not a regex). |
 
 !!! note "NONE convention"
     String config fields follow the `NONE` convention: `NONE` or an empty value = disabled / default fallback; omitting the element = use the default value.

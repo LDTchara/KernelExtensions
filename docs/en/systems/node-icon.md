@@ -75,7 +75,7 @@ ExtensionRoot/
 !!! warning "Size and format"
     - Icons are **drawn at their original pixel size (no scaling)**, so stay close to the vanilla preset icon size. The connection header has roughly **160 px** of usable width — anything wider overlaps the adjacent "Connected to" text (which is drawn from `x + 160`).
     - **PNG is recommended** (full alpha transparency). Other formats decodable by SDL_image at runtime (JPG/BMP/GIF/TGA/TIFF/WebP/PCX/PNM) also work, but formats without an alpha channel (e.g. JPG) may show a black background.
-    - The file extension **does not participate in decoding** (SDL_image detects by content); it is only used to build the `@name`. Avoid files sharing a name with different extensions (`Mine.png` and `Mine.jpg` both register as `@Mine`; the latter overwrites the former).
+    - The file extension is only used to build the `@name`; decoding detects the format by content. **Avoid files sharing a name with different extensions** — `Mine.png` and `Mine.jpg` both register as `@Mine`, and in that case the **first one registered wins** (the later one is skipped, not overwritten).
 
 ### 2. Register the icons (`KE-Config.xml`)
 

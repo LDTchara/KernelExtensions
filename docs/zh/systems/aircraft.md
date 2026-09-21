@@ -13,7 +13,7 @@
   - 可配置的坠落时长（`FallDuration`，单位秒，默认 135）
   - 坠毁/修复时分别触发 `OnFailed` / `OnSaved` 动作
   - 专用的攻击、修复与覆盖层动作
-  - 自动清理静态字典，避免内存泄漏
+  - 更新订阅按需退订（`UnsubscribeIfIdle`），无后台累积
 
 ---
 
@@ -36,6 +36,7 @@
 | `FallDuration` | `135` | 从 38000 英尺坠毁至地面的总秒数（立即坠落模式下）。 |
 | `OnFailed` | `null` | 飞机坠毁（高度降至 0）时执行的动作文件。 |
 | `OnSaved` | `null` | 飞机被修复（固件重载成功且 DLL 恢复）时执行的动作文件。 |
+| `CrashIPPrefix` | `DCLOC:` | 坠机后加在节点 IP 前的前缀，使旧 IP 不可达；空 / `NONE` = 不修改 IP（节点仍可访问）。 |
 
 > 注意：`FallDuration` 只在立即坠落模式（`AircraftFallStartsImmediately = true`）下生效，该模式默认开启。守护进程初始化时会用 `FallDuration` 设置运行时变量 `H`。
 
@@ -54,7 +55,8 @@
 - `NodeID`：目标计算机的 `idName`（必须已配置 `FlightDaemon`）。
 - `FallDuration`（可选）：指定坠落总秒数，**优先级高于** Daemon 配置中的 `FallDuration`。  
   特殊值：  
-  - `-1`（或省略）：使用 Daemon 当前的坠落时长（由自身配置决定）  
+  - `-1`：使用 Daemon 自身配置的 `FallDuration`  
+  - **省略**：保持 Action 默认值 **135**，即覆盖 Daemon 自身的 `FallDuration`——想沿用 Daemon 配置请显式写 `FallDuration="-1"`  
   - `0`：立即坠毁（跳过下降过程，直接触发 `OnFailed` 和节点移除）  
   - 正数：覆盖 Daemon 的 `FallDuration`。
 
@@ -84,8 +86,8 @@
 <HideAircraftOverlay />
 ```
 
-- 坠毁时会自动关闭覆盖层（如果正在显示该飞机）。
-- 覆盖层通过 `OverlayPatches`（Harmony 补丁）实现，不影响正常游戏流程。
+- 坠毁后覆盖层**继续显示残骸**，需用 `<HideAircraftOverlay />` 手动关闭（**不自动关闭**，对齐原版行为）。
+- 覆盖层通过 `OverlayPatch`（Harmony 补丁）实现，不影响正常游戏流程。
 
 ---
 

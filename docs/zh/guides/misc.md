@@ -6,15 +6,16 @@
 
 ## 主菜单水印
 
-模组会在 Hacknet 主菜单左上角显示 **`+ KernelExtensions <版本号>`** 的动态彩虹流动文字。
+模组会在 Hacknet 主菜单的标题右侧显示 **`+ KernelExtensions <版本号>`** 的动态彩虹流动文字。
 
-- 位置在 ZeroDayToolKit 水印右侧，与其他模组水印不重叠。
-- 颜色随时间平滑流动，无跳跃或回弹。
+- 位置在 ZeroDayToolKit 水印右侧、与其同一行，与其他模组水印不重叠。
+- 颜色随时间平滑流动，并带逐字轻微上下晃动。
 - 文字前缀 `+` 号，与社区其它模组风格一致。
 - 版本号自动跟随 `KernelExtensions.ModVer`，无需手动更新。
 - 扩展卸载时水印自动消失。
+- **可在 `KE-Config.xml` 中用 `<Watermark>false</Watermark>` 关闭**（默认 `true`）。
 
-实现于 `MainMenuWatermarkPatch.cs`，利用 `FlowColorUtils` 生成颜色。
+实现于 `MainMenuWatermarkPatch.cs`，利用 `FlowColorHelper` 生成颜色。
 
 ---
 
@@ -34,8 +35,8 @@
 
 ```xml
 <PlaySound Path="Sounds/beep.wav" Volume="1" Pitch="0" Delay="1.5" DelayHost="cheat"/>
-<TerminalWrite text="Hello, World!" />
-<TerminalType text="逐字显示的消息" CharDelay="0.04" />
+<TerminalWrite Text="Hello, World!" />
+<TerminalType Text="逐字显示的消息" CharDelay="0.04" />
 <TerminalFocus Duration="5.0" BorderDuration="2.0" FadeInDuration="0.5" />
 <RenameNode NodeID="dhs" NewName="秘密基地" />
 ```
@@ -51,7 +52,7 @@ KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展
 | `ActionHelper` | 统一执行动作文件的静态方法。 |
 | `MusicPathResolver` | 将配置中的音乐字符串解析为 `MusicManager` 可识别的路径。 |
 | `SoundHelper` | 播放扩展内的 WAV 音效文件。 |
-| `FlowColorUtils` | 提供基于时间流动的彩虹色计算，用于水印或其它动态颜色需求。 |
+| `FlowColorHelper` | 提供基于时间流动的彩虹色计算，用于水印或其它动态颜色需求。 |
 
 ---
 
@@ -61,7 +62,7 @@ KernelExtensions 提供了一系列公开的工具类，供其它模组或扩展
 
 主要补丁包括：
 - `MainMenuWatermarkPatch`：主菜单彩虹水印。
-- `OverlayPatches`：飞机高度计全局覆盖层绘制。
+- `OverlayPatch`：飞机高度计全局覆盖层绘制。
 - `CrashModuleVMAttackPatch`：虚拟机攻击注入与错误消息替换。
 
 ---

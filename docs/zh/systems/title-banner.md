@@ -41,7 +41,7 @@
 | `AccentColor` | ❌ | 空 | CustomColor 覆盖强调色（CC 预设 / 动态色）；`NONE` / 空 = 用 `Preset` 的主题色 |
 | `Icon` | ❌ | 空 | 图标：空 / `NONE` = **不显示**；`default` = 内置默认图标；其他 = 相对扩展根路径 |
 | `IconTint` | ❌ | 空 | 图标染色：空 = **自动**（`default` 染色 / 自定义原色）；`true` / `false` = 强制；其他值 = 自动 + 警告 |
-| `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作；⚠️ **属性名大小写敏感**，须与字段名一致（`Delay` 不能写成 `delay`） |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作；属性名**大小写不敏感**（`KEAction` 基类统一处理；仍推荐 PascalCase） |
 
 ---
 

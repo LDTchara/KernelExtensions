@@ -41,7 +41,7 @@ The body sits between the opening and closing tags, and **newlines are line brea
 | `AccentColor` | ❌ | empty | CustomColor override for the accent (preset / dynamic); `NONE` / empty = use the `Preset` theme colour |
 | `Icon` | ❌ | empty | Icon: empty / `NONE` = **no icon**; `default` = built-in default icon; anything else = path relative to the extension root |
 | `IconTint` | ❌ | empty | Icon tinting: empty = **auto** (`default` tinted / custom not tinted); `true` / `false` = force; any other value = auto + warning |
-| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayable action; ⚠️ **attribute names are case-sensitive** (`Delay`, not `delay`) |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayable action; attribute names are **case-insensitive** (handled by the `KEAction` base class; PascalCase is still recommended) |
 
 ---
 

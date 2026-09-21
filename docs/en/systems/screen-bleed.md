@@ -12,7 +12,7 @@ WCC = With Custom Color. It suits system alerts, emergency events and story turn
 ## Overview
 
 - Start: `<StartScreenBleedEffectWCC ...>body text</StartScreenBleedEffectWCC>`
-- Colours accept CustomColor dynamic colours, `#RRGGBB` / `#AARRGGBB`, and numeric RGB/RGBA
+- Colours accept CustomColor dynamic colours, `#RRGGBB` / `#AARRGGBB`, numeric RGB/RGBA, and XNA named colours (`Red`, etc.)
 - Configurable total duration and title; body text is up to 3 lines
 - Optional `CompleteAction` executed when the effect ends
 - Can be aborted early with the **vanilla** `CancelScreenBleedEffect` action (KE stops its own effect in sync)
@@ -59,10 +59,8 @@ Colour attributes are resolved in this order, first match wins:
 1. **CustomColor dynamic colours**: `LDTchara:0.1`, `Rainbow`, preset names (`CustomColor/*.xml`) — refreshed every frame
 2. **Hexadecimal**: `#RRGGBB` or `#AARRGGBB` (with 8 digits the leading byte is alpha)
 3. **Numeric RGB/RGBA**: e.g. `255,0,0` / `255,0,0,128`
-4. **Fallback**: unrecognised values fall back to the default colour
-
-!!! warning "Named colours are currently unavailable"
-    The current runtime colour resolution has no XNA named-colour table (e.g. `Red`), so named colours fall back to the default colour. Use hexadecimal or a CustomColor preset instead.
+4. **XNA named colours**: e.g. `Red`, `Monochrome`
+5. **Fallback**: unrecognised values fall back to the default colour
 
 ---
 

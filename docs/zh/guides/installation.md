@@ -16,7 +16,9 @@
 3. （可选，但推荐）在扩展根目录下创建以下文件夹用于存放配置文件：  
    - `Trial/`：存放试炼配置 XML  
    - `VMATK/`：存放虚拟机攻击配置 XML  
+   - `PhaseSwift/`：存放相位穿梭配置 XML  
    - `Actions/`：存放动作文件  
+   - `KE-Config.xml`：KE 自身的全局开关，**不存在时自动创建**，无需手动准备（见[配置文件](./../components/configuration.md)）
 4. 启动 Hacknet 并加载你的扩展。如果控制台出现绿色的 `[KernelExtensions] All is well ** SUCCESS!!` 即表示安装成功。
 
 ## 卸载 KernelExtensions
@@ -31,7 +33,8 @@
 答：请检查 Pathfinder 和 BepInEx 是否安装正确，以及 `KernelExtensions.dll` 是否放在了正确的位置。
 
 **问：进入游戏后主菜单没有水印？**  
-答：请确认 KernelExtensions 是在扩展中加载的。如果未加载任何扩展，水印不会出现。
+答：请确认 KernelExtensions 是在扩展中加载的。如果未加载任何扩展，水印不会出现。  
+另外检查 `KE-Config.xml` 的 `<Watermark>` 是否被设成了 `false`（该开关默认 `true`）。
 
 **问：怎么确认加载了正确版本？**  
 答：主菜单水印会显示 `+ KernelExtensions x.x.x`，版本号与 DLL 版本一致。

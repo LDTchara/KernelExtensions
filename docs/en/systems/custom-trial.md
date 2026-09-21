@@ -9,7 +9,7 @@ It replaces the original hardcoded DLC trial and provides fully configurable vis
 
 - Activated by a Flag starting with `CustomTrial_` (e.g. `CustomTrial_MyTrial`).
 - Loads its configuration from `Trial/<ConfigName>.xml` in the extension root.
-- The executable `CustomTrial` must be present in the player's `bin/` folder.
+- The `CustomTrial` executable is registered automatically by KernelExtensions (as `#CUSTOMTRIAL#`); there is **no** need to place anything in the player's `bin/` folder.
 
 ---
 

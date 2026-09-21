@@ -1,8 +1,8 @@
-# 🔧 KernelExtensions Wiki（简体中文）
+# 🔧 KernelExtensions 文档（简体中文）
 
 **KernelExtensions** 是一个基于 **Pathfinder API** 的 Hacknet 模组，为扩展作者提供高度可配置的试炼、虚拟机攻击、飞机守护进程以及一系列自定义动作。
 
-> 本文档对应 **KernelExtensions 0.6**。
+> 本文档对应 **KernelExtensions 0.7**。
 
 ## 📖 系统导航
 

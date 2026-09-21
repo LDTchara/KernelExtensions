@@ -16,7 +16,9 @@
 3. (Optional but recommended) Create the following folders in your extension root for configuration files:  
    - `Trial/` – for trial configuration XMLs  
    - `VMATK/` – for VM attack configuration XMLs  
+   - `PhaseSwift/` – for Phase Swift configuration XMLs  
    - `Actions/` – for action files  
+   - `KE-Config.xml` – KE's own global switches; **created automatically** if missing, no manual setup needed (see [Configuration Files](./../components/configuration.md))
 4. Launch Hacknet and load your extension. If you see a green `[KernelExtensions] All is well ** SUCCESS!!` in the console, the installation was successful.
 
 ## Uninstalling KernelExtensions
@@ -31,7 +33,8 @@
 A: Check that Pathfinder and BepInEx are correctly installed, and that `KernelExtensions.dll` is in the right location.
 
 **Q: There is no watermark on the main menu after entering the game.**  
-A: Make sure KernelExtensions is loaded as part of an extension. If no extension is loaded, the watermark will not appear.
+A: Make sure KernelExtensions is loaded as part of an extension. If no extension is loaded, the watermark will not appear.  
+Also check whether `<Watermark>` in `KE-Config.xml` has been set to `false` (it defaults to `true`).
 
 **Q: How can I verify the loaded version?**  
 A: The main menu watermark displays `+ KernelExtensions x.x.x`, matching the DLL version.

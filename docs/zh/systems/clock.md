@@ -34,11 +34,11 @@
 
 | 属性 | 必填 | 说明 |
 |------|:----:|------|
-| `ID` | ✅ | 标识，用于 `ClockStop` / 去重；省略时回退为文件名（不含扩展名） |
-| `Interval` | ✅ | 触发间隔（秒），必须 `> 0`（非法值 Warn 并拒绝启动） |
+| `ID` | ❌ | 标识，用于 `ClockStop` / 去重；省略时回退为文件名（不含扩展名） |
+| `Interval` | ❌ | 触发间隔（秒），默认 `1.0`；`<= 0` 时 Warn 并拒绝启动 |
 | `Times` | ❌ | 循环次数上限；`0` / 省略 / 负数 = 无限；耗尽后自动停止 |
 | `Duration` | ❌ | 运行总时长上限（秒）；与 `Times` 谁先到谁停 |
-| `OnComplete` | ❌ | 耗尽自动停止后一次性执行的 Action 文件（支持 `<Actions>` / `<ConditionalActions>` 两种根） |
+| `OnComplete` | ❌ | 耗尽自动停止后一次性执行的 Action 文件（支持 `<Actions>` / `<ConditionalActions>` 两种根）；`NONE` / 空 = 不执行 |
 | `<Actions>` | ✅ | **每次触发**执行的序列（预加载的无条件 instantly 集合） |
 
 ---

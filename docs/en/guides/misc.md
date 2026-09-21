@@ -6,15 +6,16 @@ This page collects **KernelExtensions** components that do not belong to the thr
 
 ## Main Menu Watermark
 
-The mod displays the text **`+ KernelExtensions <version>`** with a flowing rainbow effect at the top‑left corner of the Hacknet main menu.
+The mod displays the text **`+ KernelExtensions <version>`** with a flowing rainbow effect to the right of the main menu title.
 
-- Positioned to the right of the ZeroDayToolKit watermark, avoiding overlap with other mods.
-- Colours flow smoothly over time with no jumps or rebounds.
+- Positioned to the right of the ZeroDayToolKit watermark, on the same line, avoiding overlap with other mods.
+- Colours flow smoothly over time, with a slight per-character vertical bob.
 - Prefixed with `+` to match the community convention.
 - Version number automatically follows `KernelExtensions.ModVer`; no manual updates are required.
 - The watermark disappears automatically when the extension is unloaded.
+- **It can be turned off with `<Watermark>false</Watermark>` in `KE-Config.xml`** (default `true`).
 
-Implemented in `MainMenuWatermarkPatch.cs`, using `FlowColorUtils` for colour generation.
+Implemented in `MainMenuWatermarkPatch.cs`, using `FlowColorHelper` for colour generation.
 
 ---
 
@@ -34,8 +35,8 @@ Examples:
 
 ```xml
 <PlaySound Path="Sounds/beep.wav" Volume="1" Pitch="0" Delay="1.5" DelayHost="cheat"/>
-<TerminalWrite text="Hello, World!" />
-<TerminalType text="A message typed out" CharDelay="0.04" />
+<TerminalWrite Text="Hello, World!" />
+<TerminalType Text="A message typed out" CharDelay="0.04" />
 <TerminalFocus Duration="5.0" BorderDuration="2.0" FadeInDuration="0.5" />
 <RenameNode NodeID="dhs" NewName="Secret Base" />
 ```
@@ -51,7 +52,7 @@ KernelExtensions exposes a set of public utility classes for use by other mods o
 | `ActionHelper` | Static method for executing action files uniformly. |
 | `MusicPathResolver` | Resolves music strings from config into paths recognised by `MusicManager`. |
 | `SoundHelper` | Plays WAV sound effects from within the extension. |
-| `FlowColorUtils` | Provides time‑based flowing rainbow colour calculations, used for the watermark and other dynamic colour needs. |
+| `FlowColorHelper` | Provides time‑based flowing rainbow colour calculations, used for the watermark and other dynamic colour needs. |
 
 ---
 
@@ -61,7 +62,7 @@ The mod applies several Harmony patches to enhance the vanilla game. All patches
 
 Major patches include:
 - `MainMenuWatermarkPatch`: Rainbow watermark on the main menu.
-- `OverlayPatches`: Global altimeter overlay drawing for aircraft.
+- `OverlayPatch`: Global altimeter overlay drawing for aircraft.
 - `CrashModuleVMAttackPatch`: VM attack injection and error message replacement.
 
 ---

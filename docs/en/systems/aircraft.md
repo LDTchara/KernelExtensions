@@ -13,7 +13,7 @@ Core implementation contributed by **April_Crystal** — special thanks.
   - Configurable crash duration (`FallDuration` in seconds, default 135)
   - Trigger `OnFailed` / `OnSaved` actions on crash or repair respectively
   - Dedicated attack, repair, and overlay actions
-  - Automatic cleanup of static dictionaries to avoid memory leaks
+  - On-demand unsubscription of update hooks (`UnsubscribeIfIdle`); nothing accumulates in the background
 
 ---
 
@@ -36,6 +36,7 @@ Declare the daemon directly in the computer configuration file:
 | `FallDuration` | `135` | Total seconds for the aircraft to fall from 38,000 feet to the ground (in immediate fall mode). |
 | `OnFailed` | `null` | Action file executed when the aircraft crashes (altitude reaches 0). |
 | `OnSaved` | `null` | Action file executed when the aircraft is repaired (firmware reload succeeds and the DLL is restored). |
+| `CrashIPPrefix` | `DCLOC:` | Prefix prepended to the node's IP after a crash, making the old IP unreachable; empty / `NONE` = leave the IP untouched (the node stays reachable). |
 
 > Note: `FallDuration` only takes effect in immediate fall mode (`AircraftFallStartsImmediately = true`), which is enabled by default. The daemon initialises the runtime variable `H` from `FallDuration` on start‑up.
 
@@ -54,7 +55,8 @@ Triggers a critical firmware failure on the target computer's `FlightDaemon` and
 - `NodeID`: the `idName` of the target computer (must already have a `FlightDaemon` configured).
 - `FallDuration` (optional): specifies the total crash duration in seconds; **overrides** the daemon's own `FallDuration`.  
   Special values:  
-  - `-1` (or omitted): use the daemon's current fall duration (determined by its own configuration)  
+  - `-1`: use the daemon's own `FallDuration`  
+  - **omitted**: keeps the action default of **135**, i.e. it *overrides* the daemon's own `FallDuration` — write `FallDuration="-1"` explicitly if you want to inherit the daemon's setting  
   - `0`: crash instantly (skip the descent, directly trigger `OnFailed` and node removal)  
   - positive number: override the daemon's `FallDuration`.
 
@@ -84,8 +86,8 @@ Allows the aircraft's altimeter to be permanently displayed on the left side of 
 <HideAircraftOverlay />
 ```
 
-- The overlay is automatically hidden when the aircraft crashes (if it was being displayed).
-- The overlay is implemented via `OverlayPatches` (Harmony patch) and does not interfere with normal gameplay.
+- After a crash the overlay **keeps showing the wreck**; close it manually with `<HideAircraftOverlay />` (it is **not** closed automatically — matching vanilla behaviour).
+- The overlay is implemented via `OverlayPatch` (Harmony patch) and does not interfere with normal gameplay.
 
 ---
 

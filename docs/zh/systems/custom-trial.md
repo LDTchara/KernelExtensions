@@ -9,7 +9,7 @@
 
 - 通过以 `CustomTrial_` 开头的 Flag 激活（例如 `CustomTrial_MyTrial`）。
 - 从扩展根目录的 `Trial/<ConfigName>.xml` 加载配置。
-- 可执行程序 `CustomTrial` 必须存在于玩家 `bin/` 文件夹中。
+- 可执行程序 `CustomTrial` 由 KernelExtensions 自动注册（注册名 `#CUSTOMTRIAL#`），**无需**手动放入玩家 `bin/` 文件夹。
 
 ---
 

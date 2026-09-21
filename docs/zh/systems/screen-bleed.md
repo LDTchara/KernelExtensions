@@ -12,7 +12,7 @@ WCC = With Custom Color。该效果适合表现系统告警、紧急事件、剧
 ## 概览
 
 - 启动：`<StartScreenBleedEffectWCC ...>正文文本</StartScreenBleedEffectWCC>`
-- 颜色支持 CustomColor 动态色、`#RRGGBB` / `#AARRGGBB`、数值 RGB/RGBA
+- 颜色支持 CustomColor 动态色、`#RRGGBB` / `#AARRGGBB`、数值 RGB/RGBA、XNA 命名色（`Red` 等）
 - 可配置总时长与标题；正文最多 3 行
 - 结束时可选执行 `CompleteAction`
 - 可用**原版** `CancelScreenBleedEffect` Action 提前中止（KE 会同步停止自身效果）
@@ -59,10 +59,8 @@ WCC = With Custom Color。该效果适合表现系统告警、紧急事件、剧
 1. **CustomColor 动态色**：`LDTchara:0.1`、`Rainbow`、预设名（`CustomColor/*.xml`）——逐帧刷新
 2. **十六进制**：`#RRGGBB` 或 `#AARRGGBB`（8 位时首位为 alpha）
 3. **数值 RGB/RGBA**：如 `255,0,0` / `255,0,0,128`
-4. **兜底**：无法识别时回退到默认色
-
-!!! warning "命名色暂时不可用"
-    当前运行时的颜色解析不包含 XNA 命名色表（如 `Red`），填写命名色会回退到默认色。请使用十六进制或 CustomColor 预设。
+4. **XNA 命名色**：如 `Red`、`Monochrome`
+5. **兜底**：无法识别时回退到默认色
 
 ---
 

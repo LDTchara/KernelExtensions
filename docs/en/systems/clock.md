@@ -34,11 +34,11 @@ It is a **system-level timer** (hooked to `os.UpdateSubscriptions`) and does **n
 
 | Attribute | Required | Description |
 |-----------|:--------:|-------------|
-| `ID` | ✅ | Identifier for `ClockStop` / deduplication; omitted → falls back to the file name without extension |
-| `Interval` | ✅ | Trigger interval in seconds; must be `> 0` (invalid values are refused with a warning) |
+| `ID` | ❌ | Identifier for `ClockStop` / deduplication; omitted → falls back to the file name without extension |
+| `Interval` | ❌ | Trigger interval in seconds, default `1.0`; `<= 0` is refused with a warning |
 | `Times` | ❌ | Loop count limit; `0` / omitted / negative = infinite; stops automatically when exhausted |
 | `Duration` | ❌ | Total runtime limit in seconds; whichever of `Times` / `Duration` hits first stops the Clock |
-| `OnComplete` | ❌ | Action file executed once when the Clock stops by exhaustion (supports both `<Actions>` / `<ConditionalActions>` roots) |
+| `OnComplete` | ❌ | Action file executed once when the Clock stops by exhaustion (supports both `<Actions>` / `<ConditionalActions>` roots); `NONE` / empty = not executed |
 | `<Actions>` | ✅ | Sequence executed on **every trigger** (a pre-loaded unconditional instantly set) |
 
 ---

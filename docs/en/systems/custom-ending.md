@@ -111,7 +111,7 @@ One entry per line, with optional prefixes:
 
 | Prefix | Effect |
 |--------|--------|
-| `^` | Small grey text |
+| `^` | Body font, grey (0.6 alpha) |
 | `%` | Large title line |
 | `$` | Small grey text |
 

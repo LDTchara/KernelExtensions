@@ -7,11 +7,16 @@ You will learn how to set Flags, write configuration files, invoke actions, and 
 
 ## 1. Overview
 
-KernelExtensions currently provides three major configurable systems, all triggered via the Flag mechanism and driven by XML configuration files:
+KernelExtensions currently provides the following configurable systems, most triggered via Flags or custom Actions and driven by XML configuration files:
 
 - **Custom Trial (CustomTrial)**: multi‑phase mission challenges with effects, timers, music, node destruction, etc.
 - **VM Attack (VM Attack)**: simulates a virtual machine crash attack, forcing the player to interact with the real file system.
 - **Aircraft Daemon (FlightDaemon)**: an aircraft daemon with configurable crash duration and repair/crash actions.
+- **Phase Swift (PhaseSwift)**: scene switching with per-scene topology and multi-track music.
+- **Clock**: a general-purpose timer that repeats a set of Actions at a fixed interval.
+- **Node Icons (SetNodeIcon)**: statically declare or switch any node's icon at runtime.
+- **Custom Ending (StartEnding)**: a configurable ending flow (titles, speech, credits).
+- **Title Banner & ScreenBleed (ShowTitle / ScreenBleedWCC)**: full-screen story prompts and system alerts.
 
 All systems **must** run as part of an extension; global plugin mode is not supported. All paths for configuration files, action files, etc. are relative to the **extension root**.
 
@@ -19,7 +24,7 @@ All systems **must** run as part of an extension; global plugin mode is not supp
 
 ## 2. Using Flags
 
-Both the trial and VM attack systems rely on Hacknet's native Flag mechanism. Generally, Flags can only be added/removed via the Action system — not through console commands.
+Most systems are triggered through Hacknet's native Flag mechanism (or custom Actions). Generally, Flags can only be added/removed via the Action system — not through console commands.
 
 ### Custom Trial
 
