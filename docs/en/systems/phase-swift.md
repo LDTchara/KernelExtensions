@@ -362,7 +362,18 @@ Add or remove runtime blocklist entries.
 
 ## Known Limitations
 
-- **Conflict with Stuxnet.Audio**: that mod hijacks extension music (`ReplaceMusicManager`) and breaks PS's multi-track playback chain. If your extension uses both, expect altered track behaviour
+- **Coexistence boundary with Stuxnet.Audio (SASS)**: SASS takes over `MusicManager` by default
+  (`ReplaceMusicManager=true`). While PS is running it swallows `MusicManager`'s playback entry points
+  (`playSong` / `playSongImmediatley` / `transitionToSong`), so **on the normal path SASS never gets
+  triggered and stays silent**; PS also calls `MusicManager.stop()` on start, which correctly stops SASS.
+  Two gaps remain:
+  - **SASS's music Actions bypass `MusicManager`** (calling `StuxnetMusicManager` directly) → triggering one
+    while PS is running makes **both systems play at once**. Avoid SASS music actions during a PS session.
+  - SASS conditionally takes over `MusicManager.getVolume()` (when the current song name contains the
+    extension path) → PS's volume tracking may read SASS's volume instead.
+
+  The visualiser layer does **not** conflict: PS fakes `MediaPlayer.State`, while SASS rewrites the same
+  check via IL — the two semantics are orthogonal.
 - Tracks of unequal length inside one phase drift out of sync after switching (see the warning above)
 - When a scene theme is a custom path, write it relative to the extension root (PS does not prepend anything)
 

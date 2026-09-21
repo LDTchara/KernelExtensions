@@ -362,7 +362,15 @@ PS 结束时的行为分**两个正交维度**，各自可配：
 
 ## 已知限制
 
-- **与 Stuxnet.Audio 冲突**：该模组劫持扩展音乐（`ReplaceMusicManager`），会打断 PS 的多轨播放链。若你的扩展同时使用两者，请留意音轨行为
+- **与 Stuxnet.Audio（SASS）的共存边界**：SASS 默认接管 `MusicManager`（`ReplaceMusicManager=true`）。
+  PS 运行时会吞掉 `MusicManager` 的播放入口（`playSong` / `playSongImmediatley` / `transitionToSong`），
+  因此**常规路径下 SASS 收不到触发、不会出声**；PS 启动时还会调 `MusicManager.stop()`，SASS 也会被正确停下。
+  但有两条缝隙：
+  - **SASS 的音乐 Action 绕过 `MusicManager`**（直接调 `StuxnetMusicManager`）→ 在 PS 运行期调用它会导致
+    **两套音乐同时播放**。请避免在 PS 运行期触发 SASS 的音乐动作。
+  - SASS 会按条件接管 `MusicManager.getVolume()`（当当前曲名含扩展路径时）→ PS 的音量跟随可能读到 SASS 的音量。
+
+  可视化层两者互不干扰（PS 伪造 `MediaPlayer.State`，SASS 用 IL 替换同一处判断，两者语义正交）。
 - 同一 Phase 内音轨长度不一致会导致切换后进度漂移（见上文 warning）
 - 场景主题若填自定义路径，路径需相对扩展根目录书写（PS 不额外拼接前缀）
 
