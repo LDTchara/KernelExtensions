@@ -43,7 +43,10 @@
     <!-- 报幕阶段音乐（可选，空 = 原版 Music\Bit(Ending)） -->
     <OnCreditMusic></OnCreditMusic>
 
-    <!-- 回游戏后音乐（可选，空 = 原版 Music\Bit(Ending)） -->
+    <!-- 回游戏后音乐（可选）
+         空 / NONE = 不切换音乐（保持报幕曲继续播放）
+         想用原版结局曲请显式写 Music/Bit(Ending)
+         非空时切换走原版 transitionToSong：报幕曲自然淡出、新曲淡入 -->
     <AfterMusic></AfterMusic>
 
     <!-- 报幕完成后执行的动作文件（可选，NONE/空 = 不执行） -->

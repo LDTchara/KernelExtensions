@@ -42,7 +42,7 @@ public class CustomEndingModule : EndingSequenceModule
     public string Titletext = "Hacknet";
     public string endingText = "Thanks For Playing";
     public string onCreditMusic = "";   // 报幕阶段音乐，空=原版 Music\Bit(Ending)
-    public string afterMusic = "";      // 回游戏后音乐，空=原版 Music\Bit(Ending)
+    public string afterMusic = "";      // 回游戏后音乐；空/NONE = **不切换**（保持报幕曲继续），想用原版请显式写 Music/Bit(Ending)
 
     // ========================================================================
     //  结束回调 — 报幕完成后触发下一个 Action（实例字段，Action 注入）
@@ -237,7 +237,7 @@ public class CustomEndingModule : EndingSequenceModule
         }
         else
         {
-            KELog.Info($"[CustomEndingModule] voice NOT found: {SpeechFile}");
+            KELog.Warn($"[CustomEndingModule] Voice not found: {SpeechFile} — speech stage will run silent.");
         }
 
         // ---- 演讲计时终值 ----
@@ -665,8 +665,14 @@ public class CustomEndingModule : EndingSequenceModule
 
         try { os.threadedSaveExecute(); } catch { }
         MediaPlayer.IsRepeating = true;
-        string afterSong = ResolveSong(afterMusic, "Music\\Bit(Ending)");
-        try { MusicManager.playSongImmediatley(afterSong); } catch { }
+        // AfterMusic 空 / NONE = 不切换音乐（保持报幕阶段音乐继续播放）；
+        // 想用原版结局曲请显式写 Music/Bit(Ending)
+        string afterSong = ResolveSong(afterMusic, "Music\\Bit(Ending)", fallbackToVanilla: false);
+        if (afterSong != null)
+        {
+            // transitionToSong 自带淡出/淡入（原版 FADE_TIME），报幕音乐自然淡出而非硬切
+            try { MusicManager.transitionToSong(afterSong); } catch { }
+        }
 
         try { OnCompleteCallback?.Invoke(); }
         catch (Exception ex) { KELog.Warn($"[CustomEndingModule] OnCompleteCallback error: {ex.Message}"); }
@@ -675,12 +681,14 @@ public class CustomEndingModule : EndingSequenceModule
     }
 
     /// <summary>
-    /// 解析音乐路径：NONE/空 = 原版兜底（Music\Bit(Ending)）；否则走 MusicPathResolver
-    /// （扩展根相对路径，支持扩展内 ogg/wav——与 CustomTrial/PhaseSwift/FakeRecovery 一致）。
+    /// 解析音乐路径：NONE/空 时按 fallbackToVanilla 决定——
+    ///   true  → 返回原版兜底曲（报幕阶段用，保证一定有音乐）
+    ///   false → 返回 null，表示「不切换音乐」（AfterMusic 用，保持当前播放的音乐）
+    /// 非空则走 MusicPathResolver（扩展根相对路径，支持扩展内 ogg/wav——与 CustomTrial/PhaseSwift/FakeRecovery 一致）。
     /// </summary>
-    private static string ResolveSong(string configured, string vanillaFallback)
+    private static string ResolveSong(string configured, string vanillaFallback, bool fallbackToVanilla = true)
     {
-        if (ConfigValue.IsNone(configured)) return vanillaFallback;
+        if (ConfigValue.IsNone(configured)) return fallbackToVanilla ? vanillaFallback : null;
         string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
         return string.IsNullOrEmpty(extRoot) ? configured : MusicPathResolver.ResolveMusicPath(configured, extRoot);
     }

@@ -9,7 +9,8 @@ namespace KernelExtensions.Configs
     /// 来源：StartEnding 的 File 属性指向的独立结局文件（根元素 &lt;EndingConfig&gt;，子元素结构，
     /// 风格对齐 TrialConfig/PhaseSwiftConfig）。
     /// 字段语义（字符串配置遵循 NONE 约定：NONE/空 = 该字段默认）：
-    ///   Title/EndingText/OnCreditMusic/AfterMusic/AfterAction —— 文本与音乐，空 = 用原版/不执行
+    ///   Title/EndingText/OnCreditMusic/AfterAction —— 文本与音乐，空 = 用原版/不执行
+    ///   AfterMusic —— 空/NONE = **不切换**音乐（保持报幕曲继续）；想用原版结局曲请显式写 Music/Bit(Ending)
     ///   SpeechFile/SpeechTextFile/CreditsFile —— 资源路径（相对扩展根任意子目录），NONE/空 = 默认 Docs/ 下
     ///   TitleFreezeTime/EndingPauseTime/ScrollSpeed/ScrollAccelTime —— 报幕节奏（可选，不写 = 原行为）
     ///   SpeechTime（float，默认 -1）：
@@ -33,7 +34,7 @@ namespace KernelExtensions.Configs
 
         // ===== 音乐（空 = 原版 Music\Bit(Ending)）=====
         public string OnCreditMusic = "";
-        public string AfterMusic = "";
+        public string AfterMusic = "";      // 空/NONE = 不切换音乐（保持报幕曲）；想用原版结局曲写 Music/Bit(Ending)
 
         // ===== 收尾 =====
         public string AfterAction = ""; // NONE/空 = 不执行
