@@ -136,6 +136,26 @@ No prefix = regular body text.
 
     Leaving it empty or writing `NONE` = **no music switch at all**: the credits track keeps playing, so there is no "replay feel". To use the vanilla ending track, write `Music/Bit(Ending)` explicitly.
 
+### What should I write? — intent cheat sheet
+
+(`A` / `B` stand for any track path, e.g. `Music/Smile,please smile pt2.ogg`)
+
+| Desired ending-music behaviour | `OnCreditMusic` | `AfterMusic` | `CreditsFadeOutTime` |
+|--------------------------------|-----------------|--------------|----------------------|
+| Credits play A, then **keep playing A** (no cut, no fade) | `A` | **empty / `NONE`** | anything (no effect) |
+| Credits play A, then switch to B (with a fade) | `A` | `B` | `> 0` (default 5) |
+| Credits play A, then **restart A from the beginning** | `A` | `A` | anything |
+| Credits use the vanilla track, then keep playing | empty | empty / `NONE` | anything |
+
+!!! warning "Three easy traps"
+    **① "Keep playing" does not work by writing the same track twice.** Setting `AfterMusic` to the **same** track as `OnCreditMusic` gives you a **restart from the beginning**, not a continuation — because `transitionToSong` skips same-name tracks, so that case falls back to `playSongImmediatley` (replay). To let the music simply continue, **leave it empty / `NONE`**.
+
+    **② "No switch" and "no fade" are the same thing.** The two-stage fade requires `AfterMusic` to be non-empty, so when it is empty **no fade happens at all** and `CreditsFadeOutTime` has no effect.
+
+    **③ The reverse — "fade out but do not switch" — is not possible.** A fade always comes with a switch: a non-empty `AfterMusic` switches, an empty one never fades. If you want "fade to silence and just stay silent", there is currently no switch for it.
+
+    **Also**: an empty `OnCreditMusic` means the **vanilla** `Music\Bit(Ending)` — it does **not** mean "no music".
+
 !!! note "Credits duration cannot be predetermined"
     The length of the credits stage depends on the number and content of lines in `CreditsFile` (it scrolls until the **closing line reaches the centre of the screen**); there is **no configurable fixed duration**. Plan any follow-up pacing accordingly.
 
