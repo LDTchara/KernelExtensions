@@ -55,7 +55,7 @@ ExtensionRoot/
 | `Title` | `Hacknet` | Large title shown during the credits stage |
 | `EndingText` | `Thanks For Playing` | Closing line at the end of the credits |
 | `OnCreditMusic` | empty → vanilla `Music\Bit(Ending)` | Music played during the credits stage |
-| `AfterMusic` | empty → vanilla `Music\Bit(Ending)` | Music played after the ending, back in the game |
+| `AfterMusic` | empty / `NONE` → **no switch** | Music played after the ending, back in the game (leave empty to keep the credits track playing) |
 | `AfterAction` | empty = not executed | Action file loaded after the credits finish (write `<AfterAction file="..." />`; element content also accepted) |
 | `SpeechTime` | `-1` | Speech stage timing, see below |
 | `SpeechFile` | `Docs/EndingSpeech.wav` | Speech voice path (`.wav` or `.ogg`, optional) |
@@ -126,8 +126,10 @@ No prefix = regular body text.
 
 ## Music & Display
 
-!!! warning "AfterMusic always replays"
-    When the ending finishes, **`AfterMusic` is replayed unconditionally — whether or not it is the same track as `OnCreditMusic`**. If both point at the same song, it simply restarts from the beginning. To avoid that "replay feel", point `AfterMusic` at a different track, or leave it empty to use the vanilla `Music\Bit(Ending)`.
+!!! note "How AfterMusic switches"
+    When the ending finishes, the mod **switches** to `AfterMusic` — this is a switch, not a continuation: even if it is the same track as `OnCreditMusic`, it restarts from the beginning. The switch goes through vanilla `transitionToSong`, so **the credits track fades out naturally and the new one fades in** (no more hard cut).
+
+    Leaving it empty or writing `NONE` = **no music switch at all**: the credits track keeps playing, so there is no "replay feel". To use the vanilla ending track, write `Music/Bit(Ending)` explicitly.
 
 !!! note "Credits duration cannot be predetermined"
     The length of the credits stage depends on the number and content of lines in `CreditsFile` (it scrolls until the **closing line reaches the centre of the screen**); there is **no configurable fixed duration**. Plan any follow-up pacing accordingly.
@@ -147,7 +149,7 @@ Once the ending finishes (credits scrolled through), it automatically:
 - unlocks input (terminal / RAM / netmap / top-bar buttons)
 - restores `os.canRunContent`
 - saves the game
-- switches the music back (`AfterMusic`; vanilla `Music\Bit(Ending)` if unset)
+- switches the music back (`AfterMusic`; empty / `NONE` = no switch, credits track continues)
 - runs `AfterAction` (if configured)
 
 !!! note "Responsibility boundary"

@@ -55,7 +55,7 @@ ExtensionRoot/
 | `Title` | `Hacknet` | 报幕阶段的大标题 |
 | `EndingText` | `Thanks For Playing` | 报幕末尾的提示行 |
 | `OnCreditMusic` | 空 → 原版 `Music\Bit(Ending)` | 报幕阶段播放的音乐 |
-| `AfterMusic` | 空 → 原版 `Music\Bit(Ending)` | 结局完成、回到游戏后播放的音乐 |
+| `AfterMusic` | 空 / `NONE` → **不切换** | 结局完成、回到游戏后播放的音乐（留空则保持报幕曲继续） |
 | `AfterAction` | 空 = 不执行 | 报幕完成后加载执行的动作文件（写作 `<AfterAction file="..." />`，也兼容元素内容） |
 | `SpeechTime` | `-1` | 演讲阶段计时方式，见下 |
 | `SpeechFile` | `Docs/EndingSpeech.wav` | 演讲语音路径（`.wav` 或 `.ogg`，可选） |
@@ -126,8 +126,10 @@ ExtensionRoot/
 
 ## 音乐与显示
 
-!!! warning "AfterMusic 会无条件重播"
-    结局结束时，**不论 `AfterMusic` 是否与 `OnCreditMusic` 相同，都会重新播放一遍**——即使两者填的是同一首曲子，也会从头重播一次。若不希望有这种“重播感”，可让 `AfterMusic` 指向另一首曲目，或留空使用原版 `Music\Bit(Ending)`。
+!!! note "AfterMusic 的切换行为"
+    结局结束时会切到 `AfterMusic`——**这是“切换”而非“接续”**：即使与 `OnCreditMusic` 是同一首，也会从头重播。切换走原版 `transitionToSong`，**报幕音乐自然淡出、新曲淡入**（不再是硬切）。
+
+    留空或写 `NONE` = **完全不切换音乐**：报幕阶段的音乐继续播放，结束时没有“重播感”。想用原版结局曲，请显式写 `Music/Bit(Ending)`。
 
 !!! note "报幕时长无法预先确定"
     报幕阶段的时长取决于 `CreditsFile` 的行数与每行内容（滚动到**结尾提示行到达屏幕中央**为止），**没有可配置的固定时长**。若要精确安排后续节奏，请据此设计。
@@ -147,7 +149,7 @@ ExtensionRoot/
 - 解锁输入（终端 / 内存 / 网络地图 / 顶栏按钮）
 - 恢复 `os.canRunContent`
 - 保存游戏
-- 切回音乐（`AfterMusic`，未配置则原版 `Music\Bit(Ending)`）
+- 切回音乐（`AfterMusic`；留空 / `NONE` = 不切换，报幕曲继续）
 - 执行 `AfterAction`（若配置）
 
 !!! note "职责边界"
