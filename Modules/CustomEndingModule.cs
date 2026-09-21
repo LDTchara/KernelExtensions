@@ -730,7 +730,6 @@ public class CustomEndingModule : EndingSequenceModule
 
         IsActive = false;
 
-        try { os.threadedSaveExecute(); } catch { }
         MediaPlayer.IsRepeating = true;
         // 记录是否做过报幕末尾的两段式淡出（RestoreMusicVolume 会清掉 creditsFading）
         bool fadedAtCreditsEnd = creditsFading;
@@ -757,6 +756,9 @@ public class CustomEndingModule : EndingSequenceModule
                 try { MusicManager.transitionToSong(afterSong); } catch { }
             }
         }
+
+        // 存档放在 AfterMusic 切换之后：确保存下的是「音乐已切、音量已还原」的最终状态
+        try { os.threadedSaveExecute(); } catch { }
 
         try { OnCompleteCallback?.Invoke(); }
         catch (Exception ex) { KELog.Warn($"[CustomEndingModule] OnCompleteCallback error: {ex.Message}"); }
