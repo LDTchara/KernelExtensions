@@ -63,6 +63,7 @@ ExtensionRoot/
 | `CreditsFile` | `Docs/CreditsData.txt` | 报幕名单路径 |
 | `TitleFreezeTime` | `10` | 报幕开始时标题停留秒数（此期间不滚动） |
 | `EndingPauseTime` | `5` | 结尾提示行到达屏幕中央后的停顿秒数 |
+| `CreditsFadeOutTime` | `5` | 报幕末尾渐弱时长（秒）：停顿的前 N 秒把音乐渐弱到静音，其余保持静音（停一拍），随后才切歌；`0` = 不淡出；负数/无效 = 用默认。仅当配置了 `AfterMusic` 且存在结尾提示行时生效 |
 | `ScrollSpeed` | `65` | 报幕滚动满速（像素/秒） |
 | `ScrollAccelTime` | `8` | 从静止加速到满速所需秒数（`0` = 立即满速） |
 
@@ -128,6 +129,10 @@ ExtensionRoot/
 
 !!! note "AfterMusic 的切换行为"
     结局结束时会切到 `AfterMusic`——**这是“切换”而非“接续”**：即使与 `OnCreditMusic` 是同一首，也会从头重播。切换走原版 `transitionToSong`，**报幕音乐自然淡出、新曲淡入**（不再是硬切）。
+
+    此外，若配置了 `AfterMusic` **且**写了结尾提示行（`EndingText`），报幕末尾会先做**两段式淡出**：结尾提示行到达屏幕中央后的停顿期间，前 `CreditsFadeOutTime` 秒把音乐渐弱到静音，其余时间保持静音（停一拍），随后才切歌。想让静音段更长，把 `EndingPauseTime` 设得比 `CreditsFadeOutTime` 大即可（如 8 与 5 → 5 秒渐弱 + 3 秒静音）。
+
+    ⚠️ 未写 `EndingText` 时不会触发两段式——那条结束路径只走 `transitionToSong` 的淡出。
 
     留空或写 `NONE` = **完全不切换音乐**：报幕阶段的音乐继续播放，结束时没有“重播感”。想用原版结局曲，请显式写 `Music/Bit(Ending)`。
 

@@ -63,6 +63,7 @@ ExtensionRoot/
 | `CreditsFile` | `Docs/CreditsData.txt` | Credits list path |
 | `TitleFreezeTime` | `10` | Seconds the title stays frozen at the start (no scrolling) |
 | `EndingPauseTime` | `5` | Seconds to pause after the closing line reaches the screen centre |
+| `CreditsFadeOutTime` | `5` | Credits-end fade duration (seconds): the first N seconds of the pause fade the music to silence, the rest stays silent (a held beat), then the switch happens; `0` = no fade; negative/invalid = default. Only active when `AfterMusic` is configured **and** a closing line exists |
 | `ScrollSpeed` | `65` | Credits scroll speed at full speed (pixels per second) |
 | `ScrollAccelTime` | `8` | Seconds to accelerate from rest to full speed (`0` = instant) |
 
@@ -128,6 +129,10 @@ No prefix = regular body text.
 
 !!! note "How AfterMusic switches"
     When the ending finishes, the mod **switches** to `AfterMusic` — this is a switch, not a continuation: even if it is the same track as `OnCreditMusic`, it restarts from the beginning. The switch goes through vanilla `transitionToSong`, so **the credits track fades out naturally and the new one fades in** (no more hard cut).
+
+    In addition, if `AfterMusic` is configured **and** a closing line (`EndingText`) is present, the credits end with a **two-stage fade**: during the pause after the closing line reaches the screen centre, the first `CreditsFadeOutTime` seconds fade the music to silence and the remainder stays silent (a held beat) before the switch. To lengthen the silent part, set `EndingPauseTime` higher than `CreditsFadeOutTime` (e.g. 8 and 5 → 5s fade + 3s silence).
+
+    ⚠️ Without `EndingText` the two-stage fade does not trigger — that ending path only uses the `transitionToSong` fade.
 
     Leaving it empty or writing `NONE` = **no music switch at all**: the credits track keeps playing, so there is no "replay feel". To use the vanilla ending track, write `Music/Bit(Ending)` explicitly.
 
