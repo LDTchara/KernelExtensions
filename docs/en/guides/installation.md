@@ -27,6 +27,18 @@
 - If you need a complete manual removal, simply delete the `Plugins/KernelExtensions.dll` file and restart the game.
 - The mod **does not support global plugin mode** (i.e. it cannot be placed under `BepInEx/plugins/`). Please ensure it always stays inside an extension's `Plugins` directory.
 
+## License
+
+The mod is released under the **MIT License**, and the full text is embedded in `KernelExtensions.dll` (it ships with the dll).
+
+In the in-game terminal, type:
+
+```
+kelicense
+```
+
+to view the complete licence text (the command supports terminal autocomplete). The repository's `LICENSE` and `NOTICE.md` (third-party component notices) are also available online.
+
 ## FAQ
 
 **Q: The success message does not appear in the console.**  
