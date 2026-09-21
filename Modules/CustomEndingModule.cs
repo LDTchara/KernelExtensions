@@ -88,7 +88,12 @@ public class CustomEndingModule : EndingSequenceModule
     private float scrollAccelTime = 8f;       // 加速斜坡时长（由 EndingConfig.ScrollAccelTime 注入；0 = 立即满速）
     private bool endingTextReachedCenter = false;
     private float endingPauseTimer = 0f;
-    private float endingPauseDuration = 5f;   // 结尾提示行停顿（由 EndingConfig.EndingPauseTime 注入）
+    private float endingPauseDuration = 5f;
+        /// <summary>报幕末尾渐弱时长的默认值（CreditsFadeOutTime 负数/无效时回退到此值）</summary>
+        private const float DefaultCreditsFadeOutTime = 5f;
+        private float creditsFadeOutTime = DefaultCreditsFadeOutTime;  // 0 = 不淡出
+        private float originalVolume = 1f;        // 渐弱前的全局音乐音量（切歌前恢复）
+        private bool creditsFading = false;       // 本轮报幕音乐是否处于渐弱中   // 结尾提示行停顿（由 EndingConfig.EndingPauseTime 注入）
     private const float EndingTextBottomOffset = 350f;
 
     // ========================================================================
@@ -119,6 +124,7 @@ public class CustomEndingModule : EndingSequenceModule
         // 报幕节奏（可选配置；不写时与旧硬编码一致）
         hacknetTitleFreezeTime = config.TitleFreezeTime;
         endingPauseDuration = config.EndingPauseTime;
+            creditsFadeOutTime = config.CreditsFadeOutTime;
         creditsPixelsScrollPerSecond = config.ScrollSpeed;
         scrollAccelTime = config.ScrollAccelTime;
     }
@@ -534,6 +540,9 @@ public class CustomEndingModule : EndingSequenceModule
             // 停止滚动，elapsedTime 继续走以保持 _ 闪烁，等待暂停时长后结束
             elapsedTime += t;
             endingPauseTimer += t;
+            // 报幕末尾两段式淡出：停顿的前 creditsFadeOutTime 秒线性降到静音，
+            // 其余为静音段（停一拍），直到 CompleteAndReturnToMenu 切歌前恢复音量
+            ApplyCreditsFadeOut();
             if (endingPauseTimer >= endingPauseDuration)
                 CompleteAndReturnToMenu();
             return;
@@ -547,6 +556,36 @@ public class CustomEndingModule : EndingSequenceModule
                 : Math.Min(1f, (elapsedTime - hacknetTitleFreezeTime) / scrollAccelTime);
             creditsScroll -= t * creditsPixelsScrollPerSecond * speed;
         }
+    }
+
+    /// <summary>
+    /// 报幕末尾的两段式淡出（每帧调用）。仅在「配置了 AfterMusic」且「存在结尾提示行」时生效：
+    /// 停顿的前 creditsFadeOutTime 秒把全局音乐音量线性降到 0，其余时间为静音段（停一拍）。
+    /// 音量是全局的（MediaPlayer.Volume，等同玩家的音乐音量设置），必须在出口恢复。
+    /// </summary>
+    private void ApplyCreditsFadeOut()
+    {
+        if (!creditsFading)
+        {
+            float fadeT = creditsFadeOutTime;
+            // 9.55 约定：负数 / NaN / Infinity = 用默认
+            if (float.IsNaN(fadeT) || float.IsInfinity(fadeT) || fadeT < 0f) fadeT = DefaultCreditsFadeOutTime;
+            if (fadeT <= 0f) return;                          // 0 = 不淡出
+            if (ConfigValue.IsNone(afterMusic)) return;        // 无 AfterMusic（不切换音乐）→ 不淡出
+            creditsFading = true;
+            creditsFadeOutTime = fadeT;
+            try { originalVolume = MusicManager.getVolume(); } catch { }
+        }
+        float progress = Math.Min(1f, endingPauseTimer / creditsFadeOutTime);
+        try { MusicManager.setVolume(originalVolume * (1f - progress)); } catch { }
+    }
+
+    /// <summary>恢复渐弱前的全局音乐音量（切歌前调用；未渐弱过则不动）。</summary>
+    private void RestoreMusicVolume()
+    {
+        if (!creditsFading) return;
+        creditsFading = false;
+        try { MusicManager.setVolume(originalVolume); } catch { }
     }
 
     private new void DrawCredits()
@@ -665,6 +704,8 @@ public class CustomEndingModule : EndingSequenceModule
 
         try { os.threadedSaveExecute(); } catch { }
         MediaPlayer.IsRepeating = true;
+        // 先还原报幕末尾渐弱前的音量（音量是全局的，务必在出口还原）
+        RestoreMusicVolume();
         // AfterMusic 空 / NONE = 不切换音乐（保持报幕阶段音乐继续播放）；
         // 想用原版结局曲请显式写 Music/Bit(Ending)
         string afterSong = ResolveSong(afterMusic, "Music\\Bit(Ending)", fallbackToVanilla: false);

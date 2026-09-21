@@ -36,6 +36,12 @@ namespace KernelExtensions.Configs
         public string OnCreditMusic = "";
         public string AfterMusic = "";      // 空/NONE = 不切换音乐（保持报幕曲）；想用原版结局曲写 Music/Bit(Ending)
 
+        // 报幕末尾渐弱时长（秒）：默认 5；0 = 不淡出；负数 / 无效值 = 用默认。
+        // 仅在「配置了 AfterMusic（非空/NONE）」且「存在结尾提示行」时生效：
+        // 结尾提示行到达屏幕中央后的停顿期间，前 N 秒线性渐弱到静音，其余为静音段（= 停一拍），随后切歌。
+        // 想要更长的静音段，把 EndingPauseTime 设得比它大即可。
+        public float CreditsFadeOutTime = 5f;
+
         // ===== 收尾 =====
         public string AfterAction = ""; // NONE/空 = 不执行
 
@@ -91,6 +97,7 @@ namespace KernelExtensions.Configs
                 cfg.SpeechTime = GetFloat(root, "SpeechTime", -1f);
                 cfg.TitleFreezeTime = GetFloat(root, "TitleFreezeTime", 10f);
                 cfg.EndingPauseTime = GetFloat(root, "EndingPauseTime", 5f);
+                cfg.CreditsFadeOutTime = GetFloat(root, "CreditsFadeOutTime", 5f);
                 cfg.ScrollSpeed = GetFloat(root, "ScrollSpeed", 65f);
                 cfg.ScrollAccelTime = GetFloat(root, "ScrollAccelTime", 8f);
                 return cfg;
