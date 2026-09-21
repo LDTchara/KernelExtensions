@@ -82,10 +82,10 @@ nav:
           - 自定义定时器系统（Clock）: zh/systems/clock.md
           - 自定义节点图标系统: zh/systems/node-icon.md
           - 自定义结局系统（StartEnding）: zh/systems/custom-ending.md
-          - 自定义标题横幅（ShowTitle）: zh/systems/title-banner.md
-          - 自定义全屏警告特效（ScreenBleed）: zh/systems/screen-bleed.md
       - 组件:
           - 自定义 Action: zh/components/actions.md
+          - 自定义标题横幅（ShowTitle）: zh/systems/title-banner.md
+          - 自定义全屏警告特效（ScreenBleed）: zh/systems/screen-bleed.md
           - 可执行程序: zh/components/executables.md
           - 自定义 Daemon: zh/components/daemons.md
           - 配置文件: zh/components/configuration.md
@@ -105,10 +105,10 @@ nav:
           - Custom Timer System (Clock): en/systems/clock.md
           - Custom Node Icon System: en/systems/node-icon.md
           - Custom Ending System (StartEnding): en/systems/custom-ending.md
-          - Custom Title Banner (ShowTitle): en/systems/title-banner.md
-          - Custom ScreenBleed Effect: en/systems/screen-bleed.md
       - Components:
           - Actions: en/components/actions.md
+          - Custom Title Banner (ShowTitle): en/systems/title-banner.md
+          - Custom ScreenBleed Effect: en/systems/screen-bleed.md
           - Executables: en/components/executables.md
           - Daemons: en/components/daemons.md
           - Configuration Files: en/components/configuration.md

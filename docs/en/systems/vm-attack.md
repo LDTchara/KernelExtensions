@@ -92,11 +92,9 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 
 Guide text supports inline control markers wrapped in `||`:
 
-| Marker | Effect | Example |
-|--------|--------|---------|
-| `\|\|Px.x\|\|` | Pause for x.x seconds | `\|\|P0.5\|\|` |
-| `\|\|Sx.x\|\|` | Change character speed to x.x sec/char | `\|\|S0.05\|\|` (faster) |
-| `\|\|SR\|\|` | Reset character speed to default (0.12 sec/char) | `\|\|SR\|\|` |
+- `||Px.x||` — Pause for x.x seconds (e.g. `||P0.5||`)
+- `||Sx.x||` — Change character speed to x.x sec/char (e.g. `||S0.05||` for faster)
+- `||SR||` — Reset character speed to default (0.12 sec/char)
 
 Markers can appear anywhere in a line and are never displayed. Speed is reset to default at the start of each line.
 

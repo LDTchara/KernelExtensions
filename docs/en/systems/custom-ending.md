@@ -97,13 +97,11 @@ Both render a **waveform** during the speech stage (custom drawing, no vanilla r
 Typed out character by character at the **bottom-left** of the screen, showing **at most the latest 5 lines**: the newest line is opaque and older lines higher up are progressively more transparent (each line ×0.6 alpha); the 6th line and beyond are not drawn at all.  
 **Line breaks come from the file's own newlines** (there is no automatic wrapping), so keep each line short enough yourself. Inline control characters:
 
-| Marker | Meaning |
-|--------|---------|
-| `\|\|Px.x\|\|` | **Pause for x.x seconds** (any duration, e.g. `\|\|P2.5\|\|`) |
-| `\|\|Sx.x\|\|` | Set subsequent typing speed to x.x s per character |
-| `\|\|SR\|\|` | Restore the default typing speed (0.05 s per character) |
-| `#` | Pause for 1 second (shorthand) |
-| `%` | Pause for 0.5 seconds (shorthand) |
+- `||Px.x||` — **Pause for x.x seconds** (any duration, e.g. `||P2.5||`)
+- `||Sx.x||` — Set subsequent typing speed to x.x s per character
+- `||SR||` — Restore the default typing speed (0.05 s per character)
+- `#` — Pause for 1 second (shorthand)
+- `%` — Pause for 0.5 seconds (shorthand)
 
 Marker syntax matches the VM Attack (fake recovery module) guide text; other characters use the default **0.05 s per character**, and markers themselves are not displayed.
 
