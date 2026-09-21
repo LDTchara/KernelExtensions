@@ -711,8 +711,18 @@ public class CustomEndingModule : EndingSequenceModule
         string afterSong = ResolveSong(afterMusic, "Music\\Bit(Ending)", fallbackToVanilla: false);
         if (afterSong != null)
         {
-            // transitionToSong 自带淡出/淡入（原版 FADE_TIME），报幕音乐自然淡出而非硬切
-            try { MusicManager.transitionToSong(afterSong); } catch { }
+            if (MusicManager.currentSongName == afterSong)
+            {
+                // 同名：transitionToSong 会因 currentSongName 相同而直接返回（原版视作「已在播放」），
+                // 结果是音量恢复后同一首歌接着原位置继续播，听感上像「没有切换」。
+                // 这里改用 playSongImmediatley 从头重播（它同名时跳过重新加载，直接用已加载的 Song）
+                try { MusicManager.playSongImmediatley(afterSong); } catch { }
+            }
+            else
+            {
+                // 异名：transitionToSong 自带淡出/淡入（原版 FADE_TIME），报幕音乐自然淡出而非硬切
+                try { MusicManager.transitionToSong(afterSong); } catch { }
+            }
         }
 
         try { OnCompleteCallback?.Invoke(); }

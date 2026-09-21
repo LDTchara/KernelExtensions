@@ -51,7 +51,8 @@
     <!-- 回游戏后音乐（可选）
          空 / NONE = 不切换音乐（保持报幕曲继续播放）
          想用原版结局曲请显式写 Music/Bit(Ending)
-         非空时切换走原版 transitionToSong：报幕曲自然淡出、新曲淡入
+         与 OnCreditMusic 不同 → 走 transitionToSong：报幕曲淡出、新曲淡入
+         与 OnCreditMusic 相同 → 从头重播（同名时 transitionToSong 会跳过，故改走 playSongImmediatley）
          另：非空时才会启用报幕末尾的两段式淡出，见下方 CreditsFadeOutTime -->
     <AfterMusic></AfterMusic>
 
