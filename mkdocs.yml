@@ -43,6 +43,10 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+      # 中文标题锚点：默认 slugify 会丢弃非 ASCII 字符（#数据持久化 会失效）
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - pymdownx.details
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
