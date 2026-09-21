@@ -704,6 +704,8 @@ public class CustomEndingModule : EndingSequenceModule
 
         try { os.threadedSaveExecute(); } catch { }
         MediaPlayer.IsRepeating = true;
+        // 记录是否做过报幕末尾的两段式淡出（RestoreMusicVolume 会清掉 creditsFading）
+        bool fadedAtCreditsEnd = creditsFading;
         // 先还原报幕末尾渐弱前的音量（音量是全局的，务必在出口还原）
         RestoreMusicVolume();
         // AfterMusic 空 / NONE = 不切换音乐（保持报幕阶段音乐继续播放）；
@@ -711,16 +713,19 @@ public class CustomEndingModule : EndingSequenceModule
         string afterSong = ResolveSong(afterMusic, "Music\\Bit(Ending)", fallbackToVanilla: false);
         if (afterSong != null)
         {
-            if (MusicManager.currentSongName == afterSong)
+            // 以下两种情况都直接「立刻切换」，不走 transitionToSong 的淡出：
+            //  ① 已做过两段式淡出（fadedAtCreditsEnd）：报幕曲已渐弱到静音，
+            //     再走 transitionToSong 会先恢复音量、再淡出——听感「静音后突然又响一下再淡出」，割裂
+            //  ② 同名：transitionToSong 会因 currentSongName 相同而直接返回（原版视作「已在播放」），
+            //     结果是同一首歌接着原位置继续播，听感上像「没有切换」
+            if (fadedAtCreditsEnd || MusicManager.currentSongName == afterSong)
             {
-                // 同名：transitionToSong 会因 currentSongName 相同而直接返回（原版视作「已在播放」），
-                // 结果是音量恢复后同一首歌接着原位置继续播，听感上像「没有切换」。
-                // 这里改用 playSongImmediatley 从头重播（它同名时跳过重新加载，直接用已加载的 Song）
                 try { MusicManager.playSongImmediatley(afterSong); } catch { }
             }
             else
             {
-                // 异名：transitionToSong 自带淡出/淡入（原版 FADE_TIME），报幕音乐自然淡出而非硬切
+                // 异名且未做两段式淡出：transitionToSong 自带淡出/淡入（原版 FADE_TIME），
+                // 报幕音乐自然淡出而非硬切
                 try { MusicManager.transitionToSong(afterSong); } catch { }
             }
         }
