@@ -93,7 +93,13 @@ public class CustomEndingModule : EndingSequenceModule
         private const float DefaultCreditsFadeOutTime = 5f;
         private float creditsFadeOutTime = DefaultCreditsFadeOutTime;  // 0 = 不淡出
         private float originalVolume = 1f;        // 渐弱前的全局音乐音量（切歌前恢复）
-        private bool creditsFading = false;       // 本轮报幕音乐是否处于渐弱中   // 结尾提示行停顿（由 EndingConfig.EndingPauseTime 注入）
+        private bool creditsFading = false;       // 本轮报幕音乐是否处于渐弱中
+
+        // 跨实例：记录渐弱前的音量与「渐弱后未走到恢复路径」的脏标记。
+        // 若结局在报幕中途被中断（退出/切场景），全局音量会停在 0，
+        // 下一次结局的报幕音乐就会以 0 音量播放（听感：报幕阶段没有音乐）。
+        private static float _preFadeVolume = -1f;
+        private static bool _fadeLeftVolumeDirty = false;
     private const float EndingTextBottomOffset = 350f;
 
     // ========================================================================
@@ -150,6 +156,15 @@ public class CustomEndingModule : EndingSequenceModule
         endingTextReachedCenter = false;
         endingPauseTimer = 0f;
         resourcesLoaded = false;
+
+        // 自愈：若上一次结局在渐弱中途被中断，全局音乐音量会停在 0，
+        // 本次报幕音乐就会以 0 音量播放（表现为「报幕阶段没有音乐」）
+        if (_fadeLeftVolumeDirty && _preFadeVolume > 0f && MusicManager.getVolume() <= 0.0001f)
+        {
+            try { MusicManager.setVolume(_preFadeVolume); } catch { }
+            KELog.Warn($"[CustomEndingModule] music volume was left at 0 by an interrupted fade — restored to {_preFadeVolume:F2}.");
+            _fadeLeftVolumeDirty = false;
+        }
 
         // ---- 关键：设 canRunContent=false 让 OS 走入 else 分支调用 Update/Draw ----
         os.canRunContent = false;
@@ -575,6 +590,8 @@ public class CustomEndingModule : EndingSequenceModule
             creditsFading = true;
             creditsFadeOutTime = fadeT;
             try { originalVolume = MusicManager.getVolume(); } catch { }
+            _preFadeVolume = originalVolume;
+            _fadeLeftVolumeDirty = true;   // 标记「已动过全局音量」，未走到恢复路径则下次启动自愈
         }
         float progress = Math.Min(1f, endingPauseTimer / creditsFadeOutTime);
         try { MusicManager.setVolume(originalVolume * (1f - progress)); } catch { }
@@ -586,6 +603,7 @@ public class CustomEndingModule : EndingSequenceModule
         if (!creditsFading) return;
         creditsFading = false;
         try { MusicManager.setVolume(originalVolume); } catch { }
+        _fadeLeftVolumeDirty = false;   // 已正常恢复，清除脏标记
     }
 
     private new void DrawCredits()
@@ -683,8 +701,18 @@ public class CustomEndingModule : EndingSequenceModule
         os.delayer.Post(ActionDelayer.Wait(1.0), () =>
         {
             string creditSong = ResolveSong(onCreditMusic, "Music\\Bit(Ending)");
-            try { MusicManager.playSongImmediatley(creditSong); MediaPlayer.IsRepeating = false; }
-            catch { }
+            try
+            {
+                MusicManager.playSongImmediatley(creditSong);
+                MediaPlayer.IsRepeating = false;
+                // 原版加载失败只走 Console.WriteLine（不进 KELog），这里补一条可见日志便于排查
+                float vol = MusicManager.getVolume();
+                if (!MusicManager.isPlaying || vol <= 0.0001f)
+                    KELog.Warn($"[CustomEndingModule] credits music may not be audible: song={creditSong} current={MusicManager.currentSongName} playing={MusicManager.isPlaying} volume={vol:F2}");
+                else
+                    KELog.Info($"[CustomEndingModule] credits music started: {creditSong} (volume={vol:F2})");
+            }
+            catch (Exception ex) { KELog.Warn($"[CustomEndingModule] credits music failed: {ex.Message}"); }
         });
 
         KELog.Info("[CustomEndingModule] RollCredits -> Credits.");
