@@ -109,7 +109,7 @@ CustomColor preset names (including built-in `Rainbow` / `LDTchara`) are also ac
 |---|---|
 | Trial 描述文本 `DescriptionText` / `OutroText` / `ResetText` | 支持**文件路径或内嵌文本**（文件不存在则按纯文本显示）；`%` = 短停顿（约 0.5 s）、`%%` = 长停顿（约 2 s） |
 | Ending 演讲文本 `TextFile` | `#` = 停顿 1 s（段落感）、`%` = 停顿 0.5 s（短停顿），显示时被过滤 |
-| Ending 报幕名单 `CreditsFile` | 每行一条：`^` = 灰小字、`%` = 大标题行、`$` = 小号灰字 |
+| Ending 报幕名单 `CreditsFile` | 每行一条：`^` = 正文字体灰色（×0.6）、`%` = 大标题行、`$` = 小号灰字 |
 | VM Attack 引导文本 `GuideText` | 每行自动加 `> ` 前缀；行内控制标记 `\|\|Px.x\|\|` = 停顿 x.x s、`\|\|Sx.x\|\|` = 逐字速度 x.x s/字、`\|\|SR\|\|` = 恢复默认速度（0.12 s/字）；每行开始速度重置 |
 
 > ⚠️ 注意 `%` 在不同模块语义不同（Trial 文本 = 停顿；Ending 报幕 = 大标题行），**跨模块复用文本前请先确认目标模块的标记集**。
