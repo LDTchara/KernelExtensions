@@ -76,3 +76,18 @@ distributed under the Ms-PL and BepInEx under the LGPL-2.1.
 
 **Hacknet** is proprietary software by Team Fractal Alligator (published by Fellow Traveller).
 It is not distributed with this mod; a legitimate copy of the game is required to use it.
+
+---
+
+## 4. This mod's own license
+
+**KernelExtensions** is released under the **MIT License** — see `LICENSE` in the repository root.
+
+The full licence text is also **embedded in `KernelExtensions.dll`**, so it ships with the binary as well,
+and can be viewed in-game with the terminal command:
+
+```
+kelicense
+```
+
+Copyright (c) 2026 LDTchara and KernelExtensions Contributors — see `CONTRIBUTORS.md`.

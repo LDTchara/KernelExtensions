@@ -81,4 +81,12 @@
     <EmbeddedResource Include="Img\Info.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 许可证内嵌（9.62）：随 dll 分发，游戏内由 kelicense 指令输出。
+         LogicalName 显式命名，不依赖 RootNamespace 推断 -->
+    <EmbeddedResource Include="LICENSE">
+      <LogicalName>KernelExtensions.LICENSE.txt</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>
