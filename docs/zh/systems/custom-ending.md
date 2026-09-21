@@ -128,7 +128,7 @@ ExtensionRoot/
 ## 音乐与显示
 
 !!! note "AfterMusic 的切换行为"
-    结局结束时会切到 `AfterMusic`——**这是“切换”而非“接续”**：即使与 `OnCreditMusic` 是同一首，也会从头重播。切换走原版 `transitionToSong`，**报幕音乐自然淡出、新曲淡入**（不再是硬切）。
+    结局结束时会切到 `AfterMusic`：**与 `OnCreditMusic` 不同**时走原版 `transitionToSong`（报幕曲淡出、新曲淡入）；**同一首**时会**从头重播**（原因：`transitionToSong` 在同名时会直接跳过，这种情况改走 `playSongImmediatley`）。
 
     此外，若配置了 `AfterMusic` **且**写了结尾提示行（`EndingText`），报幕末尾会先做**两段式淡出**：结尾提示行到达屏幕中央后的停顿期间，前 `CreditsFadeOutTime` 秒把音乐渐弱到静音，其余时间保持静音（停一拍），随后才切歌。想让静音段更长，把 `EndingPauseTime` 设得比 `CreditsFadeOutTime` 大即可（如 8 与 5 → 5 秒渐弱 + 3 秒静音）。
 

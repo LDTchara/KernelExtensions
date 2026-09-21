@@ -128,7 +128,7 @@ No prefix = regular body text.
 ## Music & Display
 
 !!! note "How AfterMusic switches"
-    When the ending finishes, the mod **switches** to `AfterMusic` — this is a switch, not a continuation: even if it is the same track as `OnCreditMusic`, it restarts from the beginning. The switch goes through vanilla `transitionToSong`, so **the credits track fades out naturally and the new one fades in** (no more hard cut).
+    When the ending finishes, the mod switches to `AfterMusic`: when it **differs from `OnCreditMusic`** it goes through vanilla `transitionToSong` (credits track fades out, new one fades in); when it is the **same track** it **restarts from the beginning** (because `transitionToSong` skips same-name tracks, this case uses `playSongImmediatley` instead).
 
     In addition, if `AfterMusic` is configured **and** a closing line (`EndingText`) is present, the credits end with a **two-stage fade**: during the pause after the closing line reaches the screen centre, the first `CreditsFadeOutTime` seconds fade the music to silence and the remainder stays silent (a held beat) before the switch. To lengthen the silent part, set `EndingPauseTime` higher than `CreditsFadeOutTime` (e.g. 8 and 5 → 5s fade + 3s silence).
 
