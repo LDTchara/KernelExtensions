@@ -23,13 +23,18 @@
     SpeechFile     — 语音（wav/ogg，可选）
     SpeechTextFile — 演讲文本：标记 ||Px.x||=停顿x.x秒 / ||Sx.x||=逐字变速 / ||SR||=复位；
                      简写 #=停顿1s、%=停顿0.5s（标记显示时被过滤）
-    CreditsFile    — 报幕名单：^ 灰小字 / % 大标题行 / $ 小号灰字（每行一条）
+    CreditsFile    — 报幕名单：^ 正文字体灰色（×0.6）/ % 大标题行（titlefont）/ $ 小号灰字（smallfont）（每行一条）
 
   报幕节奏（可选，不写 = 默认值）：
-    TitleFreezeTime — 标题停留秒数（默认 10，此期间不滚动）
-    EndingPauseTime — 结尾提示行到达屏幕中央后的停顿（默认 5）；CreditsFadeOutTime — 报幕末尾渐弱时长（默认 5；0 = 不淡出；负数/无效 = 用默认），仅在配置了 AfterMusic 且存在结尾提示行时生效
-    ScrollSpeed     — 滚动满速 px/s（默认 65）
-    ScrollAccelTime — 加速斜坡秒数（默认 8；0 = 立即满速）
+    TitleFreezeTime    — 标题停留秒数（默认 10，此期间不滚动）
+    EndingPauseTime    — 结尾提示行到达屏幕中央后的停顿（默认 5）
+    CreditsFadeOutTime — 报幕末尾渐弱时长（默认 5；0 = 不淡出；负数/无效 = 用默认）
+                         停顿的前 N 秒渐弱到静音，其余时间静音（停一拍），随后才切歌
+                         前提：配置了 AfterMusic 且写了 EndingText（缺一不生效）
+                         想延长静音段：把 EndingPauseTime 调到比它大（如 8 与 5 → 5s 渐弱 + 3s 静音）
+                         此项不影响结局总时长（复用 EndingPauseTime 的停顿窗口）
+    ScrollSpeed        — 滚动满速 px/s（默认 65）
+    ScrollAccelTime    — 加速斜坡秒数（默认 8；0 = 立即满速）
     参考：满速下每行约 +0.62s（普通行）/ +2.77s（% 标题行）；无名单时约 33s（1080p）
   ========================================================================= -->
 
@@ -46,7 +51,8 @@
     <!-- 回游戏后音乐（可选）
          空 / NONE = 不切换音乐（保持报幕曲继续播放）
          想用原版结局曲请显式写 Music/Bit(Ending)
-         非空时切换走原版 transitionToSong：报幕曲自然淡出、新曲淡入 -->
+         非空时切换走原版 transitionToSong：报幕曲自然淡出、新曲淡入
+         另：非空时才会启用报幕末尾的两段式淡出，见下方 CreditsFadeOutTime -->
     <AfterMusic></AfterMusic>
 
     <!-- 报幕完成后执行的动作文件（可选，NONE/空 = 不执行） -->
@@ -64,10 +70,16 @@
     <!-- 报幕名单（可选，空 = 默认 Docs/CreditsData.txt） -->
     <CreditsFile>CreditsData.txt</CreditsFile>
 
-    <!-- 报幕节奏（可选，不写 = 默认值；影响结局总时长） -->
+    <!-- 报幕节奏（可选，不写 = 默认值；除 CreditsFadeOutTime 外均影响结局总时长） -->
     <TitleFreezeTime>10</TitleFreezeTime>
     <EndingPauseTime>5</EndingPauseTime>
-<CreditsFadeOutTime>5</CreditsFadeOutTime>
+
+    <!-- 报幕末尾渐弱（可选，默认 5；0 = 不淡出；负数/无效 = 用默认）
+         生效前提：① 配置了 AfterMusic（非空/NONE）② 写了 EndingText
+         行为：结尾提示行到达屏幕中央后，停顿的前 N 秒把音乐渐弱到静音，
+               其余时间保持静音（= 停一拍），随后才切歌（新曲经 transitionToSong 淡入）
+         想延长静音段：把上面的 EndingPauseTime 调大（如 8 与 5 → 5s 渐弱 + 3s 静音） -->
+    <CreditsFadeOutTime>5</CreditsFadeOutTime>
     <ScrollSpeed>65</ScrollSpeed>
     <ScrollAccelTime>8</ScrollAccelTime>
 </EndingConfig>
