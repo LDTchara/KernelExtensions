@@ -727,10 +727,12 @@ namespace KernelExtensions
         {
             OS os = e.Os;
             string flag = os.Flags.GetFlagStartingWith("PhaseSwift_");
+            KELog.Debug($"[PS-diag] AutoRestore: flag={(flag ?? "<null>")}");
             if (flag == null) return;
 
             string configName = flag.Substring("PhaseSwift_".Length);
             var restore = PhaseSwiftManager.PendingRestore;
+            KELog.Debug($"[PS-diag] AutoRestore: configName={configName} pendingRestore={(restore == null ? "<null>" : restore.ConfigName)}");
 
             // 读档恢复条件 = flag（配置声明）AND 存档数据（PhaseSwiftData 仅在 PS 运行时写入）。
             // 有 flag 但无数据 = 存档时 PS 未运行（如 PhaseSwiftInit 加过 flag 但 PS 被 Stop/
@@ -746,6 +748,7 @@ namespace KernelExtensions
             PhaseSwiftManager.OverrideOriginalLinks(restore.OriginalLinkIds, os);
             PhaseSwiftManager.RestorePersistentState(restore);
             PhaseSwiftManager.PendingRestore = null;
+            KELog.Debug("[PS-diag] AutoRestore: calling Start(overrideScene) now");
             PhaseSwiftManager.Start(overrideScene: restore.Scene);
         }
 

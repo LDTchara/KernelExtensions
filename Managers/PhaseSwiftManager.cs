@@ -136,7 +136,9 @@ namespace KernelExtensions.Managers
                 //    播放时，原版 isPlaying 恒为 false（它的 MediaPlayer.Play 拦截是 return false），
                 //    守卫会让 stop() 根本不被调用，结果是 PS 多轨与第三方音轨**同时输出**
                 //    （2026-09-22 实机证实）。stop() 本身幂等且会置 state=3，无条件调用无副作用。
+                KELog.Debug($"[PS-diag] Start: entering dual-track branch (overrideScene={overrideScene.HasValue}, isPlaying={MusicManager.isPlaying})");
                 MusicManager.stop();
+                KELog.Debug($"[PS-diag] Start: MusicManager.stop() returned (isPlaying={MusicManager.isPlaying})");
                 if (Config.MusicPhases.Count > 0)
                     LoadMusicPhase(Config.MusicPhases[CurrentMusicPhase]);
             }
