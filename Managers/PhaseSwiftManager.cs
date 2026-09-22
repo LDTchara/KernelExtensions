@@ -127,7 +127,14 @@ namespace KernelExtensions.Managers
 
         public static void Start(int? overrideScene = null)
         {
-            if (!IsInitialized || Config == null || IsRunning) return;
+            if (!IsInitialized || Config == null || IsRunning)
+            {
+                // PS 是全局单实例（PhaseSwiftManager 全 static）。重复启动时给可见反馈，不要静默忽略
+                KELog.Warn(IsRunning
+                    ? "[PhaseSwift] already running - ignoring this start request (PS is single-instance)."
+                    : "[PhaseSwift] start ignored: not initialized or config missing.");
+                return;
+            }
 
             if (UseDualTrack)
             {
