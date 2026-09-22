@@ -366,9 +366,8 @@ PS 结束时的行为分**两个正交维度**，各自可配：
   PS 运行时会吞掉 `MusicManager` 的播放入口（`playSong` / `playSongImmediatley` / `transitionToSong`），
   因此**常规路径下 SASS 收不到触发、不会出声**；PS 启动时还会调 `MusicManager.stop()`，SASS 也会被正确停下。
   但有两条缝隙：
-  - **SASS 的音乐 Action 绕过 `MusicManager`**（直接调 `StuxnetMusicManager`）→ 在 PS 运行期调用它会导致
-    **两套音乐同时播放**。请避免在 PS 运行期触发 SASS 的音乐动作。
-  - SASS 会按条件接管 `MusicManager.getVolume()`（当当前曲名含扩展路径时）→ PS 的音量跟随可能读到 SASS 的音量。
+  - SASS 会按条件接管 `MusicManager.getVolume()`（当当前曲名含扩展路径时）→ PS 的音量跟随（`volMul`）
+    可能读到 SASS 的音量，而不是玩家的音乐音量设置。
 
   可视化层两者互不干扰（PS 伪造 `MediaPlayer.State`，SASS 用 IL 替换同一处判断，两者语义正交）。
 - 同一 Phase 内音轨长度不一致会导致切换后进度漂移（见上文 warning）

@@ -367,10 +367,9 @@ Add or remove runtime blocklist entries.
   (`playSong` / `playSongImmediatley` / `transitionToSong`), so **on the normal path SASS never gets
   triggered and stays silent**; PS also calls `MusicManager.stop()` on start, which correctly stops SASS.
   Two gaps remain:
-  - **SASS's music Actions bypass `MusicManager`** (calling `StuxnetMusicManager` directly) → triggering one
-    while PS is running makes **both systems play at once**. Avoid SASS music actions during a PS session.
   - SASS conditionally takes over `MusicManager.getVolume()` (when the current song name contains the
-    extension path) → PS's volume tracking may read SASS's volume instead.
+    extension path) → PS's volume tracking (`volMul`) may read SASS's volume instead of the player's
+    music-volume setting.
 
   The visualiser layer does **not** conflict: PS fakes `MediaPlayer.State`, while SASS rewrites the same
   check via IL — the two semantics are orthogonal.
