@@ -139,8 +139,10 @@ namespace KernelExtensions
             KELog.Info("SwitchToThemeKeepLayout action registered.");
 
             // 2.5 通用特效与 UI
-            ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
-            KELog.Info("PlaySound action registered.");
+            // ⚠️ "PlaySound" 与 Stuxnet.Audio（SASS）注册的同名 Action 冲突：SASS 先加载并占位，
+            //    直接 Register 会抛 ArgumentException，导致**整个 KE Load 中断**（2026-09-22 实机复现）。
+            //    容错：重名时退回 KE 自有名 "KEPlaySound" 并补 Warn。
+            RegisterActionWithFallback<PlaySoundAction>("PlaySound", "KEPlaySound");
             ActionManager.RegisterAction<FlashScreenAction>("FlashScreen");
             KELog.Info("FlashScreen action registered.");
             ActionManager.RegisterAction<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
@@ -268,6 +270,33 @@ namespace KernelExtensions
             _harmony?.UnpatchSelf();
             _harmony = null;
             return base.Unload();
+        }
+
+        /// <summary>
+        /// 注册 Action，重名时退回备用名。
+        /// 第三方模组可能占用通用名（实例：Stuxnet.Audio 占用 "PlaySound"），
+        /// 而 Pathfinder 的 RegisterAction 重名会抛 ArgumentException 并**中断整个 Load**，故必须容错。
+        /// </summary>
+        private static void RegisterActionWithFallback<T>(string xmlName, string fallbackName)
+            where T : PathfinderAction
+        {
+            try
+            {
+                ActionManager.RegisterAction<T>(xmlName);
+                KELog.Info($"{xmlName} action registered.");
+            }
+            catch (ArgumentException)
+            {
+                try
+                {
+                    ActionManager.RegisterAction<T>(fallbackName);
+                    KELog.Warn($"{xmlName} is already taken by another mod - registered as '{fallbackName}' instead.");
+                }
+                catch (ArgumentException)
+                {
+                    KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
+                }
+            }
         }
 
         /// <summary>
