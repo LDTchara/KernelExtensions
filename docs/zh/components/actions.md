@@ -69,6 +69,41 @@ KernelExtensions 提供了一系列自定义 Action，可在任何动作文件�
 
 ---
 
+## Action 名冲突与回退
+
+第三方模组可能占用**通用 Action 名**（实例：`Stuxnet.Audio` 占用 `PlaySound`）。
+而 Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件加载**，
+因此 KE 对**通用短名**做了注册回退：
+
+| 原名 | 撞名时的回退名 |
+|------|---------------|
+| `PlaySound` | `KEPlaySound` |
+| `TerminalFocus` | `KETerminalFocus` |
+| `TerminalWrite` | `KETerminalWrite` |
+| `TerminalType` | `KETerminalType` |
+| `RenameNode` | `KERenameNode` |
+| `SetNodeIcon` | `KESetNodeIcon` |
+| `SwitchToThemeKeepLayout` | `KESwitchToThemeKeepLayout` |
+| `FlashScreen` | `KEFlashScreen` |
+| `ClockStart` | `KEClockStart` |
+| `ClockStop` | `KEClockStop` |
+| `BlockNode` | `KEBlockNode` |
+| `UnblockNode` | `KEUnblockNode` |
+| `BreakHeart` | `KEBreakHeart` |
+| `ShowTitle` | `KEShowTitle` |
+| `StartEnding` | `KEStartEnding` |
+
+规则：
+
+- **无冲突时仍用原名** —— 对已有扩展零影响
+- 撞名时回退为 `KE` + 原名，并在 KE 日志补一条 `Warn`
+- 带 KE 语境的独特名（`PhaseSwift*` / `LinkControl*` / `LaunchVMAttack` / `CustomTrial` 系 /
+  `Aircraft` 系 / `StartScreenBleedEffectWCC`）**不参与回退**，保持原名
+
+!!! tip "写作建议"
+    不确定运行环境里有没有冲突时，直接用 `KE` 前缀名（它总是可用）。
+    两种名字**不要同时写** —— 只有先注册成功的那个会生效，另一条会报“未知动作”。
+
 ## 延迟执行
 
 大多数动作支持 `Delay` 和 `DelayHost` 属性用于延迟执行。  

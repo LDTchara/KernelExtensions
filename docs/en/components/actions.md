@@ -70,6 +70,42 @@ KernelExtensions provides a set of custom Actions that can be invoked in any act
 
 ---
 
+## Action Name Conflicts and Fallback
+
+Third-party mods may occupy **common Action names** (real example: `Stuxnet.Audio` occupies `PlaySound`).
+Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole plugin load**,
+so KE registers **common short names** with a fallback:
+
+| Original name | Fallback when taken |
+|---------------|---------------------|
+| `PlaySound` | `KEPlaySound` |
+| `TerminalFocus` | `KETerminalFocus` |
+| `TerminalWrite` | `KETerminalWrite` |
+| `TerminalType` | `KETerminalType` |
+| `RenameNode` | `KERenameNode` |
+| `SetNodeIcon` | `KESetNodeIcon` |
+| `SwitchToThemeKeepLayout` | `KESwitchToThemeKeepLayout` |
+| `FlashScreen` | `KEFlashScreen` |
+| `ClockStart` | `KEClockStart` |
+| `ClockStop` | `KEClockStop` |
+| `BlockNode` | `KEBlockNode` |
+| `UnblockNode` | `KEUnblockNode` |
+| `BreakHeart` | `KEBreakHeart` |
+| `ShowTitle` | `KEShowTitle` |
+| `StartEnding` | `KEStartEnding` |
+
+Rules:
+
+- **With no conflict the original name is still used** — zero impact on existing extensions
+- On conflict KE falls back to `KE` + original name and logs a `Warn`
+- Distinctive KE names (`PhaseSwift*` / `LinkControl*` / `LaunchVMAttack` / `CustomTrial` family /
+  `Aircraft` family / `StartScreenBleedEffectWCC`) **do not fall back** and keep their names
+
+!!! tip "Authoring advice"
+    If you are unsure whether the runtime environment has a conflict, just use the `KE`-prefixed name
+    (it is always available). **Do not write both names** — only the one registered first takes effect,
+    and the other is reported as an unknown action.
+
 ## Delayed Execution
 
 Most actions support `Delay` and `DelayHost` attributes for delayed execution.  
