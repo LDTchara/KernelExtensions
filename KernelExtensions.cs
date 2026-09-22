@@ -12,6 +12,7 @@ using KernelExtensions.Actions.Misc;
 using KernelExtensions.Actions.Node;
 using KernelExtensions.Actions.PhaseSwift;
 using KernelExtensions.Actions.VMAttack;
+using KernelExtensions.Compat.Stuxnet;
 using KernelExtensions.Configs;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;

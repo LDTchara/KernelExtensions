@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System.Reflection;
 
-namespace KernelExtensions.Patches
+namespace KernelExtensions.Compat.Stuxnet
 {
     /// <summary>
     /// 条件补丁（手动安装/卸载），仅在 Stuxnet 插件存在时生效。
