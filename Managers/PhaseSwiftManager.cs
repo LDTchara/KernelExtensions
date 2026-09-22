@@ -125,6 +125,8 @@ namespace KernelExtensions.Managers
             IsInitialized = true;
         }
 
+        private static int _sassWatchFrames;   // SASS 兼容层的观察窗口（见 UpdateAudioBuffers）
+
         public static void Start(int? overrideScene = null)
         {
             if (!IsInitialized || Config == null || IsRunning)
@@ -146,6 +148,11 @@ namespace KernelExtensions.Managers
                 KELog.Debug($"[PS-diag] Start: entering dual-track branch (overrideScene={overrideScene.HasValue}, isPlaying={MusicManager.isPlaying})");
                 MusicManager.stop();
                 KELog.Debug($"[PS-diag] Start: MusicManager.stop() returned (isPlaying={MusicManager.isPlaying})");
+                // 第三方（如 SASS）用自有 DSEI 播放时，上面的 stop() 停不到它；
+                // 而它的起播是异步的，可能晚于本次调用（读档场景实测如此）→ 开一个观察窗口，
+                // 在窗口内每帧问一次「SASS 在播吗」，一旦在播就精确停掉并收束窗口。
+                _sassWatchFrames = 1200;   // ≈20 秒，覆盖慢盘/大文件的加载
+                if (Compat.StuxnetAudioCompat.IsPlaying()) { Compat.StuxnetAudioCompat.Stop(); _sassWatchFrames = 0; }
                 if (Config.MusicPhases.Count > 0)
                     LoadMusicPhase(Config.MusicPhases[CurrentMusicPhase]);
             }
@@ -301,6 +308,17 @@ namespace KernelExtensions.Managers
         {
             if (!UseDualTrack) return;
             if (!IsRunning) return;
+
+            // SASS 兼容：窗口内检测到它在播就停掉（其他第三方音乐模组不在本层保护范围）
+            if (_sassWatchFrames > 0)
+            {
+                _sassWatchFrames--;
+                if (Compat.StuxnetAudioCompat.IsPlaying())
+                {
+                    Compat.StuxnetAudioCompat.Stop();
+                    _sassWatchFrames = 0;
+                }
+            }
 
             SyncVolume();
             for (int i = 0; i < _dseInstances.Length; i++)
