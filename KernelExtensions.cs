@@ -119,40 +119,29 @@ namespace KernelExtensions
             KELog.Info("PhaseSwiftStop action registered.");
             ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
             KELog.Info("PhaseSwiftFadeOut action registered.");
-            ActionManager.RegisterAction<BlockNodeAction>("BlockNode");
-            KELog.Info("BlockNode action registered.");
-            ActionManager.RegisterAction<UnblockNodeAction>("UnblockNode");
-            KELog.Info("UnblockNode action registered.");
+            RegisterActionWithFallback<BlockNodeAction>("BlockNode", "KEBlockNode");
+            RegisterActionWithFallback<UnblockNodeAction>("UnblockNode", "KEUnblockNode");
 
             // 2.4 终端与节点
-            ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
-            KELog.Info("TerminalFocus action registered.");
-            ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
-            KELog.Info("TerminalWrite action registered.");
-            ActionManager.RegisterAction<TerminalTypeAction>("TerminalType");
-            KELog.Info("TerminalType action registered.");
-            ActionManager.RegisterAction<RenameNodeAction>("RenameNode");
-            KELog.Info("RenameNode action registered.");
-            ActionManager.RegisterAction<SetNodeIconAction>("SetNodeIcon");
-            KELog.Info("SetNodeIcon action registered.");
-            ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
-            KELog.Info("SwitchToThemeKeepLayout action registered.");
+            RegisterActionWithFallback<TerminalFocusAction>("TerminalFocus", "KETerminalFocus");
+            RegisterActionWithFallback<TerminalWriteAction>("TerminalWrite", "KETerminalWrite");
+            RegisterActionWithFallback<TerminalTypeAction>("TerminalType", "KETerminalType");
+            RegisterActionWithFallback<RenameNodeAction>("RenameNode", "KERenameNode");
+            RegisterActionWithFallback<SetNodeIconAction>("SetNodeIcon", "KESetNodeIcon");
+            RegisterActionWithFallback<SwitchThemeAction>("SwitchToThemeKeepLayout", "KESwitchToThemeKeepLayout");
 
             // 2.5 通用特效与 UI
             // ⚠️ "PlaySound" 与 Stuxnet.Audio（SASS）注册的同名 Action 冲突：SASS 先加载并占位，
             //    直接 Register 会抛 ArgumentException，导致**整个 KE Load 中断**（2026-09-22 实机复现）。
             //    容错：重名时退回 KE 自有名 "KEPlaySound" 并补 Warn。
             RegisterActionWithFallback<PlaySoundAction>("PlaySound", "KEPlaySound");
-            ActionManager.RegisterAction<FlashScreenAction>("FlashScreen");
-            KELog.Info("FlashScreen action registered.");
+            RegisterActionWithFallback<FlashScreenAction>("FlashScreen", "KEFlashScreen");
             ActionManager.RegisterAction<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
             KELog.Info("StartScreenBleedEffectWCC action registered.");
 
             // 2.6 Clock 定时器
-            ActionManager.RegisterAction<ClockStartAction>("ClockStart");
-            KELog.Info("ClockStart action registered.");
-            ActionManager.RegisterAction<ClockStopAction>("ClockStop");
-            KELog.Info("ClockStop action registered.");
+            RegisterActionWithFallback<ClockStartAction>("ClockStart", "KEClockStart");
+            RegisterActionWithFallback<ClockStopAction>("ClockStop", "KEClockStop");
 
             // 2.7 飞机（Daemon 本体在 5 节注册）
             ActionManager.RegisterAction<AttackAircraftAction>("AttackAircraft");
@@ -165,8 +154,7 @@ namespace KernelExtensions
             KELog.Info("HideAircraftOverlay action registered.");
 
             // 2.8 Porthack 心脏
-            ActionManager.RegisterAction<BreakHeartAction>("BreakHeart");
-            KELog.Info("BreakHeart action registered.");
+            RegisterActionWithFallback<BreakHeartAction>("BreakHeart", "KEBreakHeart");
 
             // 2.9 LinkControl：节点连接控制（org 基线跨会话；共享状态与事件钩子内聚在 Storage/OrgLinksStorage）
             ActionManager.RegisterAction<LinkControlResetAction>("LinkControlReset");
@@ -182,10 +170,8 @@ namespace KernelExtensions
             // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
             if (CanExtraPackUse)
             {
-                ActionManager.RegisterAction<ShowTitle>("ShowTitle");
-                KELog.Info("ShowTitle action registered.");
-                ActionManager.RegisterAction<StartEnding>("StartEnding");
-                KELog.Info("StartEnding action registered.");
+                RegisterActionWithFallback<ShowTitle>("ShowTitle", "KEShowTitle");
+                RegisterActionWithFallback<StartEnding>("StartEnding", "KEStartEnding");
             }
 
             // ============================================================
