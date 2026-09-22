@@ -367,6 +367,11 @@ Add or remove runtime blocklist entries.
   instance; it only logs a `Warn`. If you need "another set of scenes / topology", make it **another
   scene inside the same config**; to change music only, use `<PhaseSwiftMusic>`.
 
+- **Playback control is exclusive while PS runs**: PS intercepts `MusicManager`'s playback entries, so
+  **neither vanilla nor third-party music can start a new playback** during that time. This is by design,
+  not a defect. Once PS stops, the entries are no longer intercepted and playback control returns to the
+  game (that regression is tracked as its own item in the 0.7 test checklist).
+
 - **Coexistence boundary with Stuxnet.Audio (SASS)**: SASS takes over `MusicManager` by default
   (`ReplaceMusicManager=true`). While PS is running it swallows `MusicManager`'s playback entry points
   (`playSong` / `playSongImmediatley` / `transitionToSong`), so **on the normal path SASS never gets
@@ -374,13 +379,21 @@ Add or remove runtime blocklist entries.
   stop it actively — which relies on calling `MusicManager.stop()` **unconditionally** on start
   (earlier builds guarded it with `if (MusicManager.isPlaying)`, which does nothing for third parties
   using their own DSEI; fixed).
-  Two gaps remain:
-  - SASS conditionally takes over `MusicManager.getVolume()` (when the current song name contains the
-    extension path) → PS's volume tracking (`volMul`) may read SASS's volume instead of the player's
-    music-volume setting.
 
-  The visualiser layer does **not** conflict: PS fakes `MediaPlayer.State`, while SASS rewrites the same
-  check via IL — the two semantics are orthogonal.
+  The same suppression applies when **restoring PS by loading a save**: loading goes through the same
+  `Start()`, but the third party starts playback **asynchronously** (`Started song loader thread` in the
+  log), so a one-shot `stop()` lands in the moment before playback begins and misses. KE therefore queries
+  once immediately in `Start()` and, if nothing is playing, opens a **watch window** (20 seconds) that
+  stops precisely the moment playback is detected — then closes it.
+
+  The only remaining interaction is volume: SASS conditionally takes over `MusicManager.getVolume()` (when
+  the current song name contains the extension path) → PS's volume tracking (`volMul`) may read SASS's
+  volume instead of the player's music-volume setting; measured impact is near zero. The visualiser layer
+  does **not** conflict: PS fakes `MediaPlayer.State`, while SASS rewrites the same check via IL — the two
+  semantics are orthogonal.
+
+  The full conflict surface and handling mechanisms are on
+  [Mod Compatibility](./../components/mod-compat.md).
 - Tracks of unequal length inside one phase drift out of sync after switching (see the warning above)
 - When a scene theme is a custom path, write it relative to the extension root (PS does not prepend anything)
 

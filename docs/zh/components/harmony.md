@@ -4,7 +4,7 @@ KernelExtensions 通过 Harmony 进行了多项补丁，以增强原版游戏功
 
 ## 补丁列表
 
-目前共 **19 个**补丁类（完整清单以源码 `Patches/` 目录为准）。主要补丁：
+目前共 **19 个**补丁类（完整清单以源码为准，其中 `StuxnetMenuCompat` 已迁至 `Compat/Stuxnet/`）。主要补丁：
 
 | 补丁类 | 作用 |
 |--------|------|
@@ -17,13 +17,15 @@ KernelExtensions 通过 Harmony 进行了多项补丁，以增强原版游戏功
 | `CustomColorPatch` | 自定义动态色（CustomColor）支持。 |
 | `PorthackAutoPatch` / `PorthackHeartDisplayPatch` | Porthack 心脏节点的自动补丁与显示增强。 |
 | `PhaseSwift*`（6 个：`Audio` / `AudioVisualizer` / `Cleanup` / `Connection` / `Layout` / `VisualizationInjector`） | 相位穿梭系统：音频链路、可视化注入、布局保护、连接处理与清理。 |
-| 其余（`IRCLogInjector`、`MusicManagerSuppressPatch`、`PatchAccountName`、`PatchStuxnetDrawFGamemodeMenu`） | 见源码 `Patches/` 目录。 |
+| `StuxnetMenuCompat` | Stuxnet 的游戏模式菜单绘制（原 `PatchStuxnetDrawFGamemodeMenu`，已迁入 `Compat/Stuxnet/`）。 |
+| 其余（`IRCLogInjector`、`MusicManagerSuppressPatch`、`PatchAccountName`） | 见源码 `Patches/` 目录。 |
 
 ## 技术细节
 
 - 补丁统一通过静态 `Harmony` 实例注入（ID：`com.LDTchara.KernelExtensions`）。
 - 模组卸载时调用 `UnpatchSelf()` 移除所有补丁，无残留。
 - 补丁与其它模组的兼容性良好，使用了标准的 `Prefix` 和 `Transpiler` 技术。
+- 与第三方模组的冲突面与处理机制（Action 注册名、音频链路、加载/卸载健壮性）见[与第三方模组兼容](./mod-compat.md)。
 
 ---
 
@@ -31,3 +33,4 @@ KernelExtensions 通过 Harmony 进行了多项补丁，以增强原版游戏功
 
 - [首页](./../index.md) – 返回主索引
 - [Patches & Harmony (English)](./../../en/components/harmony.md) – 英文版
+- [与第三方模组兼容](./mod-compat.md) – 冲突面与 `Compat/` 架构

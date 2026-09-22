@@ -4,7 +4,7 @@ KernelExtensions applies many Harmony patches to enhance the vanilla game. All p
 
 ## Patch List
 
-There are currently **19** patch classes (the full list is the `Patches/` directory in the source). Major ones:
+There are currently **19** patch classes (the full list is in the source; `StuxnetMenuCompat` now lives under `Compat/Stuxnet/`). Major ones:
 
 | Patch Class | Purpose |
 |-------------|---------|
@@ -17,13 +17,15 @@ There are currently **19** patch classes (the full list is the `Patches/` direct
 | `CustomColorPatch` | Custom dynamic colour (CustomColor) support. |
 | `PorthackAutoPatch` / `PorthackHeartDisplayPatch` | Auto-patching and display enhancement for the Porthack heart node. |
 | `PhaseSwift*` (6: `Audio`, `AudioVisualizer`, `Cleanup`, `Connection`, `Layout`, `VisualizationInjector`) | Phase Swift system: audio chain, visualiser injection, layout protection, connection handling, cleanup. |
-| Remaining (`IRCLogInjector`, `MusicManagerSuppressPatch`, `PatchAccountName`, `PatchStuxnetDrawFGamemodeMenu`) | See the `Patches/` directory in the source. |
+| `StuxnetMenuCompat` | Stuxnet's gamemode-menu drawing (formerly `PatchStuxnetDrawFGamemodeMenu`, now under `Compat/Stuxnet/`). |
+| Remaining (`IRCLogInjector`, `MusicManagerSuppressPatch`, `PatchAccountName`) | See the `Patches/` directory in the source. |
 
 ## Technical Details
 
 - All patches are injected through a single static `Harmony` instance (ID: `com.LDTchara.KernelExtensions`).
 - On mod unload, `UnpatchSelf()` is called to remove all patches cleanly.
 - The patches are compatible with other mods and use standard `Prefix` and `Transpiler` techniques.
+- The conflict surfaces with third-party mods (Action registration names, audio pipeline, load/unload robustness) are covered on [Mod Compatibility](./mod-compat.md).
 
 ---
 
@@ -31,3 +33,4 @@ There are currently **19** patch classes (the full list is the `Patches/` direct
 
 - [Home](./../index.md) – Return to main index
 - [Harmony补丁 (中文)](./../../zh/components/harmony.md) – Chinese version
+- [Mod Compatibility](./mod-compat.md) – conflict surfaces and the `Compat/` layout
