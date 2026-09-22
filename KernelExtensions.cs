@@ -16,6 +16,7 @@ using KernelExtensions.Configs;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Managers;
+using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
@@ -249,6 +250,11 @@ namespace KernelExtensions
 
         public override bool Unload()
         {
+            // 结局模块可能把全局音乐音量停在渐弱值（0）上——卸载前先恢复，
+            // 否则卸载 / 切换扩展后，原版与其它模组的音乐会静音（2026-09-22 补）
+            CustomEndingModule.RestoreMusicVolumeIfFaded();
+            // 自定义节点图标纹理：清空并释放，避免重载扩展时残留占用（同 2026-09-22 补）
+            NodeIconRenderPatch.CustomTextures.Clear();
             PhaseSwiftExe.CleanupAll();
             // 清理 IRC 日志静态列表（退出扩展时清空，避免残留到下一局）
             FileEntry.filenames?.Clear();

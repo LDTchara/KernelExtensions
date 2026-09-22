@@ -606,6 +606,17 @@ public class CustomEndingModule : EndingSequenceModule
         _fadeLeftVolumeDirty = false;   // 已正常恢复，清除脏标记
     }
 
+    /// <summary>
+    /// 供外部（插件 Unload）调用的静态入口：若曾因报幕末尾淡出压低全局音量而未走到恢复路径，
+    /// 则立即恢复。避免卸载时把 0 音量留给后续的原版 / 其它模组音乐。
+    /// </summary>
+    internal static void RestoreMusicVolumeIfFaded()
+    {
+        if (!_fadeLeftVolumeDirty) return;
+        _fadeLeftVolumeDirty = false;
+        try { MusicManager.setVolume(_preFadeVolume > 0f ? _preFadeVolume : 1f); } catch { }
+    }
+
     private new void DrawCredits()
     {
         float y = creditsScroll;
