@@ -79,6 +79,16 @@ namespace KernelExtensions
             // ============================================================
             KELog.Init();
 
+            // ⚠️ 整体兜底（第二层）：Load 内任何异常都不允许逃出。
+            //    原因：Pathfinder 的注册是**不可回滚的副作用**，而 BepInEx 的成败标记是全有或全无。
+            //    异常逃出 → 插件被标记「加载失败」，但已注册的 Action / Executable / Daemon / Command
+            //    仍留在 PF 里，且 BepInEx 此后**永远不会调用本插件的 Unload()** →
+            //    「半初始化且无法清理」的状态永久存在（2026-09-22 由 Stuxnet 撞名事故实证）。
+            //    捕获后 return true：插件状态与已产生的副作用保持一致，卸载时能正常走 Unload 清理。
+            //    （下面 body 未缩进，只为保持本次改动的最小 diff。）
+            try
+            {
+
             // ============================================================
             //  1. 可执行程序
             // ============================================================
@@ -247,6 +257,13 @@ namespace KernelExtensions
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;
+
+            }   // try
+            catch (Exception ex)
+            {
+                KELog.Error($"[KernelExtensions] Load threw but was contained — partial initialisation possible: {ex}");
+                return true;
+            }
         }
 
         public override bool Unload()
