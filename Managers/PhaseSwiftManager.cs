@@ -125,7 +125,7 @@ namespace KernelExtensions.Managers
             IsInitialized = true;
         }
 
-        private static int _sassWatchFrames;   // SASS 兼容层的观察窗口（见 UpdateAudioBuffers）
+        private static int _conflictWatchFrames;   // 第三方音频冲突的观察窗口（见 UpdateAudioBuffers）
 
         public static void Start(int? overrideScene = null)
         {
@@ -150,9 +150,14 @@ namespace KernelExtensions.Managers
                 KELog.Debug($"[PS-diag] Start: MusicManager.stop() returned (isPlaying={MusicManager.isPlaying})");
                 // 第三方（如 SASS）用自有 DSEI 播放时，上面的 stop() 停不到它；
                 // 而它的起播是异步的，可能晚于本次调用（读档场景实测如此）→ 开一个观察窗口，
-                // 在窗口内每帧问一次「SASS 在播吗」，一旦在播就精确停掉并收束窗口。
-                _sassWatchFrames = 1200;   // ≈20 秒，覆盖慢盘/大文件的加载
-                if (Compat.StuxnetAudioCompat.IsPlaying()) { Compat.StuxnetAudioCompat.Stop(); _sassWatchFrames = 0; }
+                // 在窗口内每帧问一次「有第三方在播吗」，一旦在播就精确停掉并收束窗口。
+                // 具体覆盖哪些模组由 Compat/ModCompats 决定，此处不点名。
+                _conflictWatchFrames = 1200;   // ≈20 秒，覆盖慢盘/大文件的加载
+                if (Compat.ModCompats.IsConflictingAudioPlaying())
+                {
+                    Compat.ModCompats.StopConflictingAudio();
+                    _conflictWatchFrames = 0;
+                }
                 if (Config.MusicPhases.Count > 0)
                     LoadMusicPhase(Config.MusicPhases[CurrentMusicPhase]);
             }
@@ -309,14 +314,14 @@ namespace KernelExtensions.Managers
             if (!UseDualTrack) return;
             if (!IsRunning) return;
 
-            // SASS 兼容：窗口内检测到它在播就停掉（其他第三方音乐模组不在本层保护范围）
-            if (_sassWatchFrames > 0)
+            // 第三方音频冲突：窗口内检测到在播就停掉（覆盖范围见 Compat/ModCompats）
+            if (_conflictWatchFrames > 0)
             {
-                _sassWatchFrames--;
-                if (Compat.StuxnetAudioCompat.IsPlaying())
+                _conflictWatchFrames--;
+                if (Compat.ModCompats.IsConflictingAudioPlaying())
                 {
-                    Compat.StuxnetAudioCompat.Stop();
-                    _sassWatchFrames = 0;
+                    Compat.ModCompats.StopConflictingAudio();
+                    _conflictWatchFrames = 0;
                 }
             }
 

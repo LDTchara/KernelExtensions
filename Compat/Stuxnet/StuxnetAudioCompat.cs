@@ -1,7 +1,7 @@
 using System.Reflection;
 using KernelExtensions.Utilities;
 
-namespace KernelExtensions.Compat
+namespace KernelExtensions.Compat.Stuxnet
 {
     /// <summary>
     /// Stuxnet.Audio（SASS）兼容层。
