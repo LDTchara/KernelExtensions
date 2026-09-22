@@ -362,6 +362,11 @@ Add or remove runtime blocklist entries.
 
 ## Known Limitations
 
+- **Single instance**: PS is a **global single instance** — only one config runs at a time. Running
+  `<PhaseSwiftInit>` again, or pressing Start in another Phase Swift window, does **not** start a second
+  instance; it only logs a `Warn`. If you need "another set of scenes / topology", make it **another
+  scene inside the same config**; to change music only, use `<PhaseSwiftMusic>`.
+
 - **Coexistence boundary with Stuxnet.Audio (SASS)**: SASS takes over `MusicManager` by default
   (`ReplaceMusicManager=true`). While PS is running it swallows `MusicManager`'s playback entry points
   (`playSong` / `playSongImmediatley` / `transitionToSong`), so **on the normal path SASS never gets

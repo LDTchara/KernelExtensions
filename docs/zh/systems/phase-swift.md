@@ -362,6 +362,11 @@ PS 结束时的行为分**两个正交维度**，各自可配：
 
 ## 已知限制
 
+- **单实例**：PS 是**全局单实例**——同一时刻只有一个配置在运行。再次执行 `<PhaseSwiftInit>`、
+  或在另一个 PhaseSwift 程序窗口按开始，**不会**启动第二个实例，只会在日志里补一条 `Warn`。
+  需要「另一套场景 / 拓扑」时，请把它做成**同一配置里的另一个场景**；
+  只需要换音乐而不换场景，用 `<PhaseSwiftMusic>`。
+
 - **与 Stuxnet.Audio（SASS）的共存边界**：SASS 默认接管 `MusicManager`（`ReplaceMusicManager=true`）。
   PS 运行时会吞掉 `MusicManager` 的播放入口（`playSong` / `playSongImmediatley` / `transitionToSong`），
   因此**常规路径下 SASS 收不到新的播放触发**。⚠️ 但若 SASS **已在播放**（PS 启动前就在播），
