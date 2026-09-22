@@ -186,8 +186,8 @@ namespace KernelExtensions
             KELog.Info("NodeIcon save/load event handlers registered.");
             EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
             KELog.Info("NodeIcon OSLoaded handler registered.");
-            EventManager<OSLoadedEvent>.AddHandler((e) => { try { ConfigLoader.Load(); } catch { } });
-            EventManager<OSLoadedEvent>.AddHandler((e) => { try { KELoc.Load(); } catch { } });
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_LoadConfig);
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_LoadLoc);
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_AutoRestorePhaseSwift);
             KELog.Info("ConfigLoader handler registered.");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_RestoreClocks);
@@ -289,6 +289,18 @@ namespace KernelExtensions
                     KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
                 }
             }
+        }
+
+        /// <summary>OSLoaded 时重载 KE 配置（具名方法：Pathfinder 按 MethodInfo 去重与卸载清理，具名更确定）。</summary>
+        private static void OnOSLoaded_LoadConfig(OSLoadedEvent e)
+        {
+            try { ConfigLoader.Load(); } catch { }
+        }
+
+        /// <summary>OSLoaded 时重载本地化词典（同上，具名方法）。</summary>
+        private static void OnOSLoaded_LoadLoc(OSLoadedEvent e)
+        {
+            try { KELoc.Load(); } catch { }
         }
 
         /// <summary>
