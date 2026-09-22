@@ -29,6 +29,7 @@
 | 配置文件 | [配置文件](./components/configuration.md) |
 | 工具类 | [工具类](./components/utility.md) |
 | 补丁与 Harmony | [Harmony补丁](./components/harmony.md) |
+| 第三方兼容 | [与第三方模组兼容](./components/mod-compat.md) |
 
 ## 📚 其他
 

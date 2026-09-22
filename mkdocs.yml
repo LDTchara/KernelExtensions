@@ -92,6 +92,7 @@ nav:
           - 配置文件: zh/components/configuration.md
           - 工具类: zh/components/utility.md
           - Harmony 补丁: zh/components/harmony.md
+          - 与第三方模组兼容: zh/components/mod-compat.md
       - 指南与杂项:
           - 扩展作者指南: zh/guides/author-guide.md
           - 安装与卸载: zh/guides/installation.md
@@ -116,6 +117,7 @@ nav:
           - Configuration Files: en/components/configuration.md
           - Utility Classes: en/components/utility.md
           - Patches & Harmony: en/components/harmony.md
+          - Mod Compatibility: en/components/mod-compat.md
       - Guides & Misc:
           - Extension Author Guide: en/guides/author-guide.md
           - Installation: en/guides/installation.md
