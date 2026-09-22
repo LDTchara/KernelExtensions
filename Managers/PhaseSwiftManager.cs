@@ -289,6 +289,16 @@ namespace KernelExtensions.Managers
         {
             if (!UseDualTrack) return;
             if (!IsRunning) return;
+
+            // ── 临时诊断探针（2026-09-22）──────────────────────────────
+            // 目的：确认 SASS（Stuxnet.Audio）的 IsBaseGameSong 判定是否为 false。其定义为
+            //     !MusicManager.currentSongName.Contains(ExtensionLoader.ActiveExtensionInfo.FolderPath)
+            //   · 含 FolderPath → IsBaseGameSong=false → SASS 接管 getVolume（裂缝 B 触发）
+            //   · 不含         → 裂缝不触发，可直接结案
+            // 两个实际值也一并输出便于对照。KELog.Debug 默认关闭，仅打一次。
+            // ✅ 结论确认后**可整段删除**（连同 _probeLogged 字段与 ProbeSassVolumeOverrideOnce）。
+            ProbeSassVolumeOverrideOnce();
+
             SyncVolume();
             for (int i = 0; i < _dseInstances.Length; i++)
             {
@@ -302,6 +312,31 @@ namespace KernelExtensions.Managers
                     }
                     catch { }
                 }
+            }
+        }
+
+        private static bool _probeLogged;
+
+        /// <summary>
+        /// 临时诊断探针（2026-09-22）：打印 MusicManager 当前曲名与扩展根路径，
+        /// 用于判定 SASS 的 IsBaseGameSong 是否为 false（详见 UpdateAudioBuffers 内注释）。
+        /// ✅ 结论确认后可整段删除。
+        /// </summary>
+        private static void ProbeSassVolumeOverrideOnce()
+        {
+            if (_probeLogged) return;
+            _probeLogged = true;
+            try
+            {
+                string cur = MusicManager.currentSongName;
+                string root = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
+                bool contains = cur != null && root != null && cur.Contains(root);
+                KELog.Debug($"[PS-probe] currentSongName='{cur}' | FolderPath='{root}' | Contains={contains} "
+                            + $"=> IsBaseGameSong={!contains}（true = SASS 不接管 getVolume） | getVolume={MusicManager.getVolume():F3}");
+            }
+            catch (Exception ex)
+            {
+                KELog.Debug($"[PS-probe] failed: {ex.Message}");
             }
         }
 
