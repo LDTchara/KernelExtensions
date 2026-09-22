@@ -364,7 +364,9 @@ PS 结束时的行为分**两个正交维度**，各自可配：
 
 - **与 Stuxnet.Audio（SASS）的共存边界**：SASS 默认接管 `MusicManager`（`ReplaceMusicManager=true`）。
   PS 运行时会吞掉 `MusicManager` 的播放入口（`playSong` / `playSongImmediatley` / `transitionToSong`），
-  因此**常规路径下 SASS 收不到触发、不会出声**；PS 启动时还会调 `MusicManager.stop()`，SASS 也会被正确停下。
+  因此**常规路径下 SASS 收不到新的播放触发**。⚠️ 但若 SASS **已在播放**（PS 启动前就在播），
+  PS 必须主动停它——这依赖 PS 启动时**无条件**调用 `MusicManager.stop()`
+  （早期版本带 `if (MusicManager.isPlaying)` 守卫，对使用自有 DSEI 的第三方无效，已修正）。
   但有两条缝隙：
   - SASS 会按条件接管 `MusicManager.getVolume()`（当当前曲名含扩展路径时）→ PS 的音量跟随（`volMul`）
     可能读到 SASS 的音量，而不是玩家的音乐音量设置。

@@ -365,7 +365,10 @@ Add or remove runtime blocklist entries.
 - **Coexistence boundary with Stuxnet.Audio (SASS)**: SASS takes over `MusicManager` by default
   (`ReplaceMusicManager=true`). While PS is running it swallows `MusicManager`'s playback entry points
   (`playSong` / `playSongImmediatley` / `transitionToSong`), so **on the normal path SASS never gets
-  triggered and stays silent**; PS also calls `MusicManager.stop()` on start, which correctly stops SASS.
+  a new playback trigger**. ⚠️ But if SASS is **already playing** (started before PS launched), PS must
+  stop it actively — which relies on calling `MusicManager.stop()` **unconditionally** on start
+  (earlier builds guarded it with `if (MusicManager.isPlaying)`, which does nothing for third parties
+  using their own DSEI; fixed).
   Two gaps remain:
   - SASS conditionally takes over `MusicManager.getVolume()` (when the current song name contains the
     extension path) → PS's volume tracking (`volMul`) may read SASS's volume instead of the player's
