@@ -370,24 +370,14 @@ PS 结束时的行为分**两个正交维度**，各自可配：
 - **运行期播放控制独占**：PS 会拦截 `MusicManager` 的播放入口，因此**原版与第三方都无法在此时发起
   新的音乐播放**。这是设计内的独占行为，不是缺陷。PS 停止后入口不再被拦截，播放控制交还
   （该项在 0.7 测试清单中单列为待验回归）。
+- **音轨等长**：同一 Phase 内音轨长度不一致会导致切换后进度漂移（见上文 warning）。
+- **主题路径**：自定义主题路径需相对扩展根目录书写（PS 不额外拼接前缀）。
+- **音乐位置不持久化**：存档只记场景 / 音乐组 / 主题，**不记播放位置**——读档后音乐从头播放。
 
-- **与 Stuxnet.Audio（SASS）的共存边界**：SASS 默认接管 `MusicManager`（`ReplaceMusicManager=true`）。
-  PS 运行时会吞掉 `MusicManager` 的播放入口（`playSong` / `playSongImmediatley` / `transitionToSong`），
-  因此**常规路径下 SASS 收不到新的播放触发**。⚠️ 但若 SASS **已在播放**（PS 启动前就在播），
-  PS 必须主动停它——这依赖 PS 启动时**无条件**调用 `MusicManager.stop()`
-  （早期版本带 `if (MusicManager.isPlaying)` 守卫，对使用自有 DSEI 的第三方无效，已修正）。
-
-  同一套压制在**读档恢复 PS** 时同样适用：读档走同一个 `Start()`，但第三方的起播是**异步的**
-  （日志可见 `Started song loader thread`），一次性 `stop()` 会落在「还没开始播」的瞬间而漏掉。
-  KE 因此在 `Start()` 立即查一次，未在播则开**观察窗口**（20 秒），检测到在播即精确停掉并收束窗口。
-
-  唯一残留的交互是音量：SASS 会按条件接管 `MusicManager.getVolume()`（当当前曲名含扩展路径时）→
-  PS 的音量跟随（`volMul`）可能读到 SASS 的音量，而不是玩家的音乐音量设置；实测影响接近零。
-  可视化层两者互不干扰（PS 伪造 `MediaPlayer.State`，SASS 用 IL 替换同一处判断，两者语义正交）。
-
-  完整的冲突面与处理机制见[与第三方模组兼容](./../components/mod-compat.md)。
-- 同一 Phase 内音轨长度不一致会导致切换后进度漂移（见上文 warning）
-- 场景主题若填自定义路径，路径需相对扩展根目录书写（PS 不额外拼接前缀）
+!!! note "与第三方模组共存"
+    音频链与 Action 注册名的冲突面、处理机制与 `Compat/` 架构约定，统一见
+    **[与第三方模组兼容](./../components/mod-compat.md)**（含「必须无条件 `MusicManager.stop()`」与
+    「读档需要观察窗口」两处实机修正）。与 SASS 同用时需注意：KE 的 `PlaySound` 会退化为 `KEPlaySound`。
 
 ---
 
