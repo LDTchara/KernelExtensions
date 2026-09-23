@@ -83,6 +83,7 @@ nav:
           - 自定义定时器系统（Clock）: zh/systems/clock.md
           - 自定义节点图标系统: zh/systems/node-icon.md
           - 自定义结局系统（StartEnding）: zh/systems/custom-ending.md
+          - 自定义动态色系统（CustomColor）: zh/systems/custom-color.md
       - 组件:
           - 自定义 Action: zh/components/actions.md
           - 自定义标题横幅（ShowTitle）: zh/systems/title-banner.md
@@ -108,6 +109,7 @@ nav:
           - Custom Timer System (Clock): en/systems/clock.md
           - Custom Node Icon System: en/systems/node-icon.md
           - Custom Ending System (StartEnding): en/systems/custom-ending.md
+          - Custom Color System (CustomColor): en/systems/custom-color.md
       - Components:
           - Actions: en/components/actions.md
           - Custom Title Banner (ShowTitle): en/systems/title-banner.md

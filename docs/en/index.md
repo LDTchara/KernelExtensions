@@ -15,6 +15,7 @@
 | Timer | [Custom Timer System (Clock)](./systems/clock.md) |
 | Node Icons | [Custom Node Icon System](./systems/node-icon.md) |
 | Ending | [Custom Ending System (StartEnding)](./systems/custom-ending.md) |
+| Colors | [Custom Color System (CustomColor)](./systems/custom-color.md) |
 | Banner | [Custom Title Banner (ShowTitle)](./systems/title-banner.md) |
 | Full-screen Alert | [Custom ScreenBleed Effect](./systems/screen-bleed.md) |
 | Misc | [Misc](./guides/misc.md) |
