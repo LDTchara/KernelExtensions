@@ -117,6 +117,16 @@ After connecting to a computer with `FlightDaemon`, the flight instrument panel 
 
 Button labels (e.g., "Disconnect", "Pilot Alert", "Reload Firmware") use the game's built‑in locale terms and automatically switch language (Chinese, English, etc.).
 
+## Known Limitations
+
+- **Aircraft state is unreliable after loading a save**: the daemon's runtime state (fall progress, the
+  `IsCrashed` terminal flag, etc.) is not fully persisted. The node itself recovers correctly, but the
+  aircraft's position and running state may be wrong.
+
+  In mission design, **avoid segments where the player can save/load while the aircraft is in flight**.
+  If you truly need to block saving during a critical segment, rely on a third-party mod's capability
+  (e.g. Stuxnet's `DenySaves`) — KE does not provide save interception itself.
+
 ---
 
 ## See Also

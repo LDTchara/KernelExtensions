@@ -379,9 +379,6 @@ Add or remove runtime blocklist entries.
     convention all live in **[Mod Compatibility](./../components/mod-compat.md)** (including the two
     field-confirmed corrections: "`MusicManager.stop()` must be unconditional" and "the read-load case
     needs a watch window"). With SASS installed, KE's `PlaySound` degrades to `KEPlaySound`.
-
-  The full conflict surface and handling mechanisms are on
-  [Mod Compatibility](./../components/mod-compat.md).
 - Tracks of unequal length inside one phase drift out of sync after switching (see the warning above)
 - When a scene theme is a custom path, write it relative to the extension root (PS does not prepend anything)
 
