@@ -1,6 +1,12 @@
 # Utility Classes
 
-KernelExtensions provides a set of static utility classes for use by extension developers in their code.
+KernelExtensions provides a set of static utility classes for **mod authors** to call from code.
+
+!!! info "Who this page is for"
+    These are **C#-level APIs** — they target people writing plugins/mods.
+    **Pure extension authors normally never need this page**: everything on the extension side is done
+    through XML (actions, configuration, file layout) and needs no code. Only an extension author who also
+    builds their own private plugin takes on the mod-author role as well.
 
 ## ActionHelper
 
