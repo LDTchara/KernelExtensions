@@ -23,7 +23,7 @@
                    max loop count (0/omitted/negative = infinite); auto-stops when exhausted
       Duration   — 运行总时长上限（秒），与 Times 谁先到谁停；0/省略 = 不限
                    max total runtime (s); stops at whichever hits first; 0/omitted = unlimited
-      OnComplete — 可选，耗尽自动停止后执行的 Action 文件（相对扩展根，对齐 9.36）
+      OnComplete — 可选，耗尽自动停止后执行的 Action 文件（相对扩展根，语义对齐 ScreenBleed）
                    optional Action file executed after auto-stop (relative to extension root)
 
     行为 / Behavior:

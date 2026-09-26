@@ -31,7 +31,7 @@ namespace KernelExtensions.Actions.Misc
         {
             if (os.terminal == null) return;
 
-            // 9.55 约定：负数 / NaN / Infinity 均视为「使用默认（= Duration）」
+            // 约定：负数 / NaN / Infinity 均视为「使用默认（= Duration）」
             float actualBorder = (float.IsNaN(BorderDuration) || float.IsInfinity(BorderDuration) || BorderDuration < 0f) ? Duration : BorderDuration;
             float actualFadeIn = (float.IsNaN(FadeInDuration) || float.IsInfinity(FadeInDuration) || FadeInDuration < 0f) ? Duration : FadeInDuration;
             var anim = new TerminalFocusAnimation(os, Duration, actualBorder, actualFadeIn, DarkenAlpha, ExpandAmount);

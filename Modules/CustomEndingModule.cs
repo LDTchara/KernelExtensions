@@ -583,7 +583,7 @@ public class CustomEndingModule : EndingSequenceModule
         if (!creditsFading)
         {
             float fadeT = creditsFadeOutTime;
-            // 9.55 约定：负数 / NaN / Infinity = 用默认
+            // 约定：负数 / NaN / Infinity = 用默认
             if (float.IsNaN(fadeT) || float.IsInfinity(fadeT) || fadeT < 0f) fadeT = DefaultCreditsFadeOutTime;
             if (fadeT <= 0f) return;                          // 0 = 不淡出
             if (ConfigValue.IsNone(afterMusic)) return;        // 无 AfterMusic（不切换音乐）→ 不淡出

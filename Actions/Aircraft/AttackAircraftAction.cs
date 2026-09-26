@@ -49,7 +49,7 @@ namespace KernelExtensions.Actions.Aircraft
                 }
             }
 
-            // 处理 CrashDelay —— 9.55 约定：负数 = 使用默认（Daemon 自身配置）；
+            // 处理 CrashDelay —— 约定：负数 = 使用默认（Daemon 自身配置）；
             // NaN / Infinity 视为无效值，同样回退默认（此前会落入 throw，与「负数 = 默认」的约定相反）
             if (float.IsNaN(CrashDelay) || float.IsInfinity(CrashDelay) || CrashDelay < 0f)
                 d.H = d.FallDuration; // 使用 Daemon 自身配置的默认坠落时长

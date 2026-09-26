@@ -23,7 +23,7 @@ using KernelExtensions.Saving;
 using KernelExtensions.Storage;
 using KernelExtensions.Utilities;
 using Pathfinder.Action;
-using Pathfinder.Command;            // 提供 CommandManager（9.62 kelicense 指令注册）
+using Pathfinder.Command;            // 提供 CommandManager（kelicense 指令注册）
 using Pathfinder.Daemon;
 using Pathfinder.Event;
 using Pathfinder.Event.Gameplay;
@@ -227,7 +227,7 @@ namespace KernelExtensions
             KELog.Info("PorthackHeartDaemon registered.");
 
             // ============================================================
-            //  6. 终端指令（9.62）
+            //  6. 终端指令
             // ============================================================
             // ⚠️ RegisterCommand 带 [MethodImpl(NoInlining)]，内部用 Assembly.GetCallingAssembly()
             //    判定插件来源（卸载时据此清理）——必须**直接在此调用**，不得抽成辅助方法包装，
