@@ -29,9 +29,5 @@ namespace KernelExtensions.Actions.Misc
             SoundHelper.PlaySound(os, Path, Volume, Pitch, Pan);
         }
 
-        public override void LoadFromXml(ElementInfo info)
-        {
-            base.LoadFromXml(info);
-        }
     }
 }

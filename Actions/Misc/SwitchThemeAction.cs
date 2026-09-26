@@ -56,9 +56,5 @@ namespace KernelExtensions.Actions.Misc
             );
         }
 
-        public override void LoadFromXml(ElementInfo info)
-        {
-            base.LoadFromXml(info);
-        }
     }
 }

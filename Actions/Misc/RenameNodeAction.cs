@@ -58,9 +58,5 @@ namespace KernelExtensions.Actions.Misc
             // ComputerLookup.RebuildLookups()，但性能损耗极小。
         }
 
-        public override void LoadFromXml(ElementInfo info)
-        {
-            base.LoadFromXml(info);
-        }
     }
 }

@@ -42,9 +42,5 @@ namespace KernelExtensions.Actions.PhaseSwift
             }
         }
 
-        public override void LoadFromXml(ElementInfo info)
-        {
-            base.LoadFromXml(info);
-        }
     }
 }

@@ -66,10 +66,5 @@ namespace KernelExtensions.Actions.CustomTrial
             KELog.Info($"[RestoreCustomTrialNodes] Restored {nodesToRestore.Count} nodes for config '{ConfigName}'.");
         }
 
-        public override void LoadFromXml(ElementInfo info)
-        {
-            base.LoadFromXml(info);
-            // XMLStorage 会自动填充 ConfigName，无需额外代码
-        }
     }
 }
