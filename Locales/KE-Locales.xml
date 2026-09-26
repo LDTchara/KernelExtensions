@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ==========================================================
-     KernelExtensions 内置本地化（9.27）
+     KernelExtensions 内置本地化
      - 此文件内嵌于 KernelExtensions.dll；首次运行自动导出到扩展根目录 KE-Locales.xml
        （文件不存在时才导出，用户可自由编辑，后续不覆盖）
      - 外部文件存在时优先加载；删除后回退 dll 内嵌副本
