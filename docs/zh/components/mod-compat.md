@@ -30,8 +30,13 @@ KE 的对策是 `RegisterActionWithFallback<T>(xmlName, fallbackName)`：重名�
 [自定义 Action](./actions.md#action-名冲突与回退)。
 
 !!! warning "共存时的副作用"
-    在重名环境下，KE 的 `PlaySound` 实际注册为 `KEPlaySound`；扩展若写 `<PlaySound>`，拿到的是
-    第三方那一个。与第三方共存时请显式使用带前缀的名字，两种名字**不要同时写**。
+    KE 为这 15 组名字**同时注册原名与 `KE` 前缀名**：
+
+    - **无冲突环境**：两个名字都可用（指向同一个 Action）
+    - **重名环境**：原名归第三方，KE 的 `PlaySound` 实际注册为 `KEPlaySound`；
+      扩展若写 `<PlaySound>`，拿到的是第三方那一个 —— 与第三方共存时请显式使用带前缀的名字
+
+    两种名字**不要同时写**（无冲突时会执行两次）。
 
 ## 二、音频播放链：PhaseSwift × Stuxnet.Audio
 

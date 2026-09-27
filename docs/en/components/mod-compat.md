@@ -36,9 +36,14 @@ fallback**. Full table and authoring advice:
 [Actions](./actions.md#action-name-conflicts-and-fallback).
 
 !!! warning "Side effect when coexisting"
-    In a conflicting environment KE's `PlaySound` is actually registered as `KEPlaySound`; an extension
-    writing `<PlaySound>` gets the third-party one. Use the prefixed name explicitly when coexisting, and
-    **never write both names** — only the one registered first takes effect.
+    KE registers **both** the original name and the `KE`-prefixed name for all 15 pairs:
+
+    - **No conflict**: both names work (they point at the same Action)
+    - **Conflict**: the original belongs to the third party, so KE's `PlaySound` is actually registered as
+      `KEPlaySound`; an extension writing `<PlaySound>` gets the third-party one — use the prefixed name
+      explicitly when coexisting
+
+    **Never write both names** (with no conflict that would run the Action twice).
 
 ## 2. Audio Pipeline: PhaseSwift × Stuxnet.Audio
 

@@ -192,9 +192,11 @@ Rules:
   `Aircraft` family / `StartScreenBleedEffectWCC`) **do not fall back** and keep their names
 
 !!! tip "Authoring advice"
-    If you are unsure whether the runtime environment has a conflict, just use the `KE`-prefixed name
-    (it is always available). **Do not write both names** — only the one registered first takes effect,
-    and the other is reported as an unknown action.
+    Both names in each pair **are registered**: with no conflict the original and the `KE`-prefixed name
+    **both work** (they point at the same Action); when the original is taken by a third party, only the
+    `KE`-prefixed name works. So **writing the `KE`-prefixed name always works**.
+
+    **Do not write both names** — they point at the same Action and it would run twice.
 
 The full mechanism (why catching the exception is the only option, and the `Compat/` layout) is on
 [Mod Compatibility](./mod-compat.md).
