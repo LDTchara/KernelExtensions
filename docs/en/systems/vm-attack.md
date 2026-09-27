@@ -145,5 +145,5 @@ UI texts such as password match/mismatch prompts and help button text are availa
 
 - [Home](./../index.md) – Return to main index
 - [虚拟机攻击系统 (中文)](./../../zh/systems/vm-attack.md) – Chinese version
-- [Misc](./../guides/misc.md) – Other things not mentioned on the major system pages
+
 - [Configuration Files](./../components/configuration.md) – All configuration file references

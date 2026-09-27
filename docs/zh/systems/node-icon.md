@@ -170,4 +170,4 @@ ExtensionRoot/
 - [首页](./../index.md) – 返回主索引
 - [Custom Node Icon System (English)](./../../en/systems/node-icon.md) – 英文版
 - [自定义 Action](./../components/actions.md) – 全部自定义 Action 列表
-- [杂项](./../guides/misc.md) – 其他辅助功能
+

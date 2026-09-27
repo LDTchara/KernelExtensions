@@ -200,5 +200,5 @@ Text strings are provided by the built-in locale file (KELoc) and can be overrid
 
 - [Home](./../index.md) – Return to main index
 - [自定义试炼系统 (中文) ](./../../zh/systems/custom-trial.md) – 中文版
-- [Misc](./../guides/misc.md) – Other things not mentioned on the major system pages
+
 - [Configuration Files](./../components/configuration.md) – Collection of all configuration files

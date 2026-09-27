@@ -18,9 +18,6 @@
 | 节点图标 | [自定义节点图标系统](./systems/node-icon.md) |
 | 结局 | [自定义结局系统（StartEnding）](./systems/custom-ending.md) |
 | 动态色 | [自定义动态色系统（CustomColor）](./systems/custom-color.md) |
-| 横幅 | [自定义标题横幅（ShowTitle）](./systems/title-banner.md) |
-| 全屏警告 | [自定义全屏警告特效（ScreenBleed）](./systems/screen-bleed.md) |
-| 杂项 | [杂项](./guides/misc.md) |
 
 ## 🧩 组件种类索引
 

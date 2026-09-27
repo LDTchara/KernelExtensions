@@ -170,4 +170,4 @@ Icon state is stored as a `<NodeIcon>` child element inside each computer's save
 - [Home](./../index.md) – back to the main index
 - [自定义节点图标系统（中文）](./../../zh/systems/node-icon.md) – Chinese version
 - [Custom Actions](./../components/actions.md) – full list of custom actions
-- [Misc](./../guides/misc.md) – other auxiliary features
+
