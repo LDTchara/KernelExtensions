@@ -283,29 +283,44 @@ namespace KernelExtensions
         }
 
         /// <summary>
-        /// 注册 Action，重名时退回备用名。
+        /// 注册 Action：原名与备用名【都】尝试注册，重名不抛出（返回 false）。
         /// 第三方模组可能占用通用名（实例：Stuxnet.Audio 占用 "PlaySound"），
         /// 而 Pathfinder 的 RegisterAction 重名会抛 ArgumentException 并**中断整个 Load**，故必须容错。
         /// </summary>
         private static void RegisterActionWithFallback<T>(string xmlName, string fallbackName)
             where T : PathfinderAction
         {
+            bool primaryOk = TryRegisterAction<T>(xmlName);
+            if (primaryOk)
+                KELog.Info($"{xmlName} action registered.");
+            else
+                KELog.Warn($"{xmlName} is already taken by another mod.");
+
+            // 备用名【总是】尝试注册（不只在原名失败时）：
+            //   · 原名成功 → 两个名字都指向同一个 Action，扩展写哪个都能用
+            //   · 原名被占 → 备用名就是唯一入口
+            // Pathfinder 的注册表本就支持同一类型挂多个名字：CustomActions 是 name→type（多名字各一条），
+            // XmlNames 只记首个名字、供 GetXmlNameFor 反查，语义不受影响。
+            if (!TryRegisterAction<T>(fallbackName))
+            {
+                if (primaryOk)
+                    KELog.Warn($"{fallbackName} is already taken - only '{xmlName}' is available for this action.");
+                else
+                    KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
+            }
+        }
+
+        /// <summary>尝试注册一个 Action 名；重名（ArgumentException）时返回 false，不抛出。</summary>
+        private static bool TryRegisterAction<T>(string xmlName) where T : PathfinderAction
+        {
             try
             {
                 ActionManager.RegisterAction<T>(xmlName);
-                KELog.Info($"{xmlName} action registered.");
+                return true;
             }
             catch (ArgumentException)
             {
-                try
-                {
-                    ActionManager.RegisterAction<T>(fallbackName);
-                    KELog.Warn($"{xmlName} is already taken by another mod - registered as '{fallbackName}' instead.");
-                }
-                catch (ArgumentException)
-                {
-                    KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
-                }
+                return false;
             }
         }
 
