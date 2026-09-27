@@ -1,6 +1,13 @@
 # 自定义 Daemon
 
-KernelExtensions 提供了两个自定义守护进程：**FlightDaemon**（飞机）与 **PorthackHeartDaemon**（心脏结局）。
+KernelExtensions 提供 **2 个**自定义守护进程 —— 这就是全部：
+
+| Daemon | 所属功能 | 一句话说明 |
+|--------|----------|-----------|
+| `FlightDaemon` | [飞机 Daemon 系统](./../systems/aircraft.md) | 完全替代原版 `AircraftDaemon`：可配置坠落时长、修复/坠毁回调、全局高度计覆盖层 |
+| `PorthackHeartDaemon` | [自定义结局系统](./../systems/custom-ending.md) | 扩展原版 Porthack 心脏节点：自定义标题、音乐、心碎时序、输入锁定与完成/心碎回调 |
+
+两者的**用法与全部配置项**都在各自的系统页里，下面只作速览。
 
 ## FlightDaemon
 
@@ -22,3 +29,5 @@ KernelExtensions 提供了两个自定义守护进程：**FlightDaemon**（飞�
 
 - [首页](./../index.md) – 返回主索引
 - [Daemons (English)](./../../en/components/daemons.md) – 英文版
+- [可执行程序](./executables.md) – 另一类可挂载对象
+- [自定义 Action](./actions.md) – 动作清单
