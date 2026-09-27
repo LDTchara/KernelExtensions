@@ -1,6 +1,6 @@
 # 🔧 KernelExtensions Documentation (English)
 
-**KernelExtensions** is a Hacknet mod using the **Pathfinder API**, providing highly configurable trials, VM attacks, an aircraft daemon, and a collection of custom actions for extension authors.
+**KernelExtensions** is a Hacknet mod built on the **Pathfinder API**. It gives extension authors a full set of reusable systems and components: Phase Swift, Custom Trial, VM Attack, the aircraft daemon, custom timers, node icons, custom endings, the dynamic colour engine, and a collection of composable custom Actions / Executables / Daemons.
 
 > This documentation corresponds to **KernelExtensions 0.7**.
 
@@ -50,7 +50,7 @@
 ## ❤️ Special Thanks
 
 - **April_Crystal**: Created the aircraft daemon component, provided invaluable suggestions, and contributed immensely to the mod's refinement.
-- **The members of HN 扩展小屋**: For actively testing and providing feedback, greatly aiding the mod's stability.
+- **ZQG** and **the members of HN 扩展小屋**: For actively testing and providing feedback, greatly aiding the mod's stability.
 
 ---
 

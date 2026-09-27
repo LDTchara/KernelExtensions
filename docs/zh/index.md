@@ -1,6 +1,8 @@
 # 🔧 KernelExtensions 文档（简体中文）
 
-**KernelExtensions** 是一个基于 **Pathfinder API** 的 Hacknet 模组，为扩展作者提供高度可配置的试炼、虚拟机攻击、飞机守护进程以及一系列自定义动作。
+**KernelExtensions** 是一个基于 **Pathfinder API** 的 Hacknet 模组。它为扩展作者提供了一整套可复用的系统与组件：
+相位穿梭、自定义试炼、VM 攻击、飞机守护进程、自定义定时器、节点图标、自定义结局、动态色引擎，
+以及一系列可拼装的自定义 Action / Executable / Daemon。
 
 > 本文档对应 **KernelExtensions 0.7**。
 
@@ -50,7 +52,7 @@
 ## ❤️ 特别感谢
 
 - **April_Crystal**：制作了飞机 Daemon 相关部分，提出了大量宝贵建议，对模组的完善贡献巨大。
-- **HN 扩展小屋的朋友们**：积极测试、反馈问题，为模组的稳定性提供了重要帮助。
+- **ZQG**、**HN 扩展小屋的朋友们**：积极测试、反馈问题，为模组的稳定性提供了重要帮助。
 
 ---
 
