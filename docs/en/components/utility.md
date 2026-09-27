@@ -18,7 +18,13 @@ KernelExtensions provides a set of static utility classes for **mod authors** to
 
 - Path: `KernelExtensions.Utilities.MusicPathResolver`
 - Method: `ResolveMusicPath(string musicPath, string extensionRoot)`
-- Purpose: Resolves a music string from configuration into a path recognised by `MusicManager.transitionToSong`. Supports plain filenames, extension directories, DLC music, and vanilla music.
+- Purpose: resolves a music string from configuration into a path `MusicManager` can load. Plain-filename lookup order:
+  (1) extension root, (2) the extension's `Music/`, (3) `Content/DLC/Music`, (4) treated as a vanilla music name (`Content/Music`).
+- **When the string contains a path separator** (e.g. `Music/Bit(Ending)`): it first checks whether that file really exists
+  under the extension directory — if so it returns the extension path; **if not it passes the value through unchanged to
+  vanilla resolution**, so path-style values can also point at vanilla tracks.
+- The returned value **keeps whatever extension the caller wrote** (`.ogg` is not stripped); when omitted, FNA's
+  `SongReader.Normalize` fills it in.
 
 ## SoundHelper
 

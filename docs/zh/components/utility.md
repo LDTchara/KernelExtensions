@@ -17,7 +17,11 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 
 - 路径：`KernelExtensions.Utilities.MusicPathResolver`
 - 方法：`ResolveMusicPath(string musicPath, string extensionRoot)`
-- 作用：将配置中的音乐字符串解析为 `MusicManager.transitionToSong` 能识别的路径。支持纯文件名、扩展目录、DLC 音乐和原版音乐。
+- 作用：把配置里的音乐字符串解析成 `MusicManager` 能加载的路径。纯文件名的查找顺序：
+  ① 扩展根目录 → ② 扩展 `Music/` → ③ `Content/DLC/Music` → ④ 视为原版音乐名（`Content/Music`）。
+- **含路径分隔符时**（如 `Music/Bit(Ending)`）：先检查扩展目录下是否真有该文件——
+  有则按扩展内路径返回；**没有则原样交还原版**，所以带路径的写法也能指向原版曲。
+- 返回值**保留调用方写的扩展名**（不主动剥离 `.ogg`）；省略 `.ogg` 时由 FNA 的 `SongReader.Normalize` 补全。
 
 ## SoundHelper
 

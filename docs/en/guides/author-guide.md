@@ -102,9 +102,12 @@ Music configuration fields (e.g. `StartMusic`, `TrialStartMusic`, `Music`, `Succ
    - Then the extension's `Music/` folder (the only difference from the original music handling mechanism; a retained fallback that LDTchara kept on a whim)
    - Then the DLC Music folder
    - Finally treats it as a vanilla music name
-2. **Relative path** (e.g. `Music/MySong.ogg`): resolved relative to the extension root.
+2. **Relative path** (e.g. `Music/MySong.ogg`):
+   - if the file **really exists** under the extension directory → treated as extension music;
+   - if it **does not exist** → passed through unchanged to vanilla resolution, so a path like
+     `Music/Bit(Ending)` can be used to point **explicitly at a vanilla track**.
 3. **DLC music**: e.g. `DLC/Music/snidelyWhiplash`, used directly.
-4. The `.ogg` extension can be omitted.
+4. The `.ogg` extension can be omitted (FNA adds it back for `Song`; if you write it, it is kept as-is).
 
 ---
 
