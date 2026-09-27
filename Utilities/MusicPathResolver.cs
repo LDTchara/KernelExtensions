@@ -6,15 +6,20 @@ namespace KernelExtensions.Utilities
     public static class MusicPathResolver
     {
         /// <summary>
-        /// 将配置中的音乐字符串转换为 MusicManager.transitionToSong 能识别的路径。
+        /// 将配置中的音乐字符串转换为 MusicManager 能识别的路径。
         /// 规则：
-        /// 1. 如果字符串包含路径分隔符（/ 或 \），视为相对路径，基于扩展根目录解析并返回 "../Extensions/扩展名/路径"。
-        /// 2. 如果是纯文件名（无路径分隔符）：
-        ///    a. 首先检查扩展根目录下是否存在该文件（直接拼接），若存在则返回 "../Extensions/扩展名/文件名"。
-        ///    b. 检查扩展内 Music 文件夹：检测 Extensions/当前扩展名/Music/文件名.ogg 是否存在，若存在返回 "../Extensions/扩展名/Music/文件名"。
-        ///    c. 否则，检查是否为 DLC 音乐：检测 Content/DLC/Music/文件名.ogg 是否存在，若存在返回 "DLC/Music/文件名"。
-        ///    d. 以上都不存在，作为原版音乐返回原字符串（MusicManager 会从 Content/Music/ 加载）。
-        /// 就很...兜底。比起原版的逻辑多了个不用多填一个Music/的逻辑
+        /// 0. NONE/空 → 原样返回；绝对路径或已带 "../Extensions/" 前缀 → 原样返回。
+        /// 1. 字符串含路径分隔符（/ 或 \）：
+        ///    a. 若扩展目录下**确实存在**该文件 → "../Extensions/扩展名/路径"（扩展内相对路径）；
+        ///    b. 否则**原样返回** → 交由原版 Content 解析（如 "Music/Bit(Ending)" 指原版
+        ///       Content/Music 下的曲子；FNA 的 SongReader.Normalize 会自动补 .ogg）。
+        /// 2. 纯文件名（无分隔符）：
+        ///    a. 扩展根目录下存在 → "../Extensions/扩展名/文件名"；
+        ///    b. 扩展内 Music/ 下存在 → "../Extensions/扩展名/Music/文件名"；
+        ///    c. Content/DLC/Music 下存在 → "DLC/Music/文件名"；
+        ///    d. 都不存在 → 原样返回（原版音乐，Content/Music）。
+        /// 注：返回时**保留调用方写的扩展名**（不主动剥离 .ogg）——FNA 靠 Normalize 猜扩展名，
+        ///     保留显式扩展名更确定。
         /// </summary>
         public static string ResolveMusicPath(string musicPath, string extensionRoot)
         {
@@ -40,24 +45,35 @@ namespace KernelExtensions.Utilities
             bool Exists(string directory, string fileName) =>
                 File.Exists(Path.Combine(directory, fileName)) ||
                 File.Exists(Path.Combine(directory, fileName + ".ogg"));
-            // 去除 .ogg 扩展名（MusicManager 不需要）
-            string StripOgg(string name) =>
-                name.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase)
-                    ? name.Substring(0, name.Length - 4)
-                    : name;
-            // 若包含路径分隔符 → 视为相对扩展根目录的路径
+            // 含路径分隔符时：**先看扩展内是否真有这个文件**
+            //   · 有 → 视为扩展内相对路径，返回 "../Extensions/扩展名/路径"
+            //   · 无 → 原样返回，交由原版 Content 解析（如 "Music/Bit(Ending)" 指原版结局曲；
+            //          FNA 的 SongReader.Normalize 会自动补 .ogg）
+            // 注意：不能再无条件当成扩展内路径 —— 那样 "Music/xxx" 写法永远无法指向原版音乐。
             if (musicPath.Contains('/') || musicPath.Contains('\\'))
-                return $"../Extensions/{extFolderName}/{StripOgg(musicPath.Replace('\\', '/'))}";
-            // 纯文件名：按优先级查找
+            {
+                string rel = musicPath.Replace('\\', '/');
+                string file = Path.GetFileName(rel);
+                string dir = Path.GetDirectoryName(rel)?.Replace('\\', '/');
+                string probeDir = string.IsNullOrEmpty(dir)
+                    ? extBase
+                    : Path.Combine(extBase, dir.Replace('/', '\\'));
+
+                if (Exists(probeDir, file))
+                    return $"../Extensions/{extFolderName}/{rel}";
+
+                return rel;
+            }
+            // 纯文件名：按优先级查找（保留用户写的扩展名，不主动剥离）
             if (Exists(extBase, musicPath))
-                return $"../Extensions/{extFolderName}/{StripOgg(musicPath)}";
+                return $"../Extensions/{extFolderName}/{musicPath}";
 
             if (Exists(Path.Combine(extBase, "Music"), musicPath))
-                return $"../Extensions/{extFolderName}/Music/{StripOgg(musicPath)}";
+                return $"../Extensions/{extFolderName}/Music/{musicPath}";
 
             string dlcDir = Path.Combine(Paths.GameRootPath, "Content", "DLC", "Music");
             if (Exists(dlcDir, musicPath))
-                return $"DLC/Music/{StripOgg(musicPath)}";
+                return $"DLC/Music/{musicPath}";
             // 回退原版音乐
             return musicPath;
         }
