@@ -360,6 +360,53 @@ Add or remove runtime blocklist entries.
 
 ---
 
+## Relationship with eOS Devices (eosDevice)
+
+`<eosDevice>` is a **vanilla mechanic**: a device is nested inside a parent node's XML and becomes
+**a separate node** on the network map when loaded. It is a different thing from Phase Swift's controlled
+nodes, but two points matter.
+
+**(1) ID rules (this is the ID you use in config)**
+
+Without `id`, the device node's ID defaults to **`<parent node ID>_eos`**; with `id`, that value wins:
+
+```xml
+<Computer id="dhs" ...>
+    <eosDevice name="Phone" />          <!-- node ID = dhs_eos -->
+    <eosDevice name="Pad" id="myPad" /> <!-- node ID = myPad -->
+</Computer>
+```
+
+⚠️ `dhs` is the **parent node**; `dhs_eos` is the **device**. The IDs look alike but point at different
+objects — this is the easiest thing to get wrong.
+
+**(2) Relationship with controlled nodes**
+
+- **By default they never interfere**: controlled nodes are **collected automatically** from the scene
+  config (the union of `StartNodes` + `VisibleNodes` + `Topology` endpoints + `BlockedNodes`). When the
+  device's ID is not among them, Phase Swift **never touches it** — its links are not backed up, cleared
+  or restored.
+- **But once the device's ID is written into the scene config, it becomes a controlled node.** Then note:
+  the edge between device and parent is **one-way (device → parent)**, while the original-links backup only
+  covers edges **between controlled nodes** — so that edge, once cleared by a topology rebuild, is **not
+  restored automatically**. If you want Phase Swift to manage the device, declare it in the scene's
+  `Topology`:
+
+  ```xml
+  <Topology>
+      <Link From="dhs_eos" To="dhs" />   <!-- device → parent -->
+  </Topology>
+  ```
+
+  Otherwise the device ends up **disconnected** from its parent after a scene switch or on finishing.
+
+**(3) Pitfalls**
+
+- **Do not delete a parent node that owns an `eosDevice`** — vanilla stores the “device → parent” link as a
+  **node index**, and deleting nodes shifts those indices (inherent to the vanilla mechanic, not KE).
+
+---
+
 ## Known Limitations
 
 - **Single instance**: PS is a **global single instance** — only one config runs at a time. Running
