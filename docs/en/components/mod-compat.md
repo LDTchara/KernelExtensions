@@ -28,20 +28,17 @@ dictionary is private; only `GetXmlNameFor(Type)` and `UnregisterAction(...)` ar
 way to check before registering**, and `UnregisterAction` must not be used to make room for others.
 Catching the exception is the only option.
 
-KE's answer is `RegisterActionWithFallback<T>(xmlName, fallbackName)`: on a duplicate it falls back to an
-alternate name and logs a `Warn` instead of throwing. It is applied to the **15 most conflict-prone generic
-short names** (fallback name = `KE` + original); names that carry KE context (`PhaseSwift*` / `LinkControl*`
-/ `LaunchVMAttack` / `CustomTrial*` / `Aircraft*` / `StartScreenBleedEffectWCC`) **do not take part in the
-fallback**. Full table and authoring advice:
-[Actions](./actions.md#action-name-conflicts-and-fallback).
+KE's answer is `RegisterActionWithFallback<T>(xmlName)`: **every Action is registered under two
+names** (the original, and `KE` + the original), and only if both fail does it log an `Error`.
+This applies to **all 31 Actions** — they are no longer split into "conflict-prone" and "distinctive".
+See [Actions](./actions.md#action-name-conflicts-and-fallback) for the full table and authoring advice.
 
 !!! warning "Side effect when coexisting"
-    KE registers **both** the original name and the `KE`-prefixed name for all 15 pairs:
-
-    - **No conflict**: both names work (they point at the same Action)
+    - **No conflict**: the original and the `KE`-prefixed name **both work** (they point at the same Action)
     - **Conflict**: the original belongs to the third party, so KE's `PlaySound` is actually registered as
       `KEPlaySound`; an extension writing `<PlaySound>` gets the third-party one — use the prefixed name
       explicitly when coexisting
+    - **Both taken** (very rare): the Action is not registered and KE logs an `Error`
 
     **Never write both names** (with no conflict that would run the Action twice).
 

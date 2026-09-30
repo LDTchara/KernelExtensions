@@ -162,39 +162,59 @@ lines ignored).
 
 ## Action Name Conflicts and Fallback
 
-Third-party mods may occupy **common Action names** (real example: `Stuxnet.Audio` occupies `PlaySound`).
-Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole plugin load**, so KE
-registers **common short names** with a fallback:
+Third-party mods may occupy Action names (real example: `Stuxnet.Audio` occupies `PlaySound`).
+Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole plugin load**, so
+**all 31 KEs Actions** are registered under **two names**: the original, and `KE` + the original.
 
-| Original name | Fallback when taken |
-|---------------|---------------------|
-| `PlaySound` | `KEPlaySound` |
+| Original name | Alias registered alongside |
+|---------------|---------------------------|
+| `FailTrial` | `KEFailTrial` |
+| `RestoreCustomTrialNodes` | `KERestoreCustomTrialNodes` |
+| `LaunchVMAttack` | `KELaunchVMAttack` |
+| `PhaseSwiftInit` | `KEPhaseSwiftInit` |
+| `PhaseSwiftScene` | `KEPhaseSwiftScene` |
+| `PhaseSwiftMusic` | `KEPhaseSwiftMusic` |
+| `PhaseSwiftStop` | `KEPhaseSwiftStop` |
+| `PhaseSwiftFadeOut` | `KEPhaseSwiftFadeOut` |
+| `BlockNode` | `KEBlockNode` |
+| `UnblockNode` | `KEUnblockNode` |
 | `TerminalFocus` | `KETerminalFocus` |
 | `TerminalWrite` | `KETerminalWrite` |
 | `TerminalType` | `KETerminalType` |
 | `RenameNode` | `KERenameNode` |
 | `SetNodeIcon` | `KESetNodeIcon` |
 | `SwitchToThemeKeepLayout` | `KESwitchToThemeKeepLayout` |
+| `PlaySound` | `KEPlaySound` |
 | `FlashScreen` | `KEFlashScreen` |
+| `StartScreenBleedEffectWCC` | `KEStartScreenBleedEffectWCC` |
 | `ClockStart` | `KEClockStart` |
 | `ClockStop` | `KEClockStop` |
-| `BlockNode` | `KEBlockNode` |
-| `UnblockNode` | `KEUnblockNode` |
+| `AttackAircraft` | `KEAttackAircraft` |
+| `UploadAircraftSysFile` | `KEUploadAircraftSysFile` |
+| `ShowAircraftOverlay` | `KEShowAircraftOverlay` |
+| `HideAircraftOverlay` | `KEHideAircraftOverlay` |
 | `BreakHeart` | `KEBreakHeart` |
+| `LinkControlReset` | `KELinkControlReset` |
+| `LinkControlAdd` | `KELinkControlAdd` |
+| `LinkControlRemove` | `KELinkControlRemove` |
 | `ShowTitle` | `KEShowTitle` |
 | `StartEnding` | `KEStartEnding` |
 
-Rules:
+**Rules**:
 
-- **With no conflict the original name is still used** — zero impact on existing extensions
-- On conflict KE falls back to `KE` + original name and logs a `Warn`
-- Distinctive KE names (`PhaseSwift*` / `LinkControl*` / `LaunchVMAttack` / `CustomTrial` family /
-  `Aircraft` family / `StartScreenBleedEffectWCC`) **do not fall back** and keep their names
+- Both names point at the **same Action** — either one runs the same implementation
+- **No conflict**: both names work
+- **One name taken by a third party**: the other still works, and KE logs a `Warn`
+- **Both taken** (very rare): the Action is not registered and KE logs an `Error`
 
-!!! tip "Authoring advice"
-    Both names in each pair **are registered**: with no conflict the original and the `KE`-prefixed name
-    **both work** (they point at the same Action); when the original is taken by a third party, only the
-    `KE`-prefixed name works. So **writing the `KE`-prefixed name always works**.
+!!! tip "Why register two names for everything"
+    - **One rule to remember**: no need to learn which Actions have a `KE`-prefixed variant — **all do**
+    - **The `KE`-prefixed name works in every environment**, conflicts or not
+    - **Safe against future name grabs**: no conflict at release time does not mean no conflict in a
+      player's setup; an extension written with the `KE`-prefixed name **won't change behaviour** if some
+      mod later takes the original name
+    - **Easier debugging**: on an “unknown action” error, switch to the `KE`-prefixed name to tell
+      “never registered” apart from “taken by someone else”
 
     **Do not write both names** — they point at the same Action and it would run twice.
 

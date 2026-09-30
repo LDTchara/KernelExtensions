@@ -23,18 +23,16 @@ Pathfinder 没有「按名查询是否已注册」的公开 API（`CustomActions
 `GetXmlNameFor(Type)` 与 `UnregisterAction(...)`），因此**无法「先查再注册」**，也不可用
 `UnregisterAction` 去给别人腾位——只能靠异常兜底。
 
-KE 的对策是 `RegisterActionWithFallback<T>(xmlName, fallbackName)`：重名时退回备用名并记一条 `Warn`，
-不再抛出。它对 **15 个最易被占用的通用短名**启用（备用名 = `KE` + 原名）；带 KE 语境的独特名
-（`PhaseSwift*` / `LinkControl*` / `LaunchVMAttack` / `CustomTrial` 系 / `Aircraft` 系 /
-`StartScreenBleedEffectWCC`）**不参与回退**。完整对照表与写作建议见
+KE 的对策是 `RegisterActionWithFallback<T>(xmlName)`：**每个 Action 都注册两个名字**
+（原名 + `KE` + 原名），两者都失败才记 `Error`。**全部 31 个 Action 一律如此**，
+不按「易冲突 / 独有」分类。完整对照表与写作建议见
 [自定义 Action](./actions.md#action-名冲突与回退)。
 
 !!! warning "共存时的副作用"
-    KE 为这 15 组名字**同时注册原名与 `KE` 前缀名**：
-
-    - **无冲突环境**：两个名字都可用（指向同一个 Action）
+    - **无冲突环境**：原名与 `KE` 前缀名**都可用**（指向同一个 Action）
     - **重名环境**：原名归第三方，KE 的 `PlaySound` 实际注册为 `KEPlaySound`；
       扩展若写 `<PlaySound>`，拿到的是第三方那一个 —— 与第三方共存时请显式使用带前缀的名字
+    - **两个都被占**（极罕见）：该 Action 不注册，日志记 `Error`
 
     两种名字**不要同时写**（无冲突时会执行两次）。
 

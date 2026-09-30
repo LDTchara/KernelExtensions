@@ -153,38 +153,57 @@ KernelExtensions 共注册 **31 个**自定义 Action，可在任何动作文件
 
 ## Action 名冲突与回退
 
-第三方模组可能占用**通用 Action 名**（实例：`Stuxnet.Audio` 占用 `PlaySound`）。
-而 Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件加载**，
-因此 KE 对**通用短名**做了注册回退：
+第三方模组可能占用 Action 名（实例：`Stuxnet.Audio` 占用 `PlaySound`）。
+Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件加载**，
+因此 KE 的**全部 31 个 Action** 都注册**两个名字**：原名，以及 `KE` + 原名。
 
-| 原名 | 撞名时的回退名 |
+| 原名 | 同时注册的别名 |
 |------|---------------|
-| `PlaySound` | `KEPlaySound` |
+| `FailTrial` | `KEFailTrial` |
+| `RestoreCustomTrialNodes` | `KERestoreCustomTrialNodes` |
+| `LaunchVMAttack` | `KELaunchVMAttack` |
+| `PhaseSwiftInit` | `KEPhaseSwiftInit` |
+| `PhaseSwiftScene` | `KEPhaseSwiftScene` |
+| `PhaseSwiftMusic` | `KEPhaseSwiftMusic` |
+| `PhaseSwiftStop` | `KEPhaseSwiftStop` |
+| `PhaseSwiftFadeOut` | `KEPhaseSwiftFadeOut` |
+| `BlockNode` | `KEBlockNode` |
+| `UnblockNode` | `KEUnblockNode` |
 | `TerminalFocus` | `KETerminalFocus` |
 | `TerminalWrite` | `KETerminalWrite` |
 | `TerminalType` | `KETerminalType` |
 | `RenameNode` | `KERenameNode` |
 | `SetNodeIcon` | `KESetNodeIcon` |
 | `SwitchToThemeKeepLayout` | `KESwitchToThemeKeepLayout` |
+| `PlaySound` | `KEPlaySound` |
 | `FlashScreen` | `KEFlashScreen` |
+| `StartScreenBleedEffectWCC` | `KEStartScreenBleedEffectWCC` |
 | `ClockStart` | `KEClockStart` |
 | `ClockStop` | `KEClockStop` |
-| `BlockNode` | `KEBlockNode` |
-| `UnblockNode` | `KEUnblockNode` |
+| `AttackAircraft` | `KEAttackAircraft` |
+| `UploadAircraftSysFile` | `KEUploadAircraftSysFile` |
+| `ShowAircraftOverlay` | `KEShowAircraftOverlay` |
+| `HideAircraftOverlay` | `KEHideAircraftOverlay` |
 | `BreakHeart` | `KEBreakHeart` |
+| `LinkControlReset` | `KELinkControlReset` |
+| `LinkControlAdd` | `KELinkControlAdd` |
+| `LinkControlRemove` | `KELinkControlRemove` |
 | `ShowTitle` | `KEShowTitle` |
 | `StartEnding` | `KEStartEnding` |
 
-规则：
+**规则**：
 
-- **无冲突时仍用原名** —— 对已有扩展零影响
-- 撞名时回退为 `KE` + 原名，并在 KE 日志补一条 `Warn`
-- 带 KE 语境的独特名（`PhaseSwift*` / `LinkControl*` / `LaunchVMAttack` / `CustomTrial` 系 /
-  `Aircraft` 系 / `StartScreenBleedEffectWCC`）**不参与回退**，保持原名
+- 两个名字指向**同一个 Action**，写哪个都执行同一实现
+- **无冲突**：两个名字都能用
+- **某个名字被第三方占用**：另一个仍然可用，KE 日志补一条 `Warn`
+- **两个都被占**（极罕见）：该 Action 不注册，日志记 `Error`
 
-!!! tip "写作建议"
-    这 15 组名字**都会注册**：无冲突时原名与 `KE` 前缀名**都可用**（指向同一个 Action）；
-    原名被第三方占用时，只有 `KE` 前缀名可用。因此**写 `KE` 前缀名在任何环境下都能用**。
+!!! tip "为什么一律双名"
+    - **规则统一**：不必再记「哪些 Action 有 KE 前缀版本」—— **全都有**
+    - **写 `KE` 前缀名在任何环境下都可用**（包括无冲突环境）
+    - **抗未来的名字抢占**：扩展发布时无冲突，不代表玩家环境里永远无冲突；
+      用 `KE` 前缀名写的扩展**不会**因为将来某个模组占用原名而改变行为
+    - **便于排查**：遇到「未知动作」报错时，换成 `KE` 前缀名即可区分「没注册」还是「被抢占」
 
     两种名字**不要同时写** —— 它们指向同一个 Action，会执行两次。
 
