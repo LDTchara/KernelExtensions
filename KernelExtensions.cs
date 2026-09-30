@@ -111,70 +111,54 @@ namespace KernelExtensions
             Console.WriteLine("[KernelExtensions] Registering actions...");
 
             // 2.1 自定义试炼
-            ActionManager.RegisterAction<FailTrialAction>("FailTrial");
-            KELog.Info("FailTrial action registered.");
-            ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
-            KELog.Info("RestoreCustomTrialNodes action registered.");
+            RegisterActionWithFallback<FailTrialAction>("FailTrial");
+            RegisterActionWithFallback<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
 
             // 2.2 VM 攻击
-            ActionManager.RegisterAction<LaunchVMAttackAction>("LaunchVMAttack");
-            KELog.Info("LaunchVMAttack action registered.");
+            RegisterActionWithFallback<LaunchVMAttackAction>("LaunchVMAttack");
 
             // 2.3 PhaseSwift
-            ActionManager.RegisterAction<PhaseSwiftInitAction>("PhaseSwiftInit");
-            KELog.Info("PhaseSwiftInit action registered.");
-            ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
-            KELog.Info("PhaseSwiftScene action registered.");
-            ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
-            KELog.Info("PhaseSwiftMusic action registered.");
-            ActionManager.RegisterAction<PhaseSwiftStopAction>("PhaseSwiftStop");
-            KELog.Info("PhaseSwiftStop action registered.");
-            ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
-            KELog.Info("PhaseSwiftFadeOut action registered.");
-            RegisterActionWithFallback<BlockNodeAction>("BlockNode", "KEBlockNode");
-            RegisterActionWithFallback<UnblockNodeAction>("UnblockNode", "KEUnblockNode");
+            RegisterActionWithFallback<PhaseSwiftInitAction>("PhaseSwiftInit");
+            RegisterActionWithFallback<PhaseSwiftSceneAction>("PhaseSwiftScene");
+            RegisterActionWithFallback<PhaseSwiftMusicAction>("PhaseSwiftMusic");
+            RegisterActionWithFallback<PhaseSwiftStopAction>("PhaseSwiftStop");
+            RegisterActionWithFallback<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
+            RegisterActionWithFallback<BlockNodeAction>("BlockNode");
+            RegisterActionWithFallback<UnblockNodeAction>("UnblockNode");
 
             // 2.4 终端与节点
-            RegisterActionWithFallback<TerminalFocusAction>("TerminalFocus", "KETerminalFocus");
-            RegisterActionWithFallback<TerminalWriteAction>("TerminalWrite", "KETerminalWrite");
-            RegisterActionWithFallback<TerminalTypeAction>("TerminalType", "KETerminalType");
-            RegisterActionWithFallback<RenameNodeAction>("RenameNode", "KERenameNode");
-            RegisterActionWithFallback<SetNodeIconAction>("SetNodeIcon", "KESetNodeIcon");
-            RegisterActionWithFallback<SwitchThemeAction>("SwitchToThemeKeepLayout", "KESwitchToThemeKeepLayout");
+            RegisterActionWithFallback<TerminalFocusAction>("TerminalFocus");
+            RegisterActionWithFallback<TerminalWriteAction>("TerminalWrite");
+            RegisterActionWithFallback<TerminalTypeAction>("TerminalType");
+            RegisterActionWithFallback<RenameNodeAction>("RenameNode");
+            RegisterActionWithFallback<SetNodeIconAction>("SetNodeIcon");
+            RegisterActionWithFallback<SwitchThemeAction>("SwitchToThemeKeepLayout");
 
             // 2.5 通用特效与 UI
             // ⚠️ "PlaySound" 与 Stuxnet.Audio（SASS）注册的同名 Action 冲突：SASS 先加载并占位，
             //    直接 Register 会抛 ArgumentException，导致**整个 KE Load 中断**（2026-09-22 实机复现）。
-            //    容错：重名时退回 KE 自有名 "KEPlaySound" 并补 Warn。
-            RegisterActionWithFallback<PlaySoundAction>("PlaySound", "KEPlaySound");
-            RegisterActionWithFallback<FlashScreenAction>("FlashScreen", "KEFlashScreen");
-            ActionManager.RegisterAction<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
-            KELog.Info("StartScreenBleedEffectWCC action registered.");
+            //    故【全部】Action 一律注册「原名 + KE 前缀名」两个名字（不再按易冲突/独有分类）。
+            RegisterActionWithFallback<PlaySoundAction>("PlaySound");
+            RegisterActionWithFallback<FlashScreenAction>("FlashScreen");
+            RegisterActionWithFallback<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
 
             // 2.6 Clock 定时器
-            RegisterActionWithFallback<ClockStartAction>("ClockStart", "KEClockStart");
-            RegisterActionWithFallback<ClockStopAction>("ClockStop", "KEClockStop");
+            RegisterActionWithFallback<ClockStartAction>("ClockStart");
+            RegisterActionWithFallback<ClockStopAction>("ClockStop");
 
             // 2.7 飞机（Daemon 本体在 5 节注册）
-            ActionManager.RegisterAction<AttackAircraftAction>("AttackAircraft");
-            KELog.Info("AttackAircraft action registered.");
-            ActionManager.RegisterAction<UploadAircraftSysFileAction>("UploadAircraftSysFile");
-            KELog.Info("UploadAircraftSysFile action registered.");
-            ActionManager.RegisterAction<ShowAircraftOverlayAction>("ShowAircraftOverlay");
-            KELog.Info("ShowAircraftOverlay action registered.");
-            ActionManager.RegisterAction<HideAircraftOverlayAction>("HideAircraftOverlay");
-            KELog.Info("HideAircraftOverlay action registered.");
+            RegisterActionWithFallback<AttackAircraftAction>("AttackAircraft");
+            RegisterActionWithFallback<UploadAircraftSysFileAction>("UploadAircraftSysFile");
+            RegisterActionWithFallback<ShowAircraftOverlayAction>("ShowAircraftOverlay");
+            RegisterActionWithFallback<HideAircraftOverlayAction>("HideAircraftOverlay");
 
             // 2.8 Porthack 心脏
-            RegisterActionWithFallback<BreakHeartAction>("BreakHeart", "KEBreakHeart");
+            RegisterActionWithFallback<BreakHeartAction>("BreakHeart");
 
             // 2.9 LinkControl：节点连接控制（org 基线跨会话；共享状态与事件钩子内聚在 Storage/OrgLinksStorage）
-            ActionManager.RegisterAction<LinkControlResetAction>("LinkControlReset");
-            KELog.Info("LinkControlReset action registered.");
-            ActionManager.RegisterAction<LinkControlAddAction>("LinkControlAdd");
-            KELog.Info("LinkControlAdd action registered.");
-            ActionManager.RegisterAction<LinkControlRemoveAction>("LinkControlRemove");
-            KELog.Info("LinkControlRemove action registered.");
+            RegisterActionWithFallback<LinkControlResetAction>("LinkControlReset");
+            RegisterActionWithFallback<LinkControlAddAction>("LinkControlAdd");
+            RegisterActionWithFallback<LinkControlRemoveAction>("LinkControlRemove");
             EventManager<SaveComputerEvent>.AddHandler(OrgLinksStorage.OnSaveComputer);
             EventManager<SaveComputerLoadedEvent>.AddHandler(OrgLinksStorage.OnLoadComputer);
             EventManager<OSLoadedEvent>.AddHandler(OrgLinksStorage.OnOSLoaded);
@@ -182,8 +166,8 @@ namespace KernelExtensions
             // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
             if (CanExtraPackUse)
             {
-                RegisterActionWithFallback<ShowTitle>("ShowTitle", "KEShowTitle");
-                RegisterActionWithFallback<StartEnding>("StartEnding", "KEStartEnding");
+                RegisterActionWithFallback<ShowTitle>("ShowTitle");
+                RegisterActionWithFallback<StartEnding>("StartEnding");
             }
 
             // ============================================================
@@ -283,31 +267,27 @@ namespace KernelExtensions
         }
 
         /// <summary>
-        /// 注册 Action：原名与备用名【都】尝试注册，重名不抛出（返回 false）。
+        /// 注册 Action：一律注册【原名】与【"KE" + 原名】两个名字，重名不抛出（返回 false）。
         /// 第三方模组可能占用通用名（实例：Stuxnet.Audio 占用 "PlaySound"），
         /// 而 Pathfinder 的 RegisterAction 重名会抛 ArgumentException 并**中断整个 Load**，故必须容错。
+        /// 两名字都注册后：无冲突时两者均可用；任一被占时另一个仍然可用。
         /// </summary>
-        private static void RegisterActionWithFallback<T>(string xmlName, string fallbackName)
+        private static void RegisterActionWithFallback<T>(string xmlName)
             where T : PathfinderAction
         {
-            bool primaryOk = TryRegisterAction<T>(xmlName);
-            if (primaryOk)
-                KELog.Info($"{xmlName} action registered.");
-            else
-                KELog.Warn($"{xmlName} is already taken by another mod.");
+            string fallbackName = "KE" + xmlName;
 
-            // 备用名【总是】尝试注册（不只在原名失败时）：
-            //   · 原名成功 → 两个名字都指向同一个 Action，扩展写哪个都能用
-            //   · 原名被占 → 备用名就是唯一入口
-            // Pathfinder 的注册表本就支持同一类型挂多个名字：CustomActions 是 name→type（多名字各一条），
-            // XmlNames 只记首个名字、供 GetXmlNameFor 反查，语义不受影响。
-            if (!TryRegisterAction<T>(fallbackName))
-            {
-                if (primaryOk)
-                    KELog.Warn($"{fallbackName} is already taken - only '{xmlName}' is available for this action.");
-                else
-                    KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
-            }
+            bool primaryOk = TryRegisterAction<T>(xmlName);
+            bool fallbackOk = TryRegisterAction<T>(fallbackName);
+
+            if (primaryOk && fallbackOk)
+                KELog.Info($"{xmlName} action registered (also as {fallbackName}).");
+            else if (primaryOk)
+                KELog.Warn($"{xmlName} registered; {fallbackName} is taken by another mod.");
+            else if (fallbackOk)
+                KELog.Warn($"{xmlName} is already taken by another mod - registered as {fallbackName} instead.");
+            else
+                KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
         }
 
         /// <summary>尝试注册一个 Action 名；重名（ArgumentException）时返回 false，不抛出。</summary>
