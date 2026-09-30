@@ -15,6 +15,7 @@
 | Timer | [Custom Timer System (Clock)](./systems/clock.md) |
 | Node Icons | [Custom Node Icon System](./systems/node-icon.md) |
 | Ending | [Custom Ending System (StartEnding)](./systems/custom-ending.md) |
+| Heart | [Porthack Heart (PorthackHeartDaemon)](./systems/porthack-heart.md) |
 | Colors | [Custom Color System (CustomColor)](./systems/custom-color.md) |
 
 ## 🧩 Component Index

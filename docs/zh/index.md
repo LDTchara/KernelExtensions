@@ -17,6 +17,7 @@
 | 定时器 | [自定义定时器系统（Clock）](./systems/clock.md) |
 | 节点图标 | [自定义节点图标系统](./systems/node-icon.md) |
 | 结局 | [自定义结局系统（StartEnding）](./systems/custom-ending.md) |
+| 心脏 | [自定义 Porthack 心脏（PorthackHeartDaemon）](./systems/porthack-heart.md) |
 | 动态色 | [自定义动态色系统（CustomColor）](./systems/custom-color.md) |
 
 ## 🧩 组件种类索引
