@@ -54,7 +54,14 @@ namespace KernelExtensions.Configs
                 string blockRef = (string)ban.Attribute("ReasonBlock");
                 if (!string.IsNullOrWhiteSpace(blockRef) && _reasons.TryGetValue(blockRef, out var blockList))
                     list.AddRange(blockList);
-                if (list.Count > 0) _bans[name] = list;
+                if (list.Count > 0)
+                {
+                    // 同名多条 Ban = 原因追加到同一个池（而非覆盖）——注释语义是「同名多条=多原因随机」，
+                    // 2026-10-01 修正：原本写成 `_bans[name] = list`，导致同名条目只有最后一条生效。
+                    if (!_bans.TryGetValue(name, out var existing))
+                        _bans[name] = existing = new List<string>();
+                    existing.AddRange(list);
+                }
             }
 
             HasBans = _bans.Count > 0;
