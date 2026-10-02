@@ -168,6 +168,48 @@ namespace KernelExtensions.Modules
             return KELoc.Loc("FAKE_RECOVERY_HELP", "HELP");
         }
 
+        private static string GetLocalizedTerminalButton()
+        {
+            return KELoc.Loc("FAKE_RECOVERY_TERMINAL", "Terminal");
+        }
+
+        private static string GetLocalizedCrashButton()
+        {
+            return KELoc.Loc("FAKE_RECOVERY_CRASH", "Crash VM");
+        }
+
+        /// <summary>当前平台是否为 Windows（Pathfinder 只支持 Windows / Linux 两平台，无 macOS）。</summary>
+        private static bool IsWindows => Environment.OSVersion.Platform == PlatformID.Win32NT;
+
+        /// <summary>
+        /// 打开帮助文档。
+        /// Windows：复制到 VM 目录并用记事本打开（沿用旧行为）。
+        /// 非 Windows：不弹外部程序，直接把帮助文本追加到界面输出区
+        ///            —— 对齐原版 BootCrashAssistanceModule 在 Unix 下用 README 按钮
+        ///            把 GetHelpText() 显示在游戏内的做法。
+        /// </summary>
+        private void OpenHelpDocument()
+        {
+            if (ConfigValue.IsNone(config.HelpFile)) return;
+
+            string helpSrc = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, config.HelpFile);
+            if (!File.Exists(helpSrc)) return;
+
+            if (IsWindows)
+            {
+                string fileName = Path.GetFileName(config.HelpFile);
+                string dest = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), fileName);
+                File.Copy(helpSrc, dest, true);
+                System.Diagnostics.Process.Start("notepad.exe", dest);
+            }
+            else
+            {
+                // 先不分页、不分阶段，直接逐行追加到输出区看效果
+                foreach (string line in File.ReadAllLines(helpSrc))
+                    outputLines.Add((line, false));
+            }
+        }
+
         private void LoadLines()
         {
             // ---------- 系统日志 ----------
@@ -518,26 +560,23 @@ namespace KernelExtensions.Modules
                         }
                     }
 
-                    // 帮助按钮（如果启用）
-                    if (config.EnableHelpButton)
+                    // 帮助按钮组：拆成两个独立按钮。
+                    // 旧配置 EnableHelpButton 作为兼容总开关：为 true 时两个都显示（与旧行为等价）。
+                    bool showDocBtn = config.EnableHelpDocButton || config.EnableHelpButton;
+                    bool showTermBtn = config.EnableTerminalButton || config.EnableHelpButton;
+
+                    if (showDocBtn)
                     {
-                        Rectangle helpBtn = new(submitBtn.X, submitBtn.Y + 25, submitBtn.Width, submitBtn.Height);
-                        if (Button.doButton(1003, helpBtn.X, helpBtn.Y, helpBtn.Width, helpBtn.Height, GetLocalizedHelpButton(), Color.White))
-                        {
-                            if (!ConfigValue.IsNone(config.HelpFile))
-                            {
-                                string helpSrc = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, config.HelpFile);
-                                string fileName = Path.GetFileName(config.HelpFile);
-                                string dest = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), fileName);
-                                if (File.Exists(helpSrc))
-                                {
-                                    File.Copy(helpSrc, dest, true);
-                                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                                        System.Diagnostics.Process.Start("notepad.exe", dest);
-                                }
-                            }
+                        Rectangle docBtn = new(submitBtn.X, submitBtn.Y + 25, submitBtn.Width, submitBtn.Height);
+                        if (Button.doButton(1003, docBtn.X, docBtn.Y, docBtn.Width, docBtn.Height, GetLocalizedHelpButton(), Color.White))
+                            OpenHelpDocument();
+                    }
+
+                    if (showTermBtn)
+                    {
+                        Rectangle termBtn = new(submitBtn.X, submitBtn.Y + 25 + (showDocBtn ? 25 : 0), submitBtn.Width, submitBtn.Height);
+                        if (Button.doButton(1004, termBtn.X, termBtn.Y, termBtn.Width, termBtn.Height, GetLocalizedTerminalButton(), Color.White))
                             HostileHackerBreakinSequence.OpenTerminal();
-                        }
                     }
 
                     // 错误提示
@@ -547,24 +586,37 @@ namespace KernelExtensions.Modules
                         spriteBatch.DrawString(GuiData.smallfont, GetLocalizedPasswordMismatch(), errorPos, Color.Red);
                     }
                 }
-                else
+                else if (IsWindows)
                 {
+                    // Windows：保持原有单按钮行为（复制帮助 + 记事本 + 开终端 + 崩溃），本次不改动
                     Rectangle btn = new(bounds.X + 20, (int)btnTopY, 220, 30);
                     if (Button.doButton(1002, btn.X, btn.Y, btn.Width, btn.Height, config.ButtonText, Color.White))
                     {
-                        if (!ConfigValue.IsNone(config.HelpFile))
-                        {
-                            string helpSrc = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, config.HelpFile);
-                            string fileName = Path.GetFileName(config.HelpFile);
-                            string dest = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), fileName);
-                            if (File.Exists(helpSrc))
-                            {
-                                File.Copy(helpSrc, dest, true);
-                                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                                    System.Diagnostics.Process.Start("notepad.exe", dest);
-                            }
-                        }
+                        OpenHelpDocument();                      // Windows 分支 = 复制到 VM 目录 + notepad
                         HostileHackerBreakinSequence.OpenTerminal();
+                        HostileHackerBreakinSequence.CrashProgram();
+                    }
+                }
+                else
+                {
+                    // 非 Windows：对齐原版 BootCrashAssistanceModule 在 Unix 下的三个按钮
+                    //（README 把帮助显示在游戏内 / Terminal 开终端 / Crash VM 崩溃）
+                    Rectangle readmeBtn = new(bounds.X + 20, (int)btnTopY, 220, 30);
+                    if (Button.doButton(1010, readmeBtn.X, readmeBtn.Y, readmeBtn.Width, readmeBtn.Height, GetLocalizedHelpButton(), Color.White))
+                        OpenHelpDocument();
+
+                    Rectangle termBtn2 = new(readmeBtn.X + 230, (int)btnTopY, 220, 30);
+                    if (Button.doButton(1011, termBtn2.X, termBtn2.Y, termBtn2.Width, termBtn2.Height, GetLocalizedTerminalButton(), Color.White))
+                    {
+                        outputLines.Add(("---------------------------------------", false));
+                        outputLines.Add(($"{GetLocalizedTerminalButton()}: {HostileHackerBreakinSequence.OpenTerminal()}", false));
+                        outputLines.Add(("---------------------------------------", false));
+                    }
+
+                    Rectangle crashBtn = new(termBtn2.X + 230, (int)btnTopY, 220, 30);
+                    if (Button.doButton(1012, crashBtn.X, crashBtn.Y, crashBtn.Width, crashBtn.Height, GetLocalizedCrashButton(), Color.White))
+                    {
+                        HostileHackerBreakinSequence.CopyHelpFile();
                         HostileHackerBreakinSequence.CrashProgram();
                     }
                 }

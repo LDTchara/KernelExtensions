@@ -17,9 +17,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALIZING" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="TRIAL LOCKED" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} already running!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="Crash VM" />
     <Term Key="FAKE_RECOVERY_HELP" Value="HELP" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="MATCH: FULL. Restarting in 3s..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="MATCH: MISMATCH" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="Terminal" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Maximum Altitude" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Maximum Cruising Altitude" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Minimum Cruising Altitude" />
@@ -51,9 +53,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="正在初始化" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="试炼已锁定" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} 已经在运行中！" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="崩溃 VM" />
     <Term Key="FAKE_RECOVERY_HELP" Value="帮助" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="检测结果：完全匹配。3秒后重启..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="检测结果：不匹配" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="终端" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="最大高度" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="最大巡航高度" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="最低巡航高度" />
@@ -85,9 +89,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="初期化中" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="トライアルはロックされています" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} は既に実行中です！" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="VM をクラッシュ" />
     <Term Key="FAKE_RECOVERY_HELP" Value="ヘルプ" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="照合結果：完全一致。3秒後に再起動します..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="照合結果：不一致" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="ターミナル" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="最高高度" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="最高飛行高度" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="最低飛行高度" />
@@ -117,9 +123,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="초기화 중" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="시험이 잠겼습니다" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} 이미 실행 중입니다!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="VM 충돌" />
     <Term Key="FAKE_RECOVERY_HELP" Value="도움말" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="결과: 완전히 일치합니다. 3초 후 다시 시작..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="결과: 일치하지 않음" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="터미널" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="최대 고도" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="최대 순항 고도" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="최소 순항 고도" />
@@ -150,9 +158,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="ИНИЦИАЛИЗАЦИЯ" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="ИСПЫТАНИЕ ЗАБЛОКИРОВАНО" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} УЖЕ ЗАПУЩЕНО!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="Сбой VM" />
     <Term Key="FAKE_RECOVERY_HELP" Value="Помощь" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="РЕЗУЛЬТАТ: ПОЛНОЕ СОВПАДЕНИЕ. Перезапуск через 3 сек..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="РЕЗУЛЬТАТ: НЕ СОВПАДАЕТ" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="Терминал" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Максимальная высота" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Максимальная крейсерская высота" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Минимальная крейсерская высота" />
@@ -184,9 +194,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALISIERUNG" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="PRÜFUNG GESPERRT" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} LÄUFT BEREITS!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="VM abstürzen" />
     <Term Key="FAKE_RECOVERY_HELP" Value="Hilfe" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="ERGEBNIS: VOLLE ÜBEREINSTIMMUNG. Neustart in 3 Sek..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="ERGEBNIS: KEINE ÜBEREINSTIMMUNG" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="Terminal" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Maximale Flughöhe" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Maximale Reiseflughöhe" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Minimale Reiseflughöhe" />
@@ -217,9 +229,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALISATION" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="ÉPREUVE VERROUILLÉE" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} DÉJÀ EN COURS!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="Planter la VM" />
     <Term Key="FAKE_RECOVERY_HELP" Value="Aide" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RÉSULTAT : CORRESPONDANCE PARFAITE. Redémarrage dans 3 s..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RÉSULTAT : NON CORRESPONDANCE" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="Terminal" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Altitude maximale" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Altitude de croisière maximale" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Altitude de croisière minimale" />
@@ -251,9 +265,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INICIALIZANDO" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="PRUEBA BLOQUEADA" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} ¡YA EN EJECUCIÓN!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="Fallar VM" />
     <Term Key="FAKE_RECOVERY_HELP" Value="Ayuda" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RESULTADO: COINCIDENCIA EXACTA. Reiniciando en 3 seg..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RESULTADO: NO COINCIDE" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="Terminal" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Altitud máxima" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Altitud máxima de crucero" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Altitud mínima de crucero" />
@@ -285,9 +301,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="BAŞLATILIYOR" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="DENEME KİLİTLİ" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} ZATEN ÇALIŞIYOR!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="VM'yi çökert" />
     <Term Key="FAKE_RECOVERY_HELP" Value="Yardım" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="SONUÇ: TAM EŞLEŞME. 3 saniye içinde yeniden başlatılıyor..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="SONUÇ: EŞLEŞMİYOR" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="Terminal" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM" Value="Azami İrtifa" />
     <Term Key="FLIGHT_ALTITUDE_MAXIMUM_CRUISING" Value="Azami Seyir İrtifası" />
     <Term Key="FLIGHT_ALTITUDE_MINIMUM_CRUISING" Value="Asgari Seyir İrtifası" />
@@ -319,9 +337,11 @@
     <Term Key="CUSTOM_TRIAL_INITIALIZING" Value="INITIALISEREN" />
     <Term Key="CUSTOM_TRIAL_LOCKED" Value="PROEF GESLOTEN" />
     <Term Key="EXECUTABLE_ALREADY_RUNNING" Value="{0} AL BEZIG!" />
+    <Term Key="FAKE_RECOVERY_CRASH" Value="VM laten crashen" />
     <Term Key="FAKE_RECOVERY_HELP" Value="Help" />
     <Term Key="FAKE_RECOVERY_PASSWORD_MATCH" Value="RESULTAAT: VOLLEDIGE MATCH. Herstart over 3 seconden..." />
     <Term Key="FAKE_RECOVERY_PASSWORD_MISMATCH" Value="RESULTAAT: GEEN MATCH" />
+    <Term Key="FAKE_RECOVERY_TERMINAL" Value="Terminal" />
     <Term Key="FLIGHT_ALTITUDE_CRITICAL_ERROR" Value="FATALE FOUT" />
     <Term Key="FLIGHT_DISCONNECT" Value="Verbreek verbiding" />
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Voltooid" />

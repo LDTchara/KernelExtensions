@@ -83,10 +83,19 @@
 	<Password></Password>
 
 	<!--
-    密码模式下是否显示“帮助”按钮。该按钮可打开终端和帮助文件。
-    Whether to show a "Help" button in password mode. This button opens a terminal and help file.
+    密码模式下是否显示「帮助文档」按钮。
+    Windows：复制帮助文件到 VM 目录并用记事本打开；Linux：不弹外部程序，把帮助文本直接显示在恢复界面内。
+    Whether to show the "Help Document" button in password mode.
+    Windows: copies the help file into the VM directory and opens it with Notepad.
+    Linux: launches no external program - the help text is appended to the recovery screen instead.
     -->
-	<EnableHelpButton>false</EnableHelpButton>
+	<EnableHelpDocButton>false</EnableHelpDocButton>
+
+	<!--
+    密码模式下是否显示「终端」按钮（调用原版终端启动逻辑；两个平台都可用）。
+    Whether to show the "Terminal" button in password mode (uses vanilla terminal launching).
+    -->
+	<EnableTerminalButton>false</EnableTerminalButton>
 
 	<!-- ============================================================
     7. 错误消息 / Error Message
