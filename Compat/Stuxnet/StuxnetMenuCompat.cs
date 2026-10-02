@@ -3,6 +3,7 @@ using Hacknet;
 using Hacknet.Gui;
 using Hacknet.UIUtils;
 using HarmonyLib;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System.Reflection;
@@ -155,7 +156,8 @@ namespace KernelExtensions.Compat.Stuxnet
             EnsureGamemodeMenuReflection();
             if (_gamemodeMenuType == null)
             {
-                // 可以记录日志，但不安装
+                // Stuxnet 在、但找不到 GamemodeMenu 类型（版本不匹配？）——可恢复，不阻断其他功能。
+                KELog.Warn("[Compat/Stuxnet] Stuxnet detected but GamemodeMenu type not found - patch not installed.");
                 return;
             }
 
@@ -169,6 +171,8 @@ namespace KernelExtensions.Compat.Stuxnet
             _harmony.Patch(drawMethod, prefix: new HarmonyMethod(patchDraw));
 
             _isPatched = true;
+            // Info：扩展作者若依赖 GamemodeMenu，需要知道补丁确实装上了（每次加载一条）。
+            KELog.Info("[Compat/Stuxnet] GamemodeMenu patch installed (ResetForNewAccount postfix + Draw prefix).");
         }
 
         /// <summary>
@@ -199,9 +203,15 @@ namespace KernelExtensions.Compat.Stuxnet
         {
             bool pluginExists = HacknetChainloader.Instance?.Plugins?.ContainsKey("autumnrivers.stuxnet") == true;
             if (pluginExists)
+            {
                 Install();
+            }
             else
+            {
+                // Debug：无 Stuxnet 是绝大多数扩展的常态 → 走 Info 会变噪音。
+                KELog.Debug("[Compat/Stuxnet] Stuxnet not detected - GamemodeMenu patch not installed.");
                 Uninstall(); // 确保已卸载
+            }
         }
         /*
         /// <summary>

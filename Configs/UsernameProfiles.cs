@@ -65,6 +65,22 @@ namespace KernelExtensions.Configs
             }
 
             HasBans = _bans.Count > 0;
+
+            // 日志级别选取（对齐 AGENTS.md 的 KELog 约定）：
+            //   有配置 → Info：扩展作者需要确认自己的 <BannedUsernames> 真的生效了，
+            //                 每次 OSLoad 只输出一条，符合「一次触发一条」。
+            //   无配置 → Debug：绝大多数扩展没有禁用名，走 Info 只会变噪音。
+            //   逐条明细 → Debug：源码开发者排错用（哪条规则装了几个原因）。
+            if (HasBans)
+            {
+                KELog.Info($"[UsernameProfiles] Loaded {_bans.Count} banned name(s), {_reasons.Count} reason block(s).");
+                foreach (var kv in _bans)
+                    KELog.Debug($"[UsernameProfiles]   {kv.Key} -> {kv.Value.Count} reason(s)");
+            }
+            else
+            {
+                KELog.Debug("[UsernameProfiles] No usable <BannedUsernames> rules - nothing applied.");
+            }
         }
 
         /// <summary>是否命中禁用名单（大小写不敏感）。</summary>
