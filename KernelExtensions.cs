@@ -464,7 +464,7 @@ namespace KernelExtensions
         private void OnOSLoaded_CheckVMInfection(OSLoadedEvent e)
         {
             OS os = e.Os;
-            string flag = os.Flags.GetFlagStartingWith("Kernel_VMInfected_");
+            string flag = os.Flags.GetFlagStartingWith(VMInfectionManager.InfectionFlagPrefix);
 
             // 以下是原有感染分支，也加入少量调试
             if (ConfigLoader.Debug) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
@@ -475,12 +475,11 @@ namespace KernelExtensions
                 return;
             }
 
-            string configName = flag.Substring("Kernel_VMInfected_".Length);
-            string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, "VMATK", configName + ".xml");
-
-            if (!File.Exists(configPath))
+            // 反解配置路径（新格式后缀即相对路径；旧格式回退 VMATK/&lt;name&gt;.xml）
+            string configPath = VMInfectionManager.ResolveConfigPathFromFlag(flag);
+            if (configPath == null)
             {
-                if (ConfigLoader.Debug) Log.LogDebug("Config file not found at: " + configPath);
+                if (ConfigLoader.Debug) Log.LogDebug("Config file not found for flag: " + flag);
                 os.Flags.RemoveFlag(flag);
                 return;
             }
@@ -498,6 +497,7 @@ namespace KernelExtensions
                 return;
             }
 
+            config.SourcePath = flag.Substring(VMInfectionManager.InfectionFlagPrefix.Length);
             VMInfectionManager.CurrentConfig = config;
 
             if (ConfigLoader.Debug) Log.LogDebug("Config loaded. Mode = " + config.Mode);
@@ -515,11 +515,11 @@ namespace KernelExtensions
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                         MusicManager.loadAsCurrentSong(resolved);
                     }
-                    string guideReadFlag = "Kernel_VMGuideRead_" + configName;
+                    string guideReadFlag = "Kernel_VMGuideRead_" + VMInfectionManager.ConfigId(config);
                     if (os.Flags.HasFlag(guideReadFlag))
                         os.Flags.RemoveFlag(guideReadFlag);
                     // 清理引导动作完成 Flag
-                    string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + configName;
+                    string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config);
                     if (os.Flags.HasFlag(guideActionDoneFlag))
                         os.Flags.RemoveFlag(guideActionDoneFlag);
                     os.Flags.RemoveFlag(flag);          // 移除感染 Flag
@@ -559,11 +559,11 @@ namespace KernelExtensions
                             string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                             MusicManager.loadAsCurrentSong(resolved);
                         }
-                        string guideReadFlag = "Kernel_VMGuideRead_" + configName;
+                        string guideReadFlag = "Kernel_VMGuideRead_" + VMInfectionManager.ConfigId(config);
                         if (os.Flags.HasFlag(guideReadFlag))
                             os.Flags.RemoveFlag(guideReadFlag);
                         // 清理引导动作完成 Flag
-                        string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + configName;
+                        string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config);
                         if (os.Flags.HasFlag(guideActionDoneFlag))
                             os.Flags.RemoveFlag(guideActionDoneFlag);
                         os.Flags.RemoveFlag(flag);

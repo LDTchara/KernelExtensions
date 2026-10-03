@@ -18,6 +18,69 @@ namespace KernelExtensions.Managers
         /// <summary>恢复模块实例（由 OSDraw 补丁使用）。</summary>
         public static FakeRecoveryModule RecoveryModule;
 
+        /// <summary>感染 flag 前缀。</summary>
+        public const string InfectionFlagPrefix = "Kernel_VMInfected_";
+
+        /// <summary>
+        /// 把配置的相对路径归一化：反斜杠统一为正斜杠、去掉开头的 "./" 与 "/"、去首尾空白。
+        /// 失败/空返回 null。
+        /// </summary>
+        public static string NormalizeRelativePath(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath)) return null;
+            string p = relativePath.Trim().Replace('\\', '/');
+            while (p.StartsWith("./")) p = p.Substring(2);
+            p = p.TrimStart('/');
+            return p.Length == 0 ? null : p;
+        }
+
+        /// <summary>
+        /// 由配置相对路径生成感染 flag。
+        /// 例：VMATK/MyAttack.xml → Kernel_VMInfected_VMATK/MyAttack.xml
+        /// <para>
+        /// **刻意保留斜杠与 ".xml" 后缀**，使 flag 与路径一一对应、可无损反解。
+        /// 若把斜杠换成 "_"，"VMATK/A_B.xml" 与 "VMATK/A/B.xml" 会归一化成同一个 flag；
+        /// 而崩溃后只能靠 flag 找回配置文件，撞名会让两者互相误判为「已感染」。
+        /// flag 是普通字符串（Flags 就是个 List&lt;string&gt;，存档为 XML 文本），
+        /// 斜杠在 XML 文本内容中无需转义，可安全使用。
+        /// </para>
+        /// </summary>
+        public static string BuildInfectionFlag(string relativePath)
+        {
+            string p = NormalizeRelativePath(relativePath);
+            return p == null ? null : InfectionFlagPrefix + p;
+        }
+
+        /// <summary>
+        /// 由感染 flag 反解出配置文件的完整路径（与 <see cref="BuildInfectionFlag"/> 互逆）。
+        /// 新格式：flag 后缀就是相对路径；旧格式（无斜杠的纯名字）回退到 VMATK/&lt;name&gt;.xml。
+        /// 找不到文件返回 null。
+        /// </summary>
+        public static string ResolveConfigPathFromFlag(string flag)
+        {
+            if (string.IsNullOrEmpty(flag) || !flag.StartsWith(InfectionFlagPrefix)) return null;
+            string suffix = flag.Substring(InfectionFlagPrefix.Length);
+            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
+            if (string.IsNullOrEmpty(extRoot)) return null;
+
+            // 新格式：flag 后缀即相对路径
+            string direct = Path.Combine(extRoot, suffix);
+            if (File.Exists(direct)) return direct;
+
+            // 旧格式兼容：Kernel_VMInfected_&lt;ConfigName&gt; → VMATK/&lt;ConfigName&gt;.xml
+            string legacy = Path.Combine(extRoot, "VMATK", suffix + ".xml");
+            return File.Exists(legacy) ? legacy : null;
+        }
+
+        /// <summary>
+        /// 当前配置的标识（用于引导已读 / 引导动作完成等标记）。
+        /// 取归一化后的 SourcePath；为空则退化为空串（标记仍能工作，只是不分配置）。
+        /// </summary>
+        public static string ConfigId(VMAttackConfig config)
+        {
+            return NormalizeRelativePath(config?.SourcePath) ?? "";
+        }
+
         /// <summary>
         /// 根据存档目录判断文件是否满足配置要求。
         /// </summary>
@@ -99,7 +162,7 @@ namespace KernelExtensions.Managers
             if (CurrentConfig == null) return;
 
             // 移除感染 Flag
-            string flag = os.Flags.GetFlagStartingWith("Kernel_VMInfected_");
+            string flag = os.Flags.GetFlagStartingWith(InfectionFlagPrefix);
             if (!string.IsNullOrEmpty(flag))
             {
                 os.Flags.RemoveFlag(flag);
@@ -107,12 +170,13 @@ namespace KernelExtensions.Managers
             }
 
             // 清理已读标记
-            string guideReadFlag = "Kernel_VMGuideRead_" + CurrentConfig.ConfigName;
+            string configId = ConfigId(CurrentConfig);
+            string guideReadFlag = "Kernel_VMGuideRead_" + configId;
             if (os.Flags.HasFlag(guideReadFlag))
                 os.Flags.RemoveFlag(guideReadFlag);
 
             // 清理引导动作完成 Flag
-            string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + CurrentConfig.ConfigName;
+            string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + configId;
             if (os.Flags.HasFlag(guideActionDoneFlag))
                 os.Flags.RemoveFlag(guideActionDoneFlag);
 

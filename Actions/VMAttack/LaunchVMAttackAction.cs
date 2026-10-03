@@ -11,19 +11,24 @@ namespace KernelExtensions.Actions.VMAttack
 {
     public class LaunchVMAttackAction : KEAction
     {
+        /// <summary>
+        /// 配置文件路径，**相对于扩展根目录**（例：VMATK/MyAttack.xml）。
+        /// 不再需要单独的 ConfigName —— 路径本身就是身份，感染 flag 也由它推导。
+        /// </summary>
         [XMLStorage]
-        public string ConfigName;
+        public string ConfigPath;
 
         public override void Trigger(OS os)
         {
-            if (string.IsNullOrEmpty(ConfigName))
+            string relativePath = VMInfectionManager.NormalizeRelativePath(ConfigPath);
+            if (relativePath == null)
             {
-                KELog.Error("[LaunchVMAttack] ConfigName required.");
+                KELog.Error("[LaunchVMAttack] ConfigPath required (relative to the extension folder, e.g. VMATK/MyAttack.xml).");
                 return;
             }
 
-            // 配置加载路径
-            string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, "VMATK", ConfigName + ".xml");
+            // 配置加载路径：扩展根目录 + 相对路径
+            string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, relativePath);
             if (!File.Exists(configPath))
             {
                 KELog.Error($"[LaunchVMAttack] Config not found: {configPath}");
@@ -37,6 +42,8 @@ namespace KernelExtensions.Actions.VMAttack
                 config = (VMAttackConfig)serializer.Deserialize(fs);
             }
 
+            // 记录来源路径：感染 flag 与引导标记都以它作标识
+            config.SourcePath = relativePath;
             // 新增：立即保存至 CurrentConfig，覆盖旧配置
             VMInfectionManager.CurrentConfig = config;
 
@@ -57,8 +64,8 @@ namespace KernelExtensions.Actions.VMAttack
                     File.WriteAllBytes(filePath, new byte[f.Size]);
             }
 
-            // 添加 Flag
-            os.Flags.AddFlag("Kernel_VMInfected_" + config.ConfigName);
+            // 添加 Flag（由相对路径推导，可无损反解回配置文件）
+            os.Flags.AddFlag(VMInfectionManager.BuildInfectionFlag(relativePath));
             // 保存
             os.threadedSaveExecute(true);
             // ====== 模拟原版 systakeover 的崩溃前特效 ======

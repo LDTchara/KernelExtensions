@@ -405,9 +405,9 @@ namespace KernelExtensions.Modules
             // 在 UpdateGuideText 方法中，已读跳过之前插入这段
             if (guideLineIndex == 0 && guideCharCount == 0 &&
                 !ConfigValue.IsNone(config.ActionOnGuideTextStart) &&
-                !os.Flags.HasFlag("Kernel_VMGuideActionDone_" + config.ConfigName))
+                !os.Flags.HasFlag("Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config)))
             {
-                os.Flags.AddFlag("Kernel_VMGuideActionDone_" + config.ConfigName);
+                os.Flags.AddFlag("Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config));
                 string actionPath = config.ActionOnGuideTextStart;  // 例如 "Actions/ActionOnGuideTextStart.xml"
                 string extensionRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
 
@@ -417,7 +417,7 @@ namespace KernelExtensions.Modules
             }
 
             // 已读跳过：一次性输出所有引导文本（去除指令）
-            if (config.EnableGuideReadFlag && os.Flags.HasFlag("Kernel_VMGuideRead_" + config.ConfigName))
+            if (config.EnableGuideReadFlag && os.Flags.HasFlag("Kernel_VMGuideRead_" + VMInfectionManager.ConfigId(config)))
             {
                 foreach (string raw2 in guideLines)
                 {
@@ -432,9 +432,9 @@ namespace KernelExtensions.Modules
             // 所有引导文本已输出
             if (guideLineIndex >= guideLines.Count)
             {
-                if (config.EnableGuideReadFlag && !os.Flags.HasFlag("Kernel_VMGuideRead_" + config.ConfigName))
+                if (config.EnableGuideReadFlag && !os.Flags.HasFlag("Kernel_VMGuideRead_" + VMInfectionManager.ConfigId(config)))
                 {
-                    os.Flags.AddFlag("Kernel_VMGuideRead_" + config.ConfigName);
+                    os.Flags.AddFlag("Kernel_VMGuideRead_" + VMInfectionManager.ConfigId(config));
                     os.threadedSaveExecute(true);
                 }
                 currentPhase = Phase.Interaction;

@@ -4,23 +4,16 @@
     KernelExtensions VM 攻击配置文件完整示例
     VM Attack Configuration File Complete Example
     ============================================================
-    放置位置：扩展根目录/VMATK/<ConfigName>.xml
-    Location: Extension Root/VMATK/<ConfigName>.xml
-    使用方法：通过 <LaunchVMAttack ConfigName="<ConfigName>" /> 触发
-    Usage: Trigger via <LaunchVMAttack ConfigName="<ConfigName>" />
+    放置位置：扩展根目录/VMATK/MyAttack.xml
+    Location: Extension Root/VMATK/MyAttack.xml
+    使用方法：通过 <LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" /> 触发
+    Usage: Trigger via <LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />
     ============================================================
 -->
 
 <VMAttackConfig>
 	<!-- ============================================================
-    1. 基础信息 / Basic Info
-    ============================================================ -->
-	<!-- 配置名称（必须与文件名一致，用于内部 Flag 和文件目录命名） -->
-	<!-- Config name (must match the file name, used for internal flags and directory naming) -->
-	<ConfigName>MyAttack</ConfigName>
-
-	<!-- ============================================================
-    2. 解除模式 / Recovery Mode
+    1. 解除模式 / Recovery Mode
     ============================================================ -->
 	<!--
     可选值 / Options:

@@ -188,7 +188,7 @@
 
     <!-- VM Attack -->
     <Node name="LaunchVMAttack" enable="true" multi="false" desc="启动预设的 VM 多阶段攻击" fileTriggerPattern="Actions/**/*.xml">
-        <Attribute name="ConfigName" required="true" desc="VM 攻击配置名" />
+        <Attribute name="ConfigPath" required="true" desc="VM 攻击配置的相对路径（相对扩展根目录，如 VMATK/MyAttack.xml）" />
         <Attribute name="Delay" required="false" desc="触发前等待秒数" />
         <Attribute name="DelayHost" required="false" desc="等待时连接的宿主节点 ID" hint="Computer" />
     </Node>
@@ -512,7 +512,6 @@
 
     <!-- ==================== VM 攻击配置 ==================== -->
     <Node name="VMAttackConfig" enable="true" multi="false" desc="VM 攻击配置根标签" fileTriggerPattern="VMAttack/**/*.xml">
-        <Attribute name="ConfigName" required="true" desc="攻击配置名" />
         <Attribute name="TargetNode" required="true" desc="目标虚拟机节点 ID" hint="Computer" />
         <Attribute name="PhaseCount" required="false" default="3" desc="攻击阶段数" />
         <Attribute name="DaemonNode" required="false" desc="攻击守护进程所在节点 ID" hint="Computer" />

@@ -5,7 +5,14 @@ namespace KernelExtensions.Configs
     [XmlRoot("VMAttackConfig")]
     public class VMAttackConfig
     {
-        [XmlElement("ConfigName")] public string ConfigName;
+        // 旧的 ConfigName 字段已移除：配置文件现在由 LaunchVMAttack 的相对路径直接定位，
+        // 感染 flag 与引导标记都以该相对路径为标识（见下方 SourcePath）。
+
+        /// <summary>
+        /// 【运行时字段，不参与 XML】本配置从扩展目录下的哪个相对路径加载而来。
+        /// 由 LaunchVMAttack 与崩溃后的重建逻辑填入；用于生成感染 flag 与引导标记。
+        /// </summary>
+        [XmlIgnore] public string SourcePath;
 
         // 解除模式：FileDeletion（删除文件）、FileExists（文件存在）、Password（密码）
         [XmlElement("Mode")] public RecoveryMode Mode;

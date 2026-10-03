@@ -33,14 +33,13 @@ namespace KernelExtensions.Patches
             if (os == null) return true;
 
             // 检查是否有 VM 攻击
-            string flag = os.Flags.GetFlagStartingWith("Kernel_VMInfected_");
+            string flag = os.Flags.GetFlagStartingWith(VMInfectionManager.InfectionFlagPrefix);
             if (string.IsNullOrEmpty(flag))
                 return true; // 无攻击，走原版
 
-            // 根据 flag 强制加载对应配置，覆盖旧值
-            string configName = flag.Substring("Kernel_VMInfected_".Length);
-            string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, "VMATK", configName + ".xml");
-            if (!File.Exists(configPath))
+            // 根据 flag 反解配置文件路径（新格式后缀即相对路径；旧格式回退 VMATK/<name>.xml）
+            string configPath = VMInfectionManager.ResolveConfigPathFromFlag(flag);
+            if (configPath == null)
             {
                 os.Flags.RemoveFlag(flag);
                 VMInfectionManager.CurrentConfig = null;
@@ -53,6 +52,7 @@ namespace KernelExtensions.Patches
                 var serializer = new System.Xml.Serialization.XmlSerializer(typeof(VMAttackConfig));
                 using (var fs = new FileStream(configPath, FileMode.Open))
                     config = (VMAttackConfig)serializer.Deserialize(fs);
+                config.SourcePath = flag.Substring(VMInfectionManager.InfectionFlagPrefix.Length);
                 VMInfectionManager.CurrentConfig = config;
             }
             catch
