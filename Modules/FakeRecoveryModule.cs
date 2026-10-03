@@ -182,6 +182,108 @@ namespace KernelExtensions.Modules
         private static bool IsWindows => Environment.OSVersion.Platform == PlatformID.Win32NT;
 
         /// <summary>
+        /// Unix 下的终端候选，按优先级排列。
+        /// 全部按「存在才用」处理，所以列表长不带来风险 —— 只有前面几档都找不到时才会走到后面。
+        /// </summary>
+        private static readonly string[] UnixTerminalCandidates =
+        {
+            "xdg-terminal-exec",     // freedesktop 新标准（GNOME 47+ 的 gsettings 默认值就是它）
+            "x-terminal-emulator",   // Debian/Ubuntu alternatives：装了任一终端即存在，这一档覆盖面最广
+            "gnome-terminal", "kgx", "ptyxis",              // GNOME（含新旧默认）
+            "konsole", "xfce4-terminal", "mate-terminal",   // KDE / XFCE / MATE
+            "lxterminal", "cinnamon-terminal",              // LXDE / Cinnamon
+            "tilix", "terminator",                          // 常见第三方
+            "alacritty", "kitty", "wezterm", "foot", "st", // 现代终端
+            "urxvt", "xterm"                                // 传统兜底
+        };
+
+        /// <summary>
+        /// 打开终端。Windows 走原版；Unix 优先用现代探测，全部失败才回退原版。
+        /// 返回 base 目录路径，与旧行为一致（供界面显示）。
+        /// </summary>
+        private static string OpenTerminalCompat()
+        {
+            if (IsWindows) return HostileHackerBreakinSequence.OpenTerminal();
+            if (TryOpenTerminalUnix())
+                return HostileHackerBreakinSequence.GetBaseDirectory().Replace("\\", "/");
+            KELog.Debug("[FakeRecovery] No terminal emulator found; falling back to the vanilla lookup.");
+            return HostileHackerBreakinSequence.OpenTerminal();
+        }
+
+        /// <summary>
+        /// 在 Unix 下打开终端，成功返回 true。
+        /// 顺序：$TERMINAL（用户显式指定）→ UnixTerminalCandidates。
+        ///
+        /// 刻意不让这一路径调用原版 HostileHackerBreakinSequence.OpenTerminal()：
+        /// 它依赖 gsettings 查 org.gnome.desktop.default-applications.terminal（GNOME 3 起已废弃），
+        /// 且只重定向 stdout、不重定向 stderr —— 缺库或查不到时既往控制台刷报错，又静默不开任何终端。
+        /// 原版实现仅作为最后一档兜底保留。
+        /// </summary>
+        private static bool TryOpenTerminalUnix()
+        {
+            // 1) $TERMINAL 优先（可能带参数，如 "alacritty -e"）
+            string envTerminal = Environment.GetEnvironmentVariable("TERMINAL");
+            if (!string.IsNullOrWhiteSpace(envTerminal) && TryStartUnixCommand(envTerminal.Trim()))
+                return true;
+
+            // 2) 常见终端列表
+            foreach (string name in UnixTerminalCandidates)
+            {
+                if (TryStartUnixCommand(name)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>把一条命令（可含参数）解析为可执行文件并启动；成功返回 true。</summary>
+        private static bool TryStartUnixCommand(string commandLine)
+        {
+            string[] parts = commandLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) return false;
+
+            string program = ResolveUnixProgram(parts[0]);
+            if (program == null) return false;
+
+            string arguments = parts.Length > 1 ? string.Join(" ", parts, 1, parts.Length - 1) : "";
+
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo(program);
+                if (arguments.Length > 0) psi.Arguments = arguments;
+                psi.WorkingDirectory = HostileHackerBreakinSequence.GetBaseDirectory();
+                psi.UseShellExecute = false;
+                System.Diagnostics.Process.Start(psi);
+                KELog.Debug($"[FakeRecovery] Opened terminal via '{commandLine}'.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                KELog.Debug($"[FakeRecovery] Terminal '{commandLine}' failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 在 PATH 中查找可执行文件。名字含路径分隔符时按原样检查是否存在，
+        /// 否则逐目录拼路径检查 —— 不依赖 shell，避免 Mono 下 PATH 解析行为差异。
+        /// </summary>
+        private static string ResolveUnixProgram(string name)
+        {
+            if (name.IndexOf('/') >= 0 || name.IndexOf('\\') >= 0)
+                return File.Exists(name) ? name : null;
+
+            string pathVar = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrEmpty(pathVar)) return null;
+
+            foreach (string dir in pathVar.Split(Path.PathSeparator))
+            {
+                if (string.IsNullOrEmpty(dir)) continue;
+                string full = Path.Combine(dir, name);
+                if (File.Exists(full)) return full;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// 打开帮助文档。
         /// Windows：复制到 VM 目录并用记事本打开（沿用旧行为）。
         /// 非 Windows：不弹外部程序，直接把帮助文本追加到界面输出区
@@ -576,7 +678,7 @@ namespace KernelExtensions.Modules
                     {
                         Rectangle termBtn = new(submitBtn.X, submitBtn.Y + 25 + (showDocBtn ? 25 : 0), submitBtn.Width, submitBtn.Height);
                         if (Button.doButton(1004, termBtn.X, termBtn.Y, termBtn.Width, termBtn.Height, GetLocalizedTerminalButton(), Color.White))
-                            HostileHackerBreakinSequence.OpenTerminal();
+                            OpenTerminalCompat();
                     }
 
                     // 错误提示
@@ -609,7 +711,7 @@ namespace KernelExtensions.Modules
                     if (Button.doButton(1011, termBtn2.X, termBtn2.Y, termBtn2.Width, termBtn2.Height, GetLocalizedTerminalButton(), Color.White))
                     {
                         outputLines.Add(("---------------------------------------", false));
-                        outputLines.Add(($"{GetLocalizedTerminalButton()}: {HostileHackerBreakinSequence.OpenTerminal()}", false));
+                        outputLines.Add(($"{GetLocalizedTerminalButton()}: {OpenTerminalCompat()}", false));
                         outputLines.Add(("---------------------------------------", false));
                     }
 
