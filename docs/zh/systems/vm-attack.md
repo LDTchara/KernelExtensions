@@ -7,8 +7,8 @@
 
 ## 概述
 
-- 触发方式：使用 `<LaunchVMAttack ConfigName="MyAttack" />` 动作。
-- 配置文件路径：扩展根目录下的 `VMATK/<ConfigName>.xml`。
+- 触发方式：使用 `<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />` 动作。
+- 配置文件路径：由 `ConfigPath` 直接指定，**相对于扩展根目录**（可放任意子目录，不限于 `VMATK/`）。
 - 支持三种恢复模式，可结合虚假文件、系统日志、引导文本和交互按钮构建完整的恢复流程。
 
 ---
@@ -19,7 +19,6 @@
 
 ```xml
 <VMAttackConfig>
-  <ConfigName>MyAttack</ConfigName>
   <Mode>FileDeletion</Mode>
   <ErrorMessage>ERROR: Critical boot error loading "payload.dll"</ErrorMessage>
   <SystemLogFiles>
@@ -49,10 +48,11 @@
 
 | 元素 | 默认值 | 描述 |
 |------|--------|------|
-| `ConfigName` | 必须 | 配置名称，需与文件名（不含扩展名）及 Flag 后缀一致。 |
 | `Mode` | ❌ | 恢复模式：`FileDeletion`（删除文件，缺省）、`FileExists`（创建文件）、`Password`（输入密码）。 |
 | `Password` | `null` | 密码模式下需要的密码。 |
-| `EnableHelpButton` | `false` | 密码模式下是否显示“帮助”按钮。 |
+| `EnableHelpDocButton` | `false` | 密码模式下是否显示「帮助文档」按钮（Windows 打开记事本 / Linux 显示在界面内）。 |
+| `EnableTerminalButton` | `false` | 密码模式下是否显示「终端」按钮。 |
+| `EnableHelpButton` | `false` | **已拆分，仅作兼容**：为 `true` 时等价于同时开启上面两项（旧行为）。 |
 | `ErrorMessage` | `"ERROR: Critical boot error loading \"VMBootloaderTrap.dll\""` | 崩溃时显示的自定义错误消息。 |
 | `SystemLogFiles` | `null` | 多个文本文件路径，在恢复界面以等宽字体快速逐行显示。 |
 | `SystemLogPauseBetween` | `2.0` | 两个系统日志文件之间的停顿秒数。 |
@@ -71,6 +71,26 @@
 
 ---
 
+## 路径与命名
+
+`LaunchVMAttack` 的 `ConfigPath`，以及配置内部的各文件路径（`HelpFile`、`SystemLogFiles`、
+`FakeFiles[].Source`、`CheckFilePattern` 等），都是**相对于扩展根目录**的路径。
+
+!!! warning "大小写必须与磁盘一致"
+    Linux 的文件系统**区分大小写**，`VMATK/MyAttack.xml` 与 `vmattk/myattack.xml` 是两个不同的文件。
+    请统一按磁盘上的实际大小写书写——Windows 上虽然不区分、写错也能跑，但同一份内容拿到 Linux 就会找不到文件。
+
+!!! note "感染 Flag 的生成规则"
+    感染的判定 Flag 由 `ConfigPath` 推导，**原样保留路径结构**：
+
+    - `VMATK/MyAttack.xml` → `Kernel_VMInfected_VMATK/MyAttack.xml`
+
+    这样做是为了让崩溃后能从 Flag **无损反解**回配置文件。若把斜杠替换成下划线，
+    `VMATK/A_B.xml` 与 `VMATK/A/B.xml` 会撞成同一个 Flag 而互相误判为「已感染」，因此**不做替换**。
+    反斜杠会自动归一化为正斜杠，开头的 `./` 与 `/` 会被去掉。
+
+---
+
 ## 恢复模式详解
 
 ### FileDeletion（删除文件）
@@ -83,8 +103,30 @@
 
 ### Password（密码）
 - 恢复界面会出现密码输入框，玩家必须输入正确密码才能解锁。
-- 可搭配帮助按钮，复制帮助文件并打开终端。
 - 密码匹配后播放成功音乐，自动重启并清除感染。
+- 可配置两个辅助按钮：
+    - **帮助文档**（`EnableHelpDocButton`）—— Windows 下把帮助文件复制到存档目录并用记事本打开；
+      **Linux 下不弹外部程序**，直接把帮助文本逐行显示在恢复界面里（对齐原版 Unix 行为）。
+    - **终端**（`EnableTerminalButton`）—— 打开一个系统终端，工作目录为该存档的攻击目录。
+
+!!! note "Linux 下终端如何选择"
+    Linux 没有唯一的「默认终端」标准（原版依赖的 `gsettings` 键在 GNOME 3 后已废弃），
+    KE 按以下顺序探测，**存在才用**：
+
+    `$TERMINAL` 环境变量 → `xdg-terminal-exec` → `x-terminal-emulator` → 各桌面自带终端
+    （gnome-terminal / konsole / xfce4-terminal / mate-terminal / lxterminal / cinnamon-terminal）
+    → 常见第三方（tilix / terminator / alacritty / kitty / wezterm / foot / st / urxvt）→ `xterm`。
+
+    全部找不到时才回退原版实现。开启 `<Debug>true` 后日志会记录实际用的是哪一个。
+
+### 恢复界面的按钮差异（按平台）
+
+| 平台 | 恢复模式 | 按钮 |
+|------|----------|------|
+| Windows | 密码 | 提交 + 帮助文档 + 终端（后两者由开关控制） |
+| Windows | FileDeletion / FileExists | 单一主按钮（复制帮助 + 记事本 + 终端 + 崩溃） |
+| Linux | 密码 | 提交 + 帮助文档 + 终端 |
+| Linux | FileDeletion / FileExists | 三个：README（帮助显示在界面内） / Terminal / Crash VM |
 
 ---
 
@@ -102,8 +144,8 @@
 
 ## 攻击流程
 
-1. 调用 `<LaunchVMAttack ConfigName="MyAttack" />`。
-2. 生成虚假文件，添加 `Kernel_VMInfected_<ConfigName>` Flag 并保存。
+1. 调用 `<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />`。
+2. 生成虚假文件，添加 `Kernel_VMInfected_<相对路径>` Flag 并保存（例：`Kernel_VMInfected_VMATK/MyAttack.xml`）。
 3. 模拟崩溃前特效（色散闪光），延迟后执行原版 `crash`。
 4. 原版蓝屏 → 黑屏 → 启动日志 → 第 50 行错误注入 → 15 秒错误状态。
 5. 进入自定义恢复界面：
@@ -119,10 +161,11 @@
 ### 触发攻击：`LaunchVMAttack`
 
 ```xml
-<LaunchVMAttack ConfigName="MyAttack" />
+<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />
 ```
 
-`ConfigName` 对应 `VMATK/` 目录下的配置文件名（不含 `.xml`）。
+`ConfigPath` 是**相对于扩展根目录**的配置文件路径（如 `VMATK/MyAttack.xml`）；
+不再需要单独的 `ConfigName`——路径本身就是身份，感染 Flag 也由它推导。
 
 ### 攻击解除后自动清理
 

@@ -7,8 +7,8 @@ It is triggered by the custom action `<LaunchVMAttack>` and its configuration is
 
 ## Overview
 
-- Triggered via: `<LaunchVMAttack ConfigName="MyAttack" />`.
-- Configuration path: `VMATK/<ConfigName>.xml` in the extension root.
+- Triggered via: `<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />`.
+- Configuration path: given directly by `ConfigPath`, **relative to the extension root** (any sub‑directory, not just `VMATK/`).
 - Supports three recovery modes, combined with fake files, system logs, guide text, and interactive buttons to form a complete recovery flow.
 
 ---
@@ -19,7 +19,6 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 
 ```xml
 <VMAttackConfig>
-  <ConfigName>MyAttack</ConfigName>
   <Mode>FileDeletion</Mode>
   <ErrorMessage>ERROR: Critical boot error loading "payload.dll"</ErrorMessage>
   <SystemLogFiles>
@@ -49,10 +48,11 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 
 | Element | Default | Description |
 |---------|---------|-------------|
-| `ConfigName` | required | Configuration name; must match the file name (without extension) and Flag suffix. |
 | `Mode` | ❌ | Recovery mode: `FileDeletion` (default), `FileExists`, or `Password`. |
 | `Password` | `null` | Password required in Password mode. |
-| `EnableHelpButton` | `false` | Whether to show a "Help" button in Password mode. |
+| `EnableHelpDocButton` | `false` | Whether to show a "Help document" button in Password mode (Notepad on Windows / in‑screen text on Linux). |
+| `EnableTerminalButton` | `false` | Whether to show a "Terminal" button in Password mode. |
+| `EnableHelpButton` | `false` | **Split apart, kept for compatibility only**: `true` equals enabling both of the above (old behaviour). |
 | `ErrorMessage` | `"ERROR: Critical boot error loading \"VMBootloaderTrap.dll\""` | Custom error message displayed during the crash. |
 | `SystemLogFiles` | `null` | Multiple text file paths; each is echoed line‑by‑line in monospace font on the recovery screen. |
 | `SystemLogPauseBetween` | `2.0` | Pause in seconds between two system log files. |
@@ -71,6 +71,28 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 
 ---
 
+## Paths and Naming
+
+`ConfigPath`, together with every file path inside the configuration (`HelpFile`, `SystemLogFiles`,
+`FakeFiles[].Source`, `CheckFilePattern`, …), is **relative to the extension root**.
+
+!!! warning "Case must match the file on disk"
+    Linux file systems are **case‑sensitive**: `VMATK/MyAttack.xml` and `vmattk/myattack.xml` are
+    two different files. Always match the on‑disk casing—it happens to work on Windows,
+    but the same content will fail to find the file on Linux.
+
+!!! note "How the infection Flag is derived"
+    The Flag is derived from `ConfigPath` and **keeps the path structure intact**:
+
+    - `VMATK/MyAttack.xml` → `Kernel_VMInfected_VMATK/MyAttack.xml`
+
+    This keeps the Flag **losslessly reversible** back into the config path after a crash.
+    Replacing slashes with underscores would make `VMATK/A_B.xml` and `VMATK/A/B.xml` collide into
+    the same Flag and misjudge each other as already infected, so no replacement is done.
+    Backslashes are normalised to forward slashes, and a leading `./` or `/` is stripped.
+
+---
+
 ## Recovery Mode Details
 
 ### FileDeletion
@@ -83,8 +105,31 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 
 ### Password
 - A password input field appears on the recovery screen; the correct password must be entered.
-- A help button can optionally be provided to copy a help file and open a terminal.
 - On success, success music plays, the system reboots, and the infection is cleared.
+- Two optional helper buttons:
+    - **Help document** (`EnableHelpDocButton`) — on Windows the help file is copied to the save
+      directory and opened in Notepad; **on Linux no external program is launched** — the help text
+      is appended line by line to the recovery screen instead (matching vanilla Unix behaviour).
+    - **Terminal** (`EnableTerminalButton`) — opens a system terminal, with the attack directory as its working directory.
+
+!!! note "How the terminal is chosen on Linux"
+    Linux has no single "default terminal" standard (the `gsettings` key the vanilla game relies on
+    was deprecated after GNOME 3), so KE probes the following in order, **using only what exists**:
+
+    `$TERMINAL` env var → `xdg-terminal-exec` → `x-terminal-emulator` → desktop‑shipped terminals
+    (gnome-terminal / konsole / xfce4-terminal / mate-terminal / lxterminal / cinnamon-terminal)
+    → common third‑party ones (tilix / terminator / alacritty / kitty / wezterm / foot / st / urxvt) → `xterm`.
+
+    The vanilla implementation is used only as a last resort. With `<Debug>true` the log records which one was used.
+
+### Button Layout by Platform
+
+| Platform | Recovery mode | Buttons |
+|----------|---------------|---------|
+| Windows | Password | Submit + Help doc + Terminal (last two gated by switches) |
+| Windows | FileDeletion / FileExists | Single primary button (help copy + Notepad + terminal + crash) |
+| Linux | Password | Submit + Help doc + Terminal |
+| Linux | FileDeletion / FileExists | Three: README (help shown in‑screen) / Terminal / Crash VM |
 
 ---
 
@@ -102,8 +147,8 @@ Markers can appear anywhere in a line and are never displayed. Speed is reset to
 
 ## Attack Flow
 
-1. `<LaunchVMAttack ConfigName="MyAttack" />` is invoked.
-2. Fake files are generated, the Flag `Kernel_VMInfected_<ConfigName>` is added and saved.
+1. `<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />` is invoked.
+2. Fake files are generated, the Flag `Kernel_VMInfected_<relative path>` is added and saved (e.g. `Kernel_VMInfected_VMATK/MyAttack.xml`).
 3. Pre‑crash effects (chromatic flash) are shown, then the original `crash` is triggered after a delay.
 4. Vanilla blue screen → black screen → boot log → error injected at line 50 → 15‑second error state.
 5. Custom recovery screen:
@@ -119,10 +164,12 @@ Markers can appear anywhere in a line and are never displayed. Speed is reset to
 ### Trigger Attack: `LaunchVMAttack`
 
 ```xml
-<LaunchVMAttack ConfigName="MyAttack" />
+<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />
 ```
 
-`ConfigName` corresponds to the file name (without `.xml`) in the `VMATK/` directory.
+`ConfigPath` is the configuration file path **relative to the extension root** (e.g. `VMATK/MyAttack.xml`).
+A separate `ConfigName` is no longer needed—the path itself is the identity, and the infection Flag is
+derived from it.
 
 ### Automatic Clean‑up on Recovery
 

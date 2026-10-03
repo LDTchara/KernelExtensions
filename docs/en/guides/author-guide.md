@@ -39,13 +39,14 @@ When the `CustomTrial` program runs, it finds and loads the corresponding `Trial
 
 ### VM Attack
 
-Use the custom action `LaunchVMAttack` directly, passing the config file name (without `.xml`):
+Use the custom action `LaunchVMAttack` directly, passing the **config file path relative to the extension root**:
 
 ```xml
-<LaunchVMAttack ConfigName="MyAttack" />
+<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />
 ```
 
-The system loads `VMATK/<ConfigName>.xml` and triggers the attack. The Flag is managed automatically — no manual removal needed.
+The system loads the config at that path and triggers the attack. The Flag is managed automatically (derived from that path) — no manual removal needed.
+The **case of the path must match the file on disk**, or Linux will fail to find it (see "Paths & File Conventions" below).
 
 ### Aircraft Daemon
 
@@ -57,6 +58,9 @@ No extra Flags are required. Just add `<FlightDaemon>` to the target computer's 
 
 - All paths in `file` attributes are **relative to the extension root**.  
   For example, `Actions/MyAction.xml` resolves to `Extensions/YourExtension/Actions/MyAction.xml`.
+- **Case must match the actual file name on disk.** Linux file systems are case‑sensitive, so
+  `Actions/A.xml` and `actions/a.xml` are two different files; a wrong case silently works on Windows
+  but fails to find the file on Linux.
 - Description text (`DescriptionText`) and guide text (`GuideText`) can be either a file path or inline text (inline text is recommended for GuideText).  
   If the value ends with `.txt` or another file extension, the system attempts to read it as a file; if the file is not found, it is treated as plain text.
 - Supports `%` for short pauses and `%%` for long pauses (in trial descriptions and guide text, though for guide text it is recommended to use identifiers like `||PX.X||` and `||SX.X||` to control pauses and speed), and they can be used anywhere in the text.

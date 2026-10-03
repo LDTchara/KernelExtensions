@@ -39,13 +39,14 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 
 ### VM 攻击
 
-直接使用自定义 Action `LaunchVMAttack`，传入配置文件名（不含 `.xml`）：
+直接使用自定义 Action `LaunchVMAttack`，传入**相对于扩展根目录的配置文件路径**：
 
 ```xml
-<LaunchVMAttack ConfigName="MyAttack" />
+<LaunchVMAttack ConfigPath="VMATK/MyAttack.xml" />
 ```
 
-程序将自动加载 `VMATK/<ConfigName>.xml` 并触发攻击，VM 攻击的 Flag 由系统自动管理，无需手动移除。
+程序会加载该路径下的配置并触发攻击；VM 攻击的 Flag 由系统自动管理（由该路径推导），无需手动移除。
+路径的**大小写需与磁盘一致**，否则在 Linux 上会找不到文件（详见下方「路径与文件约定」）。
 
 ### 飞机 Daemon
 
@@ -57,6 +58,8 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 
 - 所有 `file` 属性中指定的路径均为**相对于扩展根目录**的相对路径。  
   例如 `Actions/MyAction.xml` 指向 `Extensions/你的扩展名/Actions/MyAction.xml`。
+- **大小写必须与磁盘上的实际文件名一致**。Linux 的文件系统**区分大小写**：`Actions/A.xml` 与
+  `actions/a.xml` 是两个不同的文件。在 Windows 上写错大小写不会报错，但同一份内容拿到 Linux 就会找不到文件。
 - 描述文本（`DescriptionText`）和引导文本（`GuideText`）可以是文件路径，也可以是直接内嵌的文本（GuideText建议使用内嵌文本）。  
   当内容以 `.txt` 或其它扩展名结尾时，系统会尝试将其作为文件路径读取；若文件不存在，则当作普通文本显示。
 - 支持 `%` 短停顿和 `%%` 长停顿（试炼描述和引导文本，但引导文本建议使用`||PX.X||`和`||SX.X||`等标识符来控制停顿和速度等），可在文本中任意位置使用。
