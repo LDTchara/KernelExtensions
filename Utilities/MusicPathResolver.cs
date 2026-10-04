@@ -55,11 +55,10 @@ namespace KernelExtensions.Utilities
                 string rel = musicPath.Replace('\\', '/');
                 string file = Path.GetFileName(rel);
                 string dir = Path.GetDirectoryName(rel)?.Replace('\\', '/');
-                string probeDir = string.IsNullOrEmpty(dir)
-                    ? extBase
-                    : Path.Combine(extBase, dir.Replace('/', '\\'));
+                // 只在路径确实落在扩展目录内时才当作扩展内音轨（越界则交给原版解析）
+                string probeDir = string.IsNullOrEmpty(dir) ? extBase : KEPath.ResolveInside(dir, extBase);
 
-                if (Exists(probeDir, file))
+                if (probeDir != null && Exists(probeDir, file))
                     return $"../Extensions/{extFolderName}/{rel}";
 
                 return rel;

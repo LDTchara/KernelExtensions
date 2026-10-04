@@ -76,7 +76,13 @@ namespace KernelExtensions.Managers
             if (ExtensionLoader.ActiveExtensionInfo != null)
                 ExtensionRoot = ExtensionLoader.ActiveExtensionInfo.FolderPath.Replace("\\", "/");
 
-            string configPath = Path.Combine(ExtensionRoot, "PhaseSwift", configName + ".xml").Replace("\\", "/");
+            string configPath = KEPath.ResolveInside("PhaseSwift/" + configName + ".xml", ExtensionRoot);
+            if (configPath == null)
+            {
+                KELog.Warn($"[PhaseSwift] config name escapes the extension folder: {configName}");
+                return;
+            }
+            configPath = configPath.Replace("\\", "/");
             if (!File.Exists(configPath)) { return; }
 
             try
@@ -568,19 +574,20 @@ namespace KernelExtensions.Managers
             {
                 try
                 {
-                    // 解析文件路径：先按配置中的相对路径，再回退到文件名直接查找
+                    // 解析文件路径：先按配置中的相对路径，再回退到文件名在 Music/ 下查找
+                    // （两步均在扩展目录内，越界一律不予考虑）
                     string relPath = phase.Tracks[i].Replace('\\', '/');
-                    string filePath = Path.Combine(root, relPath);
-                    if (!File.Exists(filePath))
+                    string filePath = KEPath.ResolveInside(relPath, root);
+                    if (filePath == null || !File.Exists(filePath))
                     {
                         // 回退：只取文件名，在 root/Music 下搜索
                         string fileName = Path.GetFileName(relPath);
-                        string altPath = Path.Combine(root, "Music", fileName);
-                        if (File.Exists(altPath))
+                        string altPath = KEPath.ResolveInside("Music/" + fileName, root);
+                        if (altPath != null && File.Exists(altPath))
                             filePath = altPath;
                         else
                         {
-                            KELog.Warn($"[PhaseSwift] 找不到音轨 {i}: {filePath} (已尝试 {altPath})");
+                            KELog.Warn($"[PhaseSwift] 找不到音轨 {i}: {relPath}（已尝试 Music/{fileName}）");
                             continue;
                         }
                     }

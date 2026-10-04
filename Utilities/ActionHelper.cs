@@ -17,7 +17,13 @@ namespace KernelExtensions.Utilities
         {
             if (ConfigValue.IsNone(actionFilePath)) return;
 
-            string fullPath = Path.Combine(extensionRoot, actionFilePath).Replace('\\', '/');
+            string fullPath = KEPath.ResolveInside(actionFilePath, extensionRoot);
+            if (fullPath == null)
+            {
+                os.write($"Action file escapes the extension folder: {actionFilePath}");
+                return;
+            }
+            fullPath = fullPath.Replace('\\', '/');
             if (!File.Exists(fullPath))
             {
                 os.write($"Action file not found: {actionFilePath}");

@@ -246,14 +246,11 @@ namespace KernelExtensions.Executables
         private string ResolvePath(string relativePath)
         {
             if (string.IsNullOrEmpty(relativePath)) return null;
-            if (Path.IsPathRooted(relativePath)) return relativePath; // 绝对路径直接返回
-
-            if (string.IsNullOrEmpty(extensionRoot))
-            {
-                KELog.Error("[CustomTrialExe] Error: No extension root found. This mod must be run as part of an extension.");
-                return null;
-            }
-            return Path.Combine(extensionRoot, relativePath).Replace('\\', '/');
+            // 只接受扩展目录内的路径（绝对路径同样视为越界，避免内容引用到扩展之外）
+            string resolved = KEPath.ResolveInside(relativePath, extensionRoot);
+            if (resolved == null)
+                KELog.Warn($"[CustomTrialExe] path escapes the extension folder: {relativePath}");
+            return resolved?.Replace('\\', '/');
         }
 
         /// <summary>
@@ -278,7 +275,14 @@ namespace KernelExtensions.Executables
                 return;
             }
 
-            string configPath = Path.Combine(extensionRoot, "Trial", configName + ".xml").Replace('\\', '/');
+            string configPath = KEPath.ResolveInside("Trial/" + configName + ".xml", extensionRoot);
+            if (configPath == null)
+            {
+                KELog.Error($"[CustomTrialExe] Error: trial config name escapes the extension folder: '{configName}'.");
+                isExiting = true;
+                return;
+            }
+            configPath = configPath.Replace('\\', '/');
             if (!File.Exists(configPath))
             {
                 KELog.Error($"[CustomTrialExe] Error: Trial config '{configName}.xml' not found at '{configPath}'. Please ensure the file exists and the flag '{flag}' is correct.");

@@ -221,8 +221,8 @@ public class CustomEndingModule : EndingSequenceModule
         string ext = ExtensionLoader.ActiveExtensionInfo.GetFullFolderPath();
 
         // ---- 演讲文本 ----
-        string speechPath = Path.Combine(ext, SpeechTextFile);
-        if (File.Exists(speechPath))
+        string speechPath = KEPath.ResolveInside(SpeechTextFile, ext);
+        if (speechPath != null && File.Exists(speechPath))
         {
             bitSpeechText = File.ReadAllText(speechPath);
             KELog.Info($"[CustomEndingModule] Speech.txt loaded ({bitSpeechText.Length} chars).");
@@ -230,8 +230,8 @@ public class CustomEndingModule : EndingSequenceModule
         else { bitSpeechText = ""; KELog.Warn($"[CustomEndingModule] Speech text not found: {speechPath}"); }
 
         // ---- 报幕数据 ----
-        string creditsPath = Path.Combine(ext, CreditsFile);
-        if (File.Exists(creditsPath))
+        string creditsPath = KEPath.ResolveInside(CreditsFile, ext);
+        if (creditsPath != null && File.Exists(creditsPath))
         {
             creditsData = File.ReadAllText(creditsPath)
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
@@ -240,8 +240,8 @@ public class CustomEndingModule : EndingSequenceModule
         else { creditsData = Array.Empty<string>(); KELog.Warn($"[CustomEndingModule] Credits data not found: {creditsPath} — credits stage will be empty."); }
 
         // ---- 语音（.wav / .ogg 分流）----
-        string voicePath = Path.Combine(ext, SpeechFile);
-        if (File.Exists(voicePath))
+        string voicePath = KEPath.ResolveInside(SpeechFile, ext);
+        if (voicePath != null && File.Exists(voicePath))
         {
             try
             {

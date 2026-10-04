@@ -96,7 +96,13 @@ namespace KernelExtensions.Managers
             {
                 string folder = ExtensionLoader.ActiveExtensionInfo.FolderPath;
                 var gd = Game1.getSingleton().GraphicsDevice;
-                using (var s = File.OpenRead(Path.Combine(folder, iconPath)))
+                string iconFull = KEPath.ResolveInside(iconPath, folder);
+                if (iconFull == null)
+                {
+                    KELog.Warn($"[TitleBanner] icon path escapes the extension folder: {iconPath}");
+                    return false;
+                }
+                using (var s = File.OpenRead(iconFull))
                     infoIcon = Texture2D.FromStream(gd, s);
                 return infoIcon != null;
             }

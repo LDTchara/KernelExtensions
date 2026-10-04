@@ -294,7 +294,12 @@ namespace KernelExtensions.Modules
         {
             if (ConfigValue.IsNone(config.HelpFile)) return;
 
-            string helpSrc = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, config.HelpFile);
+            string helpSrc = KEPath.ResolveInsideExtension(config.HelpFile);
+            if (helpSrc == null)
+            {
+                KELog.Warn($"[FakeRecovery] HelpFile escapes the extension folder: {config.HelpFile}");
+                return;
+            }
             if (!File.Exists(helpSrc)) return;
 
             if (IsWindows)
@@ -318,10 +323,14 @@ namespace KernelExtensions.Modules
             var sys = new List<string>();
             if (config.SystemLogFiles != null && config.SystemLogFiles.Count > 0)
             {
-                string root = ExtensionLoader.ActiveExtensionInfo.FolderPath;
                 for (int i = 0; i < config.SystemLogFiles.Count; i++)
                 {
-                    string path = Path.Combine(root, config.SystemLogFiles[i]);
+                    string path = KEPath.ResolveInsideExtension(config.SystemLogFiles[i]);
+                    if (path == null)
+                    {
+                        KELog.Warn($"[FakeRecovery] SystemLogFiles entry escapes the extension folder, skipped: {config.SystemLogFiles[i]}");
+                        continue;
+                    }
                     if (File.Exists(path))
                     {
                         var lines = File.ReadAllText(path).Split(

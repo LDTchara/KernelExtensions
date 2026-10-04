@@ -504,7 +504,13 @@ namespace KernelExtensions
 
             if (config.Mode == RecoveryMode.FileDeletion)
             {
-                string checkPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
+                string checkPath = KEPath.ResolveInsideSaveBase(config.CheckFilePath);
+                if (checkPath == null)
+                {
+                    // 越界无法判定——保守处理：不做恢复，保持感染状态
+                    KELog.Warn($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                    return;
+                }
                 if (!File.Exists(checkPath))
                 {
                     // 播放成功音乐
@@ -529,7 +535,12 @@ namespace KernelExtensions
             }
             else if (config.Mode == RecoveryMode.FileExists)
             {
-                string checkPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
+                string checkPath = KEPath.ResolveInsideSaveBase(config.CheckFilePath);
+                if (checkPath == null)
+                {
+                    KELog.Warn($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                    return;
+                }
                 if (File.Exists(checkPath))
                 {
                     // CheckFilePattern：文件内容必须与参考文件一致
@@ -538,9 +549,8 @@ namespace KernelExtensions
                     {
                         try
                         {
-                            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
-                            string refPath = Path.Combine(extRoot, config.CheckFilePattern);
-                            contentMatch = File.Exists(refPath) && FilesMatch(checkPath, refPath);
+                            string refPath = KEPath.ResolveInsideExtension(config.CheckFilePattern);
+                            contentMatch = refPath != null && File.Exists(refPath) && FilesMatch(checkPath, refPath);
                             if (ConfigLoader.Debug)
                                 KELog.Debug($"[VM] CheckFilePattern: comparing with {refPath} -> {(contentMatch ? "match" : "mismatch")}");
                         }

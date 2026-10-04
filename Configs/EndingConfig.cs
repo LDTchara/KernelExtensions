@@ -68,7 +68,12 @@ namespace KernelExtensions.Configs
         public static EndingConfig Load(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath)) return null;
-            string full = Path.Combine(ExtensionLoader.ActiveExtensionInfo?.FolderPath ?? "", filePath);
+            string full = KEPath.ResolveInsideExtension(filePath);
+            if (full == null)
+            {
+                KELog.Error($"[Ending] config path escapes the extension folder: {filePath}");
+                return null;
+            }
             if (!File.Exists(full))
             {
                 KELog.Error($"[Ending] config file not found: {full}");

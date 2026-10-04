@@ -63,13 +63,13 @@ namespace KernelExtensions.Managers
             string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
             if (string.IsNullOrEmpty(extRoot)) return null;
 
-            // 新格式：flag 后缀即相对路径
-            string direct = Path.Combine(extRoot, suffix);
-            if (File.Exists(direct)) return direct;
+            // 新格式：flag 后缀即相对路径（越界则拒绝）
+            string direct = KEPath.ResolveInsideExtension(suffix);
+            if (direct != null && File.Exists(direct)) return direct;
 
             // 旧格式兼容：Kernel_VMInfected_&lt;ConfigName&gt; → VMATK/&lt;ConfigName&gt;.xml
-            string legacy = Path.Combine(extRoot, "VMATK", suffix + ".xml");
-            return File.Exists(legacy) ? legacy : null;
+            string legacy = KEPath.ResolveInsideExtension("VMATK/" + suffix + ".xml");
+            return legacy != null && File.Exists(legacy) ? legacy : null;
         }
 
         /// <summary>
@@ -87,7 +87,13 @@ namespace KernelExtensions.Managers
         public static bool CheckFileCondition(OS os, VMAttackConfig config)
         {
             if (ConfigValue.IsNone(config.CheckFilePath)) return false;
-            string fullPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
+            string fullPath = KEPath.ResolveInsideSaveBase(config.CheckFilePath);
+            // 越界视为「条件不满足」——保守处理，不误判为可恢复
+            if (fullPath == null)
+            {
+                KELog.Warn($"[VMInfection] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                return false;
+            }
             if (config.Mode == RecoveryMode.FileDeletion) return File.Exists(fullPath);
             if (config.Mode == RecoveryMode.FileExists)
             {
@@ -101,10 +107,8 @@ namespace KernelExtensions.Managers
         private static bool FileContentMatches(string targetPath, VMAttackConfig config)
         {
             if (ConfigValue.IsNone(config.CheckFilePattern)) return true;
-            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
-            if (string.IsNullOrEmpty(extRoot)) return false;
-            string refPath = System.IO.Path.Combine(extRoot, config.CheckFilePattern);
-            if (!File.Exists(refPath)) return false;
+            string refPath = KEPath.ResolveInsideExtension(config.CheckFilePattern);
+            if (refPath == null || !File.Exists(refPath)) return false;
             return FilesMatch(targetPath, refPath);
         }
 
@@ -180,14 +184,18 @@ namespace KernelExtensions.Managers
             if (os.Flags.HasFlag(guideActionDoneFlag))
                 os.Flags.RemoveFlag(guideActionDoneFlag);
 
-            // 删除虚假文件
-            string baseDir = HostileHackerBreakinSequence.GetBaseDirectory();
+            // 删除虚假文件（同样先做越界校验，避免误删存档目录之外的东西）
             if (CurrentConfig.FakeFiles != null)
             {
                 foreach (var f in CurrentConfig.FakeFiles)
                 {
                     if (string.IsNullOrEmpty(f.Path)) continue;
-                    string filePath = Path.Combine(baseDir, f.Path);
+                    string filePath = KEPath.ResolveInsideSaveBase(f.Path);
+                    if (filePath == null)
+                    {
+                        KELog.Warn($"[VMInfection] FakeFiles Path escapes the save directory, not deleting: {f.Path}");
+                        continue;
+                    }
                     if (File.Exists(filePath))
                     {
                         File.Delete(filePath);

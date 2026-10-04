@@ -27,8 +27,13 @@ namespace KernelExtensions.Actions.VMAttack
                 return;
             }
 
-            // 配置加载路径：扩展根目录 + 相对路径
-            string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, relativePath);
+            // 配置加载路径：扩展根目录 + 相对路径（越界则拒绝）
+            string configPath = KEPath.ResolveInsideExtension(relativePath);
+            if (configPath == null)
+            {
+                KELog.Error($"[LaunchVMAttack] ConfigPath escapes the extension folder: {relativePath}");
+                return;
+            }
             if (!File.Exists(configPath))
             {
                 KELog.Error($"[LaunchVMAttack] Config not found: {configPath}");
@@ -47,21 +52,33 @@ namespace KernelExtensions.Actions.VMAttack
             // 新增：立即保存至 CurrentConfig，覆盖旧配置
             VMInfectionManager.CurrentConfig = config;
 
-            // 生成虚假文件
-            string baseDir = HostileHackerBreakinSequence.GetBaseDirectory();
+            // 生成虚假文件（路径均需落在各自的根目录内，越界则跳过不写）
             foreach (var f in config.FakeFiles)
             {
                 // 如果 Path 为空则跳过
                 if (string.IsNullOrEmpty(f.Path)) continue;
-                string filePath = Path.Combine(baseDir, f.Path);
+                string filePath = KEPath.ResolveInsideSaveBase(f.Path);
+                if (filePath == null)
+                {
+                    KELog.Warn($"[LaunchVMAttack] FakeFiles Path escapes the save directory, skipped: {f.Path}");
+                    continue;
+                }
                 // 确保目录存在
                 string dir = Path.GetDirectoryName(filePath);
                 if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
-                if (!string.IsNullOrEmpty(f.Source) && File.Exists(Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, f.Source)))
-                    File.Copy(Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, f.Source), filePath, true);
+
+                string source = string.IsNullOrEmpty(f.Source) ? null : KEPath.ResolveInsideExtension(f.Source);
+                if (source != null && File.Exists(source))
+                {
+                    File.Copy(source, filePath, true);
+                }
                 else
+                {
+                    if (!string.IsNullOrEmpty(f.Source) && source == null)
+                        KELog.Warn($"[LaunchVMAttack] FakeFiles Source escapes the extension folder, writing an empty file instead: {f.Source}");
                     File.WriteAllBytes(filePath, new byte[f.Size]);
+                }
             }
 
             // 添加 Flag（由相对路径推导，可无损反解回配置文件）
