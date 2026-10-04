@@ -61,6 +61,9 @@ No extra Flags are required. Just add `<FlightDaemon>` to the target computer's 
 - **Case must match the actual file name on disk.** Linux file systems are case‑sensitive, so
   `Actions/A.xml` and `actions/a.xml` are two different files; a wrong case silently works on Windows
   but fails to find the file on Linux.
+- **Paths must stay inside the extension folder.** `..` traversal and absolute paths (including Windows
+  drive letters) are **rejected** — such a path is treated as invalid (skipped and logged), so nothing
+  outside the extension can be read.
 - Description text (`DescriptionText`) and guide text (`GuideText`) can be either a file path or inline text (inline text is recommended for GuideText).  
   If the value ends with `.txt` or another file extension, the system attempts to read it as a file; if the file is not found, it is treated as plain text.
 - Supports `%` for short pauses and `%%` for long pauses (in trial descriptions and guide text, though for guide text it is recommended to use identifiers like `||PX.X||` and `||SX.X||` to control pauses and speed), and they can be used anywhere in the text.
