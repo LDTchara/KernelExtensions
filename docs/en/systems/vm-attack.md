@@ -81,6 +81,11 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
     two different files. Always match the on‑disk casing—it happens to work on Windows,
     but the same content will fail to find the file on Linux.
 
+!!! warning "Paths must stay inside the extension folder"
+    `..` traversal and absolute paths (including Windows drive letters) are **rejected**; such a path
+    is treated as invalid — reads are skipped and logged, and **deletions are not performed**
+    (nothing outside the extension is touched).
+
 !!! note "How the infection Flag is derived"
     The Flag is derived from `ConfigPath` and **keeps the path structure intact**:
 
