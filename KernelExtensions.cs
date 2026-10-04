@@ -170,6 +170,9 @@ namespace KernelExtensions
                 RegisterActionWithFallback<StartEnding>("StartEnding");
             }
 
+            // RAM 显示文字调整（9.12）：无 KE-Config 段，全由 Action 控制
+            RegisterActionWithFallback<RamDisplayAction>("RamDisplay");
+
             // ============================================================
             //  3. 事件处理器
             // ============================================================
@@ -187,6 +190,8 @@ namespace KernelExtensions
             KELog.Info("ConfigLoader handler registered.");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_RestoreClocks);
             KELog.Info("Clock restore handler registered.");
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_ApplyRamDisplay);
+            KELog.Info("RamDisplay restore handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
 
@@ -201,6 +206,9 @@ namespace KernelExtensions
             // Clock 持久化：解析存档 <ClockData> 节点，恢复运行中的 Clock
             SaveLoader.RegisterExecutor<ClockSaveExecutor>("ClockData", ParseOption.ParseInterior);
             KELog.Info("ClockSaveExecutor registered.");
+            // RAM 显示设置：只有两个属性，无子元素
+            SaveLoader.RegisterExecutor<RamDisplaySaveExecutor>("RamDisplayData", ParseOption.None);
+            KELog.Info("RamDisplaySaveExecutor registered.");
 
             // ============================================================
             //  5. Daemon 注册
@@ -228,6 +236,8 @@ namespace KernelExtensions
             PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
+            // RAM 显示：RamModule internal，同样需运行时反射 patch
+            RamDisplayPatch.ApplyPatch(_harmony);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
@@ -458,6 +468,17 @@ namespace KernelExtensions
                         new XAttribute("Elapsed", c.Elapsed.ToString("F2")),
                         new XAttribute("Timer", c.Timer.ToString("F2"))));
                 e.Save.Add(clockNode);
+            }
+
+            // ========== RAM 显示设置（9.12）==========
+            // 只在被 Action 改过时写入（保持默认的存档不必带这个节点）
+            if (Math.Abs(RamDisplayManager.Multiplier - RamDisplayManager.DefaultMultiplier) > 0.0001f
+                || RamDisplayManager.Unit != RamDisplayManager.DefaultUnit)
+            {
+                e.Save.Add(new XElement("RamDisplayData",
+                    new XAttribute("Multiplier", RamDisplayManager.Multiplier.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture)),
+                    new XAttribute("Unit", RamDisplayManager.Unit)));
             }
         }
 
@@ -785,6 +806,12 @@ namespace KernelExtensions
             foreach (var state in pending)
                 ClockManager.Restore(e.Os, state);
             KELog.Info($"[Clock] restored {pending.Count} running clock(s) from save");
+        }
+
+        /// <summary>读档后恢复 RAM 显示设置（9.12）：先回默认，有 &lt;RamDisplayData&gt; 则套用。</summary>
+        private void OnOSLoaded_ApplyRamDisplay(OSLoadedEvent e)
+        {
+            RamDisplayManager.ApplyOnLoaded();
         }
     }
 }
