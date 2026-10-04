@@ -53,6 +53,13 @@ namespace KernelExtensions.Actions.VMAttack
             VMInfectionManager.CurrentConfig = config;
 
             // 生成虚假文件（路径均需落在各自的根目录内，越界则跳过不写）
+            // 大小限制：单个 ≤ MaxFakeFileSize、合计 ≤ MaxFakeFilesTotalSize
+            //   —— 写入是同步的（阻塞主线程），且 new byte[Size] 是一次性分配，
+            //      不限制的话一个手滑/恶意配置就能写满磁盘或直接抛 OutOfMemory。
+            const long MaxFakeFileSize = 64L * 1024 * 1024;          // 64 MB
+            const long MaxFakeFilesTotalSize = 200L * 1024 * 1024;   // 200 MB（所有假文件合计）
+            long totalBytes = 0;
+
             foreach (var f in config.FakeFiles)
             {
                 // 如果 Path 为空则跳过
@@ -63,13 +70,38 @@ namespace KernelExtensions.Actions.VMAttack
                     KELog.Warn($"[LaunchVMAttack] FakeFiles Path escapes the save directory, skipped: {f.Path}");
                     continue;
                 }
+
+                // 负数按 0（对齐「负数 = 默认」约定）
+                long size = f.Size < 0 ? 0 : f.Size;
+
+                string source = string.IsNullOrEmpty(f.Source) ? null : KEPath.ResolveInsideExtension(f.Source);
+                bool useSource = source != null && File.Exists(source);
+                if (useSource)
+                {
+                    try { size = new FileInfo(source).Length; }
+                    catch { useSource = false; }
+                }
+
+                // 单个超限 → 跳过（而不是截断，避免静默产出与预期不符的文件）
+                if (size > MaxFakeFileSize)
+                {
+                    KELog.Warn($"[LaunchVMAttack] FakeFiles '{f.Path}' is {size} bytes, over the {MaxFakeFileSize}-byte per-file limit; skipped.");
+                    continue;
+                }
+
+                // 合计超限 → 跳过（保留前面已经生成的）
+                if (totalBytes + size > MaxFakeFilesTotalSize)
+                {
+                    KELog.Warn($"[LaunchVMAttack] FakeFiles total would exceed the {MaxFakeFilesTotalSize}-byte limit; skipped: {f.Path}");
+                    continue;
+                }
+
                 // 确保目录存在
                 string dir = Path.GetDirectoryName(filePath);
                 if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
 
-                string source = string.IsNullOrEmpty(f.Source) ? null : KEPath.ResolveInsideExtension(f.Source);
-                if (source != null && File.Exists(source))
+                if (useSource)
                 {
                     File.Copy(source, filePath, true);
                 }
@@ -77,8 +109,10 @@ namespace KernelExtensions.Actions.VMAttack
                 {
                     if (!string.IsNullOrEmpty(f.Source) && source == null)
                         KELog.Warn($"[LaunchVMAttack] FakeFiles Source escapes the extension folder, writing an empty file instead: {f.Source}");
-                    File.WriteAllBytes(filePath, new byte[f.Size]);
+                    File.WriteAllBytes(filePath, new byte[size]);
                 }
+
+                totalBytes += size;
             }
 
             // 添加 Flag（由相对路径推导，可无损反解回配置文件）

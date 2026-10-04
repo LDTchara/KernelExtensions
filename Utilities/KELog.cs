@@ -22,6 +22,15 @@ namespace KernelExtensions.Utilities
     {
         private static ManualLogSource _log;
 
+        /// <summary>
+        /// 【整活】报错是因为报错功能开着，关掉就不会报错了。
+        /// <para>
+        /// 置 false 后所有 <see cref="Error"/> 调用静默（其余级别不受影响）。
+        /// 仅代码内开关，不接入 KE-Config。
+        /// </para>
+        /// </summary>
+        public static bool EnableErrorLogging = true;
+
         public static void Init()
         {
             _log = Logger.CreateLogSource("KernelExtensions");
@@ -39,6 +48,7 @@ namespace KernelExtensions.Utilities
 
         public static void Error(string msg)
         {
+            if (!EnableErrorLogging) return;
             _log?.LogError(msg);
         }
 
