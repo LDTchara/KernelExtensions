@@ -166,6 +166,10 @@ The RAM bar still follows the real usage ratio.
 
 Useful for faking a machine's specs in the story (e.g. making a small box “look” like it has lots of memory).
 
+!!! note "Relationship with ZeroDayToolKit"
+    Stacks with **ZeroDayToolKit**'s `SASetRAM`: the latter sets the RAM values, and this action
+    scales them (multiplier + unit) for display. The two do not conflict — values are set first, then displayed.
+
 | Attribute | Required | Default | Description |
 |-----------|:--------:|---------|-------------|
 | `Multiplier` | ❌ | `1` | Unified scale for `x` and `y`; **decimals preserved** (up to two, trailing zeros trimmed) |
