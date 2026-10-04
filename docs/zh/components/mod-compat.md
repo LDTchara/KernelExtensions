@@ -24,7 +24,7 @@ Pathfinder 没有「按名查询是否已注册」的公开 API（`CustomActions
 `UnregisterAction` 去给别人腾位——只能靠异常兜底。
 
 KE 的对策是 `RegisterActionWithFallback<T>(xmlName)`：**每个 Action 都注册两个名字**
-（原名 + `KE` + 原名），两者都失败才记 `Error`。**全部 31 个 Action 一律如此**，
+（原名 + `KE` + 原名），两者都失败才记 `Error`。**全部 32 个 Action 一律如此**，
 不按「易冲突 / 独有」分类。完整对照表与写作建议见
 [自定义 Action](./actions.md#action-名冲突与回退)。
 

@@ -1,6 +1,6 @@
 # 自定义 Action
 
-KernelExtensions 共注册 **31 个**自定义 Action，可在任何动作文件中调用。本页分两部分：
+KernelExtensions 共注册 **32 个**自定义 Action，可在任何动作文件中调用。本页分两部分：
 
 - **一、与各系统相关的动作** —— 只给速查与去向，完整参数在各自的系统页
 - **二、通用动作（系统未涵盖）** —— 完整参数与示例
@@ -149,13 +149,38 @@ KernelExtensions 共注册 **31 个**自定义 Action，可在任何动作文件
   KE 通过补丁同步停止自身效果，不会出现原版与自定义效果叠加
 - WCC = **W**ith **C**ustom **C**olor
 
+### RAM 显示 `RamDisplay`
+
+调整操作界面右侧 **RAM 模块**的文字 `USED RAM: x / y mb`。
+`Multiplier` 统一缩放 `x` 与 `y`，`Unit` 替换单位串——**只改文字**，
+RAM 条的长度仍按真实占用比例绘制。
+
+适合剧情里伪造机器规格（例如让一台小机器“看起来”内存很大），或统一叙事口径。
+
+| 属性 | 必填 | 默认值 | 说明 |
+|------|:----:|--------|------|
+| `Multiplier` | ❌ | `1` | `x` 与 `y` 的统一倍率；**保留小数**（最多两位、去尾零） |
+| `Unit` | ❌ | `mb` | 单位串，替换 `mb`；`NONE` / 空 = 回退默认 |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
+
+```xml
+<RamDisplay Multiplier="0.5" Unit="GB" />
+<!-- 真实 1024mb → 显示为 512GB -->
+```
+
+- **只写显式给出的属性**：不写的项**保持当前值**（可以只改倍率、或只改单位）
+- **复位**：显式写 `Multiplier="1" Unit="mb"`
+- **持久化**：改动会立即存档，读档后保持同一显示；存档里没有这个节点时回到默认值
+- **没有 KE-Config 段**：默认值写在代码里，需要时用本 Action 覆盖（扩展可以在自己的起始 Action 里设置）
+- 两项都不写时不做事，也不会触发一次多余存档
+
 ---
 
 ## Action 名冲突与回退
 
 第三方模组可能占用 Action 名（实例：`Stuxnet.Audio` 占用 `PlaySound`）。
 Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件加载**，
-因此 KE 的**全部 31 个 Action** 都注册**两个名字**：原名，以及 `KE` + 原名。
+因此 KE 的**全部 32 个 Action** 都注册**两个名字**：原名，以及 `KE` + 原名。
 
 | 原名 | 同时注册的别名 |
 |------|---------------|
@@ -190,6 +215,7 @@ Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件�
 | `LinkControlRemove` | `KELinkControlRemove` |
 | `ShowTitle` | `KEShowTitle` |
 | `StartEnding` | `KEStartEnding` |
+| `RamDisplay` | `KERamDisplay` |
 
 **规则**：
 

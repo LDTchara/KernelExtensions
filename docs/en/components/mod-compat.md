@@ -30,7 +30,7 @@ Catching the exception is the only option.
 
 KE's answer is `RegisterActionWithFallback<T>(xmlName)`: **every Action is registered under two
 names** (the original, and `KE` + the original), and only if both fail does it log an `Error`.
-This applies to **all 31 Actions** — they are no longer split into "conflict-prone" and "distinctive".
+This applies to **all 32 Actions** — they are no longer split into "conflict-prone" and "distinctive".
 See [Actions](./actions.md#action-name-conflicts-and-fallback) for the full table and authoring advice.
 
 !!! warning "Side effect when coexisting"

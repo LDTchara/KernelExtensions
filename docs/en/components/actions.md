@@ -158,13 +158,38 @@ lines ignored).
   effect in step, so the vanilla and custom effects never stack
 - WCC = **W**ith **C**ustom **C**olor
 
+### RAM Display `RamDisplay`
+
+Adjusts the **RAM module** text on the operation interface: `USED RAM: x / y mb`.
+`Multiplier` scales both `x` and `y`; `Unit` replaces the unit string — **text only**.
+The RAM bar still follows the real usage ratio.
+
+Useful for faking a machine's specs in the story (e.g. making a small box “look” like it has lots of memory).
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Multiplier` | ❌ | `1` | Unified scale for `x` and `y`; **decimals preserved** (up to two, trailing zeros trimmed) |
+| `Unit` | ❌ | `mb` | Unit string replacing `mb`; `NONE` / empty = fall back to default |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed-action attributes |
+
+```xml
+<RamDisplay Multiplier="0.5" Unit="GB" />
+<!-- real 1024mb → shown as 512GB -->
+```
+
+- **Only explicitly given attributes are applied**; omitted ones **keep their current value** (so you can change just the multiplier, or just the unit)
+- **Reset**: write `Multiplier="1" Unit="mb"` explicitly
+- **Persistence**: changes are saved immediately and survive loading; a save without this node returns to defaults
+- **No KE-Config section**: defaults live in code and are overridden by this action (extensions can set them from their own startup action)
+- With neither attribute set, the action does nothing and does not trigger a redundant save
+
 ---
 
 ## Action Name Conflicts and Fallback
 
 Third-party mods may occupy Action names (real example: `Stuxnet.Audio` occupies `PlaySound`).
 Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole plugin load**, so
-**all 31 KEs Actions** are registered under **two names**: the original, and `KE` + the original.
+**all 32 KE Actions** are registered under **two names**: the original, and `KE` + the original.
 
 | Original name | Alias registered alongside |
 |---------------|---------------------------|
@@ -199,6 +224,7 @@ Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole 
 | `LinkControlRemove` | `KELinkControlRemove` |
 | `ShowTitle` | `KEShowTitle` |
 | `StartEnding` | `KEStartEnding` |
+| `RamDisplay` | `KERamDisplay` |
 
 **Rules**:
 
