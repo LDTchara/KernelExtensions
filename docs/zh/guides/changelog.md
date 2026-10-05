@@ -23,6 +23,7 @@
 - **Harmony 补丁管理**：统一使用一个静态 Harmony 实例，通过 `Unload()` 方法在扩展退出时干净移除所有补丁，避免残留影响。
 - **飞机按钮逻辑修正**：`FlightDaemon` 界面中的 “Exit..” 按钮已被修正为 “Disconnect”，点击后正确执行断开连接。
 - **文档全面更新**：将详细文档迁移至 GitHub Wiki，提供中英双语导航，并新增扩展作者指南、配置文件参考等页面；README 同步精简。
+  （注：该 Wiki 已于 0.7 开发期间退役，文档现由主仓库 `docs/` 的 MkDocs 站点承载。）
 
 ### 错误修复
 - 修复 `AttackAircraft` 在目标计算机缺少 `FlightDaemon` 时抛出 `KeyNotFoundException` 的崩溃问题。
@@ -120,30 +121,6 @@
 - **试炼完成转连**：新增 `ConnectTarget` 和 `StopMusicOnConnect` 配置项。
 - **阶段重置自定义文本**：`PhaseConfig` 新增 `ResetText` 和 `ExecuteOnPhaseStartOnReset`。
 - **动态内存缩减**：新增 `DynamicRamReduction` 选项，启用后根据当前显示控件自动计算最小窗口高度。
-
----
-
-## 0.4.5 – 修复与改进
-
-> Pre‑release · 2025
-
-- 添加了 `FailTrial` 自定义 Action。
-- 修复程序退出过程中多个与标题和终端输出相关的错误。
-- 对齐旋转动画（SpinUp）的缓动曲线至原版算法。
-- 稳定邮件摧毁特效的帧率。
-
----
-
-## 0.4.4 – 节点持久化与特效还原
-
-> Pre‑release · 2025
-
-- 被摧毁的节点可通过 `RestoreCustomTrialNodes` 随存档一同保存并恢复。
-- 增强邮件爆炸特效（径向线条、多段圆圈扩散）。
-- 新增 `TerminalWriteAction` 与 `TerminalFocusAction` 终端交互 Action。
-- 新增 `ThemeToSwitch`、`ProgramName`、`ConnectTarget` 及阶段重置文本等配置项。
-- 添加 `DynamicRamReduction` 支持。
-- 为退出动画、状态标题和背景网格等 UI 元素做了大量润色。
 
 ---
 

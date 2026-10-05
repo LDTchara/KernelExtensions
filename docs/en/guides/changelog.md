@@ -23,6 +23,7 @@
 - **Harmony patch management**: uses a single static Harmony instance, and all patches are cleanly removed via `Unload()` when the extension exits.
 - **Aircraft button logic**: the “Exit..” button in `FlightDaemon` has been corrected to “Disconnect” and now properly executes a disconnection.
 - **Documentation overhaul**: detailed docs have moved to the GitHub Wiki, with bilingual navigation; new pages include the Extension Author Guide, Configuration Files reference, and more. The README has been streamlined accordingly.
+  (Note: that Wiki was retired during 0.7 development; the docs are now served by the MkDocs site under `docs/` in the main repository.)
 
 ### Bug Fixes
 - Fixed a `KeyNotFoundException` crash in `AttackAircraft` when the target computer lacks a `FlightDaemon`.
