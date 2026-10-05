@@ -183,11 +183,12 @@ Useful for faking a machine's specs in the story (e.g. making a small box “loo
 
 - **Only explicitly given attributes are applied**; omitted ones **keep their current value** (so you can change just the multiplier, or just the unit)
 - **Reset**: write `Multiplier="1" Unit="mb"` explicitly
-- **Persistence**: changes are saved immediately and survive loading; a save without this node returns to defaults
+- **Persistence**: changes live in **memory** and are written to the save on the next save; a save without this node returns to defaults
 
-!!! warning "Triggers an immediate save"
-    Every actual change made by this action calls `threadedSaveExecute`, i.e. it **writes the save to disk once**.
-    Calling it repeatedly in a critical story section (or when the player should not be interrupted) produces extra save writes.
+!!! note "Changes are runtime‑temporary"
+    This action only changes the in‑memory display settings and **does not write to disk immediately**;
+    they are persisted with the next save. So **quitting without saving loses the change**;
+    once saved, it is retained.
 - **No KE-Config section**: defaults live in code and are overridden by this action (extensions can set them from their own startup action)
 - With neither attribute set, the action does nothing and does not trigger a redundant save
 
