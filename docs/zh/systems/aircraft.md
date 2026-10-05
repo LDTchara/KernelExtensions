@@ -37,6 +37,13 @@
 | `OnFailed` | `null` | 飞机坠毁（高度降至 0）时执行的动作文件。 |
 | `OnSaved` | `null` | 飞机被修复（固件重载成功且 DLL 恢复）时执行的动作文件。 |
 | `CrashIPPrefix` | `DCLOC:` | 坠机后加在节点 IP 前的前缀，使旧 IP 不可达；空 / `NONE` = 不修改 IP（节点仍可访问）。 |
+| `MapOriginX` / `MapOriginY` | `0.4304` / `0.8339` | 高度计覆盖层里**航线起点**的归一化坐标（0~1，相对世界地图矩形）。 |
+| `MapDestX` / `MapDestY` | `0.6672` / `0.4264` | 航线**终点**的归一化坐标。 |
+
+!!! note "航线图起终点"
+    叠加层里的世界地图用的是原版贴图。坐标是**归一化**的（0~1，相对地图矩形），
+    因此与贴图尺寸无关；但换贴图、或想让起终点落在别的位置时就需要改这四项。
+    取值会被 clamp 到 `[0, 1]`（超出只会画出图外，没有创作用途）。
 
 > 注意：`FallDuration` 只在立即坠落模式（`AircraftFallStartsImmediately = true`）下生效，该模式默认开启。守护进程初始化时会用 `FallDuration` 设置运行时变量 `H`。
 
@@ -100,6 +107,19 @@
 - **Reload Firmware** 按钮：启动固件重载过程。若 `FlightSystems` 中存在合法的 `747FlightOps.dll`，6 秒后故障解除并触发 `OnSaved`。
 
 ---
+
+### 调试专用动作 `FlightDaemonStatus` / `FlightDaemonMap`
+
+!!! warning "仅用于调试"
+    这两个动作**只在 `KE-Config.xml` 的 `<Debug>true</Debug>` 时生效**，
+    正式内容里写了也只会收到一句提示、不做任何事——它们不是面向扩展作者的 API。
+
+- **`<FlightDaemonStatus />`** —— 把所有飞机 daemon 的运行时状态输出到玩家终端
+  （高度 / 空速 / 航线进度 / 是否坠毁 / 是否已救 / 当前航线坐标等），
+  **不连接目标节点也能看**。可选 `NodeId="xxx"` 只列一个（匹配 `idName` 或 `ip`）。
+- **`<FlightDaemonMap OriginX="…" OriginY="…" DestX="…" DestY="…" />`** ——
+  随时改航线起终点现场调参（不写的项保持不变）。改动只在**本次运行**内有效，
+  下次读档会被节点 XML 的配置覆盖——调好的值请写回上面那四个属性。
 
 ## 坠落逻辑说明
 

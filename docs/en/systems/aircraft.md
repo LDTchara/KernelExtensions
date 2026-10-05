@@ -37,6 +37,13 @@ Declare the daemon directly in the computer configuration file:
 | `OnFailed` | `null` | Action file executed when the aircraft crashes (altitude reaches 0). |
 | `OnSaved` | `null` | Action file executed when the aircraft is repaired (firmware reload succeeds and the DLL is restored). |
 | `CrashIPPrefix` | `DCLOC:` | Prefix prepended to the node's IP after a crash, making the old IP unreachable; empty / `NONE` = leave the IP untouched (the node stays reachable). |
+| `MapOriginX` / `MapOriginY` | `0.4304` / `0.8339` | Normalised coordinates (0–1, relative to the world‑map rectangle) of the **route origin** in the altimeter overlay. |
+| `MapDestX` / `MapDestY` | `0.6672` / `0.4264` | Normalised coordinates of the **route destination**. |
+
+!!! note "Route origin / destination"
+    The overlay uses the vanilla world‑map texture. The coordinates are **normalised** (0–1, relative to the map
+    rectangle), so they are independent of the texture size — but you will need to adjust them when swapping
+    the texture or moving the endpoints. Values are clamped to `[0, 1]`.
 
 > Note: `FallDuration` only takes effect in immediate fall mode (`AircraftFallStartsImmediately = true`), which is enabled by default. The daemon initialises the runtime variable `H` from `FallDuration` on start‑up.
 
@@ -100,6 +107,19 @@ After connecting to a computer with `FlightDaemon`, the flight instrument panel 
 - **Reload Firmware** button: starts the firmware reload process. If a valid `747FlightOps.dll` exists in `FlightSystems`, the fault is cleared after 6 seconds and `OnSaved` is triggered.
 
 ---
+
+### Debug-only Actions `FlightDaemonStatus` / `FlightDaemonMap`
+
+!!! warning "Debug only"
+    These two actions **only take effect when `<Debug>true</Debug>` is set in `KE-Config.xml`**.
+    In normal content they just print a notice and do nothing — they are not an API for extension authors.
+
+- **`<FlightDaemonStatus />`** — prints every aircraft daemon's runtime state to the player terminal
+  (altitude / airspeed / route progress / crashed / rescued / current map points, …)
+  **without connecting to the target node**. Optional `NodeId="xxx"` filters to one daemon (matches `idName` or `ip`).
+- **`<FlightDaemonMap OriginX="…" OriginY="…" DestX="…" DestY="…" />`** — changes the route endpoints on the fly for tuning
+  (omitted values stay unchanged). The change lasts only for the **current run**; loading a save restores the node XML
+  values — write the tuned values back into the four attributes above.
 
 ## Fall Logic Explanation
 
