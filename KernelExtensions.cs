@@ -5,6 +5,7 @@ using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Actions;
 using KernelExtensions.Actions.Aircraft;
+using KernelExtensions.Actions.Aircraft.Debug;
 using KernelExtensions.Actions.Clock;
 using KernelExtensions.Actions.CustomTrial;
 using KernelExtensions.Actions.Ending;
@@ -152,6 +153,11 @@ namespace KernelExtensions
             RegisterActionWithFallback<ShowAircraftOverlayAction>("ShowAircraftOverlay");
             RegisterActionWithFallback<HideAircraftOverlayAction>("HideAircraftOverlay");
 
+            // 2.7b 飞机调试工具（9.15）——“仅测试用”的门控在各自 Trigger 里（检查 ConfigLoader.Debug）
+            //     不能在注册处判断：ConfigLoader.Load() 发生在注册之后，此处 Debug 恒为 false。
+            RegisterActionWithFallback<FlightDaemonStatusAction>("FlightDaemonStatus");
+            RegisterActionWithFallback<FlightDaemonMapAction>("FlightDaemonMap");
+
             // 2.8 Porthack 心脏
             RegisterActionWithFallback<BreakHeartAction>("BreakHeart");
 
@@ -245,7 +251,7 @@ namespace KernelExtensions
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("[KernelExtensions] Code contributions: April_Crystal");
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("[KernelExtensions] Testing & feedback: ZQG, HN Extension Hut");
+            Console.WriteLine("[KernelExtensions] Testing & feedback: ZQG, HN Extension Hub (QQ Group: 940056115) ");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("[KernelExtensions] MIT License - run `kelicense` in the in-game terminal to view it.");
             Console.ResetColor();
