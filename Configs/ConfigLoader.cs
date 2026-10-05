@@ -103,14 +103,17 @@ namespace KernelExtensions.Configs
     <!-- 自定义图标图片列表，用于 SetNodeIcon Action（自动注册为 @文件名） -->
     <!-- 以扩展根目录为基准，建议尺寸 128x128 -->
     <CustomImages>
+        <!--
         <Image>Images/MyIcon.png</Image>
         <Image>Images/AnotherIcon.png</Image>
+        -->
     </CustomImages>
 
     <!-- ============ 禁用用户名（可选，不写则无禁用） ============ -->
     <!-- 创建新账号时拦截禁用用户名并显示原因。
          Reason=直接原因；ReasonBlock=从下方 Reasons 块随机选一条；同名 Ban 多条=多原因随机。 -->
     <BannedUsernames>
+        <!--
         <Reasons>
             <Block Name=""Test1"">
                 <Reason>该名称已被占用，再试一遍也没用。</Reason>
@@ -118,6 +121,7 @@ namespace KernelExtensions.Configs
         </Reasons>
         <Ban Name=""admin"" Reason=""保留用户名"" />
         <Ban Name=""root"" ReasonBlock=""Test1"" />
+        -->
     </BannedUsernames>
 </KEConfig>";
         }
