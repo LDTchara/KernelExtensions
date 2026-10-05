@@ -15,7 +15,10 @@ namespace KernelExtensions.Actions.Misc
     /// <para>
     /// **只写显式给出的属性** —— 不写的项保持当前值（因此可以只改倍率、或只改单位）。
     /// 需要复位时显式写 <c>Multiplier="1" Unit="mb"</c>。
-    /// 修改后立即存档，保证读档后仍是同一显示。
+    /// </para>
+    /// <para>
+    /// 改动**只作用于当前运行**（内存），下一次存档时才写进 <c>&lt;RamDisplayData&gt;</c> 落盘。
+    /// 也就是说：**不存档就退出 = 临时改动会丢失**；存档之后则会随档保留。
     /// </para>
     /// <example>
     /// <code>
@@ -69,8 +72,8 @@ namespace KernelExtensions.Actions.Misc
 
             KELog.Info($"[RamDisplay] Multiplier={RamDisplayManager.Multiplier}, Unit='{RamDisplayManager.Unit}'.");
 
-            // 立即落盘：显示状态属于「改了就应跨读档保持」的持久数据
-            os?.threadedSaveExecute(true);
+            // 不在此处落盘：显示设置属于「运行期临时状态」，由下一次存档经 OnSaveGame
+            // 写入 <RamDisplayData>。这样连续调用不会反复写盘，也符合「不存档即临时」的语义。
         }
     }
 }
