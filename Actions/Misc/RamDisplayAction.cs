@@ -51,7 +51,8 @@ namespace KernelExtensions.Actions.Misc
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(Unit))
+            // Unit 写了就算（含空串/空白：按 NONE 约定回退默认 mb）；只有“没写属性”才保持原值
+            if (Unit != null)
             {
                 RamDisplayManager.Unit = RamDisplayManager.NormalizeUnit(Unit);
                 changed = true;
