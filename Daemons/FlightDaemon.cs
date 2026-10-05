@@ -136,6 +136,12 @@ namespace KernelExtensions.Daemons
             MainFolder.files.Add(new FileEntry(Computer.generateBinaryString(200), "Scheduler.dll"));
             MainFolder.files.Add(new FileEntry(Computer.generateBinaryString(200), "EntertainmentServices.dll"));
             MainFolder.files.Add(new FileEntry(Computer.generateBinaryString(200), "AnnouncementsSys.dll"));
+
+            // 注册到查找表（与 loadInit 对称）。
+            //   此前只在 loadInit 注册，新游戏路径下 CompToDaemons 恒为空，
+            //   要靠 AttackAircraft 顺手补全 —— 于是“离开 daemon 查状态”类工具在新游戏里什么都看不到。
+            if (!CompToDaemons.ContainsKey(comp))
+                CompToDaemons[comp] = this;
         }
 
         /// <summary>
