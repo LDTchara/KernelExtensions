@@ -58,7 +58,14 @@ namespace KernelExtensions.Actions.Misc
                 changed = true;
             }
 
-            if (!changed) return;   // 两个属性都没写：不做事，也不白存一次档
+            if (!changed)
+            {
+                // 两个属性都没写：不做事，也不白存一次档
+                // 你光写个壳不填参数那你干嘛用这个啊？直接不写这个 Action 就行了
+                // If you're not setting any attributes, why are you using this at all?
+                KELog.Warn("[RamDisplay] ...? no attributes set; nothing to do.");
+                return;
+            }
 
             KELog.Info($"[RamDisplay] Multiplier={RamDisplayManager.Multiplier}, Unit='{RamDisplayManager.Unit}'.");
 
