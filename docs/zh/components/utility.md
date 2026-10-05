@@ -85,22 +85,8 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 ### KELoc
 
 - 路径：`KernelExtensions.Utilities.KELoc`
-- 作用：**KE 内置文本本地化**。语言文件 `KE-Locales.xml` 内嵌于 dll（EmbeddedResource），
-  首次运行时导出到扩展根目录（**仅当文件不存在才导出**）；外部文件存在时优先加载，删除后回退到内嵌副本。
-- **缺失 key 自动补齐**：KE 更新后内嵌新增了词条，启动时会**物理补进外部文件**
-  （**不覆盖已有值**；整个语言节点缺失则从内嵌复制），并记一条 Info 日志。
-  所以升级 KE 后**不需要手动同步**语言文件。
-- **回退链**：当前语言（精确）→ 当前语言前缀（`zh-cn` → `zh`）→ `en-us` → 调用方的 `fallback`。
-- **语言列表**：跟随游戏设置，即原版 10 种（`en-us` / `zh-cn` / `ja-jp` / `ko-kr` / `ru-ru` /
-  `de-de` / `fr-fr` / `es-es` / `tr-tr` / `nl-nl`）。
-- **API**：
-  - `KELoc.Loc(key, fallback)` —— 取当前语言的词条；整条回退链都失败时返回 `fallback`
-  - `KELoc.Format(key, fallback, args…)` —— 在 `Loc` 基础上做一次 `string.Format`（占位符不匹配时原样返回，不抛异常）
-  - `KELoc.Load()` —— 重新加载语言表；一般不必手动调用（首次 `Loc` 时自动加载）
-- **词条格式**：`<Language Name="zh-cn"><Term Key="SOME_KEY" Value="文案" /></Language>`
-  —— 语言 `Name` 大小写不敏感；**词条 `Key` 大小写敏感**。
-- **命名约定**（KE 自己的，扩展作者不必遵守）：`FAKE_RECOVERY_*` / `PORT_CRACKER_*` /
-  `USERNAME_*` / `FLIGHT_ALTITUDE_*` 等前缀分组。
+- 作用：KE 内置**文本本地化**。注意它**主要面向扩展作者**（改 `KE-Locales.xml` 文案，不需要写代码），
+  代码 API 只是次要用途 —— 完整说明见 **[本地化（KELoc）](./keloc.md)**。
 
 ---
 

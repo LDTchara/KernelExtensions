@@ -91,6 +91,7 @@ nav:
           - 自定义 Daemon: zh/components/daemons.md
           - 配置文件: zh/components/configuration.md
           - 工具类: zh/components/utility.md
+          - 本地化（KELoc）: zh/components/keloc.md
           - Harmony 补丁: zh/components/harmony.md
           - 与第三方模组兼容: zh/components/mod-compat.md
       - 指南:
@@ -115,6 +116,7 @@ nav:
           - Daemons: en/components/daemons.md
           - Configuration Files: en/components/configuration.md
           - Utility Classes: en/components/utility.md
+          - Localization (KELoc): en/components/keloc.md
           - Patches & Harmony: en/components/harmony.md
           - Mod Compatibility: en/components/mod-compat.md
       - Guides:

@@ -94,24 +94,8 @@ Every class lives in the namespace **`KernelExtensions.Utilities`**.
 ### KELoc
 
 - Path: `KernelExtensions.Utilities.KELoc`
-- Purpose: **KE's built-in text localisation**. The language file `KE-Locales.xml` is embedded in the dll
-  (EmbeddedResource) and exported to the extension root on first run (**only when the file does not already
-  exist**); an external file takes priority when present, and deleting it falls back to the embedded copy.
-- **Missing keys are patched automatically**: when an update adds terms to the embedded table, they are
-  **physically added to the external file** on startup (**existing values are never overwritten**; a whole
-  missing language node is copied from the embedded table), with an Info log entry. So **no manual syncing**
-  of the language file is needed after upgrading KE.
-- **Fallback chain**: current language (exact) → language prefix (`zh-cn` → `zh`) → `en-us` → the caller's `fallback`.
-- **Languages**: follows the game setting, i.e. vanilla's 10 (`en-us` / `zh-cn` / `ja-jp` / `ko-kr` / `ru-ru` /
-  `de-de` / `fr-fr` / `es-es` / `tr-tr` / `nl-nl`).
-- **API**:
-  - `KELoc.Loc(key, fallback)` — returns the term for the current language; the `fallback` is returned if the whole chain misses
-  - `KELoc.Format(key, fallback, args…)` — `Loc` followed by a `string.Format` (returns the text as‑is on a placeholder mismatch, no exception)
-  - `KELoc.Load()` — reloads the table; usually unnecessary (the first `Loc` loads it automatically)
-- **Term format**: `<Language Name="zh-cn"><Term Key="SOME_KEY" Value="text" /></Language>`
-  — the language `Name` is case‑insensitive; the term `Key` is **case‑sensitive**.
-- **Key naming convention** (KE's own; extension authors need not follow it): grouped by prefix such as
-  `FAKE_RECOVERY_*` / `PORT_CRACKER_*` / `USERNAME_*` / `FLIGHT_ALTITUDE_*`.
+- Purpose: KE's built-in **text localization**. Note it is **mainly for extension authors** (editing `KE-Locales.xml`
+  text, no code required); the code API is a secondary use — see **[Localization (KELoc)](./keloc.md)** for the full picture.
 
 ---
 
