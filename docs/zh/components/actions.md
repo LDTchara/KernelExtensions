@@ -151,7 +151,7 @@ KernelExtensions 共注册 **32 个**自定义 Action，可在任何动作文件
 
 ### RAM 显示 `RamDisplay`
 
-调整操作界面右侧 **RAM 模块**的文字 `USED RAM: x / y mb`。
+调整操作界面中 **RAM 模块**的文字 `USED RAM: x / y mb`。
 `Multiplier` 统一缩放 `x` 与 `y`，`Unit` 替换单位串——**只改文字**，
 RAM 条的长度仍按真实占用比例绘制。
 

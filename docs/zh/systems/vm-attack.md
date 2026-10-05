@@ -77,7 +77,7 @@
 `FakeFiles[].Source`、`CheckFilePattern` 等），都是**相对于扩展根目录**的路径。
 
 !!! warning "大小写必须与磁盘一致"
-    Linux 的文件系统**区分大小写**，`VMATK/MyAttack.xml` 与 `vmattk/myattack.xml` 是两个不同的文件。
+    Linux 的文件系统**区分大小写**，`VMATK/MyAttack.xml` 与 `vmatk/myattack.xml` 是两个不同的文件。
     请统一按磁盘上的实际大小写书写——Windows 上虽然不区分、写错也能跑，但同一份内容拿到 Linux 就会找不到文件。
 
 !!! warning "路径不得逃出扩展目录"
