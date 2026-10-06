@@ -30,6 +30,11 @@ KernelExtensions 向 Pathfinder 注册了 **4 个**自定义可执行程序，�
 通过 `CustomTrial_` 开头的 Flag 指定要加载的配置（例如 `CustomTrial_MyTrial`）。
 详细用法、配置说明和可用特效请参阅 **[自定义试炼系统](./../systems/custom-trial.md)** 页面。
 
+## PhaseSwift 的调用方式
+
+通过 `PhaseSwift_` 开头的 Flag 指定要加载的配置（例如 `PhaseSwift_MyConfig`）。
+详细用法、场景配置与音乐组说明请参阅 **[相位穿梭系统](./../systems/phase-swift.md)** 页面。
+
 ---
 
 ## 另请参阅

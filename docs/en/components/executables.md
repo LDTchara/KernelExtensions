@@ -33,6 +33,12 @@ A Flag starting with `CustomTrial_` selects the configuration to load (e.g. `Cus
 For detailed usage, configuration options and available effects, see the
 **[Custom Trial System](./../systems/custom-trial.md)** page.
 
+## How PhaseSwift is invoked
+
+A Flag starting with `PhaseSwift_` selects the configuration to load (e.g. `PhaseSwift_MyConfig`).
+For detailed usage, scene configuration and music phases, see the
+**[Phase Swift System](./../systems/phase-swift.md)** page.
+
 ---
 
 ## See Also

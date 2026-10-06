@@ -28,6 +28,7 @@
 | Configuration Files | [Configuration-Files](./components/configuration.md) |
 | Utility Classes | [Utility-Classes](./components/utility.md) |
 | Localization | [Localization-KELoc](./components/keloc.md) |
+| Self-Replacement | [Self-Replacement-Placeholders](./components/self-replacement.md) |
 | Patches & Harmony | [Patches-and-Harmony](./components/harmony.md) |
 | Mod Compatibility | [Mod-Compatibility](./components/mod-compat.md) |
 
