@@ -34,6 +34,7 @@ namespace KernelExtensions.Patches
         public static void Initialize()
         {
             EventManager<TextReplaceEvent>.AddHandler(OnTextReplace);
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded);
             KELog.Info("[SelfReplace] #IP_<id># / #NAME_<id># handler registered.");
         }
 
@@ -41,6 +42,7 @@ namespace KernelExtensions.Patches
         public static void Dispose()
         {
             EventManager<TextReplaceEvent>.RemoveHandler(OnTextReplace);
+            EventManager<OSLoadedEvent>.RemoveHandler(OnOSLoaded);
         }
 
         private static void OnTextReplace(TextReplaceEvent e)
@@ -48,18 +50,81 @@ namespace KernelExtensions.Patches
             string text = e.Replacement;
             if (string.IsNullOrEmpty(text)) return;
 
-            // 快速预判：不含 KE 前缀直接返回 —— filter() 调用极频繁，先把正则开销挡掉
-            if (text.IndexOf("#IP_", StringComparison.Ordinal) < 0
-                && text.IndexOf("#NAME_", StringComparison.Ordinal) < 0)
-                return;
-
             // 防御：正常调用前 os 已就绪（原版 filter 自身就用 os.thisComputer），仍加保护
             OS os = ComputerLoader.os;
             if (os?.netMap?.nodes == null) return;
 
+            e.Replacement = ReplaceAll(text, os);
+        }
+
+        /// <summary>
+        /// 加载完成后的**补替换**。
+        /// <para>
+        /// <c>filter()</c> 在**节点加载时**跑，那一刻 <c>netMap.nodes</c> 可能还不完整 ——
+        /// 若文件内容引用了「尚未加载的节点」，那一轮只能查不到、保留原文
+        /// （实测：`playerComp` 的文件引用 `testNode6`，而后者加载更晚）。
+        /// 因此在 OSLoaded（<c>OS.LoadContent</c> 的 Postfix，此时 netMap 已完整）再扫一遍。
+        /// </para>
+        /// <para>
+        /// **天然安全**：已替换过的文本不再含 <c>#IP_</c> / <c>#NAME_</c> 前缀，不会被二次处理。
+        /// 只遍历**文件内容**；电脑的 name/ip 属性等按需再加。
+        /// </para>
+        /// </summary>
+        private static void OnOSLoaded(OSLoadedEvent e)
+        {
+            OS os = e.Os;
+            if (os?.netMap?.nodes == null) return;
+
+            int resolved = 0;
+            foreach (Computer comp in os.netMap.nodes)
+            {
+                if (comp?.files?.root == null) continue;
+                resolved += PatchFolder(comp.files.root, os);
+            }
+
+            if (resolved > 0)
+                KELog.Info($"[SelfReplace] resolved {resolved} placeholder file(s) after load (referenced nodes loaded later).");
+        }
+
+        /// <summary>递归遍历文件夹下的所有文件，对仍含占位符的内容做一次补替换。返回命中的文件数。</summary>
+        private static int PatchFolder(Folder folder, OS os)
+        {
+            int count = 0;
+            for (int i = 0; i < folder.files.Count; i++)
+            {
+                FileEntry f = folder.files[i];
+                if (f?.data == null || f.data.Length == 0) continue;
+
+                // 快速预判：绝大多数文件不含前缀，直接跳过
+                if (f.data.IndexOf("#IP_", StringComparison.Ordinal) < 0
+                    && f.data.IndexOf("#NAME_", StringComparison.Ordinal) < 0)
+                    continue;
+
+                string replaced = ReplaceAll(f.data, os);
+                if (!string.Equals(replaced, f.data, StringComparison.Ordinal))
+                {
+                    f.data = replaced;
+                    count++;
+                }
+            }
+            for (int i = 0; i < folder.folders.Count; i++)
+            {
+                Folder sub = folder.folders[i];
+                if (sub != null) count += PatchFolder(sub, os);
+            }
+            return count;
+        }
+
+        /// <summary>核心替换（主 handler 与补替换共用）。不含前缀时原样返回。</summary>
+        private static string ReplaceAll(string text, OS os)
+        {
+            // 快速预判：不含 KE 前缀直接返回 —— filter() 调用极频繁，先把正则开销挡掉
+            if (text.IndexOf("#IP_", StringComparison.Ordinal) < 0
+                && text.IndexOf("#NAME_", StringComparison.Ordinal) < 0)
+                return text;
+
             string result = IpPattern.Replace(text, m => Resolve(os, m, useIp: true));
-            result = NamePattern.Replace(result, m => Resolve(os, m, useIp: false));
-            e.Replacement = result;
+            return NamePattern.Replace(result, m => Resolve(os, m, useIp: false));
         }
 
         /// <summary>查到节点则替换；查不到保留原文（不记日志）。</summary>
@@ -71,11 +136,11 @@ namespace KernelExtensions.Patches
         }
 
         /// <summary>
-        /// 大小写不敏感的「三路查找」（ip / idName / name）。
+        /// 按 <c>idName</c> 查找（大小写不敏感）。
         /// <para>
-        /// 刻意不用 <c>Programs.getComputer</c>：它内部就是这套线性遍历，但用 <c>string.Equals</c>
-        /// （大小写敏感）；也不去 patch 它（会外溢影响所有模组与原版脚本）。
-        /// 原版本就是 O(n)，Hacknet 的节点规模下成本可忽略，**无需缓存索引**。
+        /// **只匹配 idName**：节点自替换符的语义是「用你在节点 XML 里写的那个 id 引用它」。
+        /// 刻意不去匹配 <c>ip</c> 或 <c>name</c>——没人会写 <c>#IP_235.7.94.131#</c>，
+        /// 而 <c>name</c> 本身可能含占位符（如 <c>#PLAYERNAME# 作战基地</c>），用它匹配会引入歧义。
         /// </para>
         /// </summary>
         private static Computer FindNode(OS os, string id)
@@ -85,9 +150,7 @@ namespace KernelExtensions.Patches
             {
                 Computer n = nodes[i];
                 if (n == null) continue;
-                if (string.Equals(n.ip, id, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(n.idName, id, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(n.name, id, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(n.idName, id, StringComparison.OrdinalIgnoreCase))
                     return n;
             }
             return null;
