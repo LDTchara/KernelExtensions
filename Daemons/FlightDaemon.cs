@@ -329,6 +329,9 @@ namespace KernelExtensions.Daemons
         // ====== 固件重载 ======
         public void StartReloadFirmware()
         {
+            // 已在重载中则直接返回：此前无条件重置进度，导致连点「重载固件」会让进度从头再来
+            if (IsReloadingFirmware) return;
+
             StartUpdating();
             IsReloadingFirmware = true;
             firmwareReloadProgress = 0f;
