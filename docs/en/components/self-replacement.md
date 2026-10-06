@@ -52,8 +52,12 @@ Vanilla only has **player-side** placeholders — nothing to reference another n
 <file path="bin" name="relay.cfg">#IP_relayNode#</file>
 ```
 
-A node matches if **any of `ip` / `idName` / `name`** matches, and matching is
+A node matches by **`idName` only** (the id you write in the node XML's `<Computer id="...">`), and matching is
 **case-insensitive** (so `#IP_RELAY#` and `#IP_relay#` are equivalent).
+
+!!! note "Why not match `ip` / `name`"
+    Nobody would actually write those (`#IP_235.7.94.131#`?), and a node's `name` may itself contain
+    placeholders (e.g. `#PLAYERNAME# base`), which would make it an ambiguous key. So only `idName` is accepted.
 
 !!! note "Why the prefix form (`IP_` first)"
     Vanilla already has `#PLAYER_IP#` / `#RANDOM_IP#` / `#GIBSON_IP#` — three identifiers **ending**
@@ -85,10 +89,15 @@ Placeholders go through `ComputerLoader.filter()`, which is used widely:
 
 - **Unknown node → the original text is kept**; KE neither errors nor logs. If you see `#IP_xxx#`
   still in place, the id is wrong
-- **Single pass, non-recursive**: if text produced by `#NAME_A#` itself contains `#IP_B#`, it is not
-  expanded again (matching vanilla's `Replace` chain)
-- **Computer `ip` / `name` properties also go through `filter()`**: while a computer is loading, other
-  nodes may **not be loaded yet** — the original text is kept in that case. That is expected, not a bug
+- **Single pass, non-recursive**: replacement runs once. If a node's **`name` itself contains a placeholder**
+  (e.g. A's display name is literally `#NAME_B#`), then `#NAME_A#` resolves to the text `#NAME_B#` and **stops there** —
+  it is not expanded into B's name (matching vanilla's `Replace` chain; this is also why mutually referencing
+  placeholders cannot loop forever)
+- **References to not-yet-loaded nodes are resolved after loading**: `filter()` runs while a node is loading, when
+  `netMap` may be incomplete (observed: `playerComp`'s file referenced the later-loaded `testNode6`). KE **sweeps file
+  contents again on OSLoaded**, so content can freely reference other nodes without worrying about load order
+- **Computer `ip` / `name` properties also go through `filter()`**: those are fixed at load time; if they reference a
+  not-yet-loaded node the original text is kept (**no post-load sweep** for properties — add later if needed)
 - **`#IP_` / `#NAME_` are KE's placeholder namespace** — don't use these prefixes for anything else
 
 ---
