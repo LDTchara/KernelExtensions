@@ -1,8 +1,11 @@
 # Self-Replacement Placeholders (`#…​#`)
 
 Text placeholders in Hacknet content, written as `#name#`, **replaced with real content when the
-content is loaded**. This page gathers the **three** sources: custom programs, vanilla mechanics,
-and the node placeholders KE adds.
+content is loaded**. This page covers the **two KE-related** sources: custom programs, and the node
+placeholders KE adds.
+
+> Vanilla placeholders (`#PLAYERNAME#` / `#BINARY#` / `#SSH_CRACK#`, …) are base-game mechanics and
+> are not expanded here — see the vanilla `self-replacement-placeholder` document for the list.
 
 ---
 
@@ -34,26 +37,7 @@ Typical use (put the program into the player node's `bin/`):
 
 ---
 
-## 2. Vanilla placeholders
-
-The vanilla `ComputerLoader.filter()` handles these with a fixed replacement chain (same in 0.6 / 0.7):
-
-**Content / player**
-
-| Placeholder | Replaced with |
-|-------------|---------------|
-| `#PLAYERNAME#` | The player's account name |
-| `#PLAYER_IP#` | The player computer's IP |
-| `#PLAYER_ACCOUNT_PASSWORD#` | The player account password |
-| `#RANDOM_IP#` | A random IP |
-| `#BINARY#` / `#BINARYSMALL#` | Random binary strings (long / short) |
-
-**Program identifiers**: `#SSH_CRACK#`, `#FTP_CRACK#` and the rest of the crackExeData placeholders
-(see the vanilla `self-replacement-placeholder` document for the full list).
-
----
-
-## 3. Added by KE: node placeholders
+## 2. Added by KE: node placeholders
 
 Vanilla only has **player-side** placeholders — nothing to reference another node. KE adds two:
 
@@ -80,7 +64,7 @@ A node matches if **any of `ip` / `idName` / `name`** matches, and matching is
 
 ---
 
-## 4. Where they take effect
+## 3. Where they take effect
 
 Placeholders go through `ComputerLoader.filter()`, which is used widely:
 
@@ -93,7 +77,7 @@ Placeholders go through `ComputerLoader.filter()`, which is used widely:
 
 ---
 
-## 5. Caveats
+## 4. Caveats
 
 !!! warning "Replacement is one-shot"
     Placeholders are replaced and frozen **when the content is loaded**. If a node's IP later changes
