@@ -77,6 +77,20 @@ KE 向 Pathfinder 注册了 4 个可执行程序，每个绑定一个自替换�
 - **KE 侧**：`TerminalWrite` / `TerminalType` / `StartScreenBleedEffectWCC` 等动作
 - **自定义程序的文件内容**（见第一节）
 
+!!! warning "不要在节点之间互相引用"
+    典型错误写法：A 的 `name` 写 `#NAME_B#`，B 的 `name` 写 `#NAME_A#`。
+    因为替换是**单遍**的、且结果依赖**加载顺序**，你拿不到想要的名字 ——
+    而是“先加载的保留字面量，后加载的引用到前者那串字面量”。
+
+    **实测（`AAA` ↔ `BBB`）**：
+
+    - `AAA.name = #NAME_BBB#`——加载时 BBB 还没进来 → 保留为字面量 `#NAME_BBB#`
+    - `BBB.name = #NAME_AAA#`——加载时 AAA 已在，于是取到 AAA 的 name（就是 `#NAME_BBB#`）→ 也成了 `#NAME_BBB#`
+    - 最终**两个节点的名字都是 `#NAME_BBB#`**
+
+    **正确做法**：节点显示名直接写字面文本，不要嵌占位符。
+    需要运行时改名请用 `RenameNode` 动作。
+
 ---
 
 ## 四、注意事项

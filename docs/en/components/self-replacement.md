@@ -79,6 +79,20 @@ Placeholders go through `ComputerLoader.filter()`, which is used widely:
 - **KE side**: actions such as `TerminalWrite` / `TerminalType` / `StartScreenBleedEffectWCC`
 - **Custom program file contents** (see section 1)
 
+!!! warning "Do not make nodes reference each other"
+    Typical mistake: A's `name` is `#NAME_B#` and B's `name` is `#NAME_A#`. Because replacement is
+    **single-pass** and order-dependent, you won't get the names you want — the earlier node keeps the
+    literal text, and the later one resolves to that literal.
+
+    **Observed case (`AAA` ↔ `BBB`):**
+
+    - `AAA.name = #NAME_BBB#` — BBB is not loaded yet → kept as the literal `#NAME_BBB#`
+    - `BBB.name = #NAME_AAA#` — AAA is loaded by then, so it resolves to AAA's name (which *is* `#NAME_BBB#`) → also becomes `#NAME_BBB#`
+    - Result: **both nodes end up named `#NAME_BBB#`**
+
+    **Do this instead**: give nodes a literal display name, with no placeholders inside it.
+    Use the `RenameNode` action if you need to change a name at runtime.
+
 ---
 
 ## 4. Caveats
