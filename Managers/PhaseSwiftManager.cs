@@ -736,8 +736,7 @@ namespace KernelExtensions.Managers
         {
             if (_stopped) return;
             if (trackIdx < 0 || trackIdx >= _trackReaders.Length) return;
-            var reader = _trackReaders[trackIdx];
-            if (reader == null) return;
+            if (_trackReaders[trackIdx] == null) return;
             int ch = _trackChannels[trackIdx];
             if (ch <= 0) return;
             float[] buf = _chunkBuf[trackIdx];
@@ -747,28 +746,44 @@ namespace KernelExtensions.Managers
             int filled = 0;
             int guard = 0;      // 防御：循环区间极短时一块内可多次回跳，设上限避免死循环
 
-            while (filled < wantFrames && !_stopped)
+            try
             {
-                if (++guard > 64) break;
-                long remaining = _loopEndFrames[trackIdx] - _framesPlayed[trackIdx];
-                if (remaining <= 0L)
+                while (filled < wantFrames && !_stopped)
                 {
-                    // 到达循环终点 → 跳回起点
-                    if (!SeekToFrame(trackIdx, _loopStartFrames[trackIdx])) continue;   // 降级后 loop 已重置，重算 remaining
-                    _framesPlayed[trackIdx] = _loopStartFrames[trackIdx];
-                    continue;
+                    if (++guard > 64) break;
+
+                    // ⚠️ 每轮必须重新取 reader：SeekToFrame / DegradeToWholeTrack 会 Dispose 并替换它
+                    //    （frame<=0 的分支就是“重建 reader”）。若像之前那样在循环外捕获一次，
+                    //    整曲循环回到起点后下一轮就会读到已释放对象 → ObjectDisposedException。
+                    var reader = _trackReaders[trackIdx];
+                    if (reader == null) break;
+
+                    long remaining = _loopEndFrames[trackIdx] - _framesPlayed[trackIdx];
+                    if (remaining <= 0L)
+                    {
+                        // 到达循环终点 → 跳回起点
+                        if (!SeekToFrame(trackIdx, _loopStartFrames[trackIdx])) continue;   // 降级后 loop 已重置，重算 remaining
+                        _framesPlayed[trackIdx] = _loopStartFrames[trackIdx];
+                        continue;
+                    }
+                    int take = (int)Math.Min((long)(wantFrames - filled), remaining);
+                    int got = reader.ReadSamples(buf, filled * ch, take * ch);
+                    if (got <= 0)
+                    {
+                        // 读不动（EOF 与 TotalSamples 不符等异常）→ 也回跳一次，失败则退出
+                        if (!SeekToFrame(trackIdx, _loopStartFrames[trackIdx])) break;
+                        _framesPlayed[trackIdx] = _loopStartFrames[trackIdx];
+                        continue;
+                    }
+                    filled += got / ch;
+                    _framesPlayed[trackIdx] += got / ch;
                 }
-                int take = (int)Math.Min((long)(wantFrames - filled), remaining);
-                int got = reader.ReadSamples(buf, filled * ch, take * ch);
-                if (got <= 0)
-                {
-                    // 读不动（EOF 与 TotalSamples 不符等异常）→ 也回跳一次，失败则退出
-                    if (!SeekToFrame(trackIdx, _loopStartFrames[trackIdx])) break;
-                    _framesPlayed[trackIdx] = _loopStartFrames[trackIdx];
-                    continue;
-                }
-                filled += got / ch;
-                _framesPlayed[trackIdx] += got / ch;
+            }
+            catch (Exception ex)
+            {
+                // 不让解码异常冒到游戏顶层（会直接崩游戏）。记 Error 并放弃本次补给，下一帧会再试。
+                KELog.Error($"[PhaseSwift] 音轨 {trackIdx} 读取失败: {ex.GetType().Name}: {ex.Message}");
+                return;
             }
 
             if (filled <= 0) return;
