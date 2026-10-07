@@ -18,6 +18,10 @@
     <Version>0.7.0</Version>
     <FileVersion>0.7.0</FileVersion>
     <AssemblyVersion>0.7.0</AssemblyVersion>
+    <!-- 调试符号格式：SDK 风格项目 + net472 默认生成 **Portable PDB**，而 .NET Framework 的
+         StackTrace 读不了它 → 异常堆栈只有 IL 偏移、没有源文件行号（排查成本很高）。
+         显式用 full（Windows PDB）；仅 Debug 需要，Release 保持默认以免 PDB 随分发。 -->
+    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

@@ -782,7 +782,8 @@ namespace KernelExtensions.Managers
             catch (Exception ex)
             {
                 // 不让解码异常冒到游戏顶层（会直接崩游戏）。记 Error 并放弃本次补给，下一帧会再试。
-                KELog.Error($"[PhaseSwift] 音轨 {trackIdx} 读取失败: {ex.GetType().Name}: {ex.Message}");
+                // 用完整 ToString（含堆栈）而非 Message：配合 Windows PDB 可直接看到源文件行号。
+                KELog.Error($"[PhaseSwift] 音轨 {trackIdx} 读取失败: {ex}");
                 return;
             }
 
