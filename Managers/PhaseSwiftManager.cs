@@ -60,6 +60,28 @@ namespace KernelExtensions.Managers
         private static float[] _startVolumes = Array.Empty<float>();
         private static float[] _targetVolumes = Array.Empty<float>();
 
+        /// <summary>
+        /// 播放队列维持的块数（9.40）。一块 = 1/24 秒 ≈ 41.7ms，
+        /// 8 块 ≈ 333ms 余量，可扛约 3 FPS 的帧间隔。
+        /// 再深则启动延迟与可视化超前涨得快、收益递减（详见改造清单 B1）。
+        /// 需与 <see cref="OnBufferNeeded"/>、<see cref="UpdateAudioBuffers"/> 及初始填充保持一致。
+        /// </summary>
+        private const int TargetPendingBuffers = 8;
+
+        // —— 循环点（9.38）运行时状态，按轨 ——
+        /// <summary>该轨已播出的帧数（**自维护**：VorbisReader.SamplePosition 的 getter 有 packet 粒度
+        /// 滞后，实测读 480000 帧后报 479552，不能用来判断循环边界）。</summary>
+        private static long[] _framesPlayed = Array.Empty<long>();
+        /// <summary>循环起点（帧）。0 = 文件开头。</summary>
+        private static long[] _loopStartFrames = Array.Empty<long>();
+        /// <summary>循环终点（帧）。等于总帧数时为整曲循环。</summary>
+        private static long[] _loopEndFrames = Array.Empty<long>();
+        /// <summary>单曲音量倍率（PhaseSwiftTrack.Volume，缺省 1）。在音量最终赋值处相乘。</summary>
+        private static float[] _trackVolumeMul = Array.Empty<float>();
+        /// <summary>按轨复用的提交缓冲（D1：免去每块两次数组分配）。
+        /// 长度 = 一块的 interleaved 样本数（帧数 × 声道）。</summary>
+        private static float[][] _chunkBuf = Array.Empty<float[]>();
+
         private static Dictionary<string, List<int>> _originalLinks = new();
         private static HashSet<string> _controlledNodeIds = new();
         private static HashSet<string> _currentVisibleNodeIds = new();
@@ -172,7 +194,7 @@ namespace KernelExtensions.Managers
                 // 单曲模式：MusicManager 播放指定音乐
                 string singleTrack = Config.SingleTrack;
                 if (ConfigValue.IsNone(singleTrack) && Config.MusicPhases.Count > 0 && Config.MusicPhases[0].Tracks.Count > 0)
-                    singleTrack = Config.MusicPhases[0].Tracks[0];
+                    singleTrack = Config.MusicPhases[0].Tracks[0].Path;
                 if (!ConfigValue.IsNone(singleTrack))
                 {
                     string resolved = MusicPathResolver.ResolveMusicPath(singleTrack, ExtensionRoot);
@@ -339,7 +361,7 @@ namespace KernelExtensions.Managers
                     try
                     {
                         int pending = _dseInstances[i].PendingBufferCount;
-                        int needed = 3 - pending;
+                        int needed = TargetPendingBuffers - pending;
                         for (int b = 0; b < needed; b++) SubmitNextChunk(i);
                     }
                     catch { }
@@ -356,13 +378,13 @@ namespace KernelExtensions.Managers
             float t = Math.Min(_fadeProgress / _targetFadeDuration, 1f);
             for (int i = 0; i < _dseInstances.Length; i++)
                 if (_dseInstances[i] != null)
-                    _dseInstances[i].Volume = MathHelper.Lerp(_startVolumes[i], _targetVolumes[i], t) * volMul;
+                    _dseInstances[i].Volume = MathHelper.Lerp(_startVolumes[i], _targetVolumes[i], t) * _trackVolumeMul[i] * volMul;
             if (_fadeProgress >= _targetFadeDuration)
             {
                 _isFading = false;
                 for (int i = 0; i < _dseInstances.Length; i++)
                     if (_dseInstances[i] != null)
-                        _dseInstances[i].Volume = _targetVolumes[i] * volMul;
+                        _dseInstances[i].Volume = _targetVolumes[i] * _trackVolumeMul[i] * volMul;
             }
         }
 
@@ -372,7 +394,10 @@ namespace KernelExtensions.Managers
             if (!IsRunning || _dseInstances.Length == 0) return;
             for (int i = 0; i < _dseInstances.Length; i++)
             {
-                _startVolumes[i] = _dseInstances[i] != null ? _dseInstances[i].Volume : 0f;
+                // _startVolumes 存的是**纯场景音量**（不含玩家音量/单曲音量）：
+                // UpdateCrossfade 会再乘 _trackVolumeMul × MusicManager.getVolume()。
+                // 若这里读 DSEI 的实际音量（已含两者），淡出会变成“音量平方”（既有问题，顺手修正）。
+                _startVolumes[i] = _targetVolumes[i];
                 _targetVolumes[i] = 0f;
             }
             _targetFadeDuration = duration;
@@ -399,12 +424,13 @@ namespace KernelExtensions.Managers
                     // 无过渡直切：直接设音量，不启动交叉淡化
                     for (int i = 0; i < _dseInstances.Length; i++)
                     {
+                        float sceneVol = (i == targetScene) ? 1f : 0f;
                         if (_dseInstances[i] != null)
-                            _dseInstances[i].Volume = (i == targetScene) ? 1f : 0f;
+                            _dseInstances[i].Volume = sceneVol * _trackVolumeMul[i] * MusicManager.getVolume();
                         // 必须同步 _targetVolumes：SyncVolume() 每帧用它覆盖 DSEI 音量，
                         // 只设 Volume 会在下一帧被覆盖回 0（LoadMusicPhase 初始化时全 0）→ 静音
-                        _targetVolumes[i] = (i == targetScene) ? 1f : 0f;
-                        _startVolumes[i] = (i == targetScene) ? 1f : 0f;
+                        _targetVolumes[i] = sceneVol;
+                        _startVolumes[i] = sceneVol;
                     }
                     _isFading = false;
                 }
@@ -412,7 +438,7 @@ namespace KernelExtensions.Managers
                 {
                     for (int i = 0; i < _dseInstances.Length; i++)
                     {
-                        _startVolumes[i] = _dseInstances[i] != null ? _dseInstances[i].Volume : 0f;
+                        _startVolumes[i] = _targetVolumes[i];   // 纯场景音量，见 StartFadeOut 注释
                         _targetVolumes[i] = (i == targetScene) ? 1f : 0f;
                     }
                     float dur = fadeDurationOverride ?? Config.DefaultFadeDuration;
@@ -570,13 +596,19 @@ namespace KernelExtensions.Managers
             _trackChannels = new int[trackCount];
             _startVolumes = new float[trackCount];
             _targetVolumes = new float[trackCount];
+            _framesPlayed = new long[trackCount];
+            _loopStartFrames = new long[trackCount];
+            _loopEndFrames = new long[trackCount];
+            _trackVolumeMul = new float[trackCount];
+            _chunkBuf = new float[trackCount][];
             for (int i = 0; i < trackCount; i++)
             {
                 try
                 {
                     // 解析文件路径：先按配置中的相对路径，再回退到文件名在 Music/ 下查找
                     // （两步均在扩展目录内，越界一律不予考虑）
-                    string relPath = phase.Tracks[i].Replace('\\', '/');
+                    var meta = phase.Tracks[i];
+                    string relPath = (meta.Path ?? "").Replace('\\', '/');
                     string filePath = KEPath.ResolveInside(relPath, root);
                     if (filePath == null || !File.Exists(filePath))
                     {
@@ -596,16 +628,59 @@ namespace KernelExtensions.Managers
                     int sr = _trackReaders[i].SampleRate;
                     int ch = _trackReaders[i].Channels;
                     _trackChannels[i] = ch;
+                    // NVorbis 的 TotalSamples 是 **per-channel 帧数**（实测 == TotalTime × SampleRate）
+                    long totalFrames = _trackReaders[i].TotalSamples;
+
+                    // —— 循环点解析（A5）：负数/NaN/Inf 回退默认；非法区间回退整曲 ——
+                    long loopStart = IsValidSeconds(meta.LoopStart) ? (long)(meta.LoopStart * sr) : 0L;
+                    long loopEnd = IsValidSeconds(meta.LoopEnd) ? (long)(meta.LoopEnd * sr) : totalFrames;
+                    if (loopStart < 0L) loopStart = 0L;
+                    if (loopEnd > totalFrames) loopEnd = totalFrames;
+                    if (loopEnd <= loopStart)
+                    {
+                        KELog.Warn($"[PhaseSwift] 音轨 {i} 循环区间非法（LoopStart={meta.LoopStart}, LoopEnd={meta.LoopEnd},"
+                            + $" 总长 {totalFrames / (double)sr:F2}s），回退整曲循环");
+                        loopStart = 0L;
+                        loopEnd = totalFrames;
+                    }
+                    _loopStartFrames[i] = loopStart;
+                    _loopEndFrames[i] = loopEnd;
+
+                    // —— 单曲音量（A8）：参与最终的音量乘法，而不是直写 DSEI.Volume ——
+                    _trackVolumeMul[i] = IsValidSeconds(meta.Volume) ? meta.Volume : 1f;
+
                     // 按首轨采样率初始化滚动缓冲 (~500ms mono)
                     if (i == 0 && (_rollingBuf == null || _rollingBuf.Length != sr / 2))
                         _rollingBuf = new float[sr / 2];
+
+                    // —— D1：一块的 interleaved 样本数，按轨复用缓冲 ——
+                    int chunkSamples = (sr * ch) / 24;
+                    if (ch > 0 && chunkSamples % ch != 0) chunkSamples -= chunkSamples % ch;
+                    if (chunkSamples < ch) chunkSamples = ch;
+                    _chunkBuf[i] = new float[chunkSamples];
+
                     AudioChannels audioCh = (ch >= 2) ? AudioChannels.Stereo : AudioChannels.Mono;
                     _dseInstances[i] = new DynamicSoundEffectInstance(sr, audioCh);
                     _dseInstances[i].BufferNeeded += OnBufferNeeded;
-                    _dseInstances[i].Volume = (i == CurrentScene) ? 1f : 0f;
+                    // 同步场景音量（A8）：SwitchMusicPhase 路径不经过 SwitchToScene，
+                    // 若这里不同步 _targetVolumes，SyncVolume() 下一帧就把音量覆盖回 0 → 切音乐组后静音。
+                    float sceneVol = (i == CurrentScene) ? 1f : 0f;
+                    _targetVolumes[i] = sceneVol;
+                    _startVolumes[i] = sceneVol;
+                    _dseInstances[i].Volume = sceneVol * _trackVolumeMul[i];
+
+                    // —— A7：Pitch（FNA 的非 XACT 源范围为 [-1, 1]）——
+                    if (meta.Pitch != 0f && !float.IsNaN(meta.Pitch) && !float.IsInfinity(meta.Pitch))
+                        _dseInstances[i].Pitch = MathHelper.Clamp(meta.Pitch, -1f, 1f);
+
                     _dseInstances[i].Play();
                     _stopped = false;
-                    for (int b = 0; b < 6; b++) SubmitNextChunk(i);
+                    // 起播位置：有循环起点则直接从该处开始（
+                    // 语义为“只循环这一段”，即 0~LoopStart 的开头部分不播）
+                    _framesPlayed[i] = 0L;
+                    if (loopStart > 0L && SeekToFrame(i, loopStart))
+                        _framesPlayed[i] = loopStart;
+                    for (int b = 0; b < TargetPendingBuffers; b++) SubmitNextChunk(i);
                 }
                 catch (Exception ex)
                 {
@@ -618,56 +693,77 @@ namespace KernelExtensions.Managers
         }
 
 
+        /// <summary>
+        /// 向指定音轨的播放队列补一块。一块 = 1/24 秒（interleaved 样本数 = 采样率 × 声道 / 24）。
+        ///
+        /// 与旧实现的区别（9.38）：旧版“读一整块，读不够就回文件头”，只能在文件末尾循环；
+        /// 新版主动用“离循环终点的剩余量”约束本次读取量，到界就跳回循环起点，
+        /// 因此支持文件中段的循环区间，且一块内可跳（甚至多次跳）循环点。
+        /// </summary>
         private static void SubmitNextChunk(int trackIdx)
         {
             if (_stopped) return;
             if (trackIdx < 0 || trackIdx >= _trackReaders.Length) return;
             var reader = _trackReaders[trackIdx];
             if (reader == null) return;
-            int bufSamples = (reader.SampleRate * _trackChannels[trackIdx]) / 24;
-            // 确保帧对齐：立体声必须是偶数个样本
-            if (bufSamples % _trackChannels[trackIdx] != 0)
-                bufSamples -= bufSamples % _trackChannels[trackIdx];
-            float[] floatBuf = new float[bufSamples];
-            int read = reader.ReadSamples(floatBuf, 0, bufSamples);
-            if (read < bufSamples)
-            {
-                // 独立循环：音轨播完后重置到文件开头
-                // 不清零剩余缓冲，避免不同长度音轨的 seek 偏移积累
-                _trackStreams[trackIdx].Position = 0;
-                _trackReaders[trackIdx].Dispose();
-                _trackReaders[trackIdx] = new VorbisReader(_trackStreams[trackIdx], false);
-                // 读取更多样本补足当前帧（从文件开头继续读）
-                int more = _trackReaders[trackIdx].ReadSamples(floatBuf, read, bufSamples - read);
-                read += more;
-            }
-            // 写入滚动缓冲（取第 0 声道）
             int ch = _trackChannels[trackIdx];
-            for (int j = 0; j < read; j += ch)
-            {
-                _rollingBuf[_rollingBufPos] = floatBuf[j];
-                _rollingBufPos = (_rollingBufPos + 1) % _rollingBuf.Length;
-            }
-            _rollingBufCount = Math.Min(_rollingBuf.Length, _rollingBufCount + read / ch);
+            if (ch <= 0) return;
+            float[] buf = _chunkBuf[trackIdx];
+            if (buf == null) return;
 
-            // 取最近 256 个连续样本（~5.8ms @ 44.1kHz），还原原版波形
+            int wantFrames = buf.Length / ch;
+            int filled = 0;
+            int guard = 0;      // 防御：循环区间极短时一块内可多次回跳，设上限避免死循环
+
+            while (filled < wantFrames && !_stopped)
+            {
+                if (++guard > 64) break;
+                long remaining = _loopEndFrames[trackIdx] - _framesPlayed[trackIdx];
+                if (remaining <= 0L)
+                {
+                    // 到达循环终点 → 跳回起点
+                    if (!SeekToFrame(trackIdx, _loopStartFrames[trackIdx])) continue;   // 降级后 loop 已重置，重算 remaining
+                    _framesPlayed[trackIdx] = _loopStartFrames[trackIdx];
+                    continue;
+                }
+                int take = (int)Math.Min((long)(wantFrames - filled), remaining);
+                int got = reader.ReadSamples(buf, filled * ch, take * ch);
+                if (got <= 0)
+                {
+                    // 读不动（EOF 与 TotalSamples 不符等异常）→ 也回跳一次，失败则退出
+                    if (!SeekToFrame(trackIdx, _loopStartFrames[trackIdx])) break;
+                    _framesPlayed[trackIdx] = _loopStartFrames[trackIdx];
+                    continue;
+                }
+                filled += got / ch;
+                _framesPlayed[trackIdx] += got / ch;
+            }
+
+            if (filled <= 0) return;
+            int written = filled * ch;
+
+            // 写入滚动缓冲（取第 0 声道）
+            // null 防御：滚动缓冲按首轨采样率初始化，若首轨加载失败则为 null（仅跳过波形数据，不影响播放）
+            if (_rollingBuf != null)
+            {
+                for (int j = 0; j < written; j += ch)
+                {
+                    _rollingBuf[_rollingBufPos] = buf[j];
+                    _rollingBufPos = (_rollingBufPos + 1) % _rollingBuf.Length;
+                }
+                _rollingBufCount = Math.Min(_rollingBuf.Length, _rollingBufCount + filled);
+            }
+
             // 从滚动缓冲的实时采样交给 UpdateVisualization (注入器触发)
             // 这里只更新 LastBandUpdateTime 标记，用于检测是否有新数据
             CurrentVisBands = Array.Empty<float>();
             LastBandUpdateTime = DateTime.UtcNow;
-            // SubmitBuffer(byte[]) 是 XNA 标准方法，全采样率兼容
-            // 将 float PCM 转为 16-bit PCM 字节
+
+            // D2：直接提交 float（FNA 扩展方法，免去 float→int16→byte 的转换与临时数组）。
+            // count 语义为 interleaved 样本数（见 FNA OpenALDevice.SetBufferFloatData：count * 4 字节）。
             try
             {
-                byte[] pcm16 = new byte[read * 2];
-                for (int s = 0; s < read; s++)
-                {
-                    float clamped = Math.Max(-1f, Math.Min(1f, floatBuf[s]));
-                    short val = (short)(clamped * short.MaxValue);
-                    pcm16[s * 2] = (byte)(val & 0xFF);
-                    pcm16[s * 2 + 1] = (byte)((val >> 8) & 0xFF);
-                }
-                _dseInstances[trackIdx].SubmitBuffer(pcm16);
+                _dseInstances[trackIdx].SubmitFloatBufferEXT(buf, 0, written);
             }
             catch (Exception ex_)
             {
@@ -675,11 +771,67 @@ namespace KernelExtensions.Managers
             }
         }
 
+        /// <summary>
+        /// 把音轨读取位置跳到指定帧（per-channel frame）。
+        /// 回到 0 用“重建 reader”的旧路径（已验证稳定）；其他位置用 SamplePosition setter。
+        /// 失败（如 seek 到距文件尾 0.5 秒内触发 NVorbis 的 GranulePos 校验）则降级为整曲循环，返回 false。
+        /// </summary>
+        private static bool SeekToFrame(int trackIdx, long frame)
+        {
+            try
+            {
+                if (frame <= 0L)
+                {
+                    _trackStreams[trackIdx].Position = 0;
+                    _trackReaders[trackIdx].Dispose();
+                    _trackReaders[trackIdx] = new VorbisReader(_trackStreams[trackIdx], false);
+                    return true;
+                }
+                _trackReaders[trackIdx].SamplePosition = frame;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                KELog.Warn($"[PhaseSwift] 音轨 {trackIdx} 跳到第 {frame} 帧失败（{ex.Message}），该轨降级为整曲循环");
+                DegradeToWholeTrack(trackIdx);
+                return false;
+            }
+        }
+
+        /// <summary>seek 失败时的降级：重建 reader 回到文件开头，并把该轨循环范围重置为整曲。</summary>
+        private static void DegradeToWholeTrack(int trackIdx)
+        {
+            try
+            {
+                _trackStreams[trackIdx].Position = 0;
+                _trackReaders[trackIdx]?.Dispose();
+                _trackReaders[trackIdx] = new VorbisReader(_trackStreams[trackIdx], false);
+                _loopStartFrames[trackIdx] = 0L;
+                _loopEndFrames[trackIdx] = _trackReaders[trackIdx].TotalSamples;
+                _framesPlayed[trackIdx] = 0L;
+            }
+            catch (Exception ex)
+            {
+                KELog.Error($"[PhaseSwift] 音轨 {trackIdx} 降级失败: {ex.Message}");
+                _loopEndFrames[trackIdx] = long.MaxValue;   // 至少避免外层因 remaining<=0 打转
+            }
+        }
+
+        /// <summary>数值配置项有效性：非负且有限（负数 / NaN / Infinity 按 9.55 约定视为“未指定”）。</summary>
+        private static bool IsValidSeconds(float v) => v >= 0f && !float.IsNaN(v) && !float.IsInfinity(v);
+
         private static void OnBufferNeeded(object sender, EventArgs e)
         {
             var dsei = sender as DynamicSoundEffectInstance;
+            if (dsei == null) return;
             for (int i = 0; i < _dseInstances.Length; i++)
-                if (_dseInstances[i] == dsei) { SubmitNextChunk(i); return; }
+            {
+                if (_dseInstances[i] != dsei) continue;
+                // B2：事件触发时一口气补到目标值，而不是只补 1 块
+                int need = TargetPendingBuffers - dsei.PendingBufferCount;
+                for (int b = 0; b < need; b++) SubmitNextChunk(i);
+                return;
+            }
         }
 
         private static void CleanupAudio()
@@ -704,6 +856,11 @@ namespace KernelExtensions.Managers
             _trackChannels = Array.Empty<int>();
             _startVolumes = Array.Empty<float>();
             _targetVolumes = Array.Empty<float>();
+            _framesPlayed = Array.Empty<long>();
+            _loopStartFrames = Array.Empty<long>();
+            _loopEndFrames = Array.Empty<long>();
+            _trackVolumeMul = Array.Empty<float>();
+            _chunkBuf = Array.Empty<float[]>();
             _isFading = false;
             _visOffset = 0;
         }
@@ -917,7 +1074,7 @@ namespace KernelExtensions.Managers
             for (int i = 0; i < _dseInstances.Length; i++)
             {
                 if (_dseInstances[i] != null)
-                    _dseInstances[i].Volume = _targetVolumes[i] * volMul;
+                    _dseInstances[i].Volume = _targetVolumes[i] * _trackVolumeMul[i] * volMul;
             }
         }
 

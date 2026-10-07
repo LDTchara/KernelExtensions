@@ -35,7 +35,26 @@ namespace KernelExtensions.Configs
     {
         [XmlAttribute("id")] public int Id;
         [XmlArray("Tracks"), XmlArrayItem("Track")]
-        public List<string> Tracks = new();
+        public List<PhaseSwiftTrack> Tracks = new();
+    }
+
+    /// <summary>
+    /// 音轨条目。路径写在元素文本里（&lt;Track&gt;Music/a.ogg&lt;/Track&gt;，与旧写法完全兼容），
+    /// 循环点/音调/音量作为可选属性。
+    /// 数值约定见 AGENTS.md「负数/无效值约定（9.55）」：负数或 NaN/Infinity 一律回退默认。
+    /// </summary>
+    public class PhaseSwiftTrack
+    {
+        /// <summary>扩展根目录下的相对路径（含文件名）。</summary>
+        [XmlText] public string Path;
+        /// <summary>循环起点（秒）。缺省、负数或无效值 = 0（文件开头）。</summary>
+        [XmlAttribute("LoopStart")] public float LoopStart = -1f;
+        /// <summary>循环终点（秒）。缺省、负数或无效值 = 整曲末尾。</summary>
+        [XmlAttribute("LoopEnd")] public float LoopEnd = -1f;
+        /// <summary>音调/速度倍率：范围 [-1, 1]，0 = 原速（底层 AL_PITCH = 2^pitch，变速必变调）。</summary>
+        [XmlAttribute("Pitch")] public float Pitch = 0f;
+        /// <summary>单曲音量倍率。缺省、负数或无效值 = 1（不衰减）。</summary>
+        [XmlAttribute("Volume")] public float Volume = -1f;
     }
 
     public class PhaseSwiftScene
