@@ -675,11 +675,10 @@ namespace KernelExtensions.Managers
 
                     _dseInstances[i].Play();
                     _stopped = false;
-                    // 起播位置：有循环起点则直接从该处开始（
-                    // 语义为“只循环这一段”，即 0~LoopStart 的开头部分不播）
+                    // 起播位置：从文件开头播（SASS 语义）——
+                    // 先播 0~LoopEnd，之后才在 [LoopStart, LoopEnd] 区间内循环；
+                    // 即开头部分会完整播一次，而不是直接跳到 LoopStart。
                     _framesPlayed[i] = 0L;
-                    if (loopStart > 0L && SeekToFrame(i, loopStart))
-                        _framesPlayed[i] = loopStart;
                     for (int b = 0; b < TargetPendingBuffers; b++) SubmitNextChunk(i);
                 }
                 catch (Exception ex)
