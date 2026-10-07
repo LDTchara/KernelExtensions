@@ -227,6 +227,10 @@ namespace KernelExtensions.Managers
             if (!IsInitialized) return;
 
             CleanupAudio();
+            // 退出 PS 时同样要断开“连在受控节点上”的连接：此后节点的可见性/拓扑会变化，
+            // 继续连着会在地图上残留连接指示（与切场景行为保持一致）。
+            // ⚠️ 必须在下面 _controlledNodeIds.Clear() 之前调用，否则无从判断。
+            DisconnectIfOnControlledNode();
             ApplyTopologyMode(topologyMode);
 
             // 根据 FinishMode 处理节点可见性
@@ -313,6 +317,25 @@ namespace KernelExtensions.Managers
             UseDualTrack = false;
             IsRunning = false;
             IsInitialized = false;
+        }
+
+        /// <summary>
+        /// 若玩家当前连接的是受控节点，强制断开。
+        /// 切场景与退出 PS 都要调：这两处之后受控节点的可见性或拓扑会变化，
+        /// 继续连着会在地图上残留连接指示（实测：与 eosDevice 共存时表现明显）。
+        /// 与切场景使用**同一个判据**，保证行为一致。
+        /// </summary>
+        private static void DisconnectIfOnControlledNode()
+        {
+            if (CurrentOS == null) return;
+            var connected = CurrentOS.connectedComp;
+            if (connected == null || connected == CurrentOS.thisComputer) return;
+            if (!_controlledNodeIds.Contains(connected.idName)) return;
+
+            CurrentOS.display.command = "dc";
+            CurrentOS.connectedComp = null;
+            if (CurrentOS.terminal != null)
+                CurrentOS.terminal.writeLine("Connection Lost: Network Changed");
         }
 
         private static void MakeNodeVisible(string id)
@@ -417,13 +440,7 @@ namespace KernelExtensions.Managers
         {
             if (Config == null || targetScene < 0 || targetScene >= Config.Scenes.Count || targetScene == CurrentScene) return;
             SaveCurrentSceneDiscovery();
-            if (CurrentOS.terminal != null && CurrentOS.connectedComp != null && CurrentOS.connectedComp != CurrentOS.thisComputer
-                && _controlledNodeIds.Contains(CurrentOS.connectedComp.idName))
-            {
-                CurrentOS.display.command = "dc";
-                CurrentOS.connectedComp = null;
-                CurrentOS.terminal.writeLine("Connection Lost: Network Changed");
-            }
+            DisconnectIfOnControlledNode();
 
             if (UseDualTrack && _dseInstances.Length > 0)
             {
