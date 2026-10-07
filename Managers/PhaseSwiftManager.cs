@@ -44,11 +44,18 @@ namespace KernelExtensions.Managers
         public static float[] CurrentVisBands = Array.Empty<float>();
         public static float[] PreviousVisBands = Array.Empty<float>();
         public static DateTime LastBandUpdateTime = DateTime.UtcNow;
-        /// <summary>可视化滚动缓冲：~500ms mono PCM，初始化时按采样率自动计算大小</summary>
-        private static float[] _rollingBuf;
-        private static int _rollingBufPos = 0;
-        private static int _rollingBufCount = 0;
-        private static int _visOffset = 0;
+        /// <summary>
+        /// 可视化滚动缓冲：**按轨各一份**（~500ms mono PCM），按各自采样率算大小。
+        /// C1：双轨模式下必须分开——两轨都往同一个环形缓冲写时，波形条取“最近 256 样本”
+        /// 会取到“最后写入那条轨”的数据，于是可能显示的是没在响的那一轨。
+        /// </summary>
+        private static float[][] _rollingBufs = Array.Empty<float[]>();
+        private static int[] _rollingBufPos = Array.Empty<int>();
+        private static int[] _rollingBufCount = Array.Empty<int>();
+        /// <summary>各轨采样率（C4 步进采样算跳距用）。</summary>
+        private static int[] _trackSampleRate = Array.Empty<int>();
+        /// <summary>各轨一块的标称帧数（C2 估算“队列里还有多少帧没播”用）。</summary>
+        private static int[] _chunkFrames = Array.Empty<int>();
 
         private static DynamicSoundEffectInstance[] _dseInstances = Array.Empty<DynamicSoundEffectInstance>();
         private static FileStream[] _trackStreams = Array.Empty<FileStream>();
@@ -291,10 +298,11 @@ namespace KernelExtensions.Managers
             _sceneDiscoveredNodeIds.Clear();
             _runtimeBlockedNodeIds.Clear();
             PendingRestore = null;
-            _rollingBuf = null;
-            _rollingBufCount = 0;
-            _rollingBufPos = 0;
-            _visOffset = 0;
+            _rollingBufs = Array.Empty<float[]>();
+            _rollingBufPos = Array.Empty<int>();
+            _rollingBufCount = Array.Empty<int>();
+            _trackSampleRate = Array.Empty<int>();
+            _chunkFrames = Array.Empty<int>();
             _visSampList = null;
             _fadeProgress = 0f;
             _isFading = false;
@@ -531,34 +539,52 @@ namespace KernelExtensions.Managers
         public static void UpdateVisualization()
         {
             // 每次 GetVisualizationData 调用时触发，~24fps
-            // 从滚动缓冲取 256 连续样本，偏移 +1 每帧，模拟播放头推进
-            if (_rollingBuf == null || _rollingBufCount < 256 || _visSampList == null)
-            {
-                if (_visSampList == null) _visSampList = new List<float>(new float[256]);
-                return;
-            }
-
-            int bufSize = _rollingBuf.Length;
-            int basePos = (_rollingBufPos - 256 - _visOffset + bufSize) % bufSize;
-            _visOffset = (_visOffset + 1) % 256;
-
-            // 写入 _visSampList 和 CurrentVisBands（供注入器读取）
-            // 获取当前场景音轨音量，FadeOut/交叉淡化时可视化同步衰减
-            float visVolume = 1f;
-            if (UseDualTrack && _dseInstances != null && CurrentScene >= 0 && CurrentScene < _dseInstances.Length)
-            {
-                var dsei = _dseInstances[CurrentScene];
-                if (dsei != null) visVolume = dsei.Volume;
-            }
-
-            // 写入 _visSampList 和 CurrentVisBands（供注入器读取）
+            if (_visSampList == null) _visSampList = new List<float>(new float[256]);
             if (CurrentVisBands.Length != 256) CurrentVisBands = new float[256];
+
+            // C1：只读“当前能听到那条轨”的缓冲（双轨时两轨各自独立）
+            int track = CurrentScene;
+            if (track < 0 || track >= _rollingBufs.Length) track = 0;
+            if (track < 0 || track >= _rollingBufs.Length) return;
+            float[] buf = _rollingBufs[track];
+            if (buf == null) return;
+            int bufSize = buf.Length;
+            if (bufSize == 0 || _rollingBufCount[track] < 256) return;
+
+            // C2：取样基准 = “已播放位置”，而不是“最新提交位置”。
+            //     队列里的 pending 块是“已提交但还没播”的量，从写入位置往回退掉它才是真实播放头。
+            // C3：Pitch 变速时消费更快、pending 下降更快，故该基准自动跟随变速（无需单独补偿）。
+            int pending = 0;
+            if (_dseInstances != null && track < _dseInstances.Length && _dseInstances[track] != null)
+                pending = _dseInstances[track].PendingBufferCount;
+            int chunkFrames = (track < _chunkFrames.Length && _chunkFrames[track] > 0) ? _chunkFrames[track] : 1;
+            long behindFrames = (long)pending * chunkFrames;
+            int maxBack = Math.Max(0, _rollingBufCount[track] - 256);
+            if (behindFrames > maxBack) behindFrames = maxBack;
+            int headPos = (int)(((_rollingBufPos[track] - behindFrames) % bufSize + bufSize) % bufSize);
+
+            // C4：步进采样，让 256 个点铺满 ~1/60 秒（对齐原版），窗口不再随采样率收缩。
+            //     15360 = 256 × 60；跳距随采样率缩放，高采样率时不会只取到几个毫秒。
+            int sr = (track < _trackSampleRate.Length && _trackSampleRate[track] > 0) ? _trackSampleRate[track] : 44100;
+            int step = (sr + 7680) / 15360;      // 四舍五入（+半跳距）；@44.1k→3、@48k→3、@96k→6
+            if (step < 1) step = 1;
+            while (step > 1 && 256 * step > bufSize) step--;      // 不能超出缓冲长度
+            int span = 256 * step;
+            if (span > bufSize) span = bufSize;
+            int startPos = (int)(((headPos - span) % bufSize + bufSize) % bufSize);
+
+            // 音量联动：FadeOut/交叉淡化时可视化同步衰减
+            float visVolume = 1f;
+            if (_dseInstances != null && track < _dseInstances.Length && _dseInstances[track] != null)
+                visVolume = _dseInstances[track].Volume;
+
             for (int i = 0; i < 256; i++)
             {
-                int srcIdx = (basePos + i + bufSize) % bufSize;
-                float val = Math.Abs(_rollingBuf[srcIdx]) * visVolume;
-                _visSampList[i] = Math.Min(1f, Math.Min(1f, val));
-                CurrentVisBands[i] = _visSampList[i];
+                int srcIdx = (startPos + i * step) % bufSize;
+                float val = Math.Abs(buf[srcIdx]) * visVolume;
+                if (val > 1f) val = 1f;
+                _visSampList[i] = val;
+                CurrentVisBands[i] = val;
             }
         }
         private static List<float> _visSampList;
@@ -601,6 +627,11 @@ namespace KernelExtensions.Managers
             _loopEndFrames = new long[trackCount];
             _trackVolumeMul = new float[trackCount];
             _chunkBuf = new float[trackCount][];
+            _rollingBufs = new float[trackCount][];
+            _rollingBufPos = new int[trackCount];
+            _rollingBufCount = new int[trackCount];
+            _trackSampleRate = new int[trackCount];
+            _chunkFrames = new int[trackCount];
             for (int i = 0; i < trackCount; i++)
             {
                 try
@@ -649,15 +680,18 @@ namespace KernelExtensions.Managers
                     // —— 单曲音量（A8）：参与最终的音量乘法，而不是直写 DSEI.Volume ——
                     _trackVolumeMul[i] = IsValidSeconds(meta.Volume) ? meta.Volume : 1f;
 
-                    // 按首轨采样率初始化滚动缓冲 (~500ms mono)
-                    if (i == 0 && (_rollingBuf == null || _rollingBuf.Length != sr / 2))
-                        _rollingBuf = new float[sr / 2];
+                    // 按轨初始化滚动缓冲（~500ms mono）——C1：每轨一份，波形条按当前场景轨取数
+                    _rollingBufs[i] = new float[Math.Max(1024, sr / 2)];
+                    _rollingBufPos[i] = 0;
+                    _rollingBufCount[i] = 0;
+                    _trackSampleRate[i] = sr;
 
                     // —— D1：一块的 interleaved 样本数，按轨复用缓冲 ——
                     int chunkSamples = (sr * ch) / 24;
                     if (ch > 0 && chunkSamples % ch != 0) chunkSamples -= chunkSamples % ch;
                     if (chunkSamples < ch) chunkSamples = ch;
                     _chunkBuf[i] = new float[chunkSamples];
+                    _chunkFrames[i] = chunkSamples / ch;   // C2：队列深度 → 帧数换算用
 
                     AudioChannels audioCh = (ch >= 2) ? AudioChannels.Stereo : AudioChannels.Mono;
                     _dseInstances[i] = new DynamicSoundEffectInstance(sr, audioCh);
@@ -688,7 +722,6 @@ namespace KernelExtensions.Managers
                 }
             }
             _isFading = false;
-            _visOffset = 0;
         }
 
 
@@ -741,16 +774,18 @@ namespace KernelExtensions.Managers
             if (filled <= 0) return;
             int written = filled * ch;
 
-            // 写入滚动缓冲（取第 0 声道）
-            // null 防御：滚动缓冲按首轨采样率初始化，若首轨加载失败则为 null（仅跳过波形数据，不影响播放）
-            if (_rollingBuf != null)
+            // 写入该轨自己的滚动缓冲（取第 0 声道）——C1：按轨分离，避免两轨互相覆盖
+            float[] rbuf = (trackIdx < _rollingBufs.Length) ? _rollingBufs[trackIdx] : null;
+            if (rbuf != null)
             {
+                int p = _rollingBufPos[trackIdx];
                 for (int j = 0; j < written; j += ch)
                 {
-                    _rollingBuf[_rollingBufPos] = buf[j];
-                    _rollingBufPos = (_rollingBufPos + 1) % _rollingBuf.Length;
+                    rbuf[p] = buf[j];
+                    p = (p + 1) % rbuf.Length;
                 }
-                _rollingBufCount = Math.Min(_rollingBuf.Length, _rollingBufCount + filled);
+                _rollingBufPos[trackIdx] = p;
+                _rollingBufCount[trackIdx] = Math.Min(rbuf.Length, _rollingBufCount[trackIdx] + filled);
             }
 
             // 从滚动缓冲的实时采样交给 UpdateVisualization (注入器触发)
@@ -861,7 +896,6 @@ namespace KernelExtensions.Managers
             _trackVolumeMul = Array.Empty<float>();
             _chunkBuf = Array.Empty<float[]>();
             _isFading = false;
-            _visOffset = 0;
         }
 
 
