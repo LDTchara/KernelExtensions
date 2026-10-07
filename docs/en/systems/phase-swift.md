@@ -162,6 +162,46 @@ Each `<Phase>` defines a set of tracks, and **the track at index i corresponds t
 - **OGG only** (NVorbis streaming into a `DynamicSoundEffectInstance`); scene switches crossfade
 - Volume follows the game's music volume setting
 
+### Track loop points (`LoopStart` / `LoopEnd`)
+
+Tracks loop the whole file by default. To loop only a section (say, an ambient bed that should
+keep replaying its intro), add loop points to the `<Track>`:
+
+```xml
+<Tracks>
+    <Track LoopStart="12" LoopEnd="45">Music/ambient.ogg</Track>
+    <Track>Music/underworld.ogg</Track>          <!-- omit = loop the whole file -->
+</Tracks>
+```
+
+- `LoopStart` / `LoopEnd` are in **seconds** and both optional
+- **Playback order**: the file plays from the beginning up to `LoopEnd`; only after that does it loop
+  inside `[LoopStart, LoopEnd]` (the intro plays through once, matching Stuxnet.Audio's behaviour)
+- Only `LoopEnd` given → plays from 0 to that point, then loops back to 0
+- Neither given → whole-file loop (identical to the previous behaviour; existing configs need no changes)
+- Inverted (`LoopEnd <= LoopStart`) → logs a warning and falls back to whole-file looping; music keeps playing
+- Negative / non-numeric values → treated as "not specified"
+- The loop may be arbitrarily short, **even shorter than one buffer chunk** (about 42 ms)
+
+!!! note "Keep loop points away from the end of the file"
+    The audio library fails to seek within roughly the last 0.5 seconds of a file. In that case PS logs
+    a warning and falls back to whole-file looping **for that track only** - playback continues, the
+    loop point just has no effect.
+
+### Pitch and per-track volume (`Pitch` / `Volume`)
+
+```xml
+<Track Pitch="0.5" Volume="0.8">Music/tense.ogg</Track>
+```
+
+- `Pitch`: range `-1` to `1`, `0` = normal speed. Backed by `AL_PITCH = 2^pitch`, so `0.5` is about
+  **1.41x speed** with the pitch rising accordingly
+- **Changing speed always changes pitch** - that is how the audio backend works, not an implementation
+  flaw; decoupling the two would need resampling (not implemented)
+- `Volume`: per-track multiplier, `1` = unchanged, `0.5` = half, `0` = silent. It multiplies with the
+  scene volume and the player's music volume, and stays in effect during crossfades
+- Out-of-range values are clamped (`Pitch` to ±1)
+
 !!! warning "All tracks in a phase must be the same length"
     Tracks are bound to scenes by index and **scene switches crossfade rather than restart**. If tracks in one
     phase have different lengths, repeated switching gradually drifts out of sync. Keep them equal.
