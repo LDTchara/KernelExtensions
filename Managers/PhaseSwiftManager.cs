@@ -374,6 +374,18 @@ namespace KernelExtensions.Managers
             if (!UseDualTrack) return;
             if (!IsRunning) return;
 
+            // 诊断（D3）：记录本方法所在线程。它挂在 OS.Update（主线程），
+            // 而 LoadMusicPhase/CleanupAudio 来自 Action（Hacknet 的 loadactions 会起线程）——
+            // 若两者线程 ID 不同，则音频 API 的跨线程竞态坐实（FNA 的池/queuedBuffers 均非线程安全）。
+            // 只在线程变化时记一次，避免每帧刷屏。
+            int tid = Thread.CurrentThread.ManagedThreadId;
+            if (_audioUpdateThreadId != tid)
+            {
+                _audioUpdateThreadId = tid;
+                KELog.Debug($"[PhaseSwift/diag] UpdateAudioBuffers: 线程 {tid}（首次/变更）；"
+                    + $"FNA 动态池 {GetDynamicPoolCount()}");
+            }
+
             // 第三方音频冲突：窗口内检测到在播就停掉（覆盖范围见 Compat/ModCompats）
             if (_conflictWatchFrames > 0)
             {
@@ -755,7 +767,7 @@ namespace KernelExtensions.Managers
             _isFading = false;
             // 诊断（D3 压测）：配合 CleanupAudio 的日志，可看出反复 Load/Cleanup 后池的累积曲线
             KELog.Debug($"[PhaseSwift/diag] LoadMusicPhase: 新建 {created}/{trackCount} 个播放器；"
-                + $"FNA 动态池 {GetDynamicPoolCount()}");
+                + $"FNA 动态池 {GetDynamicPoolCount()}；线程 {Thread.CurrentThread.ManagedThreadId}");
         }
 
 
@@ -949,7 +961,7 @@ namespace KernelExtensions.Managers
             // 诊断（D3 压测）：掉引用的播放器**不会**离开 FNA 的池（只有 Stop() 才会），
             // 所以池 “只增不减” 就是泄漏的直接证据。
             KELog.Debug($"[PhaseSwift/diag] CleanupAudio: 丢弃 {dropped} 个播放器（未关闭）；"
-                + $"FNA 动态池 {poolBefore} → {GetDynamicPoolCount()}");
+                + $"FNA 动态池 {poolBefore} → {GetDynamicPoolCount()}；线程 {Thread.CurrentThread.ManagedThreadId}");
         }
 
 
@@ -1177,6 +1189,8 @@ namespace KernelExtensions.Managers
             catch { return -1; }
         }
         private static FieldInfo _dynamicPoolField;
+        /// <summary>诊断（D3）：最近一次记录到的 UpdateAudioBuffers 线程 ID（-1 = 尚未记录）。</summary>
+        private static int _audioUpdateThreadId = -1;
 
         private static void SyncVolume()
         {
