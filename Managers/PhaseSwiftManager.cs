@@ -6,6 +6,7 @@ using KernelExtensions.Saving;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
+using Microsoft.Xna.Framework.Media;
 using NVorbis;
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -426,7 +427,7 @@ namespace KernelExtensions.Managers
         {
             if (!UseDualTrack) return;
             if (!_isFading) return;
-            float volMul = MusicManager.getVolume();
+            float volMul = GetPlayerVolume();
             _fadeProgress += dt;
             float t = Math.Min(_fadeProgress / _targetFadeDuration, 1f);
             for (int i = 0; i < _dseInstances.Length; i++)
@@ -449,7 +450,7 @@ namespace KernelExtensions.Managers
             for (int i = 0; i < _dseInstances.Length; i++)
             {
                 // _startVolumes 存的是**纯场景音量**（不含玩家音量/单曲音量）：
-                // UpdateCrossfade 会再乘 _trackVolumeMul × MusicManager.getVolume()。
+                // UpdateCrossfade 会再乘 _trackVolumeMul × GetPlayerVolume()。
                 // 若这里读 DSEI 的实际音量（已含两者），淡出会变成“音量平方”（既有问题，顺手修正）。
                 _startVolumes[i] = _targetVolumes[i];
                 _targetVolumes[i] = 0f;
@@ -479,7 +480,7 @@ namespace KernelExtensions.Managers
                     {
                         float sceneVol = (i == targetScene) ? 1f : 0f;
                         if (_dseInstances[i] != null)
-                            _dseInstances[i].Volume = sceneVol * _trackVolumeMul[i] * MusicManager.getVolume();
+                            _dseInstances[i].Volume = sceneVol * _trackVolumeMul[i] * GetPlayerVolume();
                         // 必须同步 _targetVolumes：SyncVolume() 每帧用它覆盖 DSEI 音量，
                         // 只设 Volume 会在下一帧被覆盖回 0（LoadMusicPhase 初始化时全 0）→ 静音
                         _targetVolumes[i] = sceneVol;
@@ -1280,10 +1281,38 @@ namespace KernelExtensions.Managers
             }
         }
 
+        /// <summary>
+        /// 玩家音乐音量缓存（E1；&lt; 0 = 尚未捕获）。
+        ///
+        /// 为何不直接调 <c>MusicManager.getVolume()</c>：该方法可被第三方模组 patch。
+        /// 例如 Stuxnet.Audio 的 Prefix 在扩展内会 `return false` 并返回它自己的音量
+        /// （其 getter 还缺 null 检查，卸载后可能 NRE）。PS 不该依赖一个“第三方随时会接管”的方法。
+        /// 改为跟踪 <c>MusicManager.setVolume</c>（它是 `return true`，原版逻辑照常执行），
+        /// 捕获的就是**玩家设定值**。
+        ///
+        /// 不能改用 <c>MediaPlayer.Volume</c>：音乐淡入淡出期间原版会把它临时改掉（甚至置 0）。
+        /// </summary>
+        private static float _playerVolume = -1f;
+
+        /// <summary>由 MusicManager.setVolume 的 Postfix 调用（见 PhaseSwiftAudioPatch）。</summary>
+        internal static void OnPlayerVolumeChanged(float v)
+            => _playerVolume = v < 0f ? 0f : (v > 1f ? 1f : v);
+
+        /// <summary>取玩家音乐音量；尚未捕获过时读一次底层值兜底。</summary>
+        private static float GetPlayerVolume()
+        {
+            if (_playerVolume < 0f)
+            {
+                try { _playerVolume = MathHelper.Clamp(MediaPlayer.Volume, 0f, 1f); }
+                catch { _playerVolume = 1f; }
+            }
+            return _playerVolume;
+        }
+
         private static void SyncVolume()
         {
             if (_dseInstances == null || _dseInstances.Length == 0) return;
-            float volMul = MusicManager.getVolume();
+            float volMul = GetPlayerVolume();
             for (int i = 0; i < _dseInstances.Length; i++)
             {
                 if (_dseInstances[i] != null)

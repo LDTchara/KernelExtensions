@@ -22,5 +22,19 @@ namespace KernelExtensions.Patches
             PhaseSwiftManager.UpdateAudioBuffers();
             PhaseSwiftManager.UpdateCrossfade((float)gameTime.ElapsedGameTime.TotalSeconds);
         }
+
+        /// <summary>
+        /// 捕获玩家设定的音乐音量（E1）。
+        /// 不调 <c>MusicManager.getVolume()</c>：它可被第三方模组（如 Stuxnet.Audio）patch 成
+        /// 返回自有音量，甚至在该模组卸载后抛 NRE。
+        /// <c>setVolume</c> 是安全的捕获点：它是 `return true`（原版照常执行），
+        /// 且原版淡入淡出走的是直接赋 <c>MediaPlayer.Volume</c>，不会污染这里的参数。
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MusicManager), "setVolume")]
+        public static void OnSetVolume(float volume)
+        {
+            PhaseSwiftManager.OnPlayerVolumeChanged(volume);
+        }
     }
 }
