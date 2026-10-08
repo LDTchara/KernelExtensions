@@ -984,7 +984,7 @@ namespace KernelExtensions.Managers
             _isFading = false;
             // 诊断（D3 压测）：掉引用的播放器**不会**离开 FNA 的池（只有 Stop() 才会），
             // 所以池 “只增不减” 就是泄漏的直接证据。
-            KELog.Debug($"[PhaseSwift/diag] CleanupAudio: 丢弃 {dropped} 个播放器（未关闭）；"
+            KELog.Debug($"[PhaseSwift/diag] CleanupAudio: 已释放 {dropped} 个播放器；"
                 + $"FNA 动态池 {poolBefore} → {GetDynamicPoolCount()}；线程 {Thread.CurrentThread.ManagedThreadId}");
         }
 
