@@ -83,7 +83,7 @@ Writes a valid `747FlightOps.dll` into the target computer's `FlightSystems` fol
 
 ### Global Altimeter Overlay
 
-Allows the aircraft's altimeter to be permanently displayed on the left side of the screen even without connecting to the target computer.
+Allows the aircraft's altimeter to be permanently displayed on the right side of the screen even without connecting to the target computer.
 
 ```xml
 <!-- Show overlay -->
@@ -93,7 +93,14 @@ Allows the aircraft's altimeter to be permanently displayed on the left side of 
 <HideAircraftOverlay />
 ```
 
-- After a crash the overlay **keeps showing the wreck**; close it manually with `<HideAircraftOverlay />` (it is **not** closed automatically — matching vanilla behaviour).
+!!! warning "The overlay does NOT close itself"
+    After a crash it **keeps showing the wreck**; you **must** call `<HideAircraftOverlay />` yourself.
+    It will **not** disappear on crash, disconnect, or story progress. Forget to close it and the
+    altimeter stays pinned to the right side of the screen.
+
+    A common slip: writing `<ShowAircraftOverlay />` without ever closing it. Easy to miss while
+    testing, but players will still see the overlay after finishing the story.
+
 - The overlay is implemented via `OverlayPatch` (Harmony patch) and does not interfere with normal gameplay.
 
 ---
