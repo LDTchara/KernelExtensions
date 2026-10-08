@@ -7,6 +7,7 @@ using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using NVorbis;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Xml.Serialization;
 
@@ -102,6 +103,8 @@ namespace KernelExtensions.Managers
 
         public static void Initialize(OS os, string configName)
         {
+            // D3：碰配置/音频的入口一律回到主线程（Action 可能跑在 loadactions 起的线程上）
+            if (!IsOnMainThread()) { RunOnMainThread(() => Initialize(os, configName)); return; }
             CurrentOS = os;
             if (ExtensionLoader.ActiveExtensionInfo != null)
                 ExtensionRoot = ExtensionLoader.ActiveExtensionInfo.FolderPath.Replace("\\", "/");
@@ -165,6 +168,7 @@ namespace KernelExtensions.Managers
 
         public static void Start(int? overrideScene = null)
         {
+            if (!IsOnMainThread()) { RunOnMainThread(() => Start(overrideScene)); return; }
             if (!IsInitialized || Config == null || IsRunning)
             {
                 // PS 是全局单实例（PhaseSwiftManager 全 static）。重复启动时给可见反馈，不要静默忽略
@@ -225,6 +229,7 @@ namespace KernelExtensions.Managers
         /// </summary>
         public static void Stop(string finishMode = "none", string topologyMode = null)
         {
+            if (!IsOnMainThread()) { RunOnMainThread(() => Stop(finishMode, topologyMode)); return; }
             if (!IsInitialized) return;
 
             CleanupAudio();
@@ -371,6 +376,10 @@ namespace KernelExtensions.Managers
 
         public static void UpdateAudioBuffers()
         {
+            // 本方法挂在 OS.Update Postfix（主线程）—— 在这里记录主线程 ID，
+            // 供 IsOnMainThread() 判定（放在早返回之前，未运行时也要能记录）。
+            if (_mainThreadId < 0) _mainThreadId = Thread.CurrentThread.ManagedThreadId;
+
             if (!UseDualTrack) return;
             if (!IsRunning) return;
 
@@ -435,6 +444,7 @@ namespace KernelExtensions.Managers
         /// 淡出所有音轨：目标音量 0，时长 duration 秒。
         public static void StartFadeOut(float duration)
         {
+            if (!IsOnMainThread()) { RunOnMainThread(() => StartFadeOut(duration)); return; }
             if (!IsRunning || _dseInstances.Length == 0) return;
             for (int i = 0; i < _dseInstances.Length; i++)
             {
@@ -451,6 +461,11 @@ namespace KernelExtensions.Managers
 
         public static void SwitchToScene(int targetScene, float? fadeDurationOverride = null, string overrideTheme = null, bool immediate = false)
         {
+            if (!IsOnMainThread())
+            {
+                RunOnMainThread(() => SwitchToScene(targetScene, fadeDurationOverride, overrideTheme, immediate));
+                return;
+            }
             if (Config == null || targetScene < 0 || targetScene >= Config.Scenes.Count || targetScene == CurrentScene) return;
             SaveCurrentSceneDiscovery();
             DisconnectIfOnControlledNode();
@@ -551,6 +566,7 @@ namespace KernelExtensions.Managers
 
         public static void SwitchMusicPhase(int phaseId)
         {
+            if (!IsOnMainThread()) { RunOnMainThread(() => SwitchMusicPhase(phaseId)); return; }
             if (Config == null) return;
             var phase = Config.MusicPhases.FirstOrDefault(p => p.Id == phaseId);
             if (phase == null && phaseId >= 0 && phaseId < Config.MusicPhases.Count)
@@ -1191,6 +1207,70 @@ namespace KernelExtensions.Managers
         private static FieldInfo _dynamicPoolField;
         /// <summary>诊断（D3）：最近一次记录到的 UpdateAudioBuffers 线程 ID（-1 = 尚未记录）。</summary>
         private static int _audioUpdateThreadId = -1;
+
+        // ——————————————————————————————————————————————————————————————
+        // 主线程调度（D3 修复）
+        //
+        // 实测根因：Hacknet 的 `loadactions` 会为命令**另起线程**，于是
+        //   Action 线程（如 4）→ 本类 → FNA 音频 API（new DSEI / Play→GenSource /
+        //   SubmitBuffer→GenBuffer+QueueSourceBuffer）
+        // 与
+        //   主线程（如 1）→ AudioDevice.Update() → 遍历 DynamicInstancePool / DSEI.Update()
+        //   → 主线程还有 UpdateAudioBuffers 在读写同一批 KE 数组
+        // 并发。FNA 的 DynamicInstancePool（List）与 DSEI 的 queuedBuffers（Queue）
+        // 都不是线程安全的 → 内部状态损坏 → 无异常无堆栈地卡死（伴随一声“刺啦”）。
+        //
+        // 锁挡不住 FNA 内部状态，所以改为：碰音频 API 的入口一律调到主线程执行。
+        // 采用**同步等待**（而非异步排队），以保持 Action 的原有语义：
+        // Action 返回时效果已生效。
+        // ——————————————————————————————————————————————————————————————
+
+        /// <summary>主线程 ID（由 UpdateAudioBuffers 在 OS.Update 中首次运行时记录；-1 = 未知）。</summary>
+        private static int _mainThreadId = -1;
+        private static readonly ConcurrentQueue<Action> _mainThreadQueue = new();
+        private const int MainThreadDispatchTimeoutMs = 5000;
+
+        /// <summary>当前是否处在主线程（主线程未知时视为 true，避免初始化极早期死锁）。</summary>
+        private static bool IsOnMainThread()
+            => _mainThreadId < 0 || Thread.CurrentThread.ManagedThreadId == _mainThreadId;
+
+        /// <summary>
+        /// 确保工作在**主线程**执行：已在主线程则直接执行；否则入队并同步等待。
+        /// 入口方法统一用「<c>if (!IsOnMainThread()) { RunOnMainThread(() =&gt; 方法(参数)); return; }</c>」
+        /// 的递归写法包装（第二次进入时已在主线程，直接跑原件）。
+        /// </summary>
+        private static void RunOnMainThread(Action work)
+        {
+            if (work == null) return;
+            if (IsOnMainThread()) { work(); return; }
+
+            Exception captured = null;
+            using var done = new ManualResetEventSlim(false);
+            _mainThreadQueue.Enqueue(() =>
+            {
+                try { work(); }
+                catch (Exception ex) { captured = ex; }
+                finally { done.Set(); }
+            });
+
+            if (!done.Wait(MainThreadDispatchTimeoutMs))
+            {
+                KELog.Warn($"[PhaseSwift] 主线程调度超时（{MainThreadDispatchTimeoutMs}ms），操作可能未执行");
+                return;
+            }
+            if (captured != null)
+                KELog.Error($"[PhaseSwift] 主线程执行出错: {captured}");
+        }
+
+        /// <summary>主线程侧执行排队的工作（由 OS.Update Postfix 每帧调用，在 UpdateAudioBuffers 之前）。</summary>
+        internal static void DrainMainThreadQueue()
+        {
+            while (_mainThreadQueue.TryDequeue(out var work))
+            {
+                try { work(); }
+                catch (Exception ex) { KELog.Error($"[PhaseSwift] 排队操作执行出错: {ex}"); }
+            }
+        }
 
         private static void SyncVolume()
         {
