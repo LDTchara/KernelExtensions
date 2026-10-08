@@ -40,6 +40,16 @@ namespace KernelExtensions.Managers
         public static int CurrentScene { get; set; }
         public static int CurrentMusicPhase { get; set; }
         public static bool UseDualTrack { get; private set; } = true;
+
+        /// <summary>
+        /// PS 是否**正在接管音频输出**（运行中且双轨模式）。
+        /// <para>
+        /// 可视化相关的外部补丁应以它为准，而不是只看 <see cref="UseDualTrack"/>：
+        /// 后者的**默认值是 true**，PS 从未启动时也成立 —— 那会让注入器接管原生可视化，
+        /// 把其它模块（例如 VM 攻击恢复后的原版音乐）的波形换成 PS 的空数据（表现为波形不动）。
+        /// </para>
+        /// </summary>
+        public static bool IsDrivingAudio => IsRunning && UseDualTrack;
         public static Color CachedBackgroundColor { get; set; } = Color.Transparent;
         public static string DefaultTheme { get; set; }
         public static OS CurrentOS { get; private set; }
