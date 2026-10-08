@@ -7,6 +7,7 @@ using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using NVorbis;
+using System.Reflection;
 using System.Xml.Serialization;
 
 namespace KernelExtensions.Managers
@@ -639,6 +640,7 @@ namespace KernelExtensions.Managers
             _trackChannels = new int[trackCount];
             _startVolumes = new float[trackCount];
             _targetVolumes = new float[trackCount];
+            int created = 0;   // 诊断（D3）
             _framesPlayed = new long[trackCount];
             _loopStartFrames = new long[trackCount];
             _loopEndFrames = new long[trackCount];
@@ -723,6 +725,7 @@ namespace KernelExtensions.Managers
 
                     AudioChannels audioCh = (ch >= 2) ? AudioChannels.Stereo : AudioChannels.Mono;
                     _dseInstances[i] = new DynamicSoundEffectInstance(sr, audioCh);
+                    created++;   // 诊断（D3）
                     _dseInstances[i].BufferNeeded += OnBufferNeeded;
                     // 同步场景音量（A8）：SwitchMusicPhase 路径不经过 SwitchToScene，
                     // 若这里不同步 _targetVolumes，SyncVolume() 下一帧就把音量覆盖回 0 → 切音乐组后静音。
@@ -750,6 +753,9 @@ namespace KernelExtensions.Managers
                 }
             }
             _isFading = false;
+            // 诊断（D3 压测）：配合 CleanupAudio 的日志，可看出反复 Load/Cleanup 后池的累积曲线
+            KELog.Debug($"[PhaseSwift/diag] LoadMusicPhase: 新建 {created}/{trackCount} 个播放器；"
+                + $"FNA 动态池 {GetDynamicPoolCount()}");
         }
 
 
@@ -912,6 +918,8 @@ namespace KernelExtensions.Managers
         private static void CleanupAudio()
         {
             _stopped = true;
+            int dropped = 0;
+            int poolBefore = GetDynamicPoolCount();   // 诊断（D3）
             for (int i = 0; i < _dseInstances.Length; i++)
             {
                 if (_dseInstances[i] != null)
@@ -921,6 +929,7 @@ namespace KernelExtensions.Managers
                     // 仅静音 + 丢引用，旧 DSEI 缓冲耗尽后自然静默，GC 回收
                     _dseInstances[i].Volume = 0f;
                     _dseInstances[i] = null;
+                    dropped++;
                 }
                 if (i < _trackReaders.Length && _trackReaders[i] != null) { _trackReaders[i].Dispose(); _trackReaders[i] = null; }
                 if (i < _trackStreams.Length && _trackStreams[i] != null) { _trackStreams[i].Dispose(); _trackStreams[i] = null; }
@@ -937,6 +946,10 @@ namespace KernelExtensions.Managers
             _trackVolumeMul = Array.Empty<float>();
             _chunkBuf = Array.Empty<float[]>();
             _isFading = false;
+            // 诊断（D3 压测）：掉引用的播放器**不会**离开 FNA 的池（只有 Stop() 才会），
+            // 所以池 “只增不减” 就是泄漏的直接证据。
+            KELog.Debug($"[PhaseSwift/diag] CleanupAudio: 丢弃 {dropped} 个播放器（未关闭）；"
+                + $"FNA 动态池 {poolBefore} → {GetDynamicPoolCount()}");
         }
 
 
@@ -1140,6 +1153,30 @@ namespace KernelExtensions.Managers
             if (_runtimeBlockedNodeIds.TryGetValue(idx, out var set))
                 set.Remove(nodeId);
         }
+
+        /// <summary>
+        /// 诊断（D3 压测）：反射读 FNA 的动态音频实例池大小。
+        /// 池里只增不减就是泄漏的直接证据——`CleanupAudio` 只丢掉引用、不调 Stop，
+        /// 而 FNA 仅靠 `Stop()` 才会把实例移出池（其自带的“状态==Stopped”清理对 DSEI 永不成立）。
+        /// 拿不到字段时返回 -1（不同 FNA 版本/裁剪），不影响功能。
+        /// </summary>
+        private static int GetDynamicPoolCount()
+        {
+            try
+            {
+                if (_dynamicPoolField == null)
+                {
+                    var audioDevice = typeof(DynamicSoundEffectInstance).Assembly
+                        .GetType("Microsoft.Xna.Framework.Audio.AudioDevice");
+                    _dynamicPoolField = audioDevice?.GetField("DynamicInstancePool",
+                        BindingFlags.Public | BindingFlags.Static);
+                    if (_dynamicPoolField == null) return -1;
+                }
+                return (_dynamicPoolField.GetValue(null) as System.Collections.ICollection)?.Count ?? -1;
+            }
+            catch { return -1; }
+        }
+        private static FieldInfo _dynamicPoolField;
 
         private static void SyncVolume()
         {
