@@ -1,7 +1,6 @@
 using Hacknet;
 using Hacknet.Gui;
 using HarmonyLib;
-using KernelExtensions.CustomPortPublicCracker;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
@@ -11,7 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace KernelExtensions.CustomPortCreaker;
+namespace KernelExtensions.CustomPortPublicCracker;
 
 /// <summary>
 /// CrackerToolKit —— 端口破解工具箱（简化 GUI 版）。
