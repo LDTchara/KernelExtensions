@@ -1,4 +1,4 @@
-﻿using System.Xml.Serialization;
+using System.Xml.Serialization;
 
 namespace KernelExtensions.Configs
 {
@@ -45,7 +45,7 @@ namespace KernelExtensions.Configs
     /// ⚠️ 四个数值属性**故意声明为 string**：XmlSerializer 反序列化 float 属性时，
     /// 遇到不可解析的内容（如 LoopEnd="abc"）会**直接抛异常**，导致**整份配置加载失败**。
     /// 收成 string 后由本类自行解析，写错一个属性只影响该属性，不会连累整个配置。
-    /// 合法值语义见 AGENTS.md「负数/无效值约定（9.55）」：负数或 NaN/Infinity 一律回退默认。
+    /// 合法值语义见 AGENTS.md「负数/无效值约定」：负数或 NaN/Infinity 一律回退默认。
     /// </summary>
     public class PhaseSwiftTrack
     {

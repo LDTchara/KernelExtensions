@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace KernelExtensions.Patches
 {
     /// <summary>
-    /// 节点自替换符（9.63）：<c>#IP_&lt;节点id&gt;#</c> / <c>#NAME_&lt;节点id&gt;#</c>。
+    /// 节点自替换符：<c>#IP_&lt;节点id&gt;#</c> / <c>#NAME_&lt;节点id&gt;#</c>。
     /// <para>
     /// 挂 Pathfinder 的 <see cref="TextReplaceEvent"/>（它由 Pathfinder 在 <c>ComputerLoader.filter</c>
     /// 的 Postfix 上触发），对**原版替换链跑完的结果** <c>e.Replacement</c> 再做一轮参数化替换。

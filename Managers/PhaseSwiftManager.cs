@@ -49,15 +49,15 @@ namespace KernelExtensions.Managers
         public static DateTime LastBandUpdateTime = DateTime.UtcNow;
         /// <summary>
         /// 可视化滚动缓冲：**按轨各一份**（~500ms mono PCM），按各自采样率算大小。
-        /// C1：双轨模式下必须分开——两轨都往同一个环形缓冲写时，波形条取“最近 256 样本”
+        /// 双轨模式下必须分开——两轨都往同一个环形缓冲写时，波形条取“最近 256 样本”
         /// 会取到“最后写入那条轨”的数据，于是可能显示的是没在响的那一轨。
         /// </summary>
         private static float[][] _rollingBufs = Array.Empty<float[]>();
         private static int[] _rollingBufPos = Array.Empty<int>();
         private static int[] _rollingBufCount = Array.Empty<int>();
-        /// <summary>各轨采样率（C4 步进采样算跳距用）。</summary>
+        /// <summary>各轨采样率（步进采样算跳距用）。</summary>
         private static int[] _trackSampleRate = Array.Empty<int>();
-        /// <summary>各轨一块的标称帧数（C2 估算“队列里还有多少帧没播”用）。</summary>
+        /// <summary>各轨一块的标称帧数（估算“队列里还有多少帧没播”用）。</summary>
         private static int[] _chunkFrames = Array.Empty<int>();
 
         private static DynamicSoundEffectInstance[] _dseInstances = Array.Empty<DynamicSoundEffectInstance>();
@@ -71,14 +71,14 @@ namespace KernelExtensions.Managers
         private static float[] _targetVolumes = Array.Empty<float>();
 
         /// <summary>
-        /// 播放队列维持的块数（9.40）。一块 = 1/24 秒 ≈ 41.7ms，
+        /// 播放队列维持的块数。一块 = 1/24 秒 ≈ 41.7ms，
         /// 8 块 ≈ 333ms 余量，可扛约 3 FPS 的帧间隔。
-        /// 再深则启动延迟与可视化超前涨得快、收益递减（详见改造清单 B1）。
+        /// 再深则启动延迟与可视化超前涨得快、收益递减。
         /// 需与 <see cref="OnBufferNeeded"/>、<see cref="UpdateAudioBuffers"/> 及初始填充保持一致。
         /// </summary>
         private const int TargetPendingBuffers = 8;
 
-        // —— 循环点（9.38）运行时状态，按轨 ——
+        // —— 循环点运行时状态，按轨 ——
         /// <summary>该轨已播出的帧数（**自维护**：VorbisReader.SamplePosition 的 getter 有 packet 粒度
         /// 滞后，实测读 480000 帧后报 479552，不能用来判断循环边界）。</summary>
         private static long[] _framesPlayed = Array.Empty<long>();
@@ -88,7 +88,7 @@ namespace KernelExtensions.Managers
         private static long[] _loopEndFrames = Array.Empty<long>();
         /// <summary>单曲音量倍率（PhaseSwiftTrack.Volume，缺省 1）。在音量最终赋值处相乘。</summary>
         private static float[] _trackVolumeMul = Array.Empty<float>();
-        /// <summary>按轨复用的提交缓冲（D1：免去每块两次数组分配）。
+        /// <summary>按轨复用的提交缓冲（免去每块两次数组分配）。
         /// 长度 = 一块的 interleaved 样本数（帧数 × 声道）。</summary>
         private static float[][] _chunkBuf = Array.Empty<float[]>();
 
@@ -104,7 +104,7 @@ namespace KernelExtensions.Managers
 
         public static void Initialize(OS os, string configName)
         {
-            // D3：碰配置/音频的入口一律回到主线程（Action 可能跑在 loadactions 起的线程上）
+            // 碰配置/音频的入口一律回到主线程（Action 可能跑在 loadactions 起的线程上）
             if (!IsOnMainThread()) { RunOnMainThread(() => Initialize(os, configName)); return; }
             CurrentOS = os;
             if (ExtensionLoader.ActiveExtensionInfo != null)
@@ -384,7 +384,7 @@ namespace KernelExtensions.Managers
             if (!UseDualTrack) return;
             if (!IsRunning) return;
 
-            // 诊断（D3）：记录本方法所在线程。它挂在 OS.Update（主线程），
+            // 诊断：记录本方法所在线程。它挂在 OS.Update（主线程），
             // 而 LoadMusicPhase/CleanupAudio 来自 Action（Hacknet 的 loadactions 会起线程）——
             // 若两者线程 ID 不同，则音频 API 的跨线程竞态坐实（FNA 的池/queuedBuffers 均非线程安全）。
             // 只在线程变化时记一次，避免每帧刷屏。
@@ -589,7 +589,7 @@ namespace KernelExtensions.Managers
             if (_visSampList == null) _visSampList = new List<float>(new float[256]);
             if (CurrentVisBands.Length != 256) CurrentVisBands = new float[256];
 
-            // C1：只读“当前能听到那条轨”的缓冲（双轨时两轨各自独立）
+            // 只读“当前能听到那条轨”的缓冲（双轨时两轨各自独立）
             int track = CurrentScene;
             if (track < 0 || track >= _rollingBufs.Length) track = 0;
             if (track < 0 || track >= _rollingBufs.Length) return;
@@ -598,9 +598,9 @@ namespace KernelExtensions.Managers
             int bufSize = buf.Length;
             if (bufSize == 0 || _rollingBufCount[track] < 256) return;
 
-            // C2：取样基准 = “已播放位置”，而不是“最新提交位置”。
+            // 取样基准 = “已播放位置”，而不是“最新提交位置”。
             //     队列里的 pending 块是“已提交但还没播”的量，从写入位置往回退掉它才是真实播放头。
-            // C3：Pitch 变速时消费更快、pending 下降更快，故该基准自动跟随变速（无需单独补偿）。
+            // Pitch 变速时消费更快、pending 下降更快，故该基准自动跟随变速（无需单独补偿）。
             int pending = 0;
             if (_dseInstances != null && track < _dseInstances.Length && _dseInstances[track] != null)
                 pending = _dseInstances[track].PendingBufferCount;
@@ -610,7 +610,7 @@ namespace KernelExtensions.Managers
             if (behindFrames > maxBack) behindFrames = maxBack;
             int headPos = (int)(((_rollingBufPos[track] - behindFrames) % bufSize + bufSize) % bufSize);
 
-            // C4：步进采样，让 256 个点铺满 ~1/60 秒（对齐原版），窗口不再随采样率收缩。
+            // 步进采样，让 256 个点铺满 ~1/60 秒（对齐原版），窗口不再随采样率收缩。
             //     15360 = 256 × 60；跳距随采样率缩放，高采样率时不会只取到几个毫秒。
             int sr = (track < _trackSampleRate.Length && _trackSampleRate[track] > 0) ? _trackSampleRate[track] : 44100;
             int step = (sr + 7680) / 15360;      // 四舍五入（+半跳距）；@44.1k→3、@48k→3、@96k→6
@@ -669,7 +669,7 @@ namespace KernelExtensions.Managers
             _trackChannels = new int[trackCount];
             _startVolumes = new float[trackCount];
             _targetVolumes = new float[trackCount];
-            int created = 0;   // 诊断（D3）
+            int created = 0;   // 诊断
             _framesPlayed = new long[trackCount];
             _loopStartFrames = new long[trackCount];
             _loopEndFrames = new long[trackCount];
@@ -736,34 +736,34 @@ namespace KernelExtensions.Managers
                     _loopStartFrames[i] = loopStart;
                     _loopEndFrames[i] = loopEnd;
 
-                    // —— 单曲音量（A8）：参与最终的音量乘法，而不是直写 DSEI.Volume ——
+                    // —— 单曲音量：参与最终的音量乘法，而不是直写 DSEI.Volume ——
                     _trackVolumeMul[i] = meta.VolumeMultiplier ?? 1f;
 
-                    // 按轨初始化滚动缓冲（~500ms mono）——C1：每轨一份，波形条按当前场景轨取数
+                    // 按轨初始化滚动缓冲（~500ms mono）—— 每轨一份，波形条按当前场景轨取数
                     _rollingBufs[i] = new float[Math.Max(1024, sr / 2)];
                     _rollingBufPos[i] = 0;
                     _rollingBufCount[i] = 0;
                     _trackSampleRate[i] = sr;
 
-                    // —— D1：一块的 interleaved 样本数，按轨复用缓冲 ——
+                    // —— 一块的 interleaved 样本数，按轨复用缓冲 ——
                     int chunkSamples = (sr * ch) / 24;
                     if (ch > 0 && chunkSamples % ch != 0) chunkSamples -= chunkSamples % ch;
                     if (chunkSamples < ch) chunkSamples = ch;
                     _chunkBuf[i] = new float[chunkSamples];
-                    _chunkFrames[i] = chunkSamples / ch;   // C2：队列深度 → 帧数换算用
+                    _chunkFrames[i] = chunkSamples / ch;   // 队列深度 → 帧数换算用
 
                     AudioChannels audioCh = (ch >= 2) ? AudioChannels.Stereo : AudioChannels.Mono;
                     _dseInstances[i] = new DynamicSoundEffectInstance(sr, audioCh);
-                    created++;   // 诊断（D3）
+                    created++;   // 诊断
                     _dseInstances[i].BufferNeeded += OnBufferNeeded;
-                    // 同步场景音量（A8）：SwitchMusicPhase 路径不经过 SwitchToScene，
+                    // 同步场景音量：SwitchMusicPhase 路径不经过 SwitchToScene，
                     // 若这里不同步 _targetVolumes，SyncVolume() 下一帧就把音量覆盖回 0 → 切音乐组后静音。
                     float sceneVol = (i == CurrentScene) ? 1f : 0f;
                     _targetVolumes[i] = sceneVol;
                     _startVolumes[i] = sceneVol;
                     _dseInstances[i].Volume = sceneVol * _trackVolumeMul[i];
 
-                    // —— A7：Pitch（PhaseSwiftTrack 内已解析并夹到 [-1, 1]）——
+                    // —— Pitch（PhaseSwiftTrack 内已解析并夹到 [-1, 1]）——
                     float pitch = meta.PitchValue;
                     if (pitch != 0f) _dseInstances[i].Pitch = pitch;
 
@@ -782,7 +782,7 @@ namespace KernelExtensions.Managers
                 }
             }
             _isFading = false;
-            // 诊断（D3 压测）：配合 CleanupAudio 的日志，可看出反复 Load/Cleanup 后池的累积曲线
+            // 诊断：配合 CleanupAudio 的日志，可看出反复 Load/Cleanup 后池的累积曲线
             KELog.Debug($"[PhaseSwift/diag] LoadMusicPhase: created {created}/{trackCount} players; "
                 + $"FNA dynamic pool {GetDynamicPoolCount()}; thread {Thread.CurrentThread.ManagedThreadId}");
         }
@@ -791,7 +791,7 @@ namespace KernelExtensions.Managers
         /// <summary>
         /// 向指定音轨的播放队列补一块。一块 = 1/24 秒（interleaved 样本数 = 采样率 × 声道 / 24）。
         ///
-        /// 与旧实现的区别（9.38）：旧版“读一整块，读不够就回文件头”，只能在文件末尾循环；
+        /// 与旧实现的区别：旧版“读一整块，读不够就回文件头”，只能在文件末尾循环；
         /// 新版主动用“离循环终点的剩余量”约束本次读取量，到界就跳回循环起点，
         /// 因此支持文件中段的循环区间，且一块内可跳（甚至多次跳）循环点。
         /// </summary>
@@ -853,7 +853,7 @@ namespace KernelExtensions.Managers
             if (filled <= 0) return;
             int written = filled * ch;
 
-            // 写入该轨自己的滚动缓冲（取第 0 声道）——C1：按轨分离，避免两轨互相覆盖
+            // 写入该轨自己的滚动缓冲（取第 0 声道）—— 按轨分离，避免两轨互相覆盖
             float[] rbuf = (trackIdx < _rollingBufs.Length) ? _rollingBufs[trackIdx] : null;
             if (rbuf != null)
             {
@@ -937,7 +937,7 @@ namespace KernelExtensions.Managers
             for (int i = 0; i < _dseInstances.Length; i++)
             {
                 if (_dseInstances[i] != dsei) continue;
-                // B2：事件触发时一口气补到目标值，而不是只补 1 块
+                // 事件触发时一口气补到目标值，而不是只补 1 块
                 int need = TargetPendingBuffers - dsei.PendingBufferCount;
                 for (int b = 0; b < need; b++) SubmitNextChunk(i);
                 return;
@@ -948,14 +948,14 @@ namespace KernelExtensions.Managers
         {
             _stopped = true;
             int dropped = 0;
-            int poolBefore = GetDynamicPoolCount();   // 诊断（D3）
+            int poolBefore = GetDynamicPoolCount();   // 诊断
             for (int i = 0; i < _dseInstances.Length; i++)
             {
                 if (_dseInstances[i] != null)
                 {
                     _dseInstances[i].BufferNeeded -= OnBufferNeeded;
                     _dseInstances[i].Volume = 0f;   // 先把音量拉到底，避免释放瞬间爆音
-                    // 显式释放（D3 遗留项）：Dispose 会释放 AL source、把实例移出 FNA 的
+                    // 显式释放：Dispose 会释放 AL source、把实例移出 FNA 的
                     // DynamicInstancePool，并逐个删除三个 buffer 队列里的 AL buffer。
                     // 仅 Stop() 只能做到前两项，AL buffer 仍会泄漏。
                     //
@@ -983,7 +983,7 @@ namespace KernelExtensions.Managers
             _trackVolumeMul = Array.Empty<float>();
             _chunkBuf = Array.Empty<float[]>();
             _isFading = false;
-            // 诊断（D3 压测）：掉引用的播放器**不会**离开 FNA 的池（只有 Stop() 才会），
+            // 诊断：掉引用的播放器**不会**离开 FNA 的池（只有 Stop() 才会），
             // 所以池 “只增不减” 就是泄漏的直接证据。
             KELog.Debug($"[PhaseSwift/diag] CleanupAudio: released {dropped} players; "
                 + $"FNA dynamic pool {poolBefore} -> {GetDynamicPoolCount()}; thread {Thread.CurrentThread.ManagedThreadId}");
@@ -1192,7 +1192,7 @@ namespace KernelExtensions.Managers
         }
 
         /// <summary>
-        /// 诊断（D3 压测）：反射读 FNA 的动态音频实例池大小。
+        /// 诊断：反射读 FNA 的动态音频实例池大小。
         /// 池里只增不减就是泄漏的直接证据——`CleanupAudio` 只丢掉引用、不调 Stop，
         /// 而 FNA 仅靠 `Stop()` 才会把实例移出池（其自带的“状态==Stopped”清理对 DSEI 永不成立）。
         /// 拿不到字段时返回 -1（不同 FNA 版本/裁剪），不影响功能。
@@ -1214,11 +1214,11 @@ namespace KernelExtensions.Managers
             catch { return -1; }
         }
         private static FieldInfo _dynamicPoolField;
-        /// <summary>诊断（D3）：最近一次记录到的 UpdateAudioBuffers 线程 ID（-1 = 尚未记录）。</summary>
+        /// <summary>诊断：最近一次记录到的 UpdateAudioBuffers 线程 ID（-1 = 尚未记录）。</summary>
         private static int _audioUpdateThreadId = -1;
 
         // ——————————————————————————————————————————————————————————————
-        // 主线程调度（D3 修复）
+        // 主线程调度
         //
         // 实测根因：Hacknet 的 `loadactions` 会为命令**另起线程**，于是
         //   Action 线程（如 4）→ 本类 → FNA 音频 API（new DSEI / Play→GenSource /
@@ -1282,7 +1282,7 @@ namespace KernelExtensions.Managers
         }
 
         /// <summary>
-        /// 玩家音乐音量缓存（E1；&lt; 0 = 尚未捕获）。
+        /// 玩家音乐音量缓存（&lt; 0 = 尚未捕获）。
         ///
         /// 为何不直接调 <c>MusicManager.getVolume()</c>：该方法可被第三方模组 patch。
         /// 例如 Stuxnet.Audio 的 Prefix 在扩展内会 `return false` 并返回它自己的音量

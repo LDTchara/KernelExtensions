@@ -3,7 +3,7 @@ using KernelExtensions.Utilities;
 namespace KernelExtensions.Managers
 {
     /// <summary>
-    /// RAM 显示的可调状态（9.12）。
+    /// RAM 显示的可调状态。
     /// <para>
     /// 只影响原版 <c>RamModule</c> 的文字 <c>"USED RAM: x / y mb"</c>：
     /// <c>x</c> 与 <c>y</c> 统一乘 <see cref="Multiplier"/>，单位串换成 <see cref="Unit"/>。

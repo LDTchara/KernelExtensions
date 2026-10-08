@@ -109,7 +109,7 @@ namespace KernelExtensions.Daemons
         [XMLStorage]
         public string CrashIPPrefix = "DCLOC:"; // 坠机后加在 IP 前的前缀（空 = 不修改 IP，节点仍可访问）
 
-        // ====== 航线图起终点（9.15）======
+        // ====== 航线图起终点======
         // 归一化坐标（0~1，相对世界地图矩形），默认值即原硬编码位置。
         // 换算与贴图尺寸无关（按矩形比例算），但换贴图后“起终点落在图哪里”就得重调，故开放可配。
         [XMLStorage] public float MapOriginX = 0.4304f;
@@ -145,7 +145,7 @@ namespace KernelExtensions.Daemons
         }
 
         /// <summary>
-        /// 把 XML 配置的航线起终点应用到运行时坐标（9.15），clamp 到 [0,1]。
+        /// 把 XML 配置的航线起终点应用到运行时坐标，clamp 到 [0,1]。
         /// 新游戏走 initFiles、读档走 loadInit，两处都要调（对齐 H = FallDuration 的做法）。
         /// </summary>
         private void ApplyMapPoints()

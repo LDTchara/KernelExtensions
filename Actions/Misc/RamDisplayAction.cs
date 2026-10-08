@@ -7,7 +7,7 @@ using Pathfinder.Util;
 namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
-    /// 调整 RAM 显示文字（9.12）。
+    /// 调整 RAM 显示文字。
     /// <para>
     /// 作用于原版 <c>RamModule</c> 的 <c>"USED RAM: x / y mb"</c>：
     /// <c>Multiplier</c> 统一缩放 <c>x</c> 与 <c>y</c>，<c>Unit</c> 替换单位串。其它一律不变。

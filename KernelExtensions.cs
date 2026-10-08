@@ -153,7 +153,7 @@ namespace KernelExtensions
             RegisterActionWithFallback<ShowAircraftOverlayAction>("ShowAircraftOverlay");
             RegisterActionWithFallback<HideAircraftOverlayAction>("HideAircraftOverlay");
 
-            // 2.7b 飞机调试工具（9.15）——“仅测试用”的门控在各自 Trigger 里（检查 ConfigLoader.Debug）
+            // 2.7b 飞机调试工具——“仅测试用”的门控在各自 Trigger 里（检查 ConfigLoader.Debug）
             //     不能在注册处判断：ConfigLoader.Load() 发生在注册之后，此处 Debug 恒为 false。
             RegisterActionWithFallback<FlightDaemonStatusAction>("FlightDaemonStatus");
             RegisterActionWithFallback<FlightDaemonMapAction>("FlightDaemonMap");
@@ -176,7 +176,7 @@ namespace KernelExtensions
                 RegisterActionWithFallback<StartEnding>("StartEnding");
             }
 
-            // RAM 显示文字调整（9.12）：无 KE-Config 段，全由 Action 控制
+            // RAM 显示文字调整：无 KE-Config 段，全由 Action 控制
             RegisterActionWithFallback<RamDisplayAction>("RamDisplay");
 
             // ============================================================
@@ -200,7 +200,7 @@ namespace KernelExtensions
             KELog.Info("RamDisplay restore handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
-            // 节点自替换符（9.63）：挂在 Pathfinder 的 TextReplaceEvent 上
+            // 节点自替换符：挂在 Pathfinder 的 TextReplaceEvent 上
             SelfReplacementPatch.Initialize();
 
             // ============================================================
@@ -480,7 +480,7 @@ namespace KernelExtensions
                 e.Save.Add(clockNode);
             }
 
-            // ========== RAM 显示设置（9.12）==========
+            // ========== RAM 显示设置==========
             // 只在被 Action 改过时写入（保持默认的存档不必带这个节点）
             if (Math.Abs(RamDisplayManager.Multiplier - RamDisplayManager.DefaultMultiplier) > 0.0001f
                 || RamDisplayManager.Unit != RamDisplayManager.DefaultUnit)
@@ -818,7 +818,7 @@ namespace KernelExtensions
             KELog.Info($"[Clock] restored {pending.Count} running clock(s) from save");
         }
 
-        /// <summary>读档后恢复 RAM 显示设置（9.12）：先回默认，有 &lt;RamDisplayData&gt; 则套用。</summary>
+        /// <summary>读档后恢复 RAM 显示设置：先回默认，有 &lt;RamDisplayData&gt; 则套用。</summary>
         private void OnOSLoaded_ApplyRamDisplay(OSLoadedEvent e)
         {
             RamDisplayManager.ApplyOnLoaded();

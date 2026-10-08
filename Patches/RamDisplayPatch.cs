@@ -7,7 +7,7 @@ using System.Reflection;
 namespace KernelExtensions.Patches
 {
     /// <summary>
-    /// 9.12：反射 patch 原版 <c>RamModule.Update</c>，改写 <c>"USED RAM: x / y mb"</c> 文字。
+    /// 反射 patch 原版 <c>RamModule.Update</c>，改写 <c>"USED RAM: x / y mb"</c> 文字。
     /// <para>
     /// <c>RamModule</c> 是 <c>internal</c>，KE 无法编译期引用，故运行时用
     /// <c>AccessTools.TypeByName</c> + <c>harmony.Patch(Postfix)</c>

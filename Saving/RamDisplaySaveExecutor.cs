@@ -8,7 +8,7 @@ namespace KernelExtensions.Saving
 {
     /// <summary>
     /// 读取存档中的 <c>&lt;RamDisplayData Multiplier="..." Unit="..." /&gt;</c>，
-    /// 恢复 RAM 显示设置（9.12）。
+    /// 恢复 RAM 显示设置。
     /// <para>
     /// 只有两个值，直接填 <see cref="RamDisplayManager"/> 的读档暂存，
     /// 由 <c>OSLoaded</c> 侧的 <c>ApplyOnLoaded()</c> 消费
