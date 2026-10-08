@@ -454,6 +454,12 @@ objects — this is the easiest thing to get wrong.
   instance; it only logs a `Warn`. If you need "another set of scenes / topology", make it **another
   scene inside the same config**; to change music only, use `<PhaseSwiftMusic>`.
 - **Equal track lengths**: tracks of unequal length inside one phase drift out of sync after switching.
+- **A brief hitch when starting / switching music phases**: loading music pre-fills the audio buffers on
+  the **main thread** (8 chunks by default). It has to be synchronous because the audio APIs may only be
+  called from the main thread — moving it elsewhere makes command execution order diverge from the actual
+  effect order. The hitch is dominated by decoding cost (not by the playback duration those buffers
+  represent), and the buffer depth also has to keep low-framerate playback from stuttering, so it cannot
+  simply be reduced.
 - **Theme paths**: custom theme paths are relative to the extension root (PS prepends nothing).
 - **Music position is not persisted**: the save records scene / music phase / theme but **not the playback
   position** — music restarts from the beginning after loading a save.
