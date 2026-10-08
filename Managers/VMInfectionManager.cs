@@ -103,6 +103,19 @@ namespace KernelExtensions.Managers
         }
 
         /// <summary>
+        /// 已经告警过的越界路径（去重）。
+        /// <para>
+        /// 本判定在崩溃期间**每帧**都会跑（见 CrashModule 的 Update 补丁）：越界时条件不满足、
+        /// Prefix 放行让原版继续，于是同一份越界会被反复判定（实测刷 16~35 条），
+        /// 足以淹没其它日志。同一路径只报一次即可，由 <see cref="ResetEscapeWarnings"/> 在每次攻击开始时清空。
+        /// </para>
+        /// </summary>
+        private static readonly HashSet<string> _warnedEscapePaths = new();
+
+        /// <summary>清空越界告警去重表（在每次 VM 攻击启动时调用）。</summary>
+        public static void ResetEscapeWarnings() => _warnedEscapePaths.Clear();
+
+        /// <summary>
         /// 根据存档目录判断文件是否满足配置要求。
         /// </summary>
         public static bool CheckFileCondition(OS os, VMAttackConfig config)
@@ -112,7 +125,8 @@ namespace KernelExtensions.Managers
             // 越界视为「条件不满足」——保守处理，不误判为可恢复
             if (fullPath == null)
             {
-                KELog.Warn($"[VMInfection] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                if (_warnedEscapePaths.Add(config.CheckFilePath))
+                    KELog.Warn($"[VMInfection] CheckFilePath escapes the save directory: {config.CheckFilePath}");
                 return false;
             }
             if (config.Mode == RecoveryMode.FileDeletion) return File.Exists(fullPath);

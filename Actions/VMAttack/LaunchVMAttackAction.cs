@@ -27,6 +27,9 @@ namespace KernelExtensions.Actions.VMAttack
                 return;
             }
 
+            // 新一轮攻击：清空越界告警去重表（上一次攻击的告警不应影响本次）
+            VMInfectionManager.ResetEscapeWarnings();
+
             // 配置加载路径：扩展根目录 + 相对路径（越界则拒绝）
             string configPath = KEPath.ResolveInsideExtension(relativePath);
             if (configPath == null)
