@@ -953,9 +953,17 @@ namespace KernelExtensions.Managers
                 if (_dseInstances[i] != null)
                 {
                     _dseInstances[i].BufferNeeded -= OnBufferNeeded;
-                    // 不调 Stop/Dispose，避免 OpenAL 驱动内部锁死
-                    // 仅静音 + 丢引用，旧 DSEI 缓冲耗尽后自然静默，GC 回收
-                    _dseInstances[i].Volume = 0f;
+                    _dseInstances[i].Volume = 0f;   // 先把音量拉到底，避免释放瞬间爆音
+                    // 显式释放（D3 遗留项）：Dispose 会释放 AL source、把实例移出 FNA 的
+                    // DynamicInstancePool，并逐个删除三个 buffer 队列里的 AL buffer。
+                    // 仅 Stop() 只能做到前两项，AL buffer 仍会泄漏。
+                    //
+                    // 为何现在才敢调：早前「不调 Stop/Dispose」是为了回避切歌卡死，
+                    // 但那时的前提是**确实存在跨线程竞态**（Action 线程在动 FNA 内部状态）。
+                    // 竞态已由主线程调度修复（af54ce9），且本方法现只在主线程执行，
+                    // 与 AudioDevice.Update() 同线程、时序也不重叠 → 无并发风险。
+                    // 不释放的代价：每帧遍历变慢，且 AL source 耗尽（默认 256 个）后新歌无法播放。
+                    _dseInstances[i].Dispose();
                     _dseInstances[i] = null;
                     dropped++;
                 }
