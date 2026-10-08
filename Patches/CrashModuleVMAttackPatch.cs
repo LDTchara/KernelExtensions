@@ -70,8 +70,11 @@ namespace KernelExtensions.Patches
             // 首先检查是否刚从第50行触发错误
             if (!isInHostileFileCrash)
             {
-                // 我们不需要模拟整个 Update，只需在 bootTextCount 刚到达50时干涉
-                if (bootTextCount == 50)
+                // 我们不需要模拟整个 Update，只需在开机文字滚到 50 行以后干涉
+                // （用 >= 而非 ==：节奏一旦被其它模组压缩，一帧可能加好几行，
+                //   精确匹配会直接从 48 跳到 52 而错过。改范围匹配后仍与原行为等价：
+                //   原节奏下逐行递增，必然经过 50。）
+                if (bootTextCount >= 50)
                 {
                     bool shouldError;
                     if (config.Mode == RecoveryMode.Password)
