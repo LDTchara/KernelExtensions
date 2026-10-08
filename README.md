@@ -99,8 +99,8 @@ Workarounds:
 
 - **LDTchara** - 感谢我自己的小脑袋瓜，想出来一大堆奇怪的点子并实现了它们。负责 KE 的整体设计、核心功能实现、文档编写与维护。  
   Thanks to my own little brain for coming up with a bunch of weird ideas and implementing them. Responsible for the overall design of KE, core feature implementation, and documentation writing and maintenance.
-- **April_Crystal** – 部分功能的初版核心实现（包括但不限于飞机 Daemon、自定义节点图标、自定义结局模块、自定义破解器、可配置的横幅等。）与大量改进建议 *（以及大量的麻烦）*，KE 核心开发者之一。  
-  Initial core implementation of some features (including but not limited to Aircraft Daemon, custom node icons, custom ending module, custom cracker, configurable banners, etc.) and many improvement suggestions *(and a lot of trouble)*; one of the core KE developers.
+- **April_Crystal** – 部分功能的初版核心实现（包括但不限于飞机 Daemon、自定义节点图标、自定义结局模块、自定义破解器、可配置的横幅等。）与大量改进建议 *（以及大量的麻烦）*，KE 核心开发者之一、传奇测试员。  
+  Initial core implementation of some features (including but not limited to Aircraft Daemon, custom node icons, custom ending module, custom cracker, configurable banners, etc.) and many improvement suggestions *(and a lot of trouble)*; one of the core KE developers and a legendary tester.
 - **ZQG** – 第一个使用 KE 的扩展作者，提供了宝贵的测试反馈。  
   The first extension author to use KE, providing invaluable testing feedback.
 - **HN 扩展小屋的各位朋友** – 部分灵感来源、测试、反馈与支持。  
