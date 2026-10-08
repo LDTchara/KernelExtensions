@@ -391,8 +391,8 @@ namespace KernelExtensions.Managers
             if (_audioUpdateThreadId != tid)
             {
                 _audioUpdateThreadId = tid;
-                KELog.Debug($"[PhaseSwift/diag] UpdateAudioBuffers: 线程 {tid}（首次/变更）；"
-                    + $"FNA 动态池 {GetDynamicPoolCount()}");
+                KELog.Debug($"[PhaseSwift/diag] UpdateAudioBuffers: thread {tid} (first/changed); "
+                    + $"FNA dynamic pool {GetDynamicPoolCount()}");
             }
 
             // 第三方音频冲突：窗口内检测到在播就停掉（覆盖范围见 Compat/ModCompats）
@@ -697,7 +697,7 @@ namespace KernelExtensions.Managers
                             filePath = altPath;
                         else
                         {
-                            KELog.Warn($"[PhaseSwift] 找不到音轨 {i}: {relPath}（已尝试 Music/{fileName}）");
+                            KELog.Warn($"[PhaseSwift] track {i} not found: {relPath} (also tried Music/{fileName})");
                             continue;
                         }
                     }
@@ -718,8 +718,8 @@ namespace KernelExtensions.Managers
                     if (loopEnd > totalFrames) loopEnd = totalFrames;
                     if (loopEnd <= loopStart)
                     {
-                        KELog.Warn($"[PhaseSwift] 音轨 {i} 循环区间非法（LoopStart={meta.LoopStart}, LoopEnd={meta.LoopEnd}，"
-                            + $"总长 {totalFrames / (double)sr:F2}s），回退整曲循环");
+                        KELog.Warn($"[PhaseSwift] track {i} has an invalid loop range (LoopStart={meta.LoopStart}, LoopEnd={meta.LoopEnd}, "
+                            + $"total {totalFrames / (double)sr:F2}s) - falling back to whole-file loop");
                         loopStart = 0L;
                         loopEnd = totalFrames;
                     }
@@ -727,8 +727,8 @@ namespace KernelExtensions.Managers
                     //    装载时就拦掉，比等到播完回跳时才降级更早、提示也更明确。
                     else if (loopStart > 0L && totalFrames - loopStart < sr)
                     {
-                        KELog.Warn($"[PhaseSwift] 音轨 {i} 的 LoopStart 距文件末尾不足 1 秒"
-                            + $"（总长 {totalFrames / (double)sr:F2}s）——seek 会失败，该轨回退整曲循环");
+                        KELog.Warn($"[PhaseSwift] track {i} LoopStart is within the last second of the file "
+                            + $"(total {totalFrames / (double)sr:F2}s) - seeking would fail; falling back to whole-file loop");
                         loopStart = 0L;
                         loopEnd = totalFrames;
                     }
@@ -776,14 +776,14 @@ namespace KernelExtensions.Managers
                 }
                 catch (Exception ex)
                 {
-                    KELog.Error($"[PhaseSwift] 加载音轨 {i} 失败: {ex.Message}");
+                    KELog.Error($"[PhaseSwift] failed to load track {i}: {ex.Message}");
                     if (_trackStreams[i] != null) { _trackStreams[i].Dispose(); _trackStreams[i] = null; }
                 }
             }
             _isFading = false;
             // 诊断（D3 压测）：配合 CleanupAudio 的日志，可看出反复 Load/Cleanup 后池的累积曲线
-            KELog.Debug($"[PhaseSwift/diag] LoadMusicPhase: 新建 {created}/{trackCount} 个播放器；"
-                + $"FNA 动态池 {GetDynamicPoolCount()}；线程 {Thread.CurrentThread.ManagedThreadId}");
+            KELog.Debug($"[PhaseSwift/diag] LoadMusicPhase: created {created}/{trackCount} players; "
+                + $"FNA dynamic pool {GetDynamicPoolCount()}; thread {Thread.CurrentThread.ManagedThreadId}");
         }
 
 
@@ -845,7 +845,7 @@ namespace KernelExtensions.Managers
             {
                 // 不让解码异常冒到游戏顶层（会直接崩游戏）。记 Error 并放弃本次补给，下一帧会再试。
                 // 用完整 ToString（含堆栈）而非 Message：配合 Windows PDB 可直接看到源文件行号。
-                KELog.Error($"[PhaseSwift] 音轨 {trackIdx} 读取失败: {ex}");
+                KELog.Error($"[PhaseSwift] track {trackIdx} read failed: {ex}");
                 return;
             }
 
@@ -904,7 +904,7 @@ namespace KernelExtensions.Managers
             }
             catch (Exception ex)
             {
-                KELog.Warn($"[PhaseSwift] 音轨 {trackIdx} 跳到第 {frame} 帧失败（{ex.Message}），该轨降级为整曲循环");
+                KELog.Warn($"[PhaseSwift] track {trackIdx} seek to frame {frame} failed ({ex.Message}) - degrading to whole-file loop");
                 DegradeToWholeTrack(trackIdx);
                 return false;
             }
@@ -924,7 +924,7 @@ namespace KernelExtensions.Managers
             }
             catch (Exception ex)
             {
-                KELog.Error($"[PhaseSwift] 音轨 {trackIdx} 降级失败: {ex.Message}");
+                KELog.Error($"[PhaseSwift] track {trackIdx} degrade failed: {ex.Message}");
                 _loopEndFrames[trackIdx] = long.MaxValue;   // 至少避免外层因 remaining<=0 打转
             }
         }
@@ -984,8 +984,8 @@ namespace KernelExtensions.Managers
             _isFading = false;
             // 诊断（D3 压测）：掉引用的播放器**不会**离开 FNA 的池（只有 Stop() 才会），
             // 所以池 “只增不减” 就是泄漏的直接证据。
-            KELog.Debug($"[PhaseSwift/diag] CleanupAudio: 已释放 {dropped} 个播放器；"
-                + $"FNA 动态池 {poolBefore} → {GetDynamicPoolCount()}；线程 {Thread.CurrentThread.ManagedThreadId}");
+            KELog.Debug($"[PhaseSwift/diag] CleanupAudio: released {dropped} players; "
+                + $"FNA dynamic pool {poolBefore} -> {GetDynamicPoolCount()}; thread {Thread.CurrentThread.ManagedThreadId}");
         }
 
 
@@ -1052,7 +1052,7 @@ namespace KernelExtensions.Managers
                 }
                 else
                 {
-                    KELog.Warn($"[PhaseSwift] TopologyMode 场景索引无效：{mode}（有效范围 0~{Config.Scenes.Count - 1}），回退 restore");
+                    KELog.Warn($"[PhaseSwift] TopologyMode scene index out of range: {mode} (valid 0~{Config.Scenes.Count - 1}) - falling back to restore");
                     RestoreOriginalLinks();
                 }
                 return;
@@ -1064,7 +1064,7 @@ namespace KernelExtensions.Managers
                 return;
             }
 
-            KELog.Warn($"[PhaseSwift] TopologyMode 未知：{mode}，回退 restore");
+            KELog.Warn($"[PhaseSwift] unknown TopologyMode: {mode} - falling back to restore");
             RestoreOriginalLinks();
         }
 
@@ -1263,11 +1263,11 @@ namespace KernelExtensions.Managers
 
             if (!done.Wait(MainThreadDispatchTimeoutMs))
             {
-                KELog.Warn($"[PhaseSwift] 主线程调度超时（{MainThreadDispatchTimeoutMs}ms），操作可能未执行");
+                KELog.Warn($"[PhaseSwift] main-thread dispatch timed out ({MainThreadDispatchTimeoutMs}ms); the operation may not have run");
                 return;
             }
             if (captured != null)
-                KELog.Error($"[PhaseSwift] 主线程执行出错: {captured}");
+                KELog.Error($"[PhaseSwift] main-thread execution failed: {captured}");
         }
 
         /// <summary>主线程侧执行排队的工作（由 OS.Update Postfix 每帧调用，在 UpdateAudioBuffers 之前）。</summary>
@@ -1276,7 +1276,7 @@ namespace KernelExtensions.Managers
             while (_mainThreadQueue.TryDequeue(out var work))
             {
                 try { work(); }
-                catch (Exception ex) { KELog.Error($"[PhaseSwift] 排队操作执行出错: {ex}"); }
+                catch (Exception ex) { KELog.Error($"[PhaseSwift] queued operation failed: {ex}"); }
             }
         }
 
