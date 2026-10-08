@@ -17,7 +17,9 @@ namespace KernelExtensions.Utilities
         ///    a. 扩展根目录下存在 → "../Extensions/扩展名/文件名"；
         ///    b. 扩展内 Music/ 下存在 → "../Extensions/扩展名/Music/文件名"；
         ///    c. Content/DLC/Music 下存在 → "DLC/Music/文件名"；
-        ///    d. 都不存在 → 原样返回（原版音乐，Content/Music）。
+        ///    d. 都不存在 → **补上 Music/ 前缀**（"Music/文件名"），指向原版 Content/Music。
+        ///       ⚠️ 不能直接返回裸名：原版 Song 的解析基准是 Content/Music，
+        ///       裸名会变成 Content/&lt;name&gt; 而静默失败（曾坑到 AfterMusic）。
         /// 注：返回时**保留调用方写的扩展名**（不主动剥离 .ogg）——FNA 靠 Normalize 猜扩展名，
         ///     保留显式扩展名更确定。
         /// </summary>
@@ -73,8 +75,10 @@ namespace KernelExtensions.Utilities
             string dlcDir = Path.Combine(Paths.GameRootPath, "Content", "DLC", "Music");
             if (Exists(dlcDir, musicPath))
                 return $"DLC/Music/{musicPath}";
-            // 回退原版音乐
-            return musicPath;
+            // 回退原版音乐：**必须补 Music/ 前缀**。
+            // 原版 Song 的解析基准是 Content/Music；裸名直接交回去会去找 Content/<name> → **静默失败**
+            // （实测：<AfterMusic>Bit(Ending)</AfterMusic> 不切歌且无任何报错，写 Music/Bit(Ending) 才正常）。
+            return "Music/" + musicPath;
         }
     }
 }
