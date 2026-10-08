@@ -758,6 +758,13 @@ public class CustomEndingModule : EndingSequenceModule
             //     结果是同一首歌接着原位置继续播，听感上像「没有切换」
             if (fadedAtCreditsEnd || MusicManager.currentSongName == afterSong)
             {
+                // 先停掉当前播放：playSongImmediatley 内部会**同步** Load<Song>（可能数十~数百 ms），
+                // 而上面设了 MediaPlayer.IsRepeating = true —— 报幕曲会在这段窗口里循环回开头、
+                // 播出一小段后被硬切，听感上就是一声短促异响（音量已恢复为全音量时尤其明显）。
+                // 先停可直接消除这段「多余的回放」。
+                // 安全性：MusicManager.stop() 只改 isPlaying/state、**不动音量**，
+                // 而 playSong() 的守卫是 !isPlaying —— 不会妨碍随后的起播。
+                try { MusicManager.stop(); } catch { }
                 try { MusicManager.playSongImmediatley(afterSong); } catch { }
             }
             else
