@@ -679,15 +679,26 @@ namespace KernelExtensions.Managers
                     // NVorbis 的 TotalSamples 是 **per-channel 帧数**（实测 == TotalTime × SampleRate）
                     long totalFrames = _trackReaders[i].TotalSamples;
 
-                    // —— 循环点解析（A5）：负数/NaN/Inf 回退默认；非法区间回退整曲 ——
-                    long loopStart = IsValidSeconds(meta.LoopStart) ? (long)(meta.LoopStart * sr) : 0L;
-                    long loopEnd = IsValidSeconds(meta.LoopEnd) ? (long)(meta.LoopEnd * sr) : totalFrames;
+                    // —— 循环点解析：未写/空/非数字/负数均在 PhaseSwiftTrack 内回退默认（见该类注释）——
+                    float? loopStartSec = meta.LoopStartSeconds;
+                    float? loopEndSec = meta.LoopEndSeconds;
+                    long loopStart = loopStartSec.HasValue ? (long)(loopStartSec.Value * sr) : 0L;
+                    long loopEnd = loopEndSec.HasValue ? (long)(loopEndSec.Value * sr) : totalFrames;
                     if (loopStart < 0L) loopStart = 0L;
                     if (loopEnd > totalFrames) loopEnd = totalFrames;
                     if (loopEnd <= loopStart)
                     {
-                        KELog.Warn($"[PhaseSwift] 音轨 {i} 循环区间非法（LoopStart={meta.LoopStart}, LoopEnd={meta.LoopEnd},"
-                            + $" 总长 {totalFrames / (double)sr:F2}s），回退整曲循环");
+                        KELog.Warn($"[PhaseSwift] 音轨 {i} 循环区间非法（LoopStart={meta.LoopStart}, LoopEnd={meta.LoopEnd}，"
+                            + $"总长 {totalFrames / (double)sr:F2}s），回退整曲循环");
+                        loopStart = 0L;
+                        loopEnd = totalFrames;
+                    }
+                    // —— 尾部危险区：seek 到距文件末尾约 0.5 秒内必失败（实测边界），保守取 1 秒。
+                    //    装载时就拦掉，比等到播完回跳时才降级更早、提示也更明确。
+                    else if (loopStart > 0L && totalFrames - loopStart < sr)
+                    {
+                        KELog.Warn($"[PhaseSwift] 音轨 {i} 的 LoopStart 距文件末尾不足 1 秒"
+                            + $"（总长 {totalFrames / (double)sr:F2}s）——seek 会失败，该轨回退整曲循环");
                         loopStart = 0L;
                         loopEnd = totalFrames;
                     }
@@ -695,7 +706,7 @@ namespace KernelExtensions.Managers
                     _loopEndFrames[i] = loopEnd;
 
                     // —— 单曲音量（A8）：参与最终的音量乘法，而不是直写 DSEI.Volume ——
-                    _trackVolumeMul[i] = IsValidSeconds(meta.Volume) ? meta.Volume : 1f;
+                    _trackVolumeMul[i] = meta.VolumeMultiplier ?? 1f;
 
                     // 按轨初始化滚动缓冲（~500ms mono）——C1：每轨一份，波形条按当前场景轨取数
                     _rollingBufs[i] = new float[Math.Max(1024, sr / 2)];
@@ -720,9 +731,9 @@ namespace KernelExtensions.Managers
                     _startVolumes[i] = sceneVol;
                     _dseInstances[i].Volume = sceneVol * _trackVolumeMul[i];
 
-                    // —— A7：Pitch（FNA 的非 XACT 源范围为 [-1, 1]）——
-                    if (meta.Pitch != 0f && !float.IsNaN(meta.Pitch) && !float.IsInfinity(meta.Pitch))
-                        _dseInstances[i].Pitch = MathHelper.Clamp(meta.Pitch, -1f, 1f);
+                    // —— A7：Pitch（PhaseSwiftTrack 内已解析并夹到 [-1, 1]）——
+                    float pitch = meta.PitchValue;
+                    if (pitch != 0f) _dseInstances[i].Pitch = pitch;
 
                     _dseInstances[i].Play();
                     _stopped = false;
@@ -883,9 +894,6 @@ namespace KernelExtensions.Managers
                 _loopEndFrames[trackIdx] = long.MaxValue;   // 至少避免外层因 remaining<=0 打转
             }
         }
-
-        /// <summary>数值配置项有效性：非负且有限（负数 / NaN / Infinity 按 9.55 约定视为“未指定”）。</summary>
-        private static bool IsValidSeconds(float v) => v >= 0f && !float.IsNaN(v) && !float.IsInfinity(v);
 
         private static void OnBufferNeeded(object sender, EventArgs e)
         {
