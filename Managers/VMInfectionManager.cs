@@ -82,6 +82,27 @@ namespace KernelExtensions.Managers
         }
 
         /// <summary>
+        /// 清除存档里**所有**感染 flag（可能因历史残留而存在多个）。返回清除数量。
+        /// <para>
+        /// 为何不是 GetFlagStartingWith + RemoveFlag 一次：那个组合只拿得到**第一个**。
+        /// 清理函数自身应当完备，不应依赖“任何时刻只有一个 flag”这个由调用方维持的不变量。
+        /// </para>
+        /// </summary>
+        public static int ClearAllInfectionFlags(OS os)
+        {
+            if (os?.Flags == null) return 0;
+            int removed = 0;
+            string flag;
+            while (!string.IsNullOrEmpty(flag = os.Flags.GetFlagStartingWith(InfectionFlagPrefix)))
+            {
+                os.Flags.RemoveFlag(flag);
+                removed++;
+                if (removed > 64) break;   // 防御：异常情况下不陷入死循环
+            }
+            return removed;
+        }
+
+        /// <summary>
         /// 根据存档目录判断文件是否满足配置要求。
         /// </summary>
         public static bool CheckFileCondition(OS os, VMAttackConfig config)
@@ -165,13 +186,9 @@ namespace KernelExtensions.Managers
         {
             if (CurrentConfig == null) return;
 
-            // 移除感染 Flag
-            string flag = os.Flags.GetFlagStartingWith(InfectionFlagPrefix);
-            if (!string.IsNullOrEmpty(flag))
-            {
-                os.Flags.RemoveFlag(flag);
+            // 移除感染 Flag（清所有，不只第一个）
+            if (ClearAllInfectionFlags(os) > 0)
                 os.threadedSaveExecute(true);   // 立即保存
-            }
 
             // 清理已读标记
             string configId = ConfigId(CurrentConfig);

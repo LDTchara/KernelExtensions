@@ -49,6 +49,19 @@ namespace KernelExtensions.Actions.VMAttack
 
             // 记录来源路径：感染 flag 与引导标记都以它作标识
             config.SourcePath = relativePath;
+
+            // 可恢复性校验：非密码模式的恢复依赖 CheckFilePath 指向的文件条件被满足。
+            // 若该路径越界，条件将**永远不满足** → 玩家永远无法恢复，而感染 flag 会永久留在存档里。
+            // 这种「注定卡死」的攻击应当拒绝启动，而不是留下一个无法清除的状态。
+            // （FakeFiles / Source 的越界仍为「跳过该项」，它们不影响可恢复性。）
+            if (config.Mode != RecoveryMode.Password && !ConfigValue.IsNone(config.CheckFilePath)
+                && KEPath.ResolveInsideSaveBase(config.CheckFilePath) == null)
+            {
+                KELog.Error($"[LaunchVMAttack] CheckFilePath escapes the save directory ({config.CheckFilePath}) "
+                    + $"while mode is {config.Mode} - this attack could never be recovered; aborting.");
+                return;
+            }
+
             // 新增：立即保存至 CurrentConfig，覆盖旧配置
             VMInfectionManager.CurrentConfig = config;
 
@@ -109,6 +122,9 @@ namespace KernelExtensions.Actions.VMAttack
             }
 
             // 添加 Flag（由相对路径推导，可无损反解回配置文件）
+            // 攻击是单例：写新 flag 前先清掉所有旧的（含异常残留），
+            // 避免累积，也避免旧 flag 被当作「当前攻击」而劫持后续攻击。
+            VMInfectionManager.ClearAllInfectionFlags(os);
             os.Flags.AddFlag(VMInfectionManager.BuildInfectionFlag(relativePath));
             // 保存
             os.threadedSaveExecute(true);
