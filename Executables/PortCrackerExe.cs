@@ -1,6 +1,8 @@
 using Hacknet;
 using Hacknet.Gui;
 using HarmonyLib;
+using KernelExtensions.Configs;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
@@ -9,17 +11,18 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
-namespace KernelExtensions.CustomPortPublicCracker;
+namespace KernelExtensions.Executables;
 
 /// <summary>
 /// CrackerToolKit —— 端口破解工具箱（简化 GUI 版）。
 ///
 /// 状态与行为：
 ///   Intro    ：欢迎页，绘制 Welcome 标题（无参数启动时进入；常驻，直到手动退出或被新实例互斥关闭）
-///   Listing  ：列出可破解端口的 name + useable（终端 os.write 输出 + GUI 滚动列表展示），短暂后自动退出
+///   Listing  ：列出可破解端口的 name + usable（终端 os.write 输出 + GUI 滚动列表展示），短暂后自动退出
 ///   Confings ：查看指定 UPS 配置（终端 os.write 输出 + GUI 滚动列表展示），短暂后自动退出
-///   Cracking ：破解进行中 —— 左上 CurrentUPS.Title，底部按时间推进的进度条，完成后开端口并退出
+///   Cracking ：破解进行中 —— 左上 CurrentConfig.Title，底部按时间推进的进度条，完成后开端口并退出
 ///
 /// 多实例互斥（os.exes 中已存在另一个本程序实例时）：
 ///   · 旧实例处于非 Cracking 状态 → 关闭旧实例，新实例正常运行
@@ -31,15 +34,14 @@ namespace KernelExtensions.CustomPortPublicCracker;
 ///   CrackerToolKit c &lt;n&gt;    → Confings（输出 + 滚动列表，自动退出）
 ///   CrackerToolKit &lt;port&gt;   → 直接对该端口开始破解（Cracking）
 /// </summary>
-public class PublicCracker : GameExecutable
+public class PortCrackerExe : GameExecutable
 {
     /// <summary>Listing / Confings 在 GUI 上展示多久后自动退出（秒）</summary>
     private const float EXIT_DELAY = 2.5f;
 
-    public Dictionary<string, UPSConfig> UPSConfigs = Configs.ConfigLoader.UPSConfigs;
-    public List<string> UPSPorts = new();
+    public List<string> Protocols = new();
     public Computer c;
-    public UPSConfig CurrentUPS;
+    public PortCrackerConfig CurrentConfig;
     public Status CurrentStatus { get; set; } = Status.Intro;
 
     public enum Status
@@ -57,10 +59,10 @@ public class PublicCracker : GameExecutable
     private string crackProtocol = null;     // 正在破解的协议（完成 openPort / 结算用）
 
     // ---------- GUI 状态 ----------
-    private string confingProtocol = null;   // Confings 屏正在查看的协议
+    private string configProtocol = null;   // Confings 屏正在查看的协议
     private float selfExitTimer = 0f;        // Listing/Confings 自动退出倒计时
     private int listingScroll = 0;           // Listing 滚动偏移（doFancyList 静态全局，需保存/恢复）
-    private int confingScroll = 0;           // Confings 滚动偏移
+    private int configScroll = 0;           // Confings 滚动偏移
 
     // 界面几何（对齐原版 ExeModule/PortHackExe：内容从 PANEL_HEIGHT 之下开始）
     private int InnerX => bounds.X + 2;
@@ -75,7 +77,7 @@ public class PublicCracker : GameExecutable
     private const int ID_CONFINGS = 500;
     private const int ID_CRACK_CANCEL = 600;
 
-    public PublicCracker() : base()
+    public PortCrackerExe() : base()
     {
         this.name = "CrackerToolKit";
         this.ramCost = 200;
@@ -83,16 +85,75 @@ public class PublicCracker : GameExecutable
 
     // ======================= 初始化：解析入口 -> 互斥 -> 进入状态 =======================
 
+    /// <summary>
+    /// 找出存档里所有属于本程序的 flag（<c>CustomPortCracker_*</c>）。
+    /// 正常情况下应恰好一个（flag = 入口牌）；0 个 → 锁定；多个 → 作者配置错误。
+    /// </summary>
+    private static List<string> FindPortCrackerFlags()
+    {
+        List<string> found = new();
+        ProgressionFlags pf = OS.currentInstance?.Flags;
+        if (pf == null) return found;
+
+        // ProgressionFlags 只暴露 HasFlag / GetFlagStartingWith（后者仅返回第一个），
+        // 没有“枚举全部”的公开 API；要检出多个 flag 只能反射读内部 List。
+        // 反射失败时退化为“取第一个匹配”——仍能工作，只是检不出多 flag 的情形。
+        try
+        {
+            if (_progressionFlagsField?.GetValue(pf) is List<string> all)
+            {
+                foreach (string f in all)
+                    if (f != null && f.StartsWith(PortCrackerConfig.FlagPrefix, StringComparison.Ordinal))
+                        found.Add(f);
+            }
+        }
+        catch (Exception ex)
+        {
+            KELog.Warn($"[PortCracker] could not enumerate flags ({ex.Message}); falling back to first match.");
+            string one = pf.GetFlagStartingWith(PortCrackerConfig.FlagPrefix);
+            if (!string.IsNullOrEmpty(one)) found.Add(one);
+        }
+        return found;
+    }
+
+    private static readonly FieldInfo _progressionFlagsField = typeof(ProgressionFlags)
+        .GetField("Flags", BindingFlags.Instance | BindingFlags.NonPublic);
+
     public override void OnInitialize()
     {
         base.OnInitialize();
         c = OS.currentInstance.connectedComp ?? OS.currentInstance.thisComputer;
-        UPSPorts = new List<string>(UPSConfigs.Keys);
-        CurrentUPS = null;
+
+        // flag = 入口牌：找出属于本程序的 flag，反查出唯一配置
+        var crackerFlags = FindPortCrackerFlags();
+        if (crackerFlags.Count == 0)
+        {
+            KELog.Info("[PortCracker] no config flag present - locked.");
+            os.write("PortCracker: no configuration is armed.");
+            isExiting = true;
+            return;
+        }
+        if (crackerFlags.Count > 1)
+        {
+            KELog.Error($"[PortCracker] {crackerFlags.Count} config flags present, expected exactly one: "
+                + string.Join(", ", crackerFlags));
+            os.write("PortCracker: multiple configurations are armed (authoring error).");
+            isExiting = true;
+            return;
+        }
+
+        CurrentConfig = PortCrackerConfig.LoadByFlag(crackerFlags[0]);
+        if (CurrentConfig == null)
+        {
+            os.write("PortCracker: configuration could not be loaded.");
+            isExiting = true;
+            return;
+        }
+        Protocols = new List<string> { CurrentConfig.Protocol };
 
         // 1) 解析本次目标动作
         bool willCrack = false;            // 本次是否进入破解（互斥判定用）
-        string confingProto = null;        // c <index> 解析出的协议
+        string configProto = null;        // c <index> 解析出的协议
         bool doListing = false;            // l 子命令
         List<string> commandErrors = null; // 参数错误/破解失败提示（写终端后退出）
 
@@ -106,9 +167,9 @@ public class PublicCracker : GameExecutable
 
                 case "c":
                     if (Args.Length >= 3 && int.TryParse(Args[2], out int idx)
-                        && idx >= 1 && idx <= UPSPorts.Count)
+                        && idx >= 1 && idx <= Protocols.Count)
                     {
-                        confingProto = UPSPorts[idx - 1];
+                        configProto = Protocols[idx - 1];
                     }
                     else
                     {
@@ -134,7 +195,7 @@ public class PublicCracker : GameExecutable
                         commandErrors = new List<string>
                         {
                             "Args ERROR!!!",
-                            "Use l to list useableports",
+                            "Use l to list usableports",
                             "Use c <index> to show the configs",
                             "Use <portnum> to crack"
                         };
@@ -159,9 +220,9 @@ public class PublicCracker : GameExecutable
             CurrentStatus = Status.Cracking;
             return;
         }
-        if (confingProto != null)
+        if (configProto != null)
         {
-            OpenConfings(confingProto);
+            OpenConfigs(configProto);
             return;
         }
         if (doListing)
@@ -188,7 +249,7 @@ public class PublicCracker : GameExecutable
 
             foreach (object e in exes)
             {
-                if (e is not PublicCracker other || ReferenceEquals(other, this)) continue;
+                if (e is not PortCrackerExe other || ReferenceEquals(other, this)) continue;
 
                 if (other.CurrentStatus == Status.Cracking)
                 {
@@ -216,8 +277,8 @@ public class PublicCracker : GameExecutable
     private void OpenListing()
     {
         BuildPortListData(out string[] items, out _);
-        CurrentUPS = null;
-        confingProtocol = null;
+        CurrentConfig = null;
+        configProtocol = null;
 
         // 终端输出（退出后可见），GUI 同步展示
         os.write("================================");
@@ -233,32 +294,32 @@ public class PublicCracker : GameExecutable
     }
 
     /// <summary>Confings：终端输出 + GUI 滚动列表，短暂展示后自动退出</summary>
-    private void OpenConfings(string protocol)
+    private void OpenConfigs(string protocol)
     {
-        if (protocol == null || !UPSConfigs.TryGetValue(protocol, out UPSConfig cfg))
+        if (protocol == null || CurrentConfig == null || CurrentConfig.Protocol != protocol)
         {
-            os.write($"No UPS config found for protocol '{protocol}'.");
+            os.write($"No config found for protocol '{protocol}'.");
             isExiting = true;
             return;
         }
-        CurrentUPS = cfg;
-        confingProtocol = protocol;
+        PortCrackerConfig cfg = CurrentConfig;
+        configProtocol = protocol;
 
         // 终端输出（退出后可见），GUI 同步展示
         os.write("================================");
         foreach (string s in BuildConfingLines(protocol)) os.write(s);
         os.write("================================");
 
-        confingScroll = 0;
+        configScroll = 0;
         selfExitTimer = EXIT_DELAY;
         CurrentStatus = Status.Confings;
     }
 
-    /// <summary>该协议当前是否可用（配置允许 且 未被破解过）</summary>
-    private bool IsProtocolUseable(string protocol)
+    /// <summary>该协议当前是否可用（仅看配置允许，以及前置条件；不再用 flag 作为“已破解”标记）</summary>
+    private bool IsProtocolUsable(string protocol)
     {
-        if (protocol == null || !UPSConfigs.TryGetValue(protocol, out UPSConfig cfg)) return false;
-        return cfg.Useable && !os.Flags.HasFlag(protocol);
+        if (protocol == null || CurrentConfig == null || CurrentConfig.Protocol != protocol) return false;
+        return CurrentConfig.Usable;
     }
 
     /// <summary>把协议列表格式化为可读的端口名；未注册/无效协议保留原文并标注，便于排查配置拼写错误。</summary>
@@ -299,17 +360,17 @@ public class PublicCracker : GameExecutable
         }
 
         string protocol = state.Record.Protocol;
-        if (!UPSConfigs.TryGetValue(protocol, out UPSConfig cfg))
+        if (CurrentConfig == null || CurrentConfig.Protocol != protocol)
         {
-            error = $"No UPS config for port {displayPort}.";
+            error = $"No config for port {displayPort}.";
             return false;
         }
-        CurrentUPS = cfg;
+        PortCrackerConfig cfg = CurrentConfig;
 
-        // 可用性校验
-        if (cfg.Useable == false || os.Flags.HasFlag(protocol))
+        // 可用性校验（flag 不再是“已破解”标记）
+        if (!cfg.Usable)
         {
-            error = "This Port is Not Useable now.";
+            error = "This Port is Not Usable now.";
             return false;
         }
 
@@ -357,7 +418,7 @@ public class PublicCracker : GameExecutable
     /// 破解成功后统一结算 UPS 的 debuff / buff 一次性效果（先 debuffs 后 buffs）。
     /// ProxyOverloadSpeedHelper / AutoOverloadProxy 是破解期间逐帧持续的代理辅助，不在此结算。
     /// </summary>
-    private void SettleEffects(UPSConfig cfg)
+    private void SettleEffects(PortCrackerConfig cfg)
     {
         if (cfg == null) return;
 
@@ -367,26 +428,26 @@ public class PublicCracker : GameExecutable
             string key = k.Key;
             List<string> kvp = k.Value;
             if (key == "closeports" && kvp.Count > 0 && kvp[0] != "")
-                Methods.ClosePortsFromProtocol(kvp, os, c.idName);
+                PortCrackerEffects.ClosePortsFromProtocol(kvp, os, c.idName);
             if (key == "addfirewall" && kvp.Count > 0 && kvp[0] != "")
-                Methods.addFirewall(os, c.idName, Methods.GetValue<int>(kvp, "lenth"), Methods.GetValue<float>(kvp, "additiontime"), Methods.GetValue<string>(kvp, "solution"));
+                PortCrackerEffects.addFirewall(os, c.idName, PortCrackerEffects.GetValue<int>(kvp, "lenth"), PortCrackerEffects.GetValue<float>(kvp, "additiontime"), PortCrackerEffects.GetValue<string>(kvp, "solution"));
             if (key == "addproxy" && kvp.Count > 0 && kvp[0] != "")
-                Methods.addProxy(os, c.idName, int.Parse(kvp[0]));
+                PortCrackerEffects.addProxy(os, c.idName, int.Parse(kvp[0]));
             if (key == "ReRandomFirewall" && kvp.Count > 0 && kvp[0] != "")
             {
-                int lenth = Methods.GetValue<int>(kvp, "lenth");
-                float additiontime = Methods.GetValue<float>(kvp, "additiontime");
-                bool reset = string.IsNullOrEmpty(Methods.GetValue(kvp, "reset")) ? true : Methods.GetValue<bool>(kvp, "reset");
-                Methods.ReRandomFirewallSolution(os, c.idName, lenth, additiontime, reset);
+                int lenth = PortCrackerEffects.GetValue<int>(kvp, "lenth");
+                float additiontime = PortCrackerEffects.GetValue<float>(kvp, "additiontime");
+                bool reset = string.IsNullOrEmpty(PortCrackerEffects.GetValue(kvp, "reset")) ? true : PortCrackerEffects.GetValue<bool>(kvp, "reset");
+                PortCrackerEffects.ReRandomFirewallSolution(os, c.idName, lenth, additiontime, reset);
             }
             if (key == "ResetFirewall" && kvp.Count > 0 && kvp[0] != "")
-                Methods.ResetFirewall(os, c.idName);
+                PortCrackerEffects.ResetFirewall(os, c.idName);
             if (key == "ResetProxy" && kvp.Count > 0 && kvp[0] != "")
-                Methods.ResetProxy(os, c.idName);
+                PortCrackerEffects.ResetProxy(os, c.idName);
             if (key == "SetFirewallConfig" && kvp.Count > 0 && kvp[0] != "")
             {
-                bool reset = string.IsNullOrEmpty(Methods.GetValue(kvp, "reset")) ? true : Methods.GetValue<bool>(kvp, "reset");
-                Methods.SetFirewallConfig(os, c.idName, Methods.GetValue<int>(kvp, "lenth"), Methods.GetValue<float>(kvp, "additiontime"), Methods.GetValue<string>(kvp, "solution"), reset);
+                bool reset = string.IsNullOrEmpty(PortCrackerEffects.GetValue(kvp, "reset")) ? true : PortCrackerEffects.GetValue<bool>(kvp, "reset");
+                PortCrackerEffects.SetFirewallConfig(os, c.idName, PortCrackerEffects.GetValue<int>(kvp, "lenth"), PortCrackerEffects.GetValue<float>(kvp, "additiontime"), PortCrackerEffects.GetValue<string>(kvp, "solution"), reset);
             }
         }
 
@@ -396,15 +457,15 @@ public class PublicCracker : GameExecutable
             string key = k.Key;
             List<string> kvp = k.Value;
             if (key == "openports" && kvp.Count > 0 && kvp[0] != "")
-                Methods.OpenPortsFromProtocol(kvp, os, c.idName);
+                PortCrackerEffects.OpenPortsFromProtocol(kvp, os, c.idName);
             if (key == "solvefirewall" && kvp.Count > 0 && kvp[0] != "")
-                Methods.solveFirewall(os, c.idName, float.Parse(kvp[0]));
+                PortCrackerEffects.solveFirewall(os, c.idName, float.Parse(kvp[0]));
             if (key == "solveproxy" && kvp.Count > 0 && kvp[0] != "")
-                Methods.solveProxy(os, c.idName, float.Parse(kvp[0]));
+                PortCrackerEffects.solveProxy(os, c.idName, float.Parse(kvp[0]));
             if (key == "SetFirewallConfig" && kvp.Count > 0 && kvp[0] != "")
             {
-                bool reset = string.IsNullOrEmpty(Methods.GetValue(kvp, "reset")) ? true : Methods.GetValue<bool>(kvp, "reset");
-                Methods.SetFirewallConfig(os, c.idName, Methods.GetValue<int>(kvp, "lenth"), Methods.GetValue<float>(kvp, "additiontime"), Methods.GetValue<string>(kvp, "solution"), reset);
+                bool reset = string.IsNullOrEmpty(PortCrackerEffects.GetValue(kvp, "reset")) ? true : PortCrackerEffects.GetValue<bool>(kvp, "reset");
+                PortCrackerEffects.SetFirewallConfig(os, c.idName, PortCrackerEffects.GetValue<int>(kvp, "lenth"), PortCrackerEffects.GetValue<float>(kvp, "additiontime"), PortCrackerEffects.GetValue<string>(kvp, "solution"), reset);
             }
         }
     }
@@ -441,7 +502,7 @@ public class PublicCracker : GameExecutable
 
         if (CurrentStatus == Status.Intro)
         {
-            CurrentUPS = null;
+            CurrentConfig = null;
             return;
         }
         if (CurrentStatus != Status.Cracking) return;
@@ -449,9 +510,9 @@ public class PublicCracker : GameExecutable
         // ---- Cracking：倒计时 + 持续辅助 ----
         lifetime -= t;
         if (POSH != null && POSH.Count != 0)
-            Methods.ProxyOverloadTicksHelper(os, c.idName, int.Parse(POSH[0].Replace("x", "")), t);
+            PortCrackerEffects.ProxyOverloadTicksHelper(os, c.idName, int.Parse(POSH[0].Replace("x", "")), t);
         if (AOP != null && AOP.Count != 0)
-            Methods.AutoOverloadProxy(os, c.idName, float.Parse(AOP[0]), t);
+            PortCrackerEffects.AutoOverloadProxy(os, c.idName, float.Parse(AOP[0]), t);
 
         if (lifetime <= 0f)
         {
@@ -463,14 +524,14 @@ public class PublicCracker : GameExecutable
             try
             {
                 // 直接按协议打开目标端口（PortState 表语义；null 防御）
-                string proto = crackProtocol ?? CurrentUPS.Protocol;
+                string proto = crackProtocol ?? CurrentConfig.Protocol;
                 if (c.GetPortState(proto) != null)
                     c.openPort(proto, os.thisComputer.ip);
             }
             catch { /* 端口不在目标机等极端情况：静默 */ }
 
             // 端口已打开，统一结算该 UPS 的 debuff / buff 一次性效果（先 debuffs 后 buffs）
-            SettleEffects(CurrentUPS);
+            SettleEffects(CurrentConfig);
 
             CurrentStatus = Status.Intro;
             isExiting = true;
@@ -546,20 +607,21 @@ public class PublicCracker : GameExecutable
             isExiting = true;
     }
 
-    // ---- Listing：端口列表（name + useable），滚动条 + 终端输出后自动退出 ----
+    // ---- Listing：端口列表（name + usable），滚动条 + 终端输出后自动退出 ----
 
     private void BuildPortListData(out string[] items, out int[] portIndexMap)
     {
         List<string> ss = new();
         List<int> map = new();
-        for (int i = 0; i < UPSPorts.Count; i++)
+        for (int i = 0; i < Protocols.Count; i++)
         {
-            string p = UPSPorts[i];
+            string p = Protocols[i];
             if (!PortManager.IsPortRegistered(p)) continue;
-            if (!UPSConfigs.TryGetValue(p, out UPSConfig cfg)) continue;
+            PortCrackerConfig cfg = CurrentConfig;
+            if (cfg == null) continue;
             string displayName = PortManager.GetPortRecordFromProtocol(p).DefaultDisplayName;
-            bool useable = cfg.Useable && !os.Flags.HasFlag(p);
-            ss.Add($"{i + 1}:{p}:{displayName}:{(useable ? "Useable" : "Locked")}");
+            bool usable = cfg.Usable;
+            ss.Add($"{i + 1}:{p}:{displayName}:{(usable ? "Usable" : "Locked")}");
             map.Add(i);
         }
         items = ss.ToArray();
@@ -573,7 +635,7 @@ public class PublicCracker : GameExecutable
         int w = InnerW;
 
         // 标题
-        TextItem.doFontLabel(new Vector2(x, ContentTop), "Useable Cracker Ports", GuiData.smallfont, os.highlightColor);
+        TextItem.doFontLabel(new Vector2(x, ContentTop), "Usable Cracker Ports", GuiData.smallfont, os.highlightColor);
 
         BuildPortListData(out string[] items, out _);
 
@@ -607,7 +669,7 @@ public class PublicCracker : GameExecutable
 
     private string[] BuildConfingLines(string protocol)
     {
-        UPSConfig cfg = CurrentUPS ?? UPSConfigs[protocol];
+        PortCrackerConfig cfg = CurrentConfig;
         string displayName = protocol;
         try
         {
@@ -617,7 +679,7 @@ public class PublicCracker : GameExecutable
         catch { }
 
         string sss = FormatProtocolNames(cfg.RequireOpenPortsBefore);
-        bool useable = IsProtocolUseable(protocol);
+        bool usable = IsProtocolUsable(protocol);
 
         List<string> lines = new()
         {
@@ -635,14 +697,14 @@ public class PublicCracker : GameExecutable
         lines.Add($"NeedsPreOpenPort(s)    : {sss}");
         lines.Add($"NeedsPreSolveFirewall  : {cfg.RequireSolveFirewall}");
         lines.Add($"NeedsPreSolveProxy     : {cfg.RequireProxyOverload}");
-        lines.Add($"Useable                : {(useable ? "True" : "False")}");
+        lines.Add($"Usable                : {(usable ? "True" : "False")}");
         return lines.ToArray();
     }
 
     /// <summary>把一类 debuff/buff 效果按“每效果一行”追加到 lines（含缩进），无效果则显示 None。</summary>
     private static void AppendEffectLines(List<string> lines, Dictionary<string, List<string>> effects, string label, bool isBuff)
     {
-        var effectLines = UPSConfig.OutputAnybuffConfingsLines(effects, isBuff);
+        var effectLines = PortCrackerConfig.OutputAnybuffConfingsLines(effects, isBuff);
         if (effectLines == null || effectLines.Count == 0)
         {
             lines.Add($"{label,-22}: None");
@@ -657,15 +719,15 @@ public class PublicCracker : GameExecutable
     {
         int x = InnerX;
         int w = InnerW;
-        string protocol = confingProtocol;
-        if (protocol == null || !UPSConfigs.ContainsKey(protocol))
+        string protocol = configProtocol;
+        if (protocol == null || CurrentConfig == null || CurrentConfig.Protocol != protocol)
         {
             // 防御：异常情况下退回 Listing
             OpenListing();
             return;
         }
 
-        UPSConfig cfg = UPSConfigs[protocol];
+        PortCrackerConfig cfg = CurrentConfig;
         string displayName = protocol;
         try
         {
@@ -683,11 +745,11 @@ public class PublicCracker : GameExecutable
         int listY = ContentTop + 24;
         int listH = bounds.Y + bounds.Height - 6 - listY;
 
-        SelectableTextList.scrollOffset = confingScroll;
+        SelectableTextList.scrollOffset = configScroll;
         SelectableTextList.doFancyList(PID + ID_CONFINGS,
             x, listY, w, listH,
             lines, -1, Color.Lerp(os.topBarColor, Utils.AddativeWhite, 0.2f), HasDraggableScrollbar: true);
-        confingScroll = SelectableTextList.scrollOffset;
+        configScroll = SelectableTextList.scrollOffset;
 
         // 自动退出提示 + 提前退出按钮
         TextItem.doFontLabel(new Vector2(x, bounds.Y + bounds.Height - 24), $"Closing in {(int)Math.Ceiling(selfExitTimer)}s",
@@ -696,18 +758,18 @@ public class PublicCracker : GameExecutable
             isExiting = true;
     }
 
-    // ---- Cracking：左上 CurrentUPS.Title + 底部按时间推进的进度条 ----
+    // ---- Cracking：左上 CurrentConfig.Title + 底部按时间推进的进度条 ----
 
     private void DrawCracking()
     {
-        if (CurrentUPS == null) return;
+        if (CurrentConfig == null) return;
         int x = InnerX;
         int w = InnerW;
 
         // 左上角标题（Title 为空时回退协议名）
-        string title = string.IsNullOrEmpty(CurrentUPS.Title)
-            ? $"Cracking {crackProtocol ?? confingProtocol ?? "port"}..."
-            : CurrentUPS.Title;
+        string title = string.IsNullOrEmpty(CurrentConfig.Title)
+            ? $"Cracking {crackProtocol ?? configProtocol ?? "port"}..."
+            : CurrentConfig.Title;
         TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, os.highlightColor);
 
         // 中部状态说明
@@ -718,9 +780,9 @@ public class PublicCracker : GameExecutable
             Color.White * 0.7f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
         // 底部进度条：黑色衬底 + 随进度增长的亮条（窗口外框由基类 drawOutline()/drawTarget() 负责）
-        float progress = CurrentUPS.Time <= 0f
+        float progress = CurrentConfig.Time <= 0f
             ? 1f
-            : MathHelper.Clamp(1f - (lifetime - 1f) / CurrentUPS.Time, 0f, 1f);
+            : MathHelper.Clamp(1f - (lifetime - 1f) / CurrentConfig.Time, 0f, 1f);
 
         Rectangle bar = new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16);
         // 黑色衬底

@@ -5,6 +5,7 @@ using Pathfinder.Port;
 using Pathfinder.Util;
 using Pathfinder.Util.XML;
 
+namespace KernelExtensions.Actions.Misc;
 
 public class PortControlAction : PathfinderAction
 {
@@ -38,8 +39,11 @@ public class PortControlAction : PathfinderAction
         // 根据操作类型执行添加/移除
         if (Switch.ToLower() == "add")
         {
-            // 注册端口到Pathfinder
-            KernelExtensions.KernelExtensions.LoadActionPorts(Protocol, DisplayName, PortNum);
+            // 注册端口到 Pathfinder
+            // 注意：限定符必须写 global:: —— 本文件位于 KernelExtensions.Actions.Misc，
+            // 裸写 `KernelExtensions.X` 会被解析成嵌套命名空间而不是那个同名类。
+            // （待重构时把 LoadActionPorts 移到更合适的位置，即可去掉这个写法。）
+            global::KernelExtensions.KernelExtensions.LoadActionPorts(Protocol, DisplayName, PortNum);
 
             // 添加到目标计算机
             target.AddPort(Protocol, PortNum, DisplayName);

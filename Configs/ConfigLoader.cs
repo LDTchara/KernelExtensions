@@ -1,7 +1,6 @@
 using Hacknet.Extensions;
 using System.Xml.Linq;
 using KernelExtensions.Utilities;
-using KernelExtensions.CustomPortPublicCracker;
 using Hacknet;
 
 namespace KernelExtensions.Configs
@@ -17,7 +16,6 @@ namespace KernelExtensions.Configs
         /// <summary>主菜单水印（“+ KernelExtensions &lt;版本&gt;”）是否显示；默认 true。KE-Config.xml 的 &lt;Watermark&gt; 控制。</summary>
         public static bool Watermark { get; private set; } = true;
         public static List<string> CustomImages { get; private set; } = new();
-        public static Dictionary<string, UPSConfig> UPSConfigs { get; private set; } = new();///Protocol => Obj(UPSConfings)
 
         /// <summary>
         /// 加载 KE-Config.xml。每次 OSLoad 时都可调用以支持热重载。
@@ -29,7 +27,6 @@ namespace KernelExtensions.Configs
             SkipVanillaIRCLogs = false;
             Watermark = true;
             CustomImages = new List<string>();
-            UPSConfigs = new Dictionary<string, UPSConfig>();
             var extInfo = ExtensionLoader.ActiveExtensionInfo;
             if (extInfo == null) return;
 
@@ -77,44 +74,6 @@ namespace KernelExtensions.Configs
 
                 // 禁用用户名段（dev1 用户名系统 XML 化，热重载）
                 UsernameProfiles.Apply(rootEl.Element("BannedUsernames"));
-
-                var UPS = rootEl.Element("UPS");
-                if (UPS != null)
-                {
-                    // 解析所有 <port> 子元素
-                    var portElements = UPS.Elements("port");
-                    foreach (var port in portElements)
-                    {
-                        // 读取 protocol，用作字典 Key
-                        string protocol = GetAttributeValue(port, "protocol");
-                        if (string.IsNullOrEmpty(protocol))
-                        {
-                            KELog.Warn($"Skipping <port> with missing or empty 'protocol' attribute.");
-                            continue;
-                        }
-
-                        // 解析单个 port 为 UPSConfig
-                        var config = new UPSConfig
-                        {
-                            Protocol = protocol,
-                            Time = GetAttributeFloat(port, "time", 0f),
-                            Title = GetAttributeValue(port, "title"),
-                            RamCost = GetRamCostAttribute(port),
-                            Useable = (OS.currentInstance?.Flags.HasFlag(protocol) ?? false) ? false : GetAttributeBool(port, "useable", true),
-                            Debuffs = UPSConfig.ResolveAnyBuffsList(GetAttributeValue(port, "debuff"), false),
-                            Buffs = UPSConfig.ResolveAnyBuffsList(GetAttributeValue(port, "buff"), true),
-                            RequireOpenPortsBefore = GetPortsBeforeAttribute(port),
-
-                            RequireSolveFirewall = GetAttributeBool(port, "SolveFirewallBefor", false),
-                            RequireProxyOverload = GetAttributeBool(port, "OverloadProxyBefore", false)
-                        };
-
-                        // 存入字典（若有重复 protocol，后覆盖前）
-                        UPSConfigs[protocol] = config;
-                        if (Debug)
-                            KELog.Info($"Loaded UPS config for protocol: {protocol}");
-                    }
-                }
 
 
 
@@ -248,20 +207,6 @@ namespace KernelExtensions.Configs
         <Ban Name=""root"" ReasonBlock=""Test1"" />
         -->
     </BannedUsernames>
-    <!-- 自定义端口破解器配置器 仅前四个必填-->
-    <UPS>
-        <port>
-        protocol=""aaa"" 
-        time=""12"" 
-        ramcost = ""200""
-        title=""loading......"" 
-        debuff=""name1,n2...."" 
-        buff=""..."" 
-        OpenPortsBefore=""ptcls"" 
-        SolveFirewallBefor=""true"" 
-        OverloadProxyBefore=""true""
-        </port>
-    </UPS>
 </KEConfig>";
         }
     }

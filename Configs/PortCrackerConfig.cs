@@ -1,4 +1,5 @@
 using HarmonyLib;
+using KernelExtensions.Utilities;
 using Pathfinder.Port;
 using System;
 using System.Collections.Generic;
@@ -6,13 +7,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
-namespace KernelExtensions.CustomPortPublicCracker;
+namespace KernelExtensions.Configs;
 
-public class UPSConfig
+public class PortCrackerConfig
 {
     // 属性而非字段，便于后续添加验证或变更通知
-    public bool Useable { get; set; } = true;
+    public bool Usable { get; set; } = true;
     public string Protocol { get; set; } = string.Empty;
     public float Time { get; set; }      // 单位：秒（建议明确）
     public string Title { get; set; } = string.Empty;
@@ -27,7 +29,71 @@ public class UPSConfig
     public bool RequireProxyOverload { get; set; }
 
     // 可选：构造函数，便于快速创建实例
-    public UPSConfig() { }
+    public PortCrackerConfig() { }
+
+    // ======================= 加载（flag 入口） =======================
+
+    /// <summary>
+    /// 存档 flag 前缀。**flag 是本程序的入口牌**：
+    /// 形如 <c>CustomPortCracker_MyAttack</c> → 对应 <c>&lt;扩展根&gt;/PortCracker/MyAttack.xml</c>。
+    /// 无 flag → 程序锁定；多 flag → 作者配置错误。
+    /// </summary>
+    public const string FlagPrefix = "CustomPortCracker_";
+
+    /// <summary>配置目录（扩展根下）。</summary>
+    public const string ConfigDir = "PortCracker";
+
+    /// <summary>本配置对应的 flag 名（不含前缀）；由加载器填入，供反查与日志使用。</summary>
+    [XmlIgnore] public string SourceName { get; set; }
+
+    /// <summary>
+    /// 从存档 flag 反查并加载配置。
+    /// 失败（越界 / 文件缺失 / 解析异常 / 缺 &lt;Protocol&gt;）返回 null，并在日志里记 Error。
+    /// </summary>
+    public static PortCrackerConfig LoadByFlag(string flag)
+    {
+        if (string.IsNullOrEmpty(flag)) return null;
+        if (!flag.StartsWith(FlagPrefix, StringComparison.Ordinal))
+        {
+            KELog.Error($"[PortCracker] flag '{flag}' does not start with '{FlagPrefix}'.");
+            return null;
+        }
+
+        string name = flag.Substring(FlagPrefix.Length);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            KELog.Error($"[PortCracker] flag '{flag}' has an empty config name.");
+            return null;
+        }
+
+        // 相对扩展根解析；越界由 KEPath 拦下（返回 null），不会读到扩展目录外
+        string rel = $"{ConfigDir}/{name}.xml";
+        string path = KEPath.ResolveInsideExtension(rel);
+        if (path == null || !File.Exists(path))
+        {
+            KELog.Error($"[PortCracker] config not found for flag '{flag}': {rel}");
+            return null;
+        }
+
+        try
+        {
+            var serializer = new XmlSerializer(typeof(PortCrackerConfig));
+            using var fs = new FileStream(path, FileMode.Open);
+            var cfg = (PortCrackerConfig)serializer.Deserialize(fs);
+            if (cfg == null || string.IsNullOrWhiteSpace(cfg.Protocol))
+            {
+                KELog.Error($"[PortCracker] config '{rel}' is missing the required <Protocol> field.");
+                return null;
+            }
+            cfg.SourceName = name;
+            return cfg;
+        }
+        catch (Exception ex)
+        {
+            KELog.Error($"[PortCracker] failed to load {rel}: {ex.Message}");
+            return null;
+        }
+    }
     /*
     [
     ================debuffs================

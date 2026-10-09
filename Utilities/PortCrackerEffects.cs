@@ -1,4 +1,4 @@
-﻿using Hacknet;
+using Hacknet;
 using Pathfinder.Port;
 using System;
 using System.Collections.Generic;
@@ -8,8 +8,8 @@ using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KernelExtensions.CustomPortPublicCracker;
-public class Methods
+namespace KernelExtensions.Utilities;
+public class PortCrackerEffects
 {
     public static void ClosePortsFromProtocol(List<string> Org_ptcls,OS os,string CompID)
     {

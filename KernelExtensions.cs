@@ -15,7 +15,6 @@ using KernelExtensions.Actions.PhaseSwift;
 using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Compat.Stuxnet;
 using KernelExtensions.Configs;
-using KernelExtensions.CustomPortPublicCracker;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Managers;
@@ -247,8 +246,8 @@ namespace KernelExtensions
             // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
             RegisterActionWithFallback<PortControlAction>("PortControl");
 
-            // PublicCracker（#PC#）：端口破解工具箱的可执行程序
-            ExecutableManager.RegisterExecutable<PublicCracker>("#PC#");
+            // PortCracker（#KE_PORTCRACKER#）：端口破解器（flag 驱动，配置在扩展根的 PortCracker/）
+            ExecutableManager.RegisterExecutable<PortCrackerExe>("#KE_PORTCRACKER#");
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
             // RAM 显示：RamModule internal，同样需运行时反射 patch
