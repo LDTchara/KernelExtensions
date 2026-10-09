@@ -18,6 +18,7 @@
 | `Clock_Example.xml` | 定时器 Clock | 定时触发 Action 序列（`<Clock>`） |
 | `ExampleEnding.xml` | 自定义结局 Custom Ending | 结局流程配置（`<EndingConfig>`） |
 | `CustomColor_Example.xml` | 动态颜色 CustomColor | 渐变色预设文件（`<ColorPreset>`） |
+| `PortCracker_Example.xml` | 端口破解器 PortCracker | 端口破解配置（`<PortCrackerConfig>`） |
 | `Speech.txt` / `CreditsData.txt` | 自定义结局 | Ending 演讲文本 / 报幕名单示例资源 |
 | `EndingSpeech.wav` | 自定义结局 | Ending 语音短样本（181 KB） |
 | `CustomIRCLogs_Example.txt` | — | 自定义 IRC 语录文件格式示例 |
