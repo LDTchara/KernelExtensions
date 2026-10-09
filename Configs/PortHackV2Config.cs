@@ -42,6 +42,24 @@ public class PortHackV2ProtocolConfig
     /// <summary>失败分支时长（秒）。</summary>
     [XmlIgnore] public float TimeIfFail { get; private set; } = 3f;
 
+    /// <summary>
+    /// 本协议在 Cracking 开始后**等待多久才启动**（秒）。
+    /// 多协议并行时用它错开各协议的进度条。留空 = 0（立即开始）。
+    /// </summary>
+    [XmlElement("StartDelay")] public string StartDelayRaw { get; set; }
+
+    /// <summary>启动延迟的解析结果（秒）。</summary>
+    [XmlIgnore] public float StartDelay { get; private set; }
+
+    /// <summary>动作点：本协议开始破解时执行（相对扩展根的动作文件路径）。</summary>
+    public string OnStart { get; set; } = string.Empty;
+
+    /// <summary>动作点：本协议破解成功时执行。</summary>
+    public string OnComplete { get; set; } = string.Empty;
+
+    /// <summary>动作点：本协议破解失败时执行。</summary>
+    public string OnFail { get; set; } = string.Empty;
+
     public PortHackV2ProtocolConfig() { }
 
     /// <summary>反序列化后解析并校验本协议的数值字段；<paramref name="sourceName"/> 仅用于日志定位。</summary>
@@ -60,6 +78,10 @@ public class PortHackV2ProtocolConfig
         TimeIfFail = ConfigValue.ParseInRange(TimeIfFailRaw, 3f, 0f, 3600f, out bool tfOk);
         if (!tfOk)
             KELog.Warn($"[PortHackV2] '{tag}': invalid <TimeIfFail> '{TimeIfFailRaw}', expected 0~3600; using 3.");
+
+        StartDelay = ConfigValue.ParseInRange(StartDelayRaw, 0f, 0f, 36000f, out bool sdOk);
+        if (!sdOk)
+            KELog.Warn($"[PortHackV2] '{tag}': invalid <StartDelay> '{StartDelayRaw}', expected 0~36000; using 0.");
     }
 }
 

@@ -44,16 +44,6 @@ public class PortHackV2Exe : GameExecutable
     public PortHackV2Config CurrentConfig;
     public Status CurrentStatus { get; set; } = Status.Intro;
 
-    /// <summary>
-    /// 多协议编排语义**待批 2 定**（并行 / 串行）；在此之前，进度条与时长等单值场景
-    /// 统一取**第一个合法协议**。
-    /// </summary>
-    private PortHackV2ProtocolConfig PrimaryProtocol
-        => CurrentConfig?.Protocols?.FirstOrDefault(p => p != null && !string.IsNullOrWhiteSpace(p.Name));
-
-    /// <summary>主协议的成功分支时长（秒）；取不到时回退 10。</summary>
-    private float PrimaryDuration => PrimaryProtocol?.TimeIfSuccess ?? 10f;
-
     public enum Status
     {
         Intro,
@@ -411,7 +401,7 @@ public class PortHackV2Exe : GameExecutable
         }
 
         // 进入破解：初始化计时
-        lifetime = PrimaryDuration + 1f;
+        lifetime = CurrentConfig.Time + 1f;
         ramCost = cfg.RamCost;
         crackProtocol = protocol;
         POSH = new List<string>();
@@ -695,7 +685,7 @@ public class PortHackV2Exe : GameExecutable
         {
             $"Protocol               : {protocol}",
             $"Display Name           : {displayName}",
-            $"TimeCost               : {PrimaryDuration}s",
+            $"TimeCost               : {CurrentConfig.Time}s",
             $"RamCost                : {cfg.RamCost}MB",
             $"Title                  : {cfg.Title}",
         };
@@ -790,9 +780,9 @@ public class PortHackV2Exe : GameExecutable
             Color.White * 0.7f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
         // 底部进度条：黑色衬底 + 随进度增长的亮条（窗口外框由基类 drawOutline()/drawTarget() 负责）
-        float progress = PrimaryDuration <= 0f
+        float progress = CurrentConfig.Time <= 0f
             ? 1f
-            : MathHelper.Clamp(1f - (lifetime - 1f) / PrimaryDuration, 0f, 1f);
+            : MathHelper.Clamp(1f - (lifetime - 1f) / CurrentConfig.Time, 0f, 1f);
 
         Rectangle bar = new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16);
         // 黑色衬底

@@ -28,29 +28,39 @@
   <Title>SSH Brute Force</Title>
 
   <!-- ── 根级时长（秒）/ Root-level time ──
-       **不参与 RNG 判定**。留空 = 10。
-       ⚠️ 它与多协议编排如何配合（整体基准时长？未指定分支时的兜底？）**待定**。 -->
+       **Cracking 阶段的总时长** —— 底部进度条走的就是它。留空 = 10。
+       多协议**并行**推进，每个协议由自己的 <StartDelay> 错开启动。 -->
   <Time>30</Time>
 
   <!-- ── 待破解协议 / Protocols ──
-       每个 <Protocol> 自带协议名、成功率与两条分支时长。可以放一个或多个。
-       协议名须已被注册（ssh / ftp / smtp / http 等）。
+       每个 <Protocol> 自带协议名、成功率、启动延迟与两条分支时长。可以放一个或多个，
+       **多协议并行**推进。协议名须已被注册（ssh / ftp / smtp / http 等）。
 
+       <Name>          协议名（必填）
+       <StartDelay>    本协议在 Cracking 开始后等待多久才启动（秒）；留空 = 0。
+                       并行时用它错开各协议的进度条。
        <Rng>           百分比 0~100。留空 = 100（必定成功）。
-                       在**进入破解时**掷一次，决定走成功分支还是失败分支；
+                       在本协议**启动时**掷一次，决定走成功分支还是失败分支；
                        演出上不提前暴露结果（进度条与动画在两条分支上完全一样）。
                        写错只回退 100 并记 Warn，不会让整份配置失效。
-       <TimeIfSuccess> 成功分支时长（秒）。留空 = 10；<= 0 = 瞬满。
-       <TimeIfFail>    失败分支时长（秒）。留空 = 3； <= 0 = 瞬满。 -->
+       <TimeIfSuccess> 本协议成功分支时长（秒）。留空 = 10；<= 0 = 瞬满。
+       <TimeIfFail>    本协议失败分支时长（秒）。留空 = 3； <= 0 = 瞬满。
+       <OnStart> / <OnComplete> / <OnFail>
+                       本协议级别的动作点（相对扩展根）；与根级同名钩子叠加。 -->
   <Protocols>
     <Protocol>
       <Name>ssh</Name>
+      <StartDelay>0</StartDelay>
       <Rng>60</Rng>
       <TimeIfSuccess>12</TimeIfSuccess>
       <TimeIfFail>4</TimeIfFail>
+      <OnStart>Actions/sshStart.xml</OnStart>
+      <OnComplete>Actions/sshDone.xml</OnComplete>
+      <OnFail>Actions/sshFail.xml</OnFail>
     </Protocol>
     <Protocol>
       <Name>ftp</Name>
+      <StartDelay>3</StartDelay>
       <Rng>90</Rng>
       <TimeIfSuccess>6</TimeIfSuccess>
       <TimeIfFail>3</TimeIfFail>
@@ -84,11 +94,11 @@
   <RequireSolveFirewall>false</RequireSolveFirewall>
   <RequireProxyOverload>false</RequireProxyOverload>
 
-  <!-- ── 动作点 / Action hooks ──
+  <!-- ── 动作点 / Action hooks（根级）──
        相对扩展根目录的动作文件路径。路径越界或文件不存在时跳过并记 Warn，不中断流程。
-       OnStart   ：开始破解时
-       OnComplete：破解成功、演出结束后
-       OnFail    ：破解失败后 -->
+       OnStart   ：Cracking 开始时（每个协议的 <OnStart> 则在各自启动时）
+       OnComplete：整体成功（至少一个协议成功且已达终止条件）
+       OnFail    ：整体失败 -->
   <OnStart>Actions/crackStart.xml</OnStart>
   <OnComplete>Actions/crackSuccess.xml</OnComplete>
   <OnFail>Actions/crackFailed.xml</OnFail>
