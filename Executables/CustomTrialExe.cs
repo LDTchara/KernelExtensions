@@ -342,7 +342,7 @@ namespace KernelExtensions.Executables
                 return ColorHelper.HSVToColor(hue, 1.0f, 1.0f);
             }
 
-            // 静态解析：#RGB / #RRGGBB / #RRGGBBAA / R,G,B[,A] / XNA 命名色
+            // 静态解析：#RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色
             return ColorHelper.ParseStaticColor(colorStr, Color.Transparent);
         }
 

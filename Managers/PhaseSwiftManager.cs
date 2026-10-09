@@ -1363,7 +1363,7 @@ namespace KernelExtensions.Managers
             var dynConfig = CustomColorManager.ParseColorString(colorStr);
             if (dynConfig != null)
                 return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
-            // 动态未中 → 静态解析（#RGB/#RRGGBB/#RRGGBBAA/R,G,B[,A]/XNA 命名色）
+            // 动态未中 → 静态解析（#RGB/#RRGGBB/#AARRGGBB/R,G,B[,A]/XNA 命名色）
             return ColorHelper.ParseStaticColor(colorStr, Color.Transparent);
         }
 

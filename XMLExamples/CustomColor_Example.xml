@@ -40,9 +40,9 @@
       2. 十六进制短写 / Short hex（每位重复 / each digit doubled）
          <Color>#F00</Color>             ← 等同于 #FF0000 / same as #FF0000
 
-      3. 十六进制 RGBA（带透明度）/ Hex RGBA (with alpha)
-         <Color>#FF000080</Color>        ← 红色 + 50% 透明度 / Red + 50% alpha
-         （RGB 在前、Alpha 在末位 / RGB first, alpha last）
+      3. 十六进制 ARGB（带透明度）/ Hex ARGB (with alpha)
+         <Color>#80FF0000</Color>        ← 红色 + 50% 透明度 / Red + 50% alpha
+         （Alpha 在首位 / alpha first）
 
       4. 数值 RGB / Numeric RGB
          <Color>255,0,0</Color>          ← 红色 / Red

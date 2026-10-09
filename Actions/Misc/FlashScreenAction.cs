@@ -21,7 +21,7 @@ namespace KernelExtensions.Actions.Misc
     /// <FlashScreen Color="LDTchara:0.1" Duration="2.0" />   <!-- 动态色（彩虹循环）-->
     ///
     /// 属性：
-    ///   Color    — 必要。Hex (#RGB/#RRGGBB/#RRGGBBAA)、数值 RGB (R,G,B[,A])、XNA 命名色、
+    ///   Color    — 必要。Hex (#RGB/#RRGGBB/#AARRGGBB)、数值 RGB (R,G,B[,A])、XNA 命名色、
     ///              CustomColor 动态色（LDTchara/Rainbow/Gradient/预设）
     ///   Duration — 渐变时长（秒），默认 2.0。触发瞬间最亮，线性渐隐回默认色。
     ///   PlaySound — 可选，默认 false。true 时闪烁同时播放警告音效
@@ -87,7 +87,7 @@ namespace KernelExtensions.Actions.Misc
             if (dyn != null)
                 return (XColor.White, dyn);
 
-            // 静态色：#RGB / #RRGGBB / #RRGGBBAA / R,G,B[,A] / XNA 命名色（Red/Monochrome 等）
+            // 静态色：#RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色（Red/Monochrome 等）
             return (ColorHelper.ParseStaticColor(raw, os.defaultHighlightColor), null);
         }
 

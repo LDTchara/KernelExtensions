@@ -97,7 +97,7 @@
 1. XNA 颜色名 / XNA colour names — `Red`、`CornflowerBlue` 等（大小写不敏感）
 2. 十六进制 RGB / Hex RGB — `#FF0000`
 3. 十六进制短写 / Short hex — `#F00`（每位重复 → `#FF0000`）
-4. 十六进制 RGBA（带透明度）— `#FF000080`（RGB 在前、Alpha 在末位）
+4. 十六进制 ARGB（带透明度）— `#80FF0000`（Alpha 在首位）
 5. 数值 RGB — `255,0,0`
 6. 数值 RGBA — `255,0,0,128`
 

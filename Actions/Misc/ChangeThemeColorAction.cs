@@ -15,7 +15,7 @@ namespace KernelExtensions.Actions.Misc
     /// · Locate 为逗号分隔的「字段名:颜色值」列表；字段名须是主题的颜色字段
     ///   （如 defaultHighlightColor / warningColor / moduleColorSolidDefault / terminalTextColor 等）。
     /// · 颜色值走统一解析（<see cref="ColorHelper.ParseStaticColor"/>）：
-    ///   XNA 命名色（如 Red，大小写不敏感）、#RGB、#RRGGBB、#RRGGBBAA、R,G,B[,A]。
+    ///   XNA 命名色（如 Red，大小写不敏感）、#RGB、#RRGGBB、#AARRGGBB、R,G,B[,A]。
     /// · 字段值写 NONE / 空 = 该字段保持不变。
     /// · 未知字段名、格式不符的键值对 → KELog.Warn 并跳过，不影响其余字段。
     ///

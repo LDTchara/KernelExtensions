@@ -16,7 +16,7 @@ namespace KernelExtensions.Utilities
     /// 函数：
     ///   HSVToColor(hue, saturation, value)      — HSV → Color，hue 范围 0~1
     ///   ParseHexColor(hex)                      — 历史入口；内部转调 ParseStaticColor(input, White)
-    ///   ParseStaticColor(input, fallback)       — #RGB / #RRGGBB / #RRGGBBAA / R,G,B[,A] / XNA 命名色
+    ///   ParseStaticColor(input, fallback)       — #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色
     ///   TryGetNamedColor(name, out color)       — 按名字取 XNA 命名色（大小写不敏感）
     ///
     /// ⚠️ 为何不用 <c>Microsoft.Xna.Framework.Design.ColorConverter</c>：
@@ -78,7 +78,7 @@ namespace KernelExtensions.Utilities
             };
         }
 
-        /// <summary>解析颜色值：支持 #RGB、#RRGGBB、#RRGGBBAA（RGB 在前、Alpha 在末位）、R,G,B、R,G,B,A、XNA 命名色。全部失败返回 fallback。</summary>
+        /// <summary>解析颜色值：支持 #RGB、#RRGGBB、#AARRGGBB（Alpha 在首位）、R,G,B、R,G,B,A、XNA 命名色。全部失败返回 fallback。</summary>
         public static Color ParseStaticColor(string input, Color fallback)
         {
             if (ConfigValue.IsNone(input)) return fallback;
@@ -101,7 +101,7 @@ namespace KernelExtensions.Utilities
                 return fallback;
             }
 
-            // #RGB / #RRGGBB / #RRGGBBAA（RGB 在前、Alpha 在末位）
+            // #RGB / #RRGGBB / #AARRGGBB（Alpha 在首位，对齐原版 Utils.ColorFromHexString）
             if (trimmed.StartsWith("#", StringComparison.Ordinal))
             {
                 string hex = trimmed.Substring(1);
@@ -114,13 +114,19 @@ namespace KernelExtensions.Utilities
                         byte b3 = Convert.ToByte(new string(hex[2], 2), 16);
                         return new Color(r3, g3, b3, (byte)255);
                     }
-                    if (hex.Length == 6 || hex.Length == 8)
+                    if (hex.Length == 6)
                     {
                         byte r = Convert.ToByte(hex.Substring(0, 2), 16);
                         byte g = Convert.ToByte(hex.Substring(2, 2), 16);
                         byte b = Convert.ToByte(hex.Substring(4, 2), 16);
-                        byte a = 255;
-                        if (hex.Length == 8) a = Convert.ToByte(hex.Substring(6, 2), 16);
+                        return new Color(r, g, b, (byte)255);
+                    }
+                    if (hex.Length == 8)   // #AARRGGBB
+                    {
+                        byte a = Convert.ToByte(hex.Substring(0, 2), 16);
+                        byte r = Convert.ToByte(hex.Substring(2, 2), 16);
+                        byte g = Convert.ToByte(hex.Substring(4, 2), 16);
+                        byte b = Convert.ToByte(hex.Substring(6, 2), 16);
                         return new Color(r, g, b, a);
                     }
                 }
