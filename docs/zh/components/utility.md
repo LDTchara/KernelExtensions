@@ -37,7 +37,7 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 
 <!-- ke:9.50 -->
 !!! info "颜色格式"
-    本类是**所有颜色字段的统一解析入口**：支持 `#RGB` / `#RRGGBB` / `#RRGGBBAA` / `R,G,B[,A]`
+    本类是**所有颜色字段的统一解析入口**：支持 `#RGB` / `#RRGGBB` / `#AARRGGBB` / `R,G,B[,A]`
     与 XNA 命名色（如 `Red`，大小写不敏感），详见
     [自定义动态色系统](./../systems/custom-color.md) 第四节。
 

@@ -189,7 +189,7 @@ RAM 条的长度仍按真实占用比例绘制。
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
 
 颜色值走统一解析（与其它颜色字段相同）：XNA 命名色（如 `Red`，大小写不敏感）、`#RGB`、
-`#RRGGBB`、`#RRGGBBAA`、`R,G,B[,A]`。写 `NONE` / 空 = 该字段保持不变。
+`#RRGGBB`、`#AARRGGBB`、`R,G,B[,A]`。写 `NONE` / 空 = 该字段保持不变。
 字段名须是主题的颜色字段，例如 `defaultHighlightColor`、`warningColor`、
 `moduleColorSolidDefault`、`terminalTextColor` 等。
 

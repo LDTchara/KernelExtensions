@@ -200,7 +200,7 @@ red during an intrusion); the change lapses as soon as the player switches theme
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed-action attributes |
 
 Colour values use the same unified parsing as other colour fields: XNA named colours (e.g. `Red`,
-case-insensitive), `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `R,G,B[,A]`. `NONE` / empty = leave that field
+case-insensitive), `#RGB`, `#RRGGBB`, `#AARRGGBB`, `R,G,B[,A]`. `NONE` / empty = leave that field
 unchanged. Field names must be theme colour fields such as `defaultHighlightColor`, `warningColor`,
 `moduleColorSolidDefault`, `terminalTextColor`.
 

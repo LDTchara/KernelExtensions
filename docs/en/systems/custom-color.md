@@ -87,7 +87,7 @@ File format:
 - At least **2 segments** are needed to form a loop
 - Total cycle time = the sum of every segment's `Duration + Transition`
 - The following formats are supported and **may be mixed** (preset `<Color>` does **not** accept XNA named colours):
-  `#FF0000` (hex RGB), `#F00` (short hex, each digit doubled), `#FF000080` (hex RGBA, alpha last),
+  `#FF0000` (hex RGB), `#F00` (short hex, each digit doubled), `#80FF0000` (hex ARGB, alpha first),
   `255,0,0` (numeric RGB), `255,0,0,128` (numeric RGBA)
 
 ### Common recipes
@@ -148,7 +148,7 @@ colour fields:
 | XNA named colour | `Red` | case-insensitive (`red` works too) |
 | Hex RGB | `#FF0000` | |
 | Short hex | `#F00` | each digit doubled, same as `#FF0000` |
-| Hex RGBA | `#FF000080` | RGB first, alpha last |
+| Hex ARGB | `#80FF0000` | alpha first |
 | Numeric RGB | `255,0,0` | 0–255 |
 | Numeric RGBA | `255,0,0,128` | 0–255 |
 | Dynamic keyword | `Rainbow` / preset name / `Gradient:#f00:#00f:2` | see sections 1–3 |
