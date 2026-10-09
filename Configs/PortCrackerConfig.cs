@@ -20,6 +20,21 @@ public class PortCrackerConfig
     public string Title { get; set; } = string.Empty;
     public int RamCost { get; set; }     // 单位：MB
 
+    /// <summary>
+    /// 破解成功概率，**百分比 0~100**。留空 = 100（必定成功）。
+    ///
+    /// 刻意用 string 而不用 float：XmlSerializer 遇到非数字（如 <c>&lt;Rng&gt;abc&lt;/Rng&gt;</c>）
+    /// 会直接抛异常，导致整份配置加载失败 → 程序锁定。这里改成宽松解析：
+    /// 畸形值（非数字 / NaN / Infinity / 负数 / &gt;100）只回退默认 + Warn，配置其余部分照常生效。
+    /// </summary>
+    [XmlElement("Rng")] public string RngRaw { get; set; }
+
+    /// <summary>
+    /// 破解成功概率，归一化到 0.0~1.0（由 <see cref="RngRaw"/> 除以 100 而来）。
+    /// 默认 1.0（必定成功）。判定用 <c>Random.NextDouble() &lt; SuccessChance</c>。
+    /// </summary>
+    [XmlIgnore] public float SuccessChance { get; private set; } = 1f;
+
     // 列表初始化为空列表，不要包含默认空字符串
     public Dictionary<string,List<string>> Debuffs { get; set; } = new();
     public Dictionary<string, List<string>> Buffs { get; set; } = new();
@@ -86,6 +101,7 @@ public class PortCrackerConfig
                 return null;
             }
             cfg.SourceName = name;
+            cfg.ResolveValues();
             return cfg;
         }
         catch (Exception ex)
@@ -93,6 +109,17 @@ public class PortCrackerConfig
             KELog.Error($"[PortCracker] failed to load {rel}: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    /// 反序列化后解析并校验数值型原始字段（当前只有 <see cref="RngRaw"/>）。
+    /// 与 <see cref="LoadByFlag"/> 分开，便于将来从其它入口加载时复用。
+    /// </summary>
+    private void ResolveValues()
+    {
+        SuccessChance = ConfigValue.ParseInRange(RngRaw, 100f, 0f, 100f, out bool ok) / 100f;
+        if (!ok)
+            KELog.Warn($"[PortCracker] '{SourceName}': invalid <Rng> '{RngRaw}', expected 0~100; using 100 (always succeeds).");
     }
     /*
     [
