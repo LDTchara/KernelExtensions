@@ -401,7 +401,7 @@ public class PortCrackerExe : GameExecutable
         }
 
         // 进入破解：初始化计时
-        lifetime = cfg.Time + 1f;
+        lifetime = cfg.TimeIfSuccess + 1f;
         ramCost = cfg.RamCost;
         crackProtocol = protocol;
         POSH = new List<string>();
@@ -685,7 +685,7 @@ public class PortCrackerExe : GameExecutable
         {
             $"Protocol               : {protocol}",
             $"Display Name           : {displayName}",
-            $"TimeCost               : {cfg.Time}s",
+            $"TimeCost               : {cfg.TimeIfSuccess}s",
             $"RamCost                : {cfg.RamCost}MB",
             $"Title                  : {cfg.Title}",
         };
@@ -780,9 +780,9 @@ public class PortCrackerExe : GameExecutable
             Color.White * 0.7f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
         // 底部进度条：黑色衬底 + 随进度增长的亮条（窗口外框由基类 drawOutline()/drawTarget() 负责）
-        float progress = CurrentConfig.Time <= 0f
+        float progress = CurrentConfig.TimeIfSuccess <= 0f
             ? 1f
-            : MathHelper.Clamp(1f - (lifetime - 1f) / CurrentConfig.Time, 0f, 1f);
+            : MathHelper.Clamp(1f - (lifetime - 1f) / CurrentConfig.TimeIfSuccess, 0f, 1f);
 
         Rectangle bar = new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16);
         // 黑色衬底

@@ -14,30 +14,88 @@ namespace KernelExtensions.Configs;
 public class PortCrackerConfig
 {
     // 属性而非字段，便于后续添加验证或变更通知
+
+    /// <summary>终端里显示的程序名（对齐 PhaseSwift 的 ProgramName）。注册名 #KE_PORTCRACKER# 不受影响。</summary>
+    [XmlElement("ProgramName")] public string ProgramName { get; set; } = "PortCracker";
+
     public bool Usable { get; set; } = true;
     public string Protocol { get; set; } = string.Empty;
-    public float Time { get; set; }      // 单位：秒（建议明确）
     public string Title { get; set; } = string.Empty;
     public int RamCost { get; set; }     // 单位：MB
 
+    // ---- 数值项统一用 string 承接原值 ----
+    // 理由：XmlSerializer 遇到非数字（如 <TimeIfSuccess>10s</TimeIfSuccess>）会直接抛异常，
+    // 导致整份配置加载失败 → 程序锁定。改动后统一走 ConfigValue.ParseInRange 宽松解析，
+    // 畸形值（非数字 / NaN / Infinity / 负数 / 超范围）只回退默认 + Warn，配置其余部分照常生效。
+
     /// <summary>
     /// 破解成功概率，**百分比 0~100**。留空 = 100（必定成功）。
-    ///
-    /// 刻意用 string 而不用 float：XmlSerializer 遇到非数字（如 <c>&lt;Rng&gt;abc&lt;/Rng&gt;</c>）
-    /// 会直接抛异常，导致整份配置加载失败 → 程序锁定。这里改成宽松解析：
-    /// 畸形值（非数字 / NaN / Infinity / 负数 / &gt;100）只回退默认 + Warn，配置其余部分照常生效。
+    /// 在**进入 Cracking 时**掷一次，决定本次走成功分支还是失败分支；演出上不提前暴露结果。
     /// </summary>
     [XmlElement("Rng")] public string RngRaw { get; set; }
 
-    /// <summary>
-    /// 破解成功概率，归一化到 0.0~1.0（由 <see cref="RngRaw"/> 除以 100 而来）。
-    /// 默认 1.0（必定成功）。判定用 <c>Random.NextDouble() &lt; SuccessChance</c>。
-    /// </summary>
+    /// <summary>成功分支的破解时长（秒）。留空 = 10；&lt;= 0 = 瞬满。</summary>
+    [XmlElement("TimeIfSuccess")] public string TimeIfSuccessRaw { get; set; }
+
+    /// <summary>失败分支的破解时长（秒）。留空 = 3；&lt;= 0 = 瞬满。</summary>
+    [XmlElement("TimeIfFail")] public string TimeIfFailRaw { get; set; }
+
+    /// <summary>成功演出结束后、退出前的停留秒数。留空 = 5（对齐原版 TIME_ALIVE_AFTER_SUCSESS）。</summary>
+    [XmlElement("CompleteDelay")] public string CompleteDelayRaw { get; set; }
+
+    // ---- 以下为解析结果（由 ResolveValues 在反序列化后填入）----
+
+    /// <summary>破解成功概率，归一化 0.0~1.0。判定用 <c>Random.NextDouble() &lt; SuccessChance</c>。</summary>
     [XmlIgnore] public float SuccessChance { get; private set; } = 1f;
 
-    // 列表初始化为空列表，不要包含默认空字符串
-    public Dictionary<string,List<string>> Debuffs { get; set; } = new();
-    public Dictionary<string, List<string>> Buffs { get; set; } = new();
+    /// <summary>成功分支时长（秒）。</summary>
+    [XmlIgnore] public float TimeIfSuccess { get; private set; } = 10f;
+
+    /// <summary>失败分支时长（秒）。</summary>
+    [XmlIgnore] public float TimeIfFail { get; private set; } = 3f;
+
+    /// <summary>成功演出后退出前停留（秒）。</summary>
+    [XmlIgnore] public float CompleteDelay { get; private set; } = 5f;
+
+    /// <summary>
+    /// 破解成功后是否把目标机 owner 设为玩家（原版 PortHack 的 takeAdmin 行为）。
+    /// 省略 = false：默认只开端口，不擅自给管理员权限。
+    /// </summary>
+    public bool TakeAdmin { get; set; }
+
+    /// <summary>
+    /// 玩家离开本程序所在节点时是否自动关闭程序。
+    /// 默认 true（原版 PortHack 行为）；设为 false 可让程序跨节点常驻。
+    /// </summary>
+    public bool AutoExitOnLeave { get; set; } = true;
+
+    /// <summary>动作点：开始破解时执行（相对扩展根的动作文件路径）。</summary>
+    public string OnStart { get; set; } = string.Empty;
+
+    /// <summary>动作点：破解成功、演出结束后执行。</summary>
+    public string OnComplete { get; set; } = string.Empty;
+
+    /// <summary>动作点：破解失败后执行。</summary>
+    public string OnFail { get; set; } = string.Empty;
+
+    // ---- 效果串用 AC 原始字符串语法 + XmlIgnore 字典 ----
+    // XmlSerializer **不支持 IDictionary**（会抛 "Cannot serialize member ... because it
+    // implements IDictionary"），直接把 Dictionary 当属性会让整份配置无法加载。
+    // 所以 XML 里收字符串，反序列化后再用 ResolveAnyBuffsList 展开成字典。
+
+    /// <summary>Debuff 效果串（AC 语法，逗号分隔多个效果，如 <c>closeports_ftp,addfirewall_lenth:12</c>）。</summary>
+    [XmlElement("Debuffs")] public string DebuffsRaw { get; set; } = string.Empty;
+
+    /// <summary>Buff 效果串（同语法，如 <c>openports_ssh</c>）。</summary>
+    [XmlElement("Buffs")] public string BuffsRaw { get; set; } = string.Empty;
+
+    /// <summary>展开后的 debuff 字典（由 <see cref="DebuffsRaw"/> 解析）。</summary>
+    [XmlIgnore] public Dictionary<string, List<string>> Debuffs { get; private set; } = new();
+
+    /// <summary>展开后的 buff 字典。</summary>
+    [XmlIgnore] public Dictionary<string, List<string>> Buffs { get; private set; } = new();
+
+    /// <summary>前置要求：这些端口必须先打开。List&lt;string&gt; 可被 XmlSerializer 直接处理。</summary>
     public List<string> RequireOpenPortsBefore { get; set; } = new();
 
     public bool RequireSolveFirewall { get; set; }
@@ -117,9 +175,25 @@ public class PortCrackerConfig
     /// </summary>
     private void ResolveValues()
     {
-        SuccessChance = ConfigValue.ParseInRange(RngRaw, 100f, 0f, 100f, out bool ok) / 100f;
-        if (!ok)
+        SuccessChance = ConfigValue.ParseInRange(RngRaw, 100f, 0f, 100f, out bool rngOk) / 100f;
+        if (!rngOk)
             KELog.Warn($"[PortCracker] '{SourceName}': invalid <Rng> '{RngRaw}', expected 0~100; using 100 (always succeeds).");
+
+        TimeIfSuccess = ConfigValue.ParseInRange(TimeIfSuccessRaw, 10f, 0f, 3600f, out bool tsOk);
+        if (!tsOk)
+            KELog.Warn($"[PortCracker] '{SourceName}': invalid <TimeIfSuccess> '{TimeIfSuccessRaw}', expected 0~3600; using 10.");
+
+        TimeIfFail = ConfigValue.ParseInRange(TimeIfFailRaw, 3f, 0f, 3600f, out bool tfOk);
+        if (!tfOk)
+            KELog.Warn($"[PortCracker] '{SourceName}': invalid <TimeIfFail> '{TimeIfFailRaw}', expected 0~3600; using 3.");
+
+        CompleteDelay = ConfigValue.ParseInRange(CompleteDelayRaw, 5f, 0f, 600f, out bool cdOk);
+        if (!cdOk)
+            KELog.Warn($"[PortCracker] '{SourceName}': invalid <CompleteDelay> '{CompleteDelayRaw}', expected 0~600; using 5.");
+
+        // 效果串展开成字典（空串 → 空字典，避免把无配置误认成"有键但值为空"）
+        Debuffs = string.IsNullOrWhiteSpace(DebuffsRaw) ? new() : ResolveAnyBuffsList(DebuffsRaw, false);
+        Buffs = string.IsNullOrWhiteSpace(BuffsRaw) ? new() : ResolveAnyBuffsList(BuffsRaw, true);
     }
     /*
     [
