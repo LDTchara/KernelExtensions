@@ -334,9 +334,14 @@ namespace KernelExtensions.Managers
 
         /// 解析颜色字符串为 DynColorConfig，供外部（CustomTrialExe）判断是否为动态色。
         /// 返回 null 表示纯静态色。
+        ///
+        /// 入口先 Trim：动态关键字是**前缀/整串匹配**，不 Trim 的话 " Rainbow " 会一路落到静态链
+        /// 解析失败（<see cref="ColorHelper.ParseStaticColor"/> 与命名色表都会 Trim，只有这里不会）。
         public static DynColorConfig ParseColorString(string input)
         {
             if (string.IsNullOrEmpty(input)) return null;
+            input = input.Trim();
+            if (input.Length == 0) return null;
 
             // 彩虹色
             if (input.StartsWith("LDTchara", StringComparison.OrdinalIgnoreCase) ||
