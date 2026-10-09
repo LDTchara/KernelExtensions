@@ -26,26 +26,32 @@
     ── 预设名称 / Preset Name ──
     在主题 XML 中用 <字段名>预设名</字段名> 引用。
     Referenced in theme XML as <fieldName>presetName</fieldName>.
-    预设名区分大小写，必须与文件中 <Name> 一致。
-    Case-sensitive, must match <Name> in this file.
+    预设名不区分大小写 / Preset name matching is case-insensitive.
   -->
   <Name>Monochrome</Name>
 
   <!--
     ── 颜色格式 / Color Format ──
-    支持以下四种颜色格式，可混用 / Four formats supported, can be mixed:
+    预设文件内的 <Color> 支持以下格式 / Formats accepted inside a preset's <Color>:
 
       1. 十六进制 RGB / Hex RGB
          <Color>#FF0000</Color>          ← 红色 / Red
 
-      2. 十六进制 ARGB（带透明度）/ Hex ARGB (with alpha)
-         <Color>#88FF0000</Color>        ← 红色 + 50% 透明度 / Red + 50% alpha
+      2. 十六进制短写 / Short hex（每位重复 / each digit doubled）
+         <Color>#F00</Color>             ← 等同于 #FF0000 / same as #FF0000
 
-      3. 数值 RGB / Numeric RGB
+      3. 十六进制 RGBA（带透明度）/ Hex RGBA (with alpha)
+         <Color>#FF000080</Color>        ← 红色 + 50% 透明度 / Red + 50% alpha
+         （RGB 在前、Alpha 在末位 / RGB first, alpha last）
+
+      4. 数值 RGB / Numeric RGB
          <Color>255,0,0</Color>          ← 红色 / Red
 
-      4. 数值 RGBA（带透明度）/ Numeric RGBA (with alpha)
+      5. 数值 RGBA（带透明度）/ Numeric RGBA (with alpha)
          <Color>255,0,0,128</Color>      ← 红色 + 50% 透明度 / Red + 50% alpha
+
+    注意：此处不支持 XNA 命名色（如 Red）—— 命名色只在配置的颜色字段中可用。
+    Note: XNA colour names (e.g. Red) are NOT accepted here; they only work in colour fields.
   -->
 
   <!--

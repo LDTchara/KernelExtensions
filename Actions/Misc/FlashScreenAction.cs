@@ -87,18 +87,8 @@ namespace KernelExtensions.Actions.Misc
             if (dyn != null)
                 return (XColor.White, dyn);
 
-            // 静态色：#RRGGBB / #AARRGGBB / R,G,B[,A]
-            if (raw.StartsWith("#") || raw.Contains(','))
-                return (ColorHelper.ParseHexColor(raw), null);
-
-            // 兜底：命名色（Red/Monochrome 等）
-            try
-            {
-                if (new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(raw) is Color named)
-                    return (named, null);
-            }
-            catch { }
-            return (os.defaultHighlightColor, null);
+            // 静态色：#RGB / #RRGGBB / #RRGGBBAA / R,G,B[,A] / XNA 命名色（Red/Monochrome 等）
+            return (ColorHelper.ParseStaticColor(raw, os.defaultHighlightColor), null);
         }
 
         /// <summary>一次性闪烁渐变实例：订阅驱动，结束时退订自清理。</summary>

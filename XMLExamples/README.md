@@ -92,13 +92,20 @@
 
 ### 7. 颜色格式 / Color Formats
 
-配置颜色字段支持以下格式（可混用，见 `CustomColor_Example.xml`）：
+配置里的颜色字段支持以下格式（可混用）：
 
-1. 颜色名 / Color names — `Red` 等 XNA 内置颜色名（Trial/PhaseSwift 注释）
-2. 十六进制 RGB — `#FF0000`
-3. 十六进制 ARGB（带透明度）— `#88FF0000`
-4. 数值 RGB — `255,0,0`
-5. 数值 RGBA — `255,0,0,128`
+1. XNA 颜色名 / XNA colour names — `Red`、`CornflowerBlue` 等（大小写不敏感）
+2. 十六进制 RGB / Hex RGB — `#FF0000`
+3. 十六进制短写 / Short hex — `#F00`（每位重复 → `#FF0000`）
+4. 十六进制 RGBA（带透明度）— `#FF000080`（RGB 在前、Alpha 在末位）
+5. 数值 RGB — `255,0,0`
+6. 数值 RGBA — `255,0,0,128`
+
+各模块的颜色字段（横幅 `AccentColor`、PhaseSwift、ScreenBleed、CustomTrial 等）走**同一套解析**；
+解析失败时回退到该字段各自的默认色。
+
+> ⚠️ **CustomColor 预设文件内的 `<Color>` 格式更窄**：不支持 XNA 命名色，只接受十六进制与数值
+> （详见 `CustomColor_Example.xml` 内的注释）。
 
 另支持 **CustomColor 预设名**（含内置 `Rainbow` / `LDTchara`），带参格式：`<字段>预设名:速度:透明度:饱和度:明度</字段>`（如 `Rainbow:0.1:0.8:1.0:1.0`；参数可省略到只用 `速度`）。自定义预设文件放 `CustomColor/` 自动加载。
 CustomColor preset names (including built-in `Rainbow` / `LDTchara`) are also accepted, with parameters: `preset:speed:opacity:saturation:brightness` (optional params may be omitted).

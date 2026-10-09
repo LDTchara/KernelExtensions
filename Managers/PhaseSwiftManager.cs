@@ -1363,8 +1363,8 @@ namespace KernelExtensions.Managers
             var dynConfig = CustomColorManager.ParseColorString(colorStr);
             if (dynConfig != null)
                 return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
-            try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(colorStr) as Color? ?? Color.Transparent; }
-            catch { return Color.Transparent; }
+            // 动态未中 → 静态解析（#RGB/#RRGGBB/#RRGGBBAA/R,G,B[,A]/XNA 命名色）
+            return ColorHelper.ParseStaticColor(colorStr, Color.Transparent);
         }
 
         public static void RestorePersistentState(PhaseSwiftPersistentState state)

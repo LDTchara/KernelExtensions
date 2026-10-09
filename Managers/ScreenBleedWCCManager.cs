@@ -156,10 +156,8 @@ namespace KernelExtensions.Managers
             if (dynConfig != null)
                 return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
 
-            // 兜底：数值 RGB (255,0,0) / RGBA (255,0,0,128) 和命名色
-            try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(raw) as Color? ?? fallback; }
-            catch { }
-            return fallback;
+            // 兜底：数值 RGB (255,0,0) / RGBA (255,0,0,128) 和 XNA 命名色
+            return ColorHelper.ParseStaticColor(raw, fallback);
         }
 
         private class WCCState

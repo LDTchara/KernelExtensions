@@ -77,7 +77,10 @@ namespace KernelExtensions.Managers
         // ========== 字段 ==========
         private static readonly Dictionary<string, DynColorConfig> _dynamicFields = new();
         private static readonly Dictionary<string, FieldInfo> _fieldCache = new();
-        private static readonly Dictionary<string, List<GradientSegment>> _presetCache = new();
+        // 预设名匹配用 OrdinalIgnoreCase：与 ColorHelper 的 XNA 命名色表一致，
+        // 避免“预设区分大小写 / 命名色忽略大小写”的分裂（见颜色解析统一方案）。
+        private static readonly Dictionary<string, List<GradientSegment>> _presetCache =
+            new(StringComparer.OrdinalIgnoreCase);
         private static string _lastScannedPath = null;
         private static bool _presetsLoaded = false;
 
@@ -169,8 +172,8 @@ namespace KernelExtensions.Managers
             var dynConfig = ParseColorString(colorStr);
             if (dynConfig != null)
                 return CalcColor(dynConfig, OS.currentElapsedTime);
-            try { return new Microsoft.Xna.Framework.Design.ColorConverter().ConvertFromString(colorStr) as Color? ?? defaultColor; }
-            catch { return defaultColor; }
+            // 动态未中 → 静态解析（#RGB/#RRGGBB/#RRGGBBAA/R,G,B[,A]/XNA 命名色）
+            return ColorHelper.ParseStaticColor(colorStr, defaultColor);
         }
 
         // ========== 扫描主题文件 ==========

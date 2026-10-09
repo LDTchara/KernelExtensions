@@ -342,40 +342,8 @@ namespace KernelExtensions.Executables
                 return ColorHelper.HSVToColor(hue, 1.0f, 1.0f);
             }
 
-            // 尝试使用 XNA 的颜色转换器
-            try
-            {
-                var converter = new Microsoft.Xna.Framework.Design.ColorConverter();
-                return (Color)converter.ConvertFromString(colorStr);
-            }
-            catch
-            {
-                // 手动解析十六进制颜色（支持 #RRGGBB 和 #RGB）
-                if (colorStr.StartsWith("#"))
-                {
-                    try
-                    {
-                        string hex = colorStr.Substring(1);
-                        if (hex.Length == 6)
-                        {
-                            byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
-                            byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
-                            byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
-                            return new Color(r, g, b);
-                        }
-                        else if (hex.Length == 3)
-                        {
-                            byte r = byte.Parse(hex[0].ToString() + hex[0], System.Globalization.NumberStyles.HexNumber);
-                            byte g = byte.Parse(hex[1].ToString() + hex[1], System.Globalization.NumberStyles.HexNumber);
-                            byte b = byte.Parse(hex[2].ToString() + hex[2], System.Globalization.NumberStyles.HexNumber);
-                            return new Color(r, g, b);
-                        }
-                    }
-                    catch { }
-                }
-                // 解析失败返回透明，后续会使用默认主题色
-                return Color.Transparent;
-            }
+            // 静态解析：#RGB / #RRGGBB / #RRGGBBAA / R,G,B[,A] / XNA 命名色
+            return ColorHelper.ParseStaticColor(colorStr, Color.Transparent);
         }
 
         private void AddRadialMailLine()
