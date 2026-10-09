@@ -69,7 +69,7 @@
 | `EnableTrialCompleteFocus` | `true` | 试炼完成时是否显示终端聚焦覆盖层。 |
 | `ThemeToSwitch` | `null` | 切换至的预设主题名称（如 `HacknetMint`）或自定义主题文件路径。 |
 | `ThemeFlickerDuration` | `2` | 主题切换时的闪烁时长（秒）。 |
-| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | 颜色配置，支持 `#RRGGBB` / `#AARRGGBB`、数值 RGB/RGBA 与 CustomColor 动态色（如 `LDTchara`、`Rainbow`、预设名）。 |
+| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | 颜色配置，支持 XNA 命名色（如 `Red`）、`#RGB` / `#RRGGBB` / `#RRGGBBAA`、数值 RGB/RGBA 与 CustomColor 动态色（如 `LDTchara`、`Rainbow`、预设名）。 |
 | `RamReductionDelay` | `5` | 阶段开始后延迟多少秒开始减少内存占用。 |
 | `RamReductionDuration` | `3` | 内存缩减过程的总时长（秒）。 |
 | `DynamicRamReduction` | `false` | 若为 `true`，则忽略 `RamReductionDelay` 与 `RamReductionDuration`，内存占用按当前显示的 UI 控件高度动态调整。建议设为 `true` 以避免潜在的视觉问题。 |

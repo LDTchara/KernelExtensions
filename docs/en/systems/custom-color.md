@@ -86,8 +86,8 @@ File format:
 
 - At least **2 segments** are needed to form a loop
 - Total cycle time = the sum of every segment's `Duration + Transition`
-- Four colour formats are supported and **may be mixed**:
-  `#FF0000` (hex RGB), `#88FF0000` (hex ARGB, leading byte is alpha),
+- The following formats are supported and **may be mixed** (preset `<Color>` does **not** accept XNA named colours):
+  `#FF0000` (hex RGB), `#F00` (short hex, each digit doubled), `#FF000080` (hex RGBA, alpha last),
   `255,0,0` (numeric RGB), `255,0,0,128` (numeric RGBA)
 
 ### Common recipes
@@ -136,23 +136,29 @@ Some colour fields instead use a **different parsing chain** (fixed formats only
 
 ---
 
-## 4. Versus the Fixed-Format Parsing Chain
+## 4. Static Colour Formats
 
-Referencing a preset or keyword is only one route. A plain colour string **without** a dynamic keyword goes
-through a different chain, and the two do **not** accept exactly the same formats:
-
-| Format | `<Color>` inside a CustomColor preset | Plain colour-field string parsing |
-|--------|:---:|:---:|
-| Hex `#RRGGBB` / `#AARRGGBB` | ✅ | ⚠️ field-dependent |
-| Numeric `R,G,B` / `R,G,B,A` | ✅ | ✅ |
-| XNA named colour (`Red`) | — | ⚠️ field-dependent |
-| Dynamic colour keywords | — | ✅ (this system) |
+Referencing a preset or keyword is only one route. A plain colour string **without** a dynamic keyword
+goes through the static parsing chain (`ColorHelper.ParseStaticColor`), **shared by every module's**
+colour fields:
 
 <!-- ke:9.50 -->
-⚠️ Today the **plain string parsing is not unified across fields**: some fields (such as the banner's
-`AccentColor`) do not yet accept hex or XNA named colours and silently fall back to a default.
-A **colour-parsing unification** is planned, after which the table above collapses into one.
-Until then, prefer **dynamic keywords or presets** when the exact colour matters.
+| Format | Example | Notes |
+|--------|---------|-------|
+| XNA named colour | `Red` | case-insensitive (`red` works too) |
+| Hex RGB | `#FF0000` | |
+| Short hex | `#F00` | each digit doubled, same as `#FF0000` |
+| Hex RGBA | `#FF000080` | RGB first, alpha last |
+| Numeric RGB | `255,0,0` | 0–255 |
+| Numeric RGBA | `255,0,0,128` | 0–255 |
+| Dynamic keyword | `Rainbow` / preset name / `Gradient:#f00:#00f:2` | see sections 1–3 |
+
+On failure the parser falls back to each field's own **default colour** (e.g. the banner's `AccentColor`
+falls back to the `Preset` theme colour).
+
+!!! warning "Preset `<Color>` accepts less"
+    Inside a `CustomColor/*.xml` preset, `<Color>` does **not** accept XNA named colours — only hex and
+    numeric formats (see the comments in `CustomColor_Example.xml`). Named colours work in colour fields only.
 
 ---
 

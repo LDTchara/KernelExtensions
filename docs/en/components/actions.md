@@ -96,12 +96,6 @@ When `AccentColor` is omitted the accent comes from the **current game theme**, 
 the player's theme. Full colour-parsing rules are in the
 [Custom Color System](./../systems/custom-color.md).
 
-<!-- ke:9.50 -->
-!!! warning "Hex and named colours are not available yet (known issue)"
-    `AccentColor` currently **does not parse Hex** (`#RRGGBB` silently falls back to the `Preset` theme
-    colour), nor XNA named colours (e.g. `Red`). Both will be added by the **colour-parsing unification**;
-    until then use a **CustomColor preset or dynamic colour**.
-
 **Icon rules**:
 
 | `Icon` | `IconTint` | Result |

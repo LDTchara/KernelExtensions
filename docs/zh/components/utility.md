@@ -36,9 +36,10 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
   由 `CustomColorPatch`、`PhaseSwiftManager`、`CustomTrialExe` 等多处共同使用。
 
 <!-- ke:9.50 -->
-!!! note "关于颜色格式"
-    各颜色字段目前**并非都支持十六进制与命名色**（详见
-    [自定义动态色系统](./../systems/custom-color.md) 第四节）。把解析统一到本类的工作在计划内。
+!!! info "颜色格式"
+    本类是**所有颜色字段的统一解析入口**：支持 `#RGB` / `#RRGGBB` / `#RRGGBBAA` / `R,G,B[,A]`
+    与 XNA 命名色（如 `Red`，大小写不敏感），详见
+    [自定义动态色系统](./../systems/custom-color.md) 第四节。
 
 ### FlowColorHelper
 

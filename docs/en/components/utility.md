@@ -39,9 +39,10 @@ Every class lives in the namespace **`KernelExtensions.Utilities`**.
   `CustomColorPatch`, `PhaseSwiftManager`, `CustomTrialExe` and others.
 
 <!-- ke:9.50 -->
-!!! note "About colour formats"
-    Colour fields do **not** all accept hex or named colours yet (see section 4 of the
-    [Custom Color System](./../systems/custom-color.md)). Unifying parsing onto this class is planned.
+!!! info "Colour formats"
+    This class is the **single parsing entry point for every colour field**: it accepts
+    `#RGB` / `#RRGGBB` / `#RRGGBBAA` / `R,G,B[,A]` and XNA named colours (e.g. `Red`,
+    case-insensitive). See section 4 of the [Custom Color System](./../systems/custom-color.md).
 
 ### FlowColorHelper
 

@@ -69,7 +69,7 @@ Below is a short example configuration file. For a more complete configuration f
 | `EnableTrialCompleteFocus` | `true` | Whether to show the terminal focus overlay when the trial is completed. |
 | `ThemeToSwitch` | `null` | A preset theme name to switch to (e.g. `HacknetMint`) or a custom theme file path. |
 | `ThemeFlickerDuration` | `2` | Flicker duration when switching themes (seconds). |
-| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | Colour configuration; accepts `#RRGGBB` / `#AARRGGBB`, numeric RGB/RGBA, and CustomColor dynamic colours (e.g. `LDTchara`, `Rainbow`, preset names). |
+| `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` | `null` | Colour configuration; accepts XNA named colours (e.g. `Red`), `#RGB` / `#RRGGBB` / `#RRGGBBAA`, numeric RGB/RGBA, and CustomColor dynamic colours (e.g. `LDTchara`, `Rainbow`, preset names). |
 | `RamReductionDelay` | `5` | Delay in seconds before RAM reduction begins after phases start. |
 | `RamReductionDuration` | `3` | Total duration of the RAM reduction process (seconds). |
 | `DynamicRamReduction` | `false` | If true, `RamReductionDelay` and `RamReductionDuration` are ignored; `ramCost` is dynamically adjusted based on the height of currently displayed UI controls. It is recommended to set this to `true` to avoid potential visual issues. |

@@ -89,12 +89,6 @@ KernelExtensions 共注册 **32 个**自定义 Action，可在任何动作文件
 不写 `AccentColor` 时强调色取自**当前游戏主题**（玩家切换主题时横幅配色自动跟随）。
 颜色属性的完整解析规则见[自定义动态色系统](./../systems/custom-color.md)。
 
-<!-- ke:9.50 -->
-!!! warning "Hex 与命名色暂不可用（已知问题）"
-    `AccentColor` 当前的解析链**不含 Hex**（`#RRGGBB` 会静默回退到 `Preset` 主题色），
-    也不含 XNA 命名色表（如 `Red`）。二者会在**颜色解析统一**中一并补齐；
-    在那之前请使用 **CustomColor 预设或动态色**。
-
 **图标规则**：
 
 | `Icon` | `IconTint` | 结果 |
