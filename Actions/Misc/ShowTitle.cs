@@ -21,7 +21,8 @@ namespace KernelExtensions.Actions.Misc
     ///   · 正文 = **元素内容**（真正的换行符；首尾空行与公共缩进会自动去除，可自由排版）
     ///   · Preset：info（默认，强调色取 os.defaultHighlightColor 主题高亮基色）
     ///              warning（强调色取 os.warningColor 主题警告色）
-    ///   · AccentColor：CustomColor 覆盖（CC 预设/动态），NONE/空 = 用 Preset 的主题色
+    ///   · AccentColor：颜色覆盖 — CustomColor 预设/动态色，或 Hex (#RGB/#RRGGBB/#RRGGBBAA)、
+    ///                  数值 RGB (R,G,B[,A])、XNA 命名色（如 Red）；NONE/空 = 用 Preset 的主题色
     ///   · Icon / IconTint：见下方字段说明
     ///   · ⚠️ Title **仅支持 ASCII**：标题用游戏标题字体（Kremlin），官方未提供任何语言的
     ///     本地化版本，非 ASCII 字符（中文/日文/俄文…）会显示为 `?`。正文不受此限制。

@@ -25,7 +25,8 @@ namespace KernelExtensions.Actions.Misc
     /// Line 2 text
     /// Line 3 text
     /// </StartScreenBleedEffectWCC>
-    /// 颜色值支持 CustomColor 预设，Hex (#RRGGBB) 和命名色 (Monochrome)。
+    /// 颜色值支持 CustomColor 预设、Hex 与 XNA 命名色 (Monochrome)。
+    /// 注意：本 Action 的 8 位 Hex 按 #AARRGGBB 解析（首位为 Alpha），与全局的 #RRGGBBAA 不同。
     /// 支持动态颜色 (Rainbow, Rainbow:0.5:0.3) 等。
     /// </summary>
     public class StartScreenBleedEffectWCCAction : KEAction
