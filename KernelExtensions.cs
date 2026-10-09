@@ -179,6 +179,9 @@ namespace KernelExtensions
             // RAM 显示文字调整：无 KE-Config 段，全由 Action 控制
             RegisterActionWithFallback<RamDisplayAction>("RamDisplay");
 
+            // 临时主题色：只改当前 OS 的颜色字段，不切换主题（切主题后自然撤销）
+            RegisterActionWithFallback<ChangeThemeColorAction>("ChangeThemeColor");
+
             // ============================================================
             //  3. 事件处理器
             // ============================================================
