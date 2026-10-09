@@ -1,54 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     ============================================================
-    KernelExtensions 端口破解器配置示例（PortCracker）
-    PortCracker Configuration Example
+    KernelExtensions PortHackV2 配置示例
+    PortHackV2 Configuration Example
     ============================================================
-    定位：剧情资产。每份配置对应一个端口的破解，放 <扩展根>/PortCracker/ 下。
-    Position: story asset. One config per port crack, under <extensionRoot>/PortCracker/.
+    定位：剧情资产。每份配置对应一次破解，放 <扩展根>/PortHackV2/ 下。
+    Position: story asset. One config per crack, under <extensionRoot>/PortHackV2/.
 
     启用方式 / How to enable:
-      给玩家挂上存档 flag  CustomPortCracker_<文件名>（不含 .xml）
+      给玩家挂上存档 flag  CustomPortHackV2_<文件名>（不含 .xml）
       flag 就是"入口牌"：无 flag 程序锁定；出现多个 flag 视为作者配置错误（锁定 + 日志报错）
-      Set the save flag CustomPortCracker_<fileName> on the player.
+      Set the save flag CustomPortHackV2_<fileName> on the player.
       The flag is the entry token: none means locked; more than one is an authoring error.
 
-    本文件是参考示例。为保证 XML 单根校验通过，只保留一个 <PortCrackerConfig>；
-    其余变体以注释附在文末。实际使用时把根元素复制到独立文件。
-    NOTE: only one <PortCrackerConfig> root is kept here so the file stays valid XML;
-    variants are appended as comments at the end.
+    本文件是参考示例。为保证 XML 单根校验通过，只保留一个 <PortHackV2Config>；
+    其余变体以注释附在文末。
 -->
-<PortCrackerConfig>
+<PortHackV2Config>
 
   <!-- ── 程序名 / Program name ──
-       终端里显示的名字。留空 = PortCracker。
-       程序在终端里的注册名 #KE_PORTCRACKER# 不受此处影响。 -->
-  <ProgramName>PortCracker</ProgramName>
-
-  <!-- ── 目标协议 / Target protocol ──
-       必填。要破解的端口协议名（ssh / ftp / smtp / http 等，须已被注册）。 -->
-  <Protocol>ssh</Protocol>
+       终端里显示的名字。留空 = PortHackV2。
+       程序在终端里的注册名 #KE_PORTHACKV2# 不受此处影响。 -->
+  <ProgramName>PortHackV2</ProgramName>
 
   <!-- ── 界面标题 / Screen title ──
-       破解界面左上角显示的文字。留空 = 用协议名。 -->
+       破解界面左上角显示的文字。留空 = 用第一个协议名。 -->
   <Title>SSH Brute Force</Title>
 
-  <!-- ── 成功率 / Success chance ──
-       百分比 0~100。留空 = 100（必定成功）。
-       在**进入破解时**掷一次，决定本次走成功分支还是失败分支；
-       演出上不提前暴露结果（进度条与动画不区分）。0 = 必定失败。
-       格式写错只回退 100 并记 Warn，不会让整份配置失效。 -->
-  <Rng>60</Rng>
+  <!-- ── 根级时长（秒）/ Root-level time ──
+       **不参与 RNG 判定**。留空 = 10。
+       ⚠️ 它与多协议编排如何配合（整体基准时长？未指定分支时的兜底？）**待定**。 -->
+  <Time>30</Time>
 
-  <!-- ── 两条分支的时长（秒）/ Duration per branch ──
-       TimeIfSuccess：成功分支跑多久。留空 = 10；<= 0 = 瞬满。
-       TimeIfFail   ：失败分支跑多久。留空 = 3； <= 0 = 瞬满。 -->
-  <TimeIfSuccess>12</TimeIfSuccess>
-  <TimeIfFail>4</TimeIfFail>
+  <!-- ── 待破解协议 / Protocols ──
+       每个 <Protocol> 自带协议名、成功率与两条分支时长。可以放一个或多个。
+       协议名须已被注册（ssh / ftp / smtp / http 等）。
+
+       <Rng>           百分比 0~100。留空 = 100（必定成功）。
+                       在**进入破解时**掷一次，决定走成功分支还是失败分支；
+                       演出上不提前暴露结果（进度条与动画在两条分支上完全一样）。
+                       写错只回退 100 并记 Warn，不会让整份配置失效。
+       <TimeIfSuccess> 成功分支时长（秒）。留空 = 10；<= 0 = 瞬满。
+       <TimeIfFail>    失败分支时长（秒）。留空 = 3； <= 0 = 瞬满。 -->
+  <Protocols>
+    <Protocol>
+      <Name>ssh</Name>
+      <Rng>60</Rng>
+      <TimeIfSuccess>12</TimeIfSuccess>
+      <TimeIfFail>4</TimeIfFail>
+    </Protocol>
+    <Protocol>
+      <Name>ftp</Name>
+      <Rng>90</Rng>
+      <TimeIfSuccess>6</TimeIfSuccess>
+      <TimeIfFail>3</TimeIfFail>
+    </Protocol>
+  </Protocols>
 
   <!-- ── 结束后行为 / On-finish behaviour ──
-       TakeAdmin：成功后是否像原版 PortHack 一样取得目标机管理员权限
-                  （把 owner 设为玩家）。留空 = false，即只开端口、不给 admin。
+       TakeAdmin：成功后是否像原版 PortHack 一样取得目标机管理员权限（把 owner 设为玩家）。
+                  留空 = false，即只开端口、不给 admin。
        AutoExitOnLeave：玩家离开本程序所在节点时是否自动关闭程序。
                         留空 = true（原版 PortHack 行为）；false = 程序跨节点常驻。
        CompleteDelay：成功演出（乱序字 + 上下白线）结束后、退出前的停留秒数。留空 = 5。 -->
@@ -61,7 +72,7 @@
   <RamCost>30</RamCost>
 
   <!-- ── 可用性 / Usable ──
-       false 时程序对该协议报告为不可用（Listing 里显示未满足）。留空 = true。 -->
+       false 时本程序整体报告为不可用（Listing 里对应行显示未满足）。留空 = true。 -->
   <Usable>true</Usable>
 
   <!-- ── 前置要求 / Prerequisites ──
@@ -83,7 +94,7 @@
   <OnFail>Actions/crackFailed.xml</OnFail>
 
   <!-- ── 一次性效果 / One-shot effects ──
-       沿用字符串语法，多个效果用逗号分隔。命令与参数写法见下（摘自 impl 的注释表）：
+       沿用字符串语法，多个效果用逗号分隔：
          closeports_<协议>[;<协议>...]            关闭这些端口
          openports_<协议>[;<协议>...]             打开这些端口
          addfirewall_<参数1>:<值>_<参数2>:<值>    加防火墙（参数内部 : 等价于 =）
@@ -97,18 +108,21 @@
   <Debuffs>closeports_ftp;addfirewall_lenth:12_additiontime:0.1</Debuffs>
   <Buffs>openports_ssh</Buffs>
 
-</PortCrackerConfig>
+</PortHackV2Config>
 
 <!--
     ============================================================
-    变体 / Variants（把对应行放进上面的根元素里即可）
+    变体 / Variants（把对应行放进上面的根元素或某个 <Protocol> 里）
     ============================================================
 
     [必定失败 —— 剧情用]
-      <Rng>0</Rng>
+      在某个 <Protocol> 里写 <Rng>0</Rng>
 
     [必定成功 —— 最简单]
-      省略 <Rng> 整行（等价于 100）
+      省略 <Rng>
+
+    [单协议]
+      <Protocols> 里只放一个 <Protocol>
 
     [不给管理员权限 —— 只开端口]
       省略 <TakeAdmin>（等价于 false）
