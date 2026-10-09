@@ -188,6 +188,35 @@ Useful for faking a machine's specs in the story (e.g. making a small box “loo
 
 ---
 
+### Temporary Theme Colours `ChangeThemeColor`
+
+Changes the current OS's **theme colour fields at runtime** without switching themes — panel layout
+and background stay as they are. Useful for story beats that recolour the UI (e.g. everything turns
+red during an intrusion); the change lapses as soon as the player switches theme.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Locate` | ✅ | `""` | Comma-separated `field:colour` list |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed-action attributes |
+
+Colour values use the same unified parsing as other colour fields: XNA named colours (e.g. `Red`,
+case-insensitive), `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `R,G,B[,A]`. `NONE` / empty = leave that field
+unchanged. Field names must be theme colour fields such as `defaultHighlightColor`, `warningColor`,
+`moduleColorSolidDefault`, `terminalTextColor`.
+
+```xml
+<ChangeThemeColor Locate="defaultHighlightColor:Red,warningColor:#FF0000" />
+<!-- only the highlight and warning colours change; the rest keep the current theme -->
+```
+
+- **Unknown field or unparsable colour** → that pair is skipped with a `KELog.Warn`; other fields still apply
+- **Revert**: only the in-memory OS values change — nothing is written to the save and the loaded theme
+  object is untouched; after the player **switches theme** the OS fields are rewritten, so the change lapses
+- **No dynamic colours**: `Rainbow` / `LDTchara` / CC preset names are not part of this action's parsing
+- **Use `SwitchToThemeKeepLayout`** if you want to change the layout along with the colours
+
+---
+
 ## Action Name Conflicts and Fallback
 
 Third-party mods may occupy Action names (real example: `Stuxnet.Audio` occupies `PlaySound`).

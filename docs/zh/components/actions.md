@@ -178,6 +178,34 @@ RAM 条的长度仍按真实占用比例绘制。
 
 ---
 
+### 临时主题色 `ChangeThemeColor`
+
+运行时修改当前 OS 的**主题颜色字段**，但**不切换主题**——面板布局与背景保持原样。
+适合剧情演出临时改配色（例如“系统入侵”时整屏转红），切换主题后即自动失效。
+
+| 属性 | 必填 | 默认值 | 说明 |
+|------|:----:|--------|------|
+| `Locate` | ✅ | `""` | 逗号分隔的 `字段名:颜色值` 列表 |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
+
+颜色值走统一解析（与其它颜色字段相同）：XNA 命名色（如 `Red`，大小写不敏感）、`#RGB`、
+`#RRGGBB`、`#RRGGBBAA`、`R,G,B[,A]`。写 `NONE` / 空 = 该字段保持不变。
+字段名须是主题的颜色字段，例如 `defaultHighlightColor`、`warningColor`、
+`moduleColorSolidDefault`、`terminalTextColor` 等。
+
+```xml
+<ChangeThemeColor Locate="defaultHighlightColor:Red,warningColor:#FF0000" />
+<!-- 只改高亮色与警告色，其余颜色保持当前主题 -->
+```
+
+- **未知字段名或无法解析的颜色** → 该键值对跳过并 `KELog.Warn`，其余字段照常生效
+- **撤销**：只改当前 OS 的内存值，不写存档、不改已加载的主题对象；玩家**切换主题**后
+  OS 字段被主题重新写入，改动自然失效
+- **不接管动态色**：`Rainbow` / `LDTchara` / CC 预设名等动态关键字不在此动作的解析范围内
+- **要连布局一起改**请用 `SwitchToThemeKeepLayout`
+
+---
+
 ## Action 名冲突与回退
 
 第三方模组可能占用 Action 名（实例：`Stuxnet.Audio` 占用 `PlaySound`）。
