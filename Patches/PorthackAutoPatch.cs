@@ -2,18 +2,18 @@ using Hacknet;
 using HarmonyLib;
 using KernelExtensions.Utilities;
 using System.Reflection;
-using PorthackHeartDaemon = KernelExtensions.Daemons.PorthackHeartDaemon;
+using CustomHeartDaemon = KernelExtensions.Daemons.CustomHeartDaemon;
 
 namespace KernelExtensions.Patches
 {
     /// <summary>
     /// AutoOnPorthack 支持：反射 patch 原版 PortHackExe.Update。
     ///
-    /// 原版触发链（PortHackExe.Update，progress&gt;0.5 时 typeof(PorthackHeartDaemon) 检测
+    /// 原版触发链（PortHackExe.Update，progress&gt;0.5 时 typeof(CustomHeartDaemon) 检测
     /// 目标 → BreakHeart）；PortHackExe 与 ExeModule 均为 internal，KE 无法编译期引用，
     /// 故运行时反射：AccessTools.TypeByName + AccessTools.Method + harmony.Patch(Postfix)。
     ///
-    /// Postfix 逻辑：目标含 AutoOnPorthack=true 的 KE PorthackHeartDaemon 且破解进度&gt;50%
+    /// Postfix 逻辑：目标含 AutoOnPorthack=true 的 KE CustomHeartDaemon 且破解进度&gt;50%
     /// → BreakHeart()（daemon 内部 heartbreakFinished 防重复；porthack 破解过程要求保持
     /// 连接，故不再额外校验 os.connectedComp，对齐原版最终行为）。
     /// </summary>
@@ -57,9 +57,9 @@ namespace KernelExtensions.Patches
                 var target = targetField.GetValue(__instance) as Computer;
                 if (target == null) return;
 
-                PorthackHeartDaemon phd = null;
+                CustomHeartDaemon phd = null;
                 foreach (var d in target.daemons)
-                    if (d is PorthackHeartDaemon h) { phd = h; break; }
+                    if (d is CustomHeartDaemon h) { phd = h; break; }
                 if (phd == null || !phd.AutoOnPorthack) return;
 
                 // 对齐原版时机：破解进度 > 50%

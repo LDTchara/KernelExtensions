@@ -161,7 +161,7 @@ namespace KernelExtensions.Executables
                 activeInstances.Remove(this);
                 try
                 {
-                    // ExeModule internal 无法直接访问，反射处理（同 PorthackHeartDaemon.ClosePorthackExe）
+                    // ExeModule internal 无法直接访问，反射处理（同 CustomHeartDaemon.ClosePorthackExe）
                     var exes = AccessTools.Field(typeof(OS), "exes")?.GetValue(os) as System.Collections.IList;
                     exes?.Remove(this);
                 }

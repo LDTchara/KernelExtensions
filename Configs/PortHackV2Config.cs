@@ -11,26 +11,19 @@ using System.Xml.Serialization;
 
 namespace KernelExtensions.Configs;
 
-public class PortCrackerConfig
+/// <summary>
+/// 单个待破解协议：协议名 + 成功率 + 两条分支各自时长。
+///
+/// 数值项与根配置同样用 string 承接原值（XmlSerializer 遇非数字会直接抛，详见根类注释）。
+/// </summary>
+public class PortHackV2ProtocolConfig
 {
-    // 属性而非字段，便于后续添加验证或变更通知
-
-    /// <summary>终端里显示的程序名（对齐 PhaseSwift 的 ProgramName）。注册名 #KE_PORTCRACKER# 不受影响。</summary>
-    [XmlElement("ProgramName")] public string ProgramName { get; set; } = "PortCracker";
-
-    public bool Usable { get; set; } = true;
-    public string Protocol { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
-    public int RamCost { get; set; }     // 单位：MB
-
-    // ---- 数值项统一用 string 承接原值 ----
-    // 理由：XmlSerializer 遇到非数字（如 <TimeIfSuccess>10s</TimeIfSuccess>）会直接抛异常，
-    // 导致整份配置加载失败 → 程序锁定。改动后统一走 ConfigValue.ParseInRange 宽松解析，
-    // 畸形值（非数字 / NaN / Infinity / 负数 / 超范围）只回退默认 + Warn，配置其余部分照常生效。
+    /// <summary>协议名（必填，须已被注册，如 ssh / ftp）。</summary>
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// 破解成功概率，**百分比 0~100**。留空 = 100（必定成功）。
-    /// 在**进入 Cracking 时**掷一次，决定本次走成功分支还是失败分支；演出上不提前暴露结果。
+    /// 本协议的破解成功概率，**百分比 0~100**。留空 = 100（必定成功）。
+    /// 在**进入 Cracking 时**掷一次，决定走成功分支还是失败分支；演出上不提前暴露。
     /// </summary>
     [XmlElement("Rng")] public string RngRaw { get; set; }
 
@@ -40,11 +33,6 @@ public class PortCrackerConfig
     /// <summary>失败分支的破解时长（秒）。留空 = 3；&lt;= 0 = 瞬满。</summary>
     [XmlElement("TimeIfFail")] public string TimeIfFailRaw { get; set; }
 
-    /// <summary>成功演出结束后、退出前的停留秒数。留空 = 5（对齐原版 TIME_ALIVE_AFTER_SUCSESS）。</summary>
-    [XmlElement("CompleteDelay")] public string CompleteDelayRaw { get; set; }
-
-    // ---- 以下为解析结果（由 ResolveValues 在反序列化后填入）----
-
     /// <summary>破解成功概率，归一化 0.0~1.0。判定用 <c>Random.NextDouble() &lt; SuccessChance</c>。</summary>
     [XmlIgnore] public float SuccessChance { get; private set; } = 1f;
 
@@ -53,6 +41,72 @@ public class PortCrackerConfig
 
     /// <summary>失败分支时长（秒）。</summary>
     [XmlIgnore] public float TimeIfFail { get; private set; } = 3f;
+
+    public PortHackV2ProtocolConfig() { }
+
+    /// <summary>反序列化后解析并校验本协议的数值字段；<paramref name="sourceName"/> 仅用于日志定位。</summary>
+    public void ResolveValues(string sourceName)
+    {
+        string tag = $"{sourceName}/{Name}";
+
+        SuccessChance = ConfigValue.ParseInRange(RngRaw, 100f, 0f, 100f, out bool rngOk) / 100f;
+        if (!rngOk)
+            KELog.Warn($"[PortHackV2] '{tag}': invalid <Rng> '{RngRaw}', expected 0~100; using 100 (always succeeds).");
+
+        TimeIfSuccess = ConfigValue.ParseInRange(TimeIfSuccessRaw, 10f, 0f, 3600f, out bool tsOk);
+        if (!tsOk)
+            KELog.Warn($"[PortHackV2] '{tag}': invalid <TimeIfSuccess> '{TimeIfSuccessRaw}', expected 0~3600; using 10.");
+
+        TimeIfFail = ConfigValue.ParseInRange(TimeIfFailRaw, 3f, 0f, 3600f, out bool tfOk);
+        if (!tfOk)
+            KELog.Warn($"[PortHackV2] '{tag}': invalid <TimeIfFail> '{TimeIfFailRaw}', expected 0~3600; using 3.");
+    }
+}
+
+public class PortHackV2Config
+{
+    // 属性而非字段，便于后续添加验证或变更通知
+
+    /// <summary>终端里显示的程序名（对齐 PhaseSwift 的 ProgramName）。注册名 #KE_PORTHACKV2# 不受影响。</summary>
+    [XmlElement("ProgramName")] public string ProgramName { get; set; } = "PortHackV2";
+
+    public bool Usable { get; set; } = true;
+    public string Title { get; set; } = string.Empty;
+    public int RamCost { get; set; }     // 单位：MB
+
+    /// <summary>
+    /// 要破解的协议列表。每个 &lt;Protocol&gt; 自带协议名、成功率与两条分支时长。
+    /// ⚠️ 多协议时的编排语义（并行 / 串行、根级 &lt;Time&gt; 如何参与）**待批 2 定**。
+    /// </summary>
+    [XmlArray("Protocols")]
+    [XmlArrayItem("Protocol")]
+    public List<PortHackV2ProtocolConfig> Protocols { get; set; } = new();
+
+    /// <summary>协议名列表（剔除空项），供快速判断用；不参与序列化。</summary>
+    [XmlIgnore]
+    public List<string> ProtocolNames =>
+        Protocols == null
+            ? new List<string>()
+            : Protocols.Where(p => p != null && !string.IsNullOrWhiteSpace(p.Name)).Select(p => p.Name).ToList();
+
+    /// <summary>
+    /// 根级时长（秒），**不参与 RNG 判定**。
+    /// ⚠️ 具体语义（整体基准时长 / 未指定分支时的兜底）**待批 2 定**。
+    /// </summary>
+    [XmlElement("Time")] public string TimeRaw { get; set; }
+
+    /// <summary>根级时长的解析结果（秒）。</summary>
+    [XmlIgnore] public float Time { get; private set; } = 10f;
+
+    // ---- 数值项统一用 string 承接原值 ----
+    // 理由：XmlSerializer 遇到非数字（如 <TimeIfSuccess>10s</TimeIfSuccess>）会直接抛异常，
+    // 导致整份配置加载失败 → 程序锁定。改动后统一走 ConfigValue.ParseInRange 宽松解析，
+    // 畸形值（非数字 / NaN / Infinity / 负数 / 超范围）只回退默认 + Warn，配置其余部分照常生效。
+
+    /// <summary>成功演出结束后、退出前的停留秒数。留空 = 5（对齐原版 TIME_ALIVE_AFTER_SUCSESS）。</summary>
+    [XmlElement("CompleteDelay")] public string CompleteDelayRaw { get; set; }
+
+    // ---- 以下为解析结果（由 ResolveValues 在反序列化后填入）----
 
     /// <summary>成功演出后退出前停留（秒）。</summary>
     [XmlIgnore] public float CompleteDelay { get; private set; } = 5f;
@@ -102,19 +156,19 @@ public class PortCrackerConfig
     public bool RequireProxyOverload { get; set; }
 
     // 可选：构造函数，便于快速创建实例
-    public PortCrackerConfig() { }
+    public PortHackV2Config() { }
 
     // ======================= 加载（flag 入口） =======================
 
     /// <summary>
     /// 存档 flag 前缀。**flag 是本程序的入口牌**：
-    /// 形如 <c>CustomPortCracker_MyAttack</c> → 对应 <c>&lt;扩展根&gt;/PortCracker/MyAttack.xml</c>。
+    /// 形如 <c>CustomPortHackV2_MyAttack</c> → 对应 <c>&lt;扩展根&gt;/PortHackV2/MyAttack.xml</c>。
     /// 无 flag → 程序锁定；多 flag → 作者配置错误。
     /// </summary>
-    public const string FlagPrefix = "CustomPortCracker_";
+    public const string FlagPrefix = "CustomPortHackV2_";
 
     /// <summary>配置目录（扩展根下）。</summary>
-    public const string ConfigDir = "PortCracker";
+    public const string ConfigDir = "PortHackV2";
 
     /// <summary>本配置对应的 flag 名（不含前缀）；由加载器填入，供反查与日志使用。</summary>
     [XmlIgnore] public string SourceName { get; set; }
@@ -123,19 +177,19 @@ public class PortCrackerConfig
     /// 从存档 flag 反查并加载配置。
     /// 失败（越界 / 文件缺失 / 解析异常 / 缺 &lt;Protocol&gt;）返回 null，并在日志里记 Error。
     /// </summary>
-    public static PortCrackerConfig LoadByFlag(string flag)
+    public static PortHackV2Config LoadByFlag(string flag)
     {
         if (string.IsNullOrEmpty(flag)) return null;
         if (!flag.StartsWith(FlagPrefix, StringComparison.Ordinal))
         {
-            KELog.Error($"[PortCracker] flag '{flag}' does not start with '{FlagPrefix}'.");
+            KELog.Error($"[PortHackV2] flag '{flag}' does not start with '{FlagPrefix}'.");
             return null;
         }
 
         string name = flag.Substring(FlagPrefix.Length);
         if (string.IsNullOrWhiteSpace(name))
         {
-            KELog.Error($"[PortCracker] flag '{flag}' has an empty config name.");
+            KELog.Error($"[PortHackV2] flag '{flag}' has an empty config name.");
             return null;
         }
 
@@ -144,18 +198,18 @@ public class PortCrackerConfig
         string path = KEPath.ResolveInsideExtension(rel);
         if (path == null || !File.Exists(path))
         {
-            KELog.Error($"[PortCracker] config not found for flag '{flag}': {rel}");
+            KELog.Error($"[PortHackV2] config not found for flag '{flag}': {rel}");
             return null;
         }
 
         try
         {
-            var serializer = new XmlSerializer(typeof(PortCrackerConfig));
+            var serializer = new XmlSerializer(typeof(PortHackV2Config));
             using var fs = new FileStream(path, FileMode.Open);
-            var cfg = (PortCrackerConfig)serializer.Deserialize(fs);
-            if (cfg == null || string.IsNullOrWhiteSpace(cfg.Protocol))
+            var cfg = (PortHackV2Config)serializer.Deserialize(fs);
+            if (cfg == null || cfg.ProtocolNames.Count == 0)
             {
-                KELog.Error($"[PortCracker] config '{rel}' is missing the required <Protocol> field.");
+                KELog.Error($"[PortHackV2] config '{rel}' needs at least one <Protocol> with a non-empty <Name>.");
                 return null;
             }
             cfg.SourceName = name;
@@ -164,32 +218,26 @@ public class PortCrackerConfig
         }
         catch (Exception ex)
         {
-            KELog.Error($"[PortCracker] failed to load {rel}: {ex.Message}");
+            KELog.Error($"[PortHackV2] failed to load {rel}: {ex.Message}");
             return null;
         }
     }
 
     /// <summary>
-    /// 反序列化后解析并校验数值型原始字段（当前只有 <see cref="RngRaw"/>）。
+    /// 反序列化后解析并校验数值型原始字段，并驱动每个 <see cref="PortHackV2ProtocolConfig"/> 自己解析。
     /// 与 <see cref="LoadByFlag"/> 分开，便于将来从其它入口加载时复用。
     /// </summary>
     private void ResolveValues()
     {
-        SuccessChance = ConfigValue.ParseInRange(RngRaw, 100f, 0f, 100f, out bool rngOk) / 100f;
-        if (!rngOk)
-            KELog.Warn($"[PortCracker] '{SourceName}': invalid <Rng> '{RngRaw}', expected 0~100; using 100 (always succeeds).");
-
-        TimeIfSuccess = ConfigValue.ParseInRange(TimeIfSuccessRaw, 10f, 0f, 3600f, out bool tsOk);
-        if (!tsOk)
-            KELog.Warn($"[PortCracker] '{SourceName}': invalid <TimeIfSuccess> '{TimeIfSuccessRaw}', expected 0~3600; using 10.");
-
-        TimeIfFail = ConfigValue.ParseInRange(TimeIfFailRaw, 3f, 0f, 3600f, out bool tfOk);
-        if (!tfOk)
-            KELog.Warn($"[PortCracker] '{SourceName}': invalid <TimeIfFail> '{TimeIfFailRaw}', expected 0~3600; using 3.");
-
         CompleteDelay = ConfigValue.ParseInRange(CompleteDelayRaw, 5f, 0f, 600f, out bool cdOk);
         if (!cdOk)
-            KELog.Warn($"[PortCracker] '{SourceName}': invalid <CompleteDelay> '{CompleteDelayRaw}', expected 0~600; using 5.");
+            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <CompleteDelay> '{CompleteDelayRaw}', expected 0~600; using 5.");
+
+        Time = ConfigValue.ParseInRange(TimeRaw, 10f, 0f, 36000f, out bool tOk);
+        if (!tOk)
+            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
+
+        foreach (var p in Protocols) p?.ResolveValues(SourceName);
 
         // 效果串展开成字典（空串 → 空字典，避免把无配置误认成"有键但值为空"）
         Debuffs = string.IsNullOrWhiteSpace(DebuffsRaw) ? new() : ResolveAnyBuffsList(DebuffsRaw, false);

@@ -226,8 +226,8 @@ namespace KernelExtensions
             // ============================================================
             DaemonManager.RegisterDaemon<FlightDaemon>();
             KELog.Info("FlightDaemon registered.");
-            DaemonManager.RegisterDaemon<global::KernelExtensions.Daemons.PorthackHeartDaemon>();
-            KELog.Info("PorthackHeartDaemon registered.");
+            DaemonManager.RegisterDaemon<global::KernelExtensions.Daemons.CustomHeartDaemon>();
+            KELog.Info("CustomHeartDaemon registered.");
 
             // ============================================================
             //  6. 终端指令
@@ -249,8 +249,8 @@ namespace KernelExtensions
             // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
             RegisterActionWithFallback<PortControlAction>("PortControl");
 
-            // PortCracker（#KE_PORTCRACKER#）：端口破解器（flag 驱动，配置在扩展根的 PortCracker/）
-            ExecutableManager.RegisterExecutable<PortCrackerExe>("#KE_PORTCRACKER#");
+            // PortHackV2（#KE_PORTHACKV2#）：端口破解器（flag 驱动，配置在扩展根的 PortHackV2/）
+            ExecutableManager.RegisterExecutable<PortHackV2Exe>("#KE_PORTHACKV2#");
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
             // RAM 显示：RamModule internal，同样需运行时反射 patch

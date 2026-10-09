@@ -14,11 +14,11 @@ using Pathfinder.Util;
 namespace KernelExtensions.Daemons
 {
     /// <summary>
-    /// 复刻原版 PorthackHeartDaemon（可配置剧情版）。
+    /// 复刻原版 CustomHeartDaemon（可配置剧情版）。
     ///
     /// ── 节点 XML 用法（全部参数可选）──────────────────────────────────────────
     /// &lt;Computer&gt;
-    ///     &lt;PorthackHeartDaemon Title="PortHack.Heart" Music="Music/Ambient/AmbientDrone_Clipped"
+    ///     &lt;CustomHeartDaemon Title="PortHack.Heart" Music="Music/Ambient/AmbientDrone_Clipped"
     ///         FadeoutDelay="1" FadeoutDuration="10" AlignTime="2.5" HeartDuration="30"
     ///         FlashOutTime="3.8" OnComplete="Actions/HeartBroken" LockInput="true"
     ///         AutoOnPorthack="false"/&gt;
@@ -55,7 +55,7 @@ namespace KernelExtensions.Daemons
     ///   · 触发入口: BreakHeartAction（剧情显式）/ AutoOnPorthack（porthack 破解）
     ///   · 存档: BaseDaemon.GetSaveElement（[XMLStorage] 字段自动序列化）
     /// </summary>
-    public class PorthackHeartDaemon : BaseDaemon
+    public class CustomHeartDaemon : BaseDaemon
     {
         // ====== XML 可配置（[XMLStorage] 字段，全部可选带默认） ======
         [XMLStorage] public string Title = "PortHack.Heart";
@@ -83,7 +83,7 @@ namespace KernelExtensions.Daemons
         private bool heartbreakTriggered = false; // 一次性触发标志（对齐原版 hasCheckedForheart，防 AutoOnPorthack 每帧重复触发）
         private bool heartbreakFinished = false;  // 终结态：心碎序列已结束
 
-        public PorthackHeartDaemon(Computer c, string serviceName, OS os)
+        public CustomHeartDaemon(Computer c, string serviceName, OS os)
             : base(c, serviceName, os)
         {
             name = "Porthack.Heart";
@@ -130,7 +130,7 @@ namespace KernelExtensions.Daemons
             });
 
             if (ConfigLoader.Debug)
-                KELog.Info($"[PorthackHeart] '{Identifier}' heartbreak started");
+                KELog.Info($"[CustomHeart] '{Identifier}' heartbreak started");
         }
 
         /// <summary>供扩展/测试复位（恢复默认态，允许再次触发）。</summary>
@@ -266,7 +266,7 @@ namespace KernelExtensions.Daemons
             }
             catch (Exception ex)
             {
-                KELog.Error($"[PorthackHeart] action failed: {ex.Message}");
+                KELog.Error($"[CustomHeart] action failed: {ex.Message}");
             }
         }
 
@@ -354,7 +354,7 @@ namespace KernelExtensions.Daemons
             }
             catch (Exception ex)
             {
-                KELog.Error($"[PorthackHeart] draw failed: {ex.Message}");
+                KELog.Error($"[CustomHeart] draw failed: {ex.Message}");
             }
         }
     }

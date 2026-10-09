@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace KernelExtensions.Utilities;
-public class PortCrackerEffects
+public class PortHackV2Effects
 {
     public static void ClosePortsFromProtocol(List<string> Org_ptcls,OS os,string CompID)
     {

@@ -2,12 +2,12 @@ using Hacknet;
 using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Util;
-using PorthackHeartDaemon = KernelExtensions.Daemons.PorthackHeartDaemon;
+using CustomHeartDaemon = KernelExtensions.Daemons.CustomHeartDaemon;
 
 namespace KernelExtensions.Actions.Misc
 {
     /// <summary>
-    /// 显式触发目标节点的 PorthackHeartDaemon 心碎序列（剧情触发入口）。
+    /// 显式触发目标节点的 CustomHeartDaemon 心碎序列（剧情触发入口）。
     ///
     /// 用法（全部参数可选，缺省用 daemon 自身 XML 配置）：
     ///   &lt;BreakHeart NodeID="heart" OnComplete="Actions/HeartBroken" /&gt;
@@ -51,13 +51,13 @@ namespace KernelExtensions.Actions.Misc
                     return;
                 }
 
-                PorthackHeartDaemon daemon = null;
+                CustomHeartDaemon daemon = null;
                 foreach (var d in comp.daemons)
-                    if (d is PorthackHeartDaemon phd) { daemon = phd; break; }
+                    if (d is CustomHeartDaemon phd) { daemon = phd; break; }
 
                 if (daemon == null)
                 {
-                    KELog.Warn($"[BreakHeart] node '{NodeID}' has no PorthackHeartDaemon");
+                    KELog.Warn($"[BreakHeart] node '{NodeID}' has no CustomHeartDaemon");
                     return;
                 }
 
@@ -70,7 +70,7 @@ namespace KernelExtensions.Actions.Misc
             }
         }
 
-        private void ApplyOverrides(PorthackHeartDaemon d)
+        private void ApplyOverrides(CustomHeartDaemon d)
         {
             if (Title != null) d.Title = Title;
             if (Music != null) d.Music = Music;              // 空 = 显式不切歌
