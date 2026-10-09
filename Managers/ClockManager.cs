@@ -50,7 +50,13 @@ namespace KernelExtensions.Managers
                 return;
             }
 
-            string fullPath = NormalizePath(Path.Combine(extensionRoot ?? "", filepath));
+            string fullPath = KEPath.ResolveInside(filepath, extensionRoot);
+            if (fullPath == null)
+            {
+                os.write($"[ClockStart] Filepath escapes the extension folder: {filepath}");
+                return;
+            }
+            fullPath = NormalizePath(fullPath);
             if (!File.Exists(fullPath))
             {
                 os.write($"Clock file not found: {filepath}");
@@ -98,7 +104,9 @@ namespace KernelExtensions.Managers
             if (string.IsNullOrWhiteSpace(filepath)) return;
             if (!ActiveClocks.TryGetValue(os, out var clocks)) return;
 
-            string full = NormalizePath(Path.Combine(extensionRoot ?? "", filepath));
+            string full = KEPath.ResolveInside(filepath, extensionRoot);
+            if (full == null) return;   // 越界：不可能与此前注册的合法路径匹配
+            full = NormalizePath(full);
             var toRemove = new List<string>();
             foreach (var kv in clocks)
                 if (string.Equals(kv.Value.Def.SourcePath, full, StringComparison.OrdinalIgnoreCase))
@@ -285,12 +293,13 @@ namespace KernelExtensions.Managers
                 // NONE/空 = 不执行（不查文件，避免 NONE 误报）
                 if (!ConfigValue.IsNone(onCompletePath))
                 {
-                    string ocFull = NormalizePath(Path.Combine(extensionRoot ?? "", onCompletePath));
-                    if (!File.Exists(ocFull))
+                    string ocFull = KEPath.ResolveInside(onCompletePath, extensionRoot);
+                    if (ocFull == null || !File.Exists(ocFull))
                     {
-                        KELog.Warn($"[Clock] '{id}' OnComplete file not found: {onCompletePath}");
+                        KELog.Warn($"[Clock] '{id}' OnComplete file missing or out of bounds: {onCompletePath}");
                         onCompletePath = null;
                     }
+                    else ocFull = NormalizePath(ocFull);
                 }
 
                 return new ClockDefinition

@@ -49,7 +49,10 @@ namespace KernelExtensions.Patches
         [HarmonyPrefix]
         static bool Prefix(VisualizationData data)
         {
-            if (!PhaseSwiftManager.UseDualTrack) return true;
+            // 只有在「PS 正在接管音频」时才替换原生可视化数据。
+            // ⚠️ 不能只看 UseDualTrack：它默认 true，PS 从未启动时也成立，
+            //    会把其它模块（如 VM 攻击恢复后的原版音乐）的波形换成 PS 的空数据。
+            if (!PhaseSwiftManager.IsDrivingAudio) return true;
             Init(data);
             if (_sampListField == null)
                 return true;

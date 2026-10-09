@@ -13,7 +13,7 @@ namespace KernelExtensions.Actions.PhaseSwift
     /// 参数：
     ///   Phase  (int, 必填) 目标音乐组索引（对应 MusicPhases 列表中的 id）
     /// </summary>
-    public class PhaseSwiftMusicAction : DelayablePathfinderAction
+    public class PhaseSwiftMusicAction : KEAction
     {
         [Pathfinder.Util.XMLStorage] public int Phase;
 

@@ -61,19 +61,19 @@ namespace KernelExtensions.Daemons
         private const float StartingAltitude = 38000f;
         
         public double CurrentAltitude = 37900.0;
-        private float currentAirspeed = 460f;
-        private float rateOfClimb = 0.073f;
+        internal float currentAirspeed = 460f;
+        internal float rateOfClimb = 0.073f;
         private Color ThemeColor = Color.CornflowerBlue;
         private Folder MainFolder;
-        private bool PilotAlerted = false;
-        private bool IsReloadingFirmware = false;
-        private float firmwareReloadProgress = 0f;
-        private float timeFallingFor = 0f;
-        private float timeSinceLastDataUpdate = 0f;
+        internal bool PilotAlerted = false;
+        internal bool IsReloadingFirmware = false;
+        internal float firmwareReloadProgress = 0f;
+        internal float timeFallingFor = 0f;
+        internal float timeSinceLastDataUpdate = 0f;
         public float H = 135f;
-        private bool IsSubscribedForUpdates = false;
+        internal bool IsSubscribedForUpdates = false;
         public bool IsInCriticalFirmwareFailure = false;
-        private bool IsCrashed = false; // 坠毁终结标志：坠机后物理彻底停止，防止重访节点时"复活"
+        internal bool IsCrashed = false; // 坠毁终结标志：坠机后物理彻底停止，防止重访节点时"复活"
         public bool AircraftFallStartsImmediatley = true;
         public Action CrashAction;
         private Texture2D WorldMap = OS.currentInstance.content.Load<Texture2D>("DLC/Sprites/SmallWorldMap");
@@ -83,13 +83,15 @@ namespace KernelExtensions.Daemons
         private Texture2D Plane = OS.currentInstance.content.Load<Texture2D>("DLC/Sprites/Airplane");
         private Texture2D CircleOutline = OS.currentInstance.content.Load<Texture2D>("CircleOutlineLarge");
 
-        private Vector2 mapOrigin = new(0.4304f, 0.8339f);
-        private Vector2 mapDestV = new(0.6672f, 0.4264f);
+        /// <summary>运行时航线起点（归一化坐标）。由 ApplyMapPoints() 从 XML 应用；Debug Action 可临时改。</summary>
+        internal Vector2 mapOrigin = new(0.4304f, 0.8339f);
+        /// <summary>运行时航线终点（同上）。</summary>
+        internal Vector2 mapDestV = new(0.6672f, 0.4264f);
 
-        private float FlightProgress=3f;
+        internal float FlightProgress=3f;
         
         // ★新增：拯救标志，防止重复触发 OnSaved
-        private bool hasBeenRescued = false;
+        internal bool hasBeenRescued = false;
 
         public static Dictionary<Computer, FlightDaemon> CompToDaemons = new();
 
@@ -107,12 +109,21 @@ namespace KernelExtensions.Daemons
         [XMLStorage]
         public string CrashIPPrefix = "DCLOC:"; // 坠机后加在 IP 前的前缀（空 = 不修改 IP，节点仍可访问）
 
+        // ====== 航线图起终点======
+        // 归一化坐标（0~1，相对世界地图矩形），默认值即原硬编码位置。
+        // 换算与贴图尺寸无关（按矩形比例算），但换贴图后“起终点落在图哪里”就得重调，故开放可配。
+        [XMLStorage] public float MapOriginX = 0.4304f;
+        [XMLStorage] public float MapOriginY = 0.8339f;
+        [XMLStorage] public float MapDestX = 0.6672f;
+        [XMLStorage] public float MapDestY = 0.4264f;
+
         // ====== 文件系统初始化 ======
         public override void initFiles()
         {
             base.initFiles();
 
             H = FallDuration; // 将 XML 配置的坠落时长应用到运行时变量 H（此前未生效）
+            ApplyMapPoints();
 
             MainFolder = comp.files.root.searchForFolder("FlightSystems");
             if (MainFolder == null)
@@ -125,6 +136,22 @@ namespace KernelExtensions.Daemons
             MainFolder.files.Add(new FileEntry(Computer.generateBinaryString(200), "Scheduler.dll"));
             MainFolder.files.Add(new FileEntry(Computer.generateBinaryString(200), "EntertainmentServices.dll"));
             MainFolder.files.Add(new FileEntry(Computer.generateBinaryString(200), "AnnouncementsSys.dll"));
+
+            // 注册到查找表（与 loadInit 对称）。
+            //   此前只在 loadInit 注册，新游戏路径下 CompToDaemons 恒为空，
+            //   要靠 AttackAircraft 顺手补全 —— 于是“离开 daemon 查状态”类工具在新游戏里什么都看不到。
+            if (!CompToDaemons.ContainsKey(comp))
+                CompToDaemons[comp] = this;
+        }
+
+        /// <summary>
+        /// 把 XML 配置的航线起终点应用到运行时坐标，clamp 到 [0,1]。
+        /// 新游戏走 initFiles、读档走 loadInit，两处都要调（对齐 H = FallDuration 的做法）。
+        /// </summary>
+        private void ApplyMapPoints()
+        {
+            mapOrigin = new Vector2(MathHelper.Clamp(MapOriginX, 0f, 1f), MathHelper.Clamp(MapOriginY, 0f, 1f));
+            mapDestV = new Vector2(MathHelper.Clamp(MapDestX, 0f, 1f), MathHelper.Clamp(MapDestY, 0f, 1f));
         }
 
         public override void loadInit()
@@ -144,6 +171,7 @@ namespace KernelExtensions.Daemons
             ThemeColor = os.highlightColor;
             MainFolder = comp.files.root.searchForFolder("FlightSystems");
             H = FallDuration; // 读档后同步 H（XMLStorage 反序列化在 loadInit 前完成）
+            ApplyMapPoints(); // 同上：读档后同步航线起终点
             if (!CompToDaemons.ContainsKey(comp))
                 CompToDaemons[comp] = this;
 
@@ -301,6 +329,9 @@ namespace KernelExtensions.Daemons
         // ====== 固件重载 ======
         public void StartReloadFirmware()
         {
+            // 已在重载中则直接返回：此前无条件重置进度，导致连点「重载固件」会让进度从头再来
+            if (IsReloadingFirmware) return;
+
             StartUpdating();
             IsReloadingFirmware = true;
             firmwareReloadProgress = 0f;

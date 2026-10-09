@@ -23,7 +23,8 @@ namespace KernelExtensions.Patches
         [HarmonyPrefix]
         static void Prefix()
         {
-            if (!PhaseSwiftManager.UseDualTrack) return;
+            // 只在 PS 正在接管音频时伪造 State（理由同 PhaseSwiftVisualizationInjector）。
+            if (!PhaseSwiftManager.IsDrivingAudio) return;
             // 设 State = Playing 使 AudioVisualizer 调用 GetVisualizationData
             // 不保存旧值、不恢复——MusicManager 自己的操作会正确管理 State
             _stateField.SetValue(null, MediaState.Playing);

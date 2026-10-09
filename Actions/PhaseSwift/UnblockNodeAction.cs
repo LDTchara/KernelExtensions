@@ -11,7 +11,7 @@ namespace KernelExtensions.Actions.PhaseSwift
     /// 不填 SceneIndex 则使用当前场景。
     /// 用法：<UnblockNode NodeId="A" /> 或 <UnblockNode NodeId="A" SceneIndex="0" />
     /// </summary>
-    public class UnblockNodeAction : DelayablePathfinderAction
+    public class UnblockNodeAction : KEAction
     {
         [XMLStorage] public string NodeId;
         [XMLStorage] public int SceneIndex = -1;

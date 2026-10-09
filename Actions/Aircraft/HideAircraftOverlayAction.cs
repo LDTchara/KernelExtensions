@@ -9,7 +9,7 @@ namespace KernelExtensions.Actions.Aircraft
     /// <summary>
     /// 关闭全局高度计覆盖层。
     /// </summary>
-    public class HideAircraftOverlayAction : DelayablePathfinderAction
+    public class HideAircraftOverlayAction : KEAction
     {
         public override void Trigger(OS os)
         {

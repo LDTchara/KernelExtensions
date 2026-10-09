@@ -15,7 +15,7 @@ namespace KernelExtensions.Actions.PhaseSwift
     /// 参数：
     ///   Duration  (float, 可选) 淡出时长（秒），默认 1
     /// </summary>
-    public class PhaseSwiftFadeOutAction : DelayablePathfinderAction
+    public class PhaseSwiftFadeOutAction : KEAction
     {
         [XMLStorage] public float Duration = 1f;
 

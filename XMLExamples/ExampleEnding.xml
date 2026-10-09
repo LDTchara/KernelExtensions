@@ -1,0 +1,88 @@
+<!-- =========================================================================
+  ExampleEnding.xml — 自定义结局配置示例（StartEnding 的 File 属性引用）
+  =========================================================================
+  用法（示例资源需先放入你的扩展）：
+    · 本文件位于仓库 XMLExamples/ 仅为示例展示，不会被游戏直接加载
+    · 使用时把本文件连同 Speech.txt / CreditsData.txt / EndingSpeech.wav
+      一起复制到扩展根（或任意子目录并对应调整下方路径），然后在扩展的
+      action 文件里引用（File 相对「扩展根」）：
+        <StartEnding File="ExampleEnding.xml" />
+
+  路径规则（重要）：
+    · File 与下方所有资源路径均为「相对扩展根目录」的相对路径，可放在任意
+      子目录，不强制 Docs/（本例与示例资源同放扩展根）
+    · 不写某子元素 = 用默认值；写了 NONE/空 = 显式禁用/用默认
+    · 语音支持 .wav（SoundEffect）与 .ogg（NVorbis 解码，体积约 1/10，波形自绘）
+
+  SpeechTime 语义：
+    负数 / 无效值 / 不写 —— 有语音跟随音频时长；无语音静默 30s 兜底
+     0        —— 跳过演讲阶段，直接进入报幕
+     N (>0)   —— 演讲上限 N 秒（音频先播完则提前进报幕，N 先到则截断）
+
+  资源文件格式：
+    SpeechFile     — 语音（wav/ogg，可选）
+    SpeechTextFile — 演讲文本：标记 ||Px.x||=停顿x.x秒 / ||Sx.x||=逐字变速 / ||SR||=复位；
+                     简写 #=停顿1s、%=停顿0.5s（标记显示时被过滤）
+    CreditsFile    — 报幕名单：^ 正文字体灰色（×0.6）/ % 大标题行（titlefont）/ $ 小号灰字（smallfont）（每行一条）
+
+  报幕节奏（可选，不写 = 默认值）：
+    TitleFreezeTime    — 标题停留秒数（默认 10，此期间不滚动）
+    EndingPauseTime    — 结尾提示行到达屏幕中央后的停顿（默认 5）
+    CreditsFadeOutTime — 报幕末尾渐弱时长（默认 5；0 = 不淡出；负数/无效 = 用默认）
+                         停顿的前 N 秒渐弱到静音，其余时间静音（停一拍），随后才切歌
+                         前提：配置了 AfterMusic 且写了 EndingText（缺一不生效）
+                         想延长静音段：把 EndingPauseTime 调到比它大（如 8 与 5 → 5s 渐弱 + 3s 静音）
+                         此项不影响结局总时长（复用 EndingPauseTime 的停顿窗口）
+    ScrollSpeed        — 滚动满速 px/s（默认 65）
+    ScrollAccelTime    — 加速斜坡秒数（默认 8；0 = 立即满速）
+    参考：满速下每行约 +0.62s（普通行）/ +2.77s（% 标题行）；无名单时约 33s（1080p）
+  ========================================================================= -->
+
+<EndingConfig>
+    <!-- 报幕大标题（可选，默认 "Hacknet"） -->
+    <Title>THE END</Title>
+
+    <!-- 报幕末尾提示行（可选，默认 "Thanks For Playing"） -->
+    <EndingText>Thanks for playing</EndingText>
+
+    <!-- 报幕阶段音乐（可选，空 = 原版 Music\Bit(Ending)） -->
+    <OnCreditMusic></OnCreditMusic>
+
+    <!-- 回游戏后音乐（可选）
+         空 / NONE = 不切换音乐（保持报幕曲继续播放）
+         想用原版结局曲请显式写 Music/Bit(Ending)
+         与 OnCreditMusic 不同 → 平常走 transitionToSong（报幕曲淡出、新曲淡入）；
+                                若报幕末尾已做过两段式淡出，则改为立刻切换
+                                （避免“静音后又恢复音量再淡出”的割裂感）
+         与 OnCreditMusic 相同 → 从头重播（同名时 transitionToSong 会跳过，故改走 playSongImmediatley）
+         另：非空时才会启用报幕末尾的两段式淡出，见下方 CreditsFadeOutTime -->
+    <AfterMusic></AfterMusic>
+
+    <!-- 报幕完成后执行的动作文件（可选，NONE/空 = 不执行） -->
+    <AfterAction file="Actions/AfterCredits.xml" />
+
+    <!-- 演讲计时（可选，默认 -1：见上方 SpeechTime 语义） -->
+    <SpeechTime>-1</SpeechTime>
+
+    <!-- 语音文件（可选，wav/ogg；相对扩展根任意子目录，空 = 默认 Docs/EndingSpeech.wav） -->
+    <SpeechFile>EndingSpeech.wav</SpeechFile>
+
+    <!-- 演讲文本（可选，空 = 默认 Docs/Speech.txt） -->
+    <SpeechTextFile>Speech.txt</SpeechTextFile>
+
+    <!-- 报幕名单（可选，空 = 默认 Docs/CreditsData.txt） -->
+    <CreditsFile>CreditsData.txt</CreditsFile>
+
+    <!-- 报幕节奏（可选，不写 = 默认值；除 CreditsFadeOutTime 外均影响结局总时长） -->
+    <TitleFreezeTime>10</TitleFreezeTime>
+    <EndingPauseTime>5</EndingPauseTime>
+
+    <!-- 报幕末尾渐弱（可选，默认 5；0 = 不淡出；负数/无效 = 用默认）
+         生效前提：① 配置了 AfterMusic（非空/NONE）② 写了 EndingText
+         行为：结尾提示行到达屏幕中央后，停顿的前 N 秒把音乐渐弱到静音，
+               其余时间保持静音（= 停一拍），随后才切歌（新曲经 transitionToSong 淡入）
+         想延长静音段：把上面的 EndingPauseTime 调大（如 8 与 5 → 5s 渐弱 + 3s 静音） -->
+    <CreditsFadeOutTime>5</CreditsFadeOutTime>
+    <ScrollSpeed>65</ScrollSpeed>
+    <ScrollAccelTime>8</ScrollAccelTime>
+</EndingConfig>

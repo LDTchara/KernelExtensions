@@ -52,8 +52,13 @@ namespace KernelExtensions.Storage
         {
             try
             {
-                string fullPath = Path.IsPathRooted(path) ? path
-                    : Path.Combine(ExtensionLoader.ActiveExtensionInfo?.FolderPath ?? ".", path);
+                // 只接受扩展目录内的相对路径（绝对路径同样视为越界，以免内容引用到扩展之外）
+                string fullPath = KEPath.ResolveInsideExtension(path);
+                if (fullPath == null)
+                {
+                    KELog.Error($"[SetNodeIcon] path escapes the extension folder: {path}");
+                    return null;
+                }
                 if (!File.Exists(fullPath)) { KELog.Error($"[SetNodeIcon] file not found: {fullPath}"); return null; }
                 var gd = GuiData.spriteBatch?.GraphicsDevice ?? Game1.getSingleton()?.GraphicsDevice;
                 if (gd == null) { KELog.Error("[SetNodeIcon] GraphicsDevice unavailable"); return null; }

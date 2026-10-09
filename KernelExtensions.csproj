@@ -18,7 +18,17 @@
     <Version>0.7.0</Version>
     <FileVersion>0.7.0</FileVersion>
     <AssemblyVersion>0.7.0</AssemblyVersion>
+    <!-- 调试符号格式：SDK 风格项目 + net472 默认生成 **Portable PDB**，而 .NET Framework 的
+         StackTrace 读不了它 → 异常堆栈只有 IL 偏移、没有源文件行号（排查成本很高）。
+         显式用 full（Windows PDB）；仅 Debug 需要，Release 保持默认以免 PDB 随分发。 -->
+    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="site\**" />
+    <EmbeddedResource Remove="site\**" />
+    <None Remove="site\**" />
+  </ItemGroup>
     
   <ItemGroup>
     <Reference Include="0Harmony">
@@ -73,7 +83,14 @@
   <ItemGroup>
     <!-- 标题横幅图标（dev1 合入）：raw 内嵌，运行时 GetManifestResourceStream 提取到扩展 Images/ -->
     <EmbeddedResource Include="Img\Info.png" />
-    <EmbeddedResource Include="Img\InfoBG.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 许可证内嵌（9.62）：随 dll 分发，游戏内由 kelicense 指令输出。
+         LogicalName 显式命名，不依赖 RootNamespace 推断 -->
+    <EmbeddedResource Include="LICENSE">
+      <LogicalName>KernelExtensions.LICENSE.txt</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

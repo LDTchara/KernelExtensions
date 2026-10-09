@@ -11,7 +11,7 @@ namespace KernelExtensions.Actions.Aircraft
     /// <summary>
     /// 激活指定计算机（通过 idName）的全局高度计覆盖层。
     /// </summary>
-    public class ShowAircraftOverlayAction : DelayablePathfinderAction
+    public class ShowAircraftOverlayAction : KEAction
     {
         [XMLStorage]
         public string NodeID;

@@ -1,55 +1,51 @@
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Extensions;
+using KernelExtensions.Configs;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
-using System.Reflection;
+using NVorbis;
+using System.Text;
 
 namespace KernelExtensions.Modules;
 
 /// <summary>
 /// 自定义结局 Module —— 继承 EndingSequenceModule，由 OS 原生驱动 Update/Draw。
 ///
-/// 直接设置 os.endingSequence = new CustomEndingModule(os.fullscreen, os) 即可生效。
+/// 直接设置 os.endingSequence = new CustomEndingModule(os.fullscreen, os, config) 即可生效。
 /// OS 会自动处理：
 ///   - endingSequence.Update(num)     每帧调用
 ///   - PostProcessor + SpriteBatch + drawScanlines 的包裹
 ///   无需任何 Event 或 HarmonyPatch。
 ///
+/// 配置见 Configs/EndingConfig（独立 &lt;Ending&gt; XML 或旧属性用法）。
 /// 资源文件位于扩展根目录（路径可配，默认 Docs/）：
-///   - EndingSpeech.wav    语音文件（可选）
-///   - Speech.txt          演讲文本（#=1s, %=0.5s）
-///   - CreditsData.txt     报幕名单（%/^/$ 前缀）
+///   - SpeechFile    语音（.wav 走 SoundEffect；.ogg 走 NVorbis 解码 → PCM SoundEffect，
+///                    波形由解码采样自绘，不再依赖原版 WaveformRenderer 反射）
+///   - Speech.txt    演讲文本（#=1s, %=0.5s）
+///   - CreditsData.txt 报幕名单（%/^/$ 前缀）
+///
+/// SpeechTime 语义（EndingConfig.SpeechTime）：
+///   -1/缺省 —— 有语音跟随音频时长；无语音静默 30s 兜底（Warn）
+///    0      —— 跳过演讲阶段，加载后直接进报幕
+///    &gt;0    —— 演讲上限 N 秒：音频先播完则提前进报幕，N 先到则截断
 /// </summary>
 public class CustomEndingModule : EndingSequenceModule
 {
     // ========================================================================
-    //  公开标志
+    //  配置与展示字段（由 EndingConfig 注入；保留 public 供动态覆盖）
     // ========================================================================
 
-    /// <summary>表示当前正在播放自定义扩展结局。</summary>
-    public static bool IsCustomExtensionEnding = false;
-    public string Titletext;
-    public string endingText = "";
+    public string Titletext = "Hacknet";
+    public string endingText = "Thanks For Playing";
     public string onCreditMusic = "";   // 报幕阶段音乐，空=原版 Music\Bit(Ending)
-    public string afterMusic = "";      // 回游戏后音乐，空=原版 Music\Bit(Ending)
-    // ========================================================================
-    //  通用状态
-    // ========================================================================
-
-    /// <summary>资源文件路径（相对扩展根，可配；默认 Docs/）。</summary>
-    public string SpeechFile = "Docs/EndingSpeech.wav";
-    public string TextFile = "Docs/Speech.txt";
-    public string CreditsFile = "Docs/CreditsData.txt";
-
-    private bool resourcesLoaded = false;
-    private MethodInfo drawScanlinesMethod;
+    public string afterMusic = "";      // 回游戏后音乐；空/NONE = **不切换**（保持报幕曲继续），想用原版请显式写 Music/Bit(Ending)
 
     // ========================================================================
-    //  结束回调 — 报幕完成后触发下一个 Action
+    //  结束回调 — 报幕完成后触发下一个 Action（实例字段，Action 注入）
     // ========================================================================
 
     internal Action OnCompleteCallback;
@@ -61,19 +57,25 @@ public class CustomEndingModule : EndingSequenceModule
     private new const float SpeechTextHashDelay = 1.0f;
     private new const float SpeechTextPercDelay = 0.5f;
     private new const float SpeechTextCharDelay = 0.05f;
-    private float speechDurationFallback = 30f;
+
+    /// <summary>演讲计时模式（由 SpeechTime 决定）。</summary>
+    private enum SpeechTiming { FollowAudio, FixedLimit, SkipSpeech }
+    private SpeechTiming timingMode = SpeechTiming.FollowAudio;
 
     private new SoundEffect speech;
     private SoundEffectInstance speechInstance;
-    private bool noSpeechFile = false;
+    private bool hasVoice = false;
+    private bool noSpeechWarned = false;
+    private float speechLimit = 30f;    // 演讲阶段时长上限（秒）；Skip 模式为 0
+    private float voiceDuration = 0f;   // 语音时长（秒）
+
     private string bitSpeechText;
     private int speechTextIndex = 0;
     private float speechTextTimer = 0f;
 
-    // 波形可视化（反射）
-    private new object waveRender;
-    private Type waveRenderType;
-    private MethodInfo renderWaveformMethod;
+    // ---- 波形可视化（自实现，wav/ogg 统一）----
+    private float[] waveSamples;        // 单声道归一化采样（-1~1）
+    private int waveSampleRate = 44100;
 
     // ========================================================================
     //  报幕阶段
@@ -83,34 +85,68 @@ public class CustomEndingModule : EndingSequenceModule
     private new float creditsScroll;
     private float hacknetTitleFreezeTime = 10f;
     private new float creditsPixelsScrollPerSecond = 65f;
+    private float scrollAccelTime = 8f;       // 加速斜坡时长（由 EndingConfig.ScrollAccelTime 注入；0 = 立即满速）
     private bool endingTextReachedCenter = false;
     private float endingPauseTimer = 0f;
-    private const float EndingPauseDuration = 5f;
+    private float endingPauseDuration = 5f;
+        /// <summary>报幕末尾渐弱时长的默认值（CreditsFadeOutTime 负数/无效时回退到此值）</summary>
+        private const float DefaultCreditsFadeOutTime = 5f;
+        private float creditsFadeOutTime = DefaultCreditsFadeOutTime;  // 0 = 不淡出
+        private float originalVolume = 1f;        // 渐弱前的全局音乐音量（切歌前恢复）
+        private bool creditsFading = false;       // 本轮报幕音乐是否处于渐弱中
+
+        // 跨实例：记录渐弱前的音量与「渐弱后未走到恢复路径」的脏标记。
+        // 若结局在报幕中途被中断（退出/切场景），全局音量会停在 0，
+        // 下一次结局的报幕音乐就会以 0 音量播放（听感：报幕阶段没有音乐）。
+        private static float _preFadeVolume = -1f;
+        private static bool _fadeLeftVolumeDirty = false;
     private const float EndingTextBottomOffset = 350f;
+
+    // ========================================================================
+    //  通用状态（与基类 private 同名互不干扰，去 new）
+    // ========================================================================
+
+    private new float elapsedTime = 0f;
+    private bool isInCredits = false;
+    private bool resourcesLoaded = false;
 
     // ========================================================================
     //  ██████  构造函数  ██████
     // ========================================================================
 
-    public CustomEndingModule(Rectangle location, OS operatingSystem)
+    public CustomEndingModule(Rectangle location, OS operatingSystem, EndingConfig config)
         : base(location, operatingSystem)
     {
-        // 基类 EndingSequenceModule(location, os) 已经:
-        //   1. 调用 Module(location, os) → 设置 spriteBatch、os、bounds
-        //   2. 加载 spinUpEffect、traceDownEffect、BitSpeechText（原版资源）
-        // 我们自己的资源在首次 Update 时懒加载
+        // 基类 EndingSequenceModule(location, os) 已设置 spriteBatch/os/bounds 并加载原版音效/文本
+        Titletext = config.Title;
+        endingText = config.EndingText;
+        onCreditMusic = config.OnCreditMusic;
+        afterMusic = config.AfterMusic;
+        SpeechFile = config.SpeechFile;
+        SpeechTextFile = config.SpeechTextFile;
+        CreditsFile = config.CreditsFile;
+        ConfigureSpeechTiming(config.SpeechTime);
+
+        // 报幕节奏（可选配置；不写时与旧硬编码一致）
+        hacknetTitleFreezeTime = config.TitleFreezeTime;
+        endingPauseDuration = config.EndingPauseTime;
+            creditsFadeOutTime = config.CreditsFadeOutTime;
+        creditsPixelsScrollPerSecond = config.ScrollSpeed;
+        scrollAccelTime = config.ScrollAccelTime;
     }
+
+    /// <summary>演讲计时配置（路径可配，供 StartEnding 阶段前决定跳/跟/限）。</summary>
+    public string SpeechFile = "Docs/EndingSpeech.wav";
+    public string SpeechTextFile = "Docs/Speech.txt";
+    public string CreditsFile = "Docs/CreditsData.txt";
 
     // ========================================================================
     //  ██████  入口 — StartEnding  ██████
     // ========================================================================
 
     /// <summary>触发自定义结局。调用后 OS 原生驱动 Update/Draw。</summary>
-    public void StartEnding(float speechDurationFallback = 30f)
+    public void StartEnding()
     {
-        this.speechDurationFallback = speechDurationFallback;
-
-        IsCustomExtensionEnding = true;
         IsActive = true;
         isInCredits = false;
         elapsedTime = 0f;
@@ -120,15 +156,31 @@ public class CustomEndingModule : EndingSequenceModule
         endingTextReachedCenter = false;
         endingPauseTimer = 0f;
         resourcesLoaded = false;
-        noSpeechFile = false;
 
-        InitWaveformRendererReflection();
-        InitDrawScanlinesReflection();
+        // 自愈：若上一次结局在渐弱中途被中断，全局音乐音量会停在 0，
+        // 本次报幕音乐就会以 0 音量播放（表现为「报幕阶段没有音乐」）
+        if (_fadeLeftVolumeDirty && _preFadeVolume > 0f && MusicManager.getVolume() <= 0.0001f)
+        {
+            try { MusicManager.setVolume(_preFadeVolume); } catch { }
+            KELog.Warn($"[CustomEndingModule] music volume was left at 0 by an interrupted fade — restored to {_preFadeVolume:F2}.");
+            _fadeLeftVolumeDirty = false;
+        }
 
         // ---- 关键：设 canRunContent=false 让 OS 走入 else 分支调用 Update/Draw ----
         os.canRunContent = false;
 
-        KELog.Info($"[CustomEndingModule] Started. DurationFallback={speechDurationFallback}s canRunContent=false");
+        KELog.Info($"[CustomEndingModule] Started. timing={timingMode} canRunContent=false");
+    }
+
+    private void ConfigureSpeechTiming(float speechTime)
+    {
+        // 负数 / 无效值（NaN、Infinity）/ 缺省 → 跟随音频；0 → 跳过演讲；正数 → 上限
+        if (float.IsNaN(speechTime) || float.IsInfinity(speechTime) || speechTime < 0f)
+            timingMode = SpeechTiming.FollowAudio;
+        else if (speechTime == 0f) timingMode = SpeechTiming.SkipSpeech;
+        else timingMode = SpeechTiming.FixedLimit;
+        if (timingMode == SpeechTiming.FixedLimit) speechLimit = speechTime;
+        else speechLimit = 30f; // FollowAudio 无语音时的兜底（加载后可能被 Warn 覆盖）
     }
 
     // ========================================================================
@@ -161,7 +213,7 @@ public class CustomEndingModule : EndingSequenceModule
     }
 
     // ========================================================================
-    // ██  资源加载  ██
+    // ██  资源加载（文本/报幕/语音——wav 与 ogg 分流）██
     // ========================================================================
 
     private void LoadResources()
@@ -169,97 +221,149 @@ public class CustomEndingModule : EndingSequenceModule
         string ext = ExtensionLoader.ActiveExtensionInfo.GetFullFolderPath();
 
         // ---- 演讲文本 ----
-        string speechPath = Path.Combine(ext, TextFile);
-        if (File.Exists(speechPath))
+        string speechPath = KEPath.ResolveInside(SpeechTextFile, ext);
+        if (speechPath != null && File.Exists(speechPath))
         {
             bitSpeechText = File.ReadAllText(speechPath);
             KELog.Info($"[CustomEndingModule] Speech.txt loaded ({bitSpeechText.Length} chars).");
         }
-        else { bitSpeechText = ""; }
+        else { bitSpeechText = ""; KELog.Warn($"[CustomEndingModule] Speech text not found: {speechPath}"); }
 
         // ---- 报幕数据 ----
-        string creditsPath = Path.Combine(ext, CreditsFile);
-        if (File.Exists(creditsPath))
+        string creditsPath = KEPath.ResolveInside(CreditsFile, ext);
+        if (creditsPath != null && File.Exists(creditsPath))
         {
             creditsData = File.ReadAllText(creditsPath)
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             KELog.Info($"[CustomEndingModule] CreditsData.txt loaded ({creditsData.Length} lines).");
         }
-        else { creditsData = Array.Empty<string>(); }
+        else { creditsData = Array.Empty<string>(); KELog.Warn($"[CustomEndingModule] Credits data not found: {creditsPath} — credits stage will be empty."); }
 
-        // ---- 语音 WAV ----
-        string wavPath = Path.Combine(ext, SpeechFile);
-        if (File.Exists(wavPath))
+        // ---- 语音（.wav / .ogg 分流）----
+        string voicePath = KEPath.ResolveInside(SpeechFile, ext);
+        if (voicePath != null && File.Exists(voicePath))
         {
             try
             {
-                using (var fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read))
-                    speech = SoundEffect.FromStream(fs);
-                speechInstance = speech.CreateInstance();
-                speechInstance.IsLooped = false;
-                InitWaveformRenderer(wavPath);
-                KELog.Info($"[CustomEndingModule] EndingSpeech.wav loaded ({speech.Duration.TotalSeconds:F2}s).");
+                bool isOgg = voicePath.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase);
+                if (isOgg) LoadVoiceOgg(voicePath);
+                else LoadVoiceWav(voicePath);
             }
             catch (Exception ex)
             {
-                KELog.Warn($"[CustomEndingModule] Failed to load EndingSpeech.wav: {ex.Message}");
-                noSpeechFile = true;
+                KELog.Warn($"[CustomEndingModule] Failed to load voice ({SpeechFile}): {ex.Message}");
+                hasVoice = false;
+                waveSamples = null;
             }
         }
         else
         {
-            KELog.Info($"[CustomEndingModule] EndingSpeech.wav NOT found — silent ({speechDurationFallback}s).");
-            noSpeechFile = true;
+            KELog.Warn($"[CustomEndingModule] Voice not found: {SpeechFile} — speech stage will run silent.");
+        }
+
+        // ---- 演讲计时终值 ----
+        if (hasVoice)
+        {
+            voiceDuration = (float)(speech?.Duration.TotalSeconds ?? 0.0);
+            if (timingMode == SpeechTiming.FollowAudio) speechLimit = voiceDuration;
+            else if (timingMode == SpeechTiming.FixedLimit) speechLimit = Math.Min(speechLimit, voiceDuration);
+            // SkipSpeech：speechLimit 保持 0
+            KELog.Info($"[CustomEndingModule] voice loaded ({voiceDuration:F2}s, timing={timingMode}, limit={speechLimit:F2}s).");
+        }
+        else
+        {
+            if (timingMode == SpeechTiming.FollowAudio && !noSpeechWarned)
+            {
+                noSpeechWarned = true;
+                KELog.Warn($"[CustomEndingModule] no voice & SpeechTime<0 — falling back to 30s silent speech.");
+            }
+            // Skip 模式 limit=0；FixedLimit 用设定值；FollowAudio 用 30s 兜底
+            if (timingMode == SpeechTiming.SkipSpeech) speechLimit = 0f;
+            else if (timingMode == SpeechTiming.FollowAudio) speechLimit = 30f;
         }
 
         try { MusicManager.stop(); } catch { }
     }
 
-    // ========================================================================
-    // ██  反射辅助  ██
-    // ========================================================================
-
-    private void InitDrawScanlinesReflection()
+    /// <summary>wav：SoundEffect.FromStream + 自解析采样（16-bit PCM）供波形。</summary>
+    private void LoadVoiceWav(string wavPath)
     {
-        try
+        using (var fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read))
+            speech = SoundEffect.FromStream(fs);
+        speechInstance = speech.CreateInstance();
+        speechInstance.IsLooped = false;
+        waveSamples = ParseWavSamples(wavPath);
+        hasVoice = true;
+    }
+
+    /// <summary>ogg：NVorbis 解码 → PCM SoundEffect（public 构造）+ 采样供波形。</summary>
+    private void LoadVoiceOgg(string oggPath)
+    {
+        using var reader = new VorbisReader(oggPath);
+        int channels = reader.Channels;
+        int sampleRate = reader.SampleRate;
+        int total = (int)reader.TotalSamples; // 每声道采样数
+        if (total <= 0) throw new InvalidDataException("empty ogg");
+
+        var interleaved = new float[total * channels];
+        int read = 0;
+        while (read < interleaved.Length)
         {
-            drawScanlinesMethod = typeof(OS).GetMethod("drawScanlines",
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            int n = reader.ReadSamples(interleaved, read, interleaved.Length - read);
+            if (n <= 0) break;
+            read += n;
         }
-        catch { }
-    }
+        if (read <= 0) throw new InvalidDataException("no samples decoded");
 
-    private void InvokeDrawScanlines(OS osInstance)
-    {
-        if (drawScanlinesMethod != null)
-            try { drawScanlinesMethod.Invoke(osInstance, null); } catch { }
-    }
-
-    private void InitWaveformRendererReflection()
-    {
-        try
+        // 交错 float → mono 采样 + 16-bit PCM（交错）
+        var mono = new float[total];
+        var pcm = new byte[total * channels * 2];
+        int p = 0;
+        for (int i = 0; i < total; i++)
         {
-            var asm = typeof(OS).Assembly;
-            waveRenderType = asm.GetType("Hacknet.UIUtils.WaveformRenderer");
-            if (waveRenderType != null)
-                renderWaveformMethod = waveRenderType.GetMethod("RenderWaveform",
-                    new[] { typeof(double), typeof(double), typeof(SpriteBatch), typeof(Rectangle) });
+            float l = interleaved[i * channels];
+            float r = channels > 1 ? interleaved[i * channels + 1] : l;
+            mono[i] = (l + r) * 0.5f;
+            for (int c = 0; c < channels; c++)
+            {
+                short s = (short)Math.Max(-32768, Math.Min(32767, (int)(interleaved[i * channels + c] * 32767f)));
+                pcm[p++] = (byte)(s & 0xFF);
+                pcm[p++] = (byte)((s >> 8) & 0xFF);
+            }
         }
-        catch (Exception ex) { KELog.Debug($"[CustomEndingModule] WaveformRenderer refl: {ex.Message}"); }
+
+        speech = new SoundEffect(pcm, sampleRate, (AudioChannels)channels);
+        speechInstance = speech.CreateInstance();
+        speechInstance.IsLooped = false;
+        waveSamples = mono;
+        waveSampleRate = sampleRate;
+        hasVoice = true;
     }
 
-    private void InitWaveformRenderer(string wavPath)
+    /// <summary>解析 16-bit PCM wav → 单声道归一化采样（自实现，替代 internal AudioUtils）。</summary>
+    private static float[] ParseWavSamples(string path)
     {
-        if (waveRenderType == null) return;
-        try { waveRender = Activator.CreateInstance(waveRenderType, new object[] { wavPath }); }
-        catch (Exception ex) { KELog.Debug($"[CustomEndingModule] WaveformRenderer ctor: {ex.Message}"); }
-    }
-
-    private void RenderWaveform(double time, double totalTime, SpriteBatch sb, Rectangle bounds)
-    {
-        if (waveRender == null || renderWaveformMethod == null) return;
-        try { renderWaveformMethod.Invoke(waveRender, new object[] { time, totalTime, sb, bounds }); }
-        catch { }
+        byte[] data = File.ReadAllBytes(path);
+        // 跳 RIFF chunk 找 "data"（AudioUtils.openWav 同款遍历）
+        int i = 12;
+        while (i + 8 <= data.Length &&
+               !(data[i] == 100 && data[i + 1] == 97 && data[i + 2] == 116 && data[i + 3] == 97)) // "data"
+        {
+            int chunkSize = data[i + 4] | (data[i + 5] << 8) | (data[i + 6] << 16) | (data[i + 7] << 24);
+            i += 8 + chunkSize;
+        }
+        int channels = data[22]; // 字节 22 = 声道数（16-bit PCM 假设）
+        i += 8; // 跳过 "data" + 大小
+        int samplesPerChannel = (data.Length - i) / 2 / Math.Max(1, channels);
+        var mono = new float[samplesPerChannel];
+        int idx = 0;
+        while (i + 1 < data.Length && idx < samplesPerChannel)
+        {
+            short s = (short)(data[i] | (data[i + 1] << 8));
+            mono[idx++] = s / 32768f;
+            i += 2 * channels; // 取每帧左声道（或单声道）
+        }
+        return mono;
     }
 
     // ========================================================================
@@ -268,28 +372,68 @@ public class CustomEndingModule : EndingSequenceModule
 
     private void UpdateSpeech(float t)
     {
-        if (noSpeechFile)
+        // SkipSpeech（SpeechTime=0）：加载完成即进报幕
+        if (timingMode == SpeechTiming.SkipSpeech)
         {
-            elapsedTime += t;
-            if (elapsedTime > speechDurationFallback) { RollCredits(); return; }
-            AdvanceSpeechText(t);
+            RollCredits();
+            return;
         }
-        else if (speechInstance != null)
+
+        if (speechInstance != null && !hasVoiceStarted)
         {
-            if (speechInstance.State == SoundState.Playing)
-            {
-                elapsedTime += t;
-                if (elapsedTime > (float)speech.Duration.TotalSeconds) { RollCredits(); return; }
-                AdvanceSpeechText(t);
-            }
-            else { speechInstance.Play(); }
+            speechInstance.Play();
+            hasVoiceStarted = true;
         }
+
+        elapsedTime += t;
+
+        // 完成判定：达到 limit（音频自然播完：语音 Stopped 且已开始；限时：elapsed >= limit）
+        bool voiceEnded = hasVoice && hasVoiceStarted && speechInstance != null
+                          && speechInstance.State == SoundState.Stopped;
+        if (voiceEnded || elapsedTime >= speechLimit)
+        {
+            if (speechInstance != null) try { speechInstance.Stop(); } catch { }
+            RollCredits();
+            return;
+        }
+
+        AdvanceSpeechText(t);
     }
+
+    private bool hasVoiceStarted = false;
+
+    private float currentCharDelay = SpeechTextCharDelay;   // 可被 ||Sx.x|| 修改，||SR|| 复位
 
     private void AdvanceSpeechText(float t)
     {
         if (speechTextIndex >= bitSpeechText.Length) return;
         speechTextTimer += t;
+
+        // ---- ||...|| 指令标记：P=停顿任意秒 / S=逐字速度 / SR=恢复默认 ----
+        // 语法与假恢复模块的引导文本一致（||P0.5|| 等），解决演讲阶段只有 #(1s)/%(0.5s) 两档的问题
+        if (IsMarkerStart(speechTextIndex, out int markerEnd))
+        {
+            string cmd = bitSpeechText.Substring(speechTextIndex + 2, markerEnd - speechTextIndex - 2);
+            if (cmd == "SR")
+            {
+                currentCharDelay = SpeechTextCharDelay;
+                speechTextIndex = markerEnd + 2;
+                return;
+            }
+            if (cmd.Length > 1 && cmd[0] == 'P' && TryParseInvariant(cmd.Substring(1), out float pauseSec) && pauseSec >= 0f)
+            {
+                if (speechTextTimer >= pauseSec) { speechTextTimer -= pauseSec; speechTextIndex = markerEnd + 2; }
+                return;
+            }
+            if (cmd.Length > 1 && cmd[0] == 'S' && TryParseInvariant(cmd.Substring(1), out float charDelay) && charDelay > 0f)
+            {
+                currentCharDelay = charDelay;
+                speechTextIndex = markerEnd + 2;
+                return;
+            }
+            // 未识别标记：按普通字符处理（不吞掉，避免误伤正文中的 "||"）
+        }
+
         char c = bitSpeechText[speechTextIndex];
         if (c == '#')
         {
@@ -303,26 +447,64 @@ public class CustomEndingModule : EndingSequenceModule
         }
         else
         {
-            if (speechTextTimer >= SpeechTextCharDelay)
-            { speechTextTimer -= SpeechTextCharDelay; speechTextIndex++; }
+            if (speechTextTimer >= currentCharDelay)
+            { speechTextTimer -= currentCharDelay; speechTextIndex++; }
         }
     }
+
+    /// <summary>
+    /// 显示前剥离行内标记：<c>||Px.x||</c> / <c>||Sx.x||</c> / <c>||SR||</c> 整体移除，
+    /// <c>#</c>（1s）、<c>%</c>（0.5s）单字符停顿移除。
+    /// </summary>
+    private static string StripSpeechMarkers(string s)
+    {
+        var sb = new StringBuilder(s.Length);
+        int i = 0;
+        while (i < s.Length)
+        {
+            if (i + 1 < s.Length && s[i] == '|' && s[i + 1] == '|')
+            {
+                int e = s.IndexOf("||", i + 2, StringComparison.Ordinal);
+                if (e > i + 2) { i = e + 2; continue; }
+            }
+            char c = s[i];
+            if (c != '#' && c != '%') sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>当前位置是否为一个完整的 ||...|| 标记（返回结束处索引）。</summary>
+    private bool IsMarkerStart(int i, out int endIdx)
+    {
+        endIdx = -1;
+        if (i + 1 >= bitSpeechText.Length) return false;
+        if (bitSpeechText[i] != '|' || bitSpeechText[i + 1] != '|') return false;
+        int e = bitSpeechText.IndexOf("||", i + 2, StringComparison.Ordinal);
+        if (e <= i + 2) return false;
+        endIdx = e;
+        return true;
+    }
+
+    private static bool TryParseInvariant(string s, out float value)
+        => float.TryParse(s, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out value);
 
     private void DrawSpeech()
     {
         int w = os.fullscreen.Width;
         int h = os.fullscreen.Height;
 
-        if (!noSpeechFile && speech != null && waveRender != null)
+        // 自绘波形（原版 WaveformRenderer 语义，wav/ogg 统一）
+        if (hasVoice && waveSamples != null && waveSamples.Length > 0)
         {
             var bounds = new Rectangle(0, os.fullscreen.Height / 2 - h / 2, w, h);
-            RenderWaveform(elapsedTime, speech.Duration.TotalSeconds, spriteBatch, bounds);
+            RenderWaveform(elapsedTime, Math.Max(0.001, voiceDuration), spriteBatch, bounds);
         }
 
         if (!string.IsNullOrEmpty(bitSpeechText) && speechTextIndex > 0)
         {
-            string[] lines = bitSpeechText.Substring(0, speechTextIndex)
-                .Replace("#", "").Replace("%", "")
+            string[] lines = StripSpeechMarkers(bitSpeechText.Substring(0, speechTextIndex))
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             var pos = new Vector2(os.fullscreen.X + 150f,
                 os.fullscreen.Y + os.fullscreen.Height - 100f);
@@ -340,6 +522,28 @@ public class CustomEndingModule : EndingSequenceModule
         }
     }
 
+    /// <summary>自绘波形（语义同原版 WaveformRenderer：当前时刻 1/100 秒采样段逐采样画竖条）。</summary>
+    private void RenderWaveform(double time, double totalTime, SpriteBatch sb, Rectangle bounds)
+    {
+        if (waveSamples == null || waveSamples.Length == 0 || totalTime <= 0) return;
+        double t = time % totalTime;
+        int samplesPerSecond = Math.Max(1, (int)(waveSamples.Length / totalTime));
+        int blockSamples = Math.Max(1, samplesPerSecond / 100);
+        int start = (int)(t * samplesPerSecond);
+        int end = Math.Min(waveSamples.Length - 1, start + blockSamples);
+        int count = Math.Max(1, end - start);
+        float step = (float)bounds.Width / count;
+        for (int i = 0; i < count; i++)
+        {
+            float v = waveSamples[Math.Min(waveSamples.Length - 1, start + i)];
+            if (v == 0f) continue;
+            float h = v * bounds.Height;
+            var rect = new Rectangle((int)(bounds.X + i * step),
+                bounds.Y + bounds.Height / 2 - (int)(h / 2f), Math.Max(1, (int)step), Math.Max(1, (int)h));
+            sb.Draw(Utils.white, rect, Color.White * 0.4f);
+        }
+    }
+
     // ========================================================================
     // ██  报幕 Update/Draw  ██
     // ========================================================================
@@ -351,7 +555,10 @@ public class CustomEndingModule : EndingSequenceModule
             // 停止滚动，elapsedTime 继续走以保持 _ 闪烁，等待暂停时长后结束
             elapsedTime += t;
             endingPauseTimer += t;
-            if (endingPauseTimer >= EndingPauseDuration)
+            // 报幕末尾两段式淡出：停顿的前 creditsFadeOutTime 秒线性降到静音，
+            // 其余为静音段（停一拍），直到 CompleteAndReturnToMenu 切歌前恢复音量
+            ApplyCreditsFadeOut();
+            if (endingPauseTimer >= endingPauseDuration)
                 CompleteAndReturnToMenu();
             return;
         }
@@ -359,9 +566,55 @@ public class CustomEndingModule : EndingSequenceModule
         elapsedTime += t;
         if (elapsedTime > hacknetTitleFreezeTime)
         {
-            float speed = Math.Min(1f, (elapsedTime - hacknetTitleFreezeTime) / 8f);
+            float speed = scrollAccelTime <= 0f
+                ? 1f
+                : Math.Min(1f, (elapsedTime - hacknetTitleFreezeTime) / scrollAccelTime);
             creditsScroll -= t * creditsPixelsScrollPerSecond * speed;
         }
+    }
+
+    /// <summary>
+    /// 报幕末尾的两段式淡出（每帧调用）。仅在「配置了 AfterMusic」且「存在结尾提示行」时生效：
+    /// 停顿的前 creditsFadeOutTime 秒把全局音乐音量线性降到 0，其余时间为静音段（停一拍）。
+    /// 音量是全局的（MediaPlayer.Volume，等同玩家的音乐音量设置），必须在出口恢复。
+    /// </summary>
+    private void ApplyCreditsFadeOut()
+    {
+        if (!creditsFading)
+        {
+            float fadeT = creditsFadeOutTime;
+            // 约定：负数 / NaN / Infinity = 用默认
+            if (float.IsNaN(fadeT) || float.IsInfinity(fadeT) || fadeT < 0f) fadeT = DefaultCreditsFadeOutTime;
+            if (fadeT <= 0f) return;                          // 0 = 不淡出
+            if (ConfigValue.IsNone(afterMusic)) return;        // 无 AfterMusic（不切换音乐）→ 不淡出
+            creditsFading = true;
+            creditsFadeOutTime = fadeT;
+            try { originalVolume = MusicManager.getVolume(); } catch { }
+            _preFadeVolume = originalVolume;
+            _fadeLeftVolumeDirty = true;   // 标记「已动过全局音量」，未走到恢复路径则下次启动自愈
+        }
+        float progress = Math.Min(1f, endingPauseTimer / creditsFadeOutTime);
+        try { MusicManager.setVolume(originalVolume * (1f - progress)); } catch { }
+    }
+
+    /// <summary>恢复渐弱前的全局音乐音量（切歌前调用；未渐弱过则不动）。</summary>
+    private void RestoreMusicVolume()
+    {
+        if (!creditsFading) return;
+        creditsFading = false;
+        try { MusicManager.setVolume(originalVolume); } catch { }
+        _fadeLeftVolumeDirty = false;   // 已正常恢复，清除脏标记
+    }
+
+    /// <summary>
+    /// 供外部（插件 Unload）调用的静态入口：若曾因报幕末尾淡出压低全局音量而未走到恢复路径，
+    /// 则立即恢复。避免卸载时把 0 音量留给后续的原版 / 其它模组音乐。
+    /// </summary>
+    internal static void RestoreMusicVolumeIfFaded()
+    {
+        if (!_fadeLeftVolumeDirty) return;
+        _fadeLeftVolumeDirty = false;
+        try { MusicManager.setVolume(_preFadeVolume > 0f ? _preFadeVolume : 1f); } catch { }
     }
 
     private new void DrawCredits()
@@ -405,9 +658,12 @@ public class CustomEndingModule : EndingSequenceModule
                 else if (raw.StartsWith("%")) { txt = raw.Substring(1); font = GuiData.titlefont; lh = 90f; }
                 else if (raw.StartsWith("$")) { txt = raw.Substring(1); col = Color.Gray * 0.6f; font = GuiData.smallfont; }
 
+                // 按该字体实际字符集清洗（本地化字体保留本语言字形，Kremlin 等非 ASCII 替换为 '?'），
+                // 必须放在 MeasureString 之前——否则测量阶段就会抛 ArgumentException。
+                txt = TextHelper.CleanStringForFont(font, txt);
+
                 var sz = font.MeasureString(txt);
                 var dp = vector + new Vector2(os.fullscreen.Width / 2f - sz.X / 2f, 0f);
-                txt = Utils.CleanStringToRenderable(txt);
                 spriteBatch.DrawString(font, txt, dp, col);
                 vector.Y += lh;  // 第 1 次：内容行距
             }
@@ -455,9 +711,19 @@ public class CustomEndingModule : EndingSequenceModule
 
         os.delayer.Post(ActionDelayer.Wait(1.0), () =>
         {
-            string creditSong = string.IsNullOrEmpty(onCreditMusic) ? "Music\\Bit(Ending)" : onCreditMusic;
-            try { MusicManager.playSongImmediatley(creditSong); MediaPlayer.IsRepeating = false; }
-            catch { }
+            string creditSong = ResolveSong(onCreditMusic, "Music\\Bit(Ending)");
+            try
+            {
+                MusicManager.playSongImmediatley(creditSong);
+                MediaPlayer.IsRepeating = false;
+                // 原版加载失败只走 Console.WriteLine（不进 KELog），这里补一条可见日志便于排查
+                float vol = MusicManager.getVolume();
+                if (!MusicManager.isPlaying || vol <= 0.0001f)
+                    KELog.Warn($"[CustomEndingModule] credits music may not be audible: song={creditSong} current={MusicManager.currentSongName} playing={MusicManager.isPlaying} volume={vol:F2}");
+                else
+                    KELog.Info($"[CustomEndingModule] credits music started: {creditSong} (volume={vol:F2})");
+            }
+            catch (Exception ex) { KELog.Warn($"[CustomEndingModule] credits music failed: {ex.Message}"); }
         });
 
         KELog.Info("[CustomEndingModule] RollCredits -> Credits.");
@@ -465,41 +731,69 @@ public class CustomEndingModule : EndingSequenceModule
 
     private new void CompleteAndReturnToMenu()
     {
-        //os.Flags.AddFlag("Victory");
+        // 结局只管自己的收尾（断开连接、恢复状态、存档、音乐、AfterAction）；
+        // heart 节点清理由 PorthackHeartDaemon 负责——谁的事谁干，本模块是通用结局，
+        // 不假设存在 porthackHeart 节点（旧代码在此做删除/禁用/换 IP 属越界且重复）。
         try { Programs.disconnect(Array.Empty<string>(), os); } catch { }
-        try
-        {
-            var heart = Programs.getComputer(os, "porthackHeart");
-            if (heart != null)
-            {
-                os.netMap.visibleNodes.Remove(os.netMap.nodes.IndexOf(heart));
-                heart.disabled = true; heart.daemons.Clear();
-                heart.ip = NetworkMap.generateRandomIP();
-            }
-        }
-        catch { }
         os.terminal.inputLocked = false; os.ram.inputLocked = false;
         os.netMap.inputLocked = false; os.DisableTopBarButtons = false;
         os.canRunContent = true;
 
         IsActive = false;
 
-        //try { //ComputerLoader.loadMission("Content/Missions/CreditsMission.xml"); } catch { }
-        try { os.threadedSaveExecute(); } catch { }
         MediaPlayer.IsRepeating = true;
-        string afterSong = string.IsNullOrEmpty(afterMusic) ? "Music\\Bit(Ending)" : afterMusic;
-        try { MusicManager.playSongImmediatley(afterSong); } catch { }
+        // 记录是否做过报幕末尾的两段式淡出（RestoreMusicVolume 会清掉 creditsFading）
+        bool fadedAtCreditsEnd = creditsFading;
+        // 先还原报幕末尾渐弱前的音量（音量是全局的，务必在出口还原）
+        RestoreMusicVolume();
+        // AfterMusic 空 / NONE = 不切换音乐（保持报幕阶段音乐继续播放）；
+        // 想用原版结局曲请显式写 Music/Bit(Ending)
+        string afterSong = ResolveSong(afterMusic, "Music\\Bit(Ending)", fallbackToVanilla: false);
+        if (afterSong != null)
+        {
+            // 以下两种情况都直接「立刻切换」，不走 transitionToSong 的淡出：
+            //  ① 已做过两段式淡出（fadedAtCreditsEnd）：报幕曲已渐弱到静音，
+            //     再走 transitionToSong 会先恢复音量、再淡出——听感「静音后突然又响一下再淡出」，割裂
+            //  ② 同名：transitionToSong 会因 currentSongName 相同而直接返回（原版视作「已在播放」），
+            //     结果是同一首歌接着原位置继续播，听感上像「没有切换」
+            if (fadedAtCreditsEnd || MusicManager.currentSongName == afterSong)
+            {
+                // 先停掉当前播放：playSongImmediatley 内部会**同步** Load<Song>（可能数十~数百 ms），
+                // 而上面设了 MediaPlayer.IsRepeating = true —— 报幕曲会在这段窗口里循环回开头、
+                // 播出一小段后被硬切，听感上就是一声短促异响（音量已恢复为全音量时尤其明显）。
+                // 先停可直接消除这段「多余的回放」。
+                // 安全性：MusicManager.stop() 只改 isPlaying/state、**不动音量**，
+                // 而 playSong() 的守卫是 !isPlaying —— 不会妨碍随后的起播。
+                try { MusicManager.stop(); } catch { }
+                try { MusicManager.playSongImmediatley(afterSong); } catch { }
+            }
+            else
+            {
+                // 异名且未做两段式淡出：transitionToSong 自带淡出/淡入（原版 FADE_TIME），
+                // 报幕音乐自然淡出而非硬切
+                try { MusicManager.transitionToSong(afterSong); } catch { }
+            }
+        }
+
+        // 存档放在 AfterMusic 切换之后：确保存下的是「音乐已切、音量已还原」的最终状态
+        try { os.threadedSaveExecute(); } catch { }
 
         try { OnCompleteCallback?.Invoke(); }
         catch (Exception ex) { KELog.Warn($"[CustomEndingModule] OnCompleteCallback error: {ex.Message}"); }
 
-        KELog.Info("[CustomEndingModule] Complete — Victory set.");
+        KELog.Info("[CustomEndingModule] Complete.");
     }
 
-    // ========================================================================
-    //  我们的字段（与基类同名 private 字段互相独立，互不干扰）
-    // ========================================================================
-
-    private new float elapsedTime = 0f;
-    private bool isInCredits = false;
+    /// <summary>
+    /// 解析音乐路径：NONE/空 时按 fallbackToVanilla 决定——
+    ///   true  → 返回原版兜底曲（报幕阶段用，保证一定有音乐）
+    ///   false → 返回 null，表示「不切换音乐」（AfterMusic 用，保持当前播放的音乐）
+    /// 非空则走 MusicPathResolver（扩展根相对路径，支持扩展内 ogg/wav——与 CustomTrial/PhaseSwift/FakeRecovery 一致）。
+    /// </summary>
+    private static string ResolveSong(string configured, string vanillaFallback, bool fallbackToVanilla = true)
+    {
+        if (ConfigValue.IsNone(configured)) return fallbackToVanilla ? vanillaFallback : null;
+        string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
+        return string.IsNullOrEmpty(extRoot) ? configured : MusicPathResolver.ResolveMusicPath(configured, extRoot);
+    }
 }

@@ -1,5 +1,6 @@
 using Hacknet;
 using HarmonyLib;
+using KernelExtensions.Configs;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +19,7 @@ namespace KernelExtensions.Patches
 
         static void Prefix(MainMenu __instance)
         {
+            if (!ConfigLoader.Watermark) return;
             if (GuiData.smallfont == null) return;
 
             // 计算偏移：只在第一次测量

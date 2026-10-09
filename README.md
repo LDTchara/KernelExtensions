@@ -1,7 +1,16 @@
+<img height="128" align="left" src="KernelExtensions.png" alt="Logo">
+
 # KernelExtensions
+
+[![Release](https://img.shields.io/badge/Release-0.7.0-brightgreen?logo=github)](https://github.com/LDTchara/KernelExtensions/releases)
+[![Nightly Build (dev)](https://github.com/LDTchara/KernelExtensions/actions/workflows/nightly.yml/badge.svg?branch=dev)](https://github.com/LDTchara/KernelExtensions/actions/workflows/nightly.yml)
 
 > **KernelExtensions** 是一个面向 Hacknet 扩展作者的"开箱即用"组件库：把原版风格的完整系统（自定义试炼、场景切换、飞机、心脏结局、定时器、本地化、动态颜色……）封装为 **XML 可配置**的组件，扩展作者无需编写 C# 即可搭建复杂剧情。基于 Pathfinder API 深度集成（Harmony 补丁、存档钩子、多语言）。  
 > **KernelExtensions** is a drop-in component library for Hacknet extension authors: complete vanilla-styled systems (custom trials, scene switching, aircraft, heart finale, timers, localisation, dynamic colors, ...) packaged as **XML-configurable** components, so you can build rich storylines without writing C#. Deeply integrated with the Pathfinder API (Harmony patches, save hooks, multi-language).
+
+> [!WARNING] 
+> 本项目部分文档与代码由 AI 辅助生成，可能存在不准确或不完整之处，请在使用前自行评估；若发现问题，欢迎通过 Issue 或 PR 指出，我们会及时修正。  
+> This project uses AI-assisted generation for parts of its documentation and code, which may be inaccurate or incomplete. Please evaluate before use, and feel free to report any issues via Issue or PR — we will fix them promptly.
 
 **当前版本 / Current Version**: 0.7.0
 
@@ -9,10 +18,13 @@
 
 ## 📖 完整文档 / Full Documentation
 
-所有详细文档、配置指南和动作列表已迁移至 **GitHub Wiki**（中英双语页面）。  
-All detailed documentation, configuration guides, and action references have moved to the **GitHub Wiki** (bilingual Chinese/English pages).
+所有详细文档、配置指南和动作列表已迁移至**主仓库文档站**（MkDocs Material，中英双语页面）。  
+All detailed documentation, configuration guides, and action references live on the **documentation site** (MkDocs Material, bilingual Chinese/English pages).
 
-👉 **[前往 Wiki / Go to Wiki](https://github.com/LDTchara/KernelExtensions/wiki)** 👈
+👉 **[前往文档站 / Go to Docs](https://ldtchara.github.io/KernelExtensions/)** 👈
+
+> GitHub Wiki（`KernelExtensions.wiki`）自 0.7 起**已退役**，内容迁入主仓库 `docs/`。  
+> The GitHub Wiki has been **retired** as of 0.7; its content moved into `docs/` in the main repository.
 
 ---
 
@@ -55,31 +67,48 @@ All detailed documentation, configuration guides, and action references have mov
 - **自定义 Action 与可执行程序 (Custom Actions & Executables)** – 终端交互、音效、标题横幅、自定义结局等 30 余种能力。  
   30+ capabilities including terminal interaction, sound effects, title banners, and custom endings.
 
-→ 完整介绍请参阅 [Wiki 主页](https://github.com/LDTchara/KernelExtensions/wiki)。  
-→ See the [Wiki home](https://github.com/LDTchara/KernelExtensions/wiki) for full details.
+→ 完整介绍请参阅[文档站](https://ldtchara.github.io/KernelExtensions/)。  
+→ See the [documentation site](https://ldtchara.github.io/KernelExtensions/) for full details.
 
 ---
 
-## 🤝 贡献 / Contributing
+## 兼容性 / Compatibility
 
-我们欢迎任何形式的贡献：功能、修复、文档或反馈。  
-Contributions of all kinds are welcome: features, fixes, docs, or feedback.
+**与 Stuxnet.Audio（SASS）不兼容 —— 冲突点在 PhaseSwift 的多轨音乐系统（每场景一轨同时播放）。**  
+**Incompatible with Stuxnet.Audio (SASS) — the conflict is with PhaseSwift's multi-track music (one track per scene, played simultaneously).**
 
-- 开发前请阅读 [贡献指南 / Contributing Guide](./CONTRIBUTING.md) 与 [行为准则 / Code of Conduct](./CODE_OF_CONDUCT.md)。  
-  Please read the [Contributing Guide](./CONTRIBUTING.md) and [Code of Conduct](./CODE_OF_CONDUCT.md) first.
+Stuxnet.Audio 默认开启“替换 MusicManager”（`ReplaceMusicManager = true`），会劫持对**扩展内音乐**的播放、停止、音量与切歌调用；而 KernelExtensions 的 PhaseSwift 多轨模式（每场景一轨同时播放）自行流式播放扩展音乐，以 `MusicManager.getVolume()` 作为音量基准，启动时会调用 `MusicManager.stop()` 防止叠播。两者争夺同一条播放链，可能造成：双份播放（叠播）、音量/静音调节失效、交叉淡化错乱或切歌失效。
+
+规避方式：
+- 不同时安装两者；或
+- 关闭 Stuxnet.Audio 的 *Replace Music Manager* 选项后可与 PhaseSwift 共存（SASS 其余音效功能不受影响）。
+
+> 注：本声明针对 Stuxnet.Audio（`autumnrivers.stuxnet.audio`）。KernelExtensions 对 Stuxnet 本体（`autumnrivers.stuxnet`）的主菜单有主动适配（PatchStuxnetDrawFGamemodeMenu），不受此冲突影响。
+
+Stuxnet.Audio replaces MusicManager by default (`ReplaceMusicManager = true`), hijacking play/stop/volume/song-transition calls for **extension music**; PhaseSwift's multi-track mode (one track per scene) streams extension music on its own, uses `MusicManager.getVolume()` as its volume reference, and calls `MusicManager.stop()` on start to prevent overlap. Both fight over the same playback chain, which may cause double playback (overlap), broken volume/mute control, corrupted crossfades, or failed song transitions.
+
+Workarounds:
+- Do not install both at the same time; or
+- Turn off Stuxnet.Audio's *Replace Music Manager* option — SASS can then coexist with PhaseSwift (its other SFX features are unaffected).
+
+> Note: this statement targets Stuxnet.Audio (`autumnrivers.stuxnet.audio`). KernelExtensions actively adapts Stuxnet itself (`autumnrivers.stuxnet`) for the main menu (PatchStuxnetDrawFGamemodeMenu), which is not affected by this conflict.
 
 ---
 
 ## ❤️ 致谢 / Thanks
 
-- **LDTchara** - 感谢我自己的小脑袋瓜，想出来一大堆奇怪的点子并实现了它们。  
-  Thanks to my own little brain for coming up with a bunch of weird ideas and implementing them.
-- **April_Crystal** – 飞机 Daemon 和自定义节点图标的核心实现与大量改进建议 *（以及大量的麻烦）*，KE 早期开发者之一。  
-  Core implementation of the Aircraft Daemon and node icons, plus lots of improvement suggestions *(and lots of trouble)*. One of KE's earliest developers.
+- **LDTchara** - 感谢我自己的小脑袋瓜，想出来一大堆奇怪的点子并实现了它们。负责 KE 的整体设计、核心功能实现、文档编写与维护。  
+  Thanks to my own little brain for coming up with a bunch of weird ideas and implementing them. Responsible for the overall design of KE, core feature implementation, and documentation writing and maintenance.
+- **April_Crystal** – 部分功能的初版核心实现（包括但不限于飞机 Daemon、自定义节点图标、自定义结局模块、自定义破解器、可配置的横幅等。）与大量改进建议 *（以及大量的麻烦）*，KE 核心开发者之一、传奇测试员。  
+  Initial core implementation of some features (including but not limited to Aircraft Daemon, custom node icons, custom ending module, custom cracker, configurable banners, etc.) and many improvement suggestions *(and a lot of trouble)*; one of the core KE developers and a legendary tester.
 - **ZQG** – 第一个使用 KE 的扩展作者，提供了宝贵的测试反馈。  
   The first extension author to use KE, providing invaluable testing feedback.
-- **HN 扩展小屋的各位朋友** – 测试、反馈与支持。  
-  Friends in the HN extension community – testing, feedback, and support.
+- **HN 扩展小屋的各位朋友** – 部分灵感来源、测试、反馈与支持。  
+  Members in the HN 扩展小屋 – Sources of some inspiration, testing, feedback, and support.
+
+> [!TIP] 
+> *有关 April_Crystal 那句“大量的麻烦”是他自己加的。*  
+> *The "a lot of trouble" part about April_Crystal was added by himself.*
 
 ---
 

@@ -6,10 +6,12 @@ using Pathfinder.Util.XML;
 
 namespace KernelExtensions.Actions.Aircraft
 {
-    public class AttackAircraftAction : DelayablePathfinderAction
+    public class AttackAircraftAction : KEAction
     {
         [XMLStorage] public string NodeID;
 
+        /// <summary>坠落延迟（秒）。XML 主名为 <c>FallDuration</c>，<c>CrashDelay</c> 为向后兼容别名
+        /// （两者均大小写不敏感）。负数 / NaN / Infinity = 用 daemon 自身配置的 FallDuration；0 = 立即坠毁。</summary>
         public float CrashDelay = 135f;
 
         public string Nodeid => NodeID;
@@ -47,21 +49,18 @@ namespace KernelExtensions.Actions.Aircraft
                 }
             }
 
-            // 处理 CrashDelay
-            if (CrashDelay == -1)
+            // 处理 CrashDelay —— 约定：负数 = 使用默认（Daemon 自身配置）；
+            // NaN / Infinity 视为无效值，同样回退默认（此前会落入 throw，与「负数 = 默认」的约定相反）
+            if (float.IsNaN(CrashDelay) || float.IsInfinity(CrashDelay) || CrashDelay < 0f)
                 d.H = d.FallDuration; // 使用 Daemon 自身配置的默认坠落时长
-            else if (CrashDelay == 0)
+            else if (CrashDelay == 0f)
             {
                 d.CurrentAltitude = 0;
                 d.CrashAircraft();
                 return;
             }
-            else if (CrashDelay > 0)
-                d.H = CrashDelay;
             else
-            {
-                throw new Exception($"Invalid CrashDelay: {CrashDelay}. Use -1 for default, 0 for instant, or a positive number of seconds.");
-            }
+                d.H = CrashDelay; // 正数：覆盖 Daemon 的 FallDuration
             StartAttack(os, d);
         }
 
@@ -98,18 +97,28 @@ namespace KernelExtensions.Actions.Aircraft
 
             d.StartReloadFirmware();
         }
-        // 手动读取 XML 属性，支持 FallDuration 和 CrashDelay 两个名称
+        // 手动读取 XML 属性：**主名 FallDuration**，向后兼容别名 CrashDelay
+        // （CrashDelay 易与 Delay 混淆，已不推荐；仅为兼容旧用例保留）
+        // ⚠️ 必须自行做大小写不敏感查找：KEAction.LoadFromXml 只在 base 调用期间替换
+        //    info.Attributes，finally 已还原为原始 Ordinal 字典，故此处拿到的仍是原字典。
         public override void LoadFromXml(ElementInfo info)
         {
             base.LoadFromXml(info);
 
-            string delayStr = null;
-            if (info.Attributes.TryGetValue("FallDuration", out delayStr) ||
-                info.Attributes.TryGetValue("CrashDelay", out delayStr))
-            {
-                if (float.TryParse(delayStr, out float parsed))
-                    CrashDelay = parsed;
-            }
+            string delayStr = FindAttrIgnoreCase(info.Attributes, "FallDuration")
+                           ?? FindAttrIgnoreCase(info.Attributes, "CrashDelay");
+
+            if (!string.IsNullOrEmpty(delayStr) && float.TryParse(delayStr, out float parsed))
+                CrashDelay = parsed;
+        }
+
+        private static string FindAttrIgnoreCase(Dictionary<string, string> attrs, string name)
+        {
+            if (attrs == null) return null;
+            foreach (var kv in attrs)
+                if (string.Equals(kv.Key, name, StringComparison.OrdinalIgnoreCase))
+                    return kv.Value;
+            return null;
         }
     }
 }

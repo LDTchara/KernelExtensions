@@ -256,8 +256,8 @@ namespace KernelExtensions.Managers
             if (Path.IsPathRooted(themePath) && File.Exists(themePath)) return themePath;
             if (ExtensionLoader.ActiveExtensionInfo != null)
             {
-                string inExt = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, themePath);
-                if (File.Exists(inExt)) return inExt;
+                string inExt = KEPath.ResolveInsideExtension(themePath);
+                if (inExt != null && File.Exists(inExt)) return inExt;
             }
             string inContent = Path.Combine("Content", themePath);
             if (File.Exists(inContent)) return inContent;

@@ -5,19 +5,27 @@ using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Actions;
 using KernelExtensions.Actions.Aircraft;
+using KernelExtensions.Actions.Aircraft.Debug;
+using KernelExtensions.Actions.Clock;
 using KernelExtensions.Actions.CustomTrial;
+using KernelExtensions.Actions.Ending;
+using KernelExtensions.Actions.Misc;
+using KernelExtensions.Actions.Node;
 using KernelExtensions.Actions.PhaseSwift;
-using KernelExtensions.Actions.Title;
 using KernelExtensions.Actions.VMAttack;
+using KernelExtensions.Compat.Stuxnet;
 using KernelExtensions.Configs;
+using KernelExtensions.CustomPortPublicCracker;
 using KernelExtensions.Daemons;
 using KernelExtensions.Executables;
 using KernelExtensions.Managers;
+using KernelExtensions.Modules;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
 using KernelExtensions.Storage;
 using KernelExtensions.Utilities;
 using Pathfinder.Action;
+using Pathfinder.Command;            // 提供 CommandManager（kelicense 指令注册）
 using Pathfinder.Daemon;
 using Pathfinder.Event;
 using Pathfinder.Event.Gameplay;
@@ -44,20 +52,20 @@ namespace KernelExtensions
         private static Harmony _harmony;
         string KEArt = $@"
 #===============================================================================================================#
-|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                                   |
-|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡿⠛⠛⠷⢶⣤⣄⠀⠀⠀⠀⠀⠀⠀ ██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗                                     |
-|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣼⣷⣤⣀⡀⠀⠈⠙⠿⣦⡀⠀⠀⠀⠀ ██║ ██╔╝██╔════╝██╔══██╗████╗  ██║██╔════╝██║                                     |
-|⠀⠀⠀⠀⠀⠀⠀⠀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠈⢻⣆⠀⠀⠀ █████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║                                     |
-|⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⡿⠋⠉⠁⠀⠈⠉⠻⢿⣿⣿⣦⠀⠀⠹⣧⠀⠀ ██╔═██╗ ██╔══╝  ██╔══██╗██║╚██╗██║██╔══╝  ██║                                     |
-|⠀⠀⠀⠀⠀⢠⣿⣿⣿⠋⠀⣠⡶⠿⠿⢿⣶⣄⠀⠹⣿⣿⣧⠀⠀⠙⠀⠀ ██║  ██╗███████╗██║  ██║██║ ╚████║███████╗███████╗                                |
-|⠀⠀⣀⣀⣀⣼⣿⣿⡇⠀⣸⡏⠁⠀⠀⠀⠈⣿⡆⠀⢹⣿⣿⡇⠀⢠⠀⠀ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝                                |
-|⠀⠀⣿⡟⠛⢿⣿⣿⡆⠀⢿⡇⠀⠀⠀⠀⠀⣽⡇⠀⢸⣿⣿⡇⠀⠀⠀⠀ ███████╗██╗  ██╗████████╗███████╗███╗   ██╗███████╗██╗ ██████╗ ███╗   ██╗███████╗ |
-|⠀⠀⢻⡇⠀⠸⣿⣿⣧⡀⠈⠻⣦⣄⣀⣠⣾⠟⠀⢠⣿⣿⡿⠀⠀⠘⠀⠀ ██╔════╝╚██╗██╔╝╚══██╔══╝██╔════╝████╗  ██║██╔════╝██║██╔═══██╗████╗  ██║██╔════╝ |
-|⠀⠀⠀⢿⡄⠀⠹⣿⣿⣷⣄⡀⠀⠉⠉⠉⠀⣀⣴⣿⣿⡿⠃⠀⢠⡄⠀⠀ █████╗   ╚███╔╝    ██║   █████╗  ██╔██╗ ██║███████╗██║██║   ██║██╔██╗ ██║███████╗ |
-|⠀⠀⠀⠈⢿⣄⠀⠈⠻⣿⣿⣿⣿⣶⣶⣶⣿⣿⣿⡿⠋⠀⠀⣰⡟⠁⠀⠀ ██╔══╝   ██╔██╗    ██║   ██╔══╝  ██║╚██╗██║╚════██║██║██║   ██║██║╚██╗██║╚════██║ |
-|⠀⠀⠀⠀⠀⠙⢷⣄⡀⠀⠉⠛⠻⠿⠿⠿⠛⠋⠉⠀⢀⣠⡾⠋⠀⠀⠀⠀ ███████╗██╔╝ ██╗   ██║   ███████╗██║ ╚████║███████║██║╚██████╔╝██║ ╚████║███████║ |
-|⠀⠀⠀⠀⠀⠀⠀⠉⠻⢶⣦⣄⠀⠀⠀⠀⠀⠀⢠⡶⠛⠉⠀⠀⠀⠀⠀⠀ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝ |
-|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                       LDTchara (C) 2026      Version-0.7.0                        |
+|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                                   |
+|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠛⠿⠿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀ ██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗                                     |
+|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣤⣾⣿⣤⣄⣀⠀⠈⠛⢿⣶⣄⠀⠀⠀⠀ ██║ ██╔╝██╔════╝██╔══██╗████╗  ██║██╔════╝██║                                     |
+|⠀⠀⠀⠀⠀⠀⠀⢀⣴⣾⣿⣿⣿⡇⢠⣤⣄⣉⠙⠶⣄⠀⠙⢿⣦⡀⠀⠀ █████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║                                     |
+|⠀⠀⠀⠀⠀⠀⣠⣿⣿⣿⡿⠟⠋⠉⠉⠉⠙⠻⣿⣦⡈⠳⡀⠀⢻⣷⡀⠀ ██╔═██╗ ██╔══╝  ██╔══██╗██║╚██╗██║██╔══╝  ██║                                     |
+|⠀⠀⠀⠀⠀⢰⣿⣿⣿⠏⢀⣴⣾⠿⠿⠿⣷⣄⠈⢻⣿⡄⠹⡀⠀⠛⠃⠀ ██║  ██╗███████╗██║  ██║██║ ╚████║███████╗███████╗                                |
+|⠀⠀⣤⣤⣤⡿⠿⢿⡏⠀⣾⡟⡕⠁⠀⠈⢊⣿⣇⠀⢿⣿⠿⡇⠀⣴⡄⠀ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝                                |
+|⠀⠀⣿⡟⠛⡇⢠⣼⡇⠀⣿⣇⢄⠀⠀⠀⡠⣽⡿⠀⣼⣿⠿⡇⠀⠀⠀⠀ ███████╗██╗  ██╗████████╗███████╗███╗   ██╗███████╗██╗ ██████╗ ███╗   ██╗███████╗ |
+|⠀⠀⢿⣧⠀⢡⠈⢿⣿⡄⠘⢿⣦⣥⣒⣬⣾⡿⠁⣠⣿⡿⢾⠃⠀⠛⠃⠀ ██╔════╝╚██╗██╔╝╚══██╔══╝██╔════╝████╗  ██║██╔════╝██║██╔═══██╗████╗  ██║██╔════╝ |
+|⠀⠀⠘⣿⣆⠀⢣⡈⠻⣿⣦⣀⠉⠙⠛⠉⢁⣠⣴⡿⠋⣠⠋⠀⣠⣶⠀⠀ █████╗   ╚███╔╝    ██║   █████╗  ██╔██╗ ██║███████╗██║██║   ██║██╔██╗ ██║███████╗ |
+|⠀⠀⠀⠘⣿⣦⡀⠙⢦⣈⠙⠻⢿⣿⣿⣿⣿⠛⢉⣠⠞⠁⢀⣴⡿⠃⠀⠀ ██╔══╝   ██╔██╗    ██║   ██╔══╝  ██║╚██╗██║╚════██║██║██║   ██║██║╚██╗██║╚════██║ |
+|⠀⠀⠀⠀⠈⠻⣿⣦⡀⠈⠙⠓⠶⠿⠿⠿⠿⠛⠉⠀⣀⣴⣿⠟⠁⠀⠀⠀ ███████╗██╔╝ ██╗   ██║   ███████╗██║ ╚████║███████║██║╚██████╔╝██║ ╚████║███████║ |
+|⠀⠀⠀⠀⠀⠀⠈⠙⠿⣷⣶⣤⡀⠀⠀⠀⠀⠀⢴⣿⠟⠋⠀⠀⠀⠀⠀⠀ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝ |
+|⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                       LDTchara (C) 2026      Version-0.7.0                        |
 #===============================================================================================================#
 ";
 
@@ -68,9 +76,24 @@ namespace KernelExtensions
 
         public override bool Load()
         {
-            // 0. 绑定 BepInEx 配置
-            // 1. 注册自定义可执行程序
+            // ============================================================
+            //  0. 日志初始化（必须最先——后续注册都会写 KELog）
+            // ============================================================
             KELog.Init();
+
+            // ⚠️ 整体兜底（第二层）：Load 内任何异常都不允许逃出。
+            //    原因：Pathfinder 的注册是**不可回滚的副作用**，而 BepInEx 的成败标记是全有或全无。
+            //    异常逃出 → 插件被标记「加载失败」，但已注册的 Action / Executable / Daemon / Command
+            //    仍留在 PF 里，且 BepInEx 此后**永远不会调用本插件的 Unload()** →
+            //    「半初始化且无法清理」的状态永久存在（2026-09-22 由 Stuxnet 撞名事故实证）。
+            //    捕获后 return true：插件状态与已产生的副作用保持一致，卸载时能正常走 Unload 清理。
+            //    （下面 body 未缩进，只为保持本次改动的最小 diff。）
+            try
+            {
+
+            // ============================================================
+            //  1. 可执行程序
+            // ============================================================
             // 无痕互斥 handler 必须先于 ExecutableManager 注册（RegisterExecutable 触发其静态
             // 构造 → OnExeExecute 事件 handler 注册；InvokeAll 按注册顺序稳定执行）
             EventManager<ExecutableExecuteEvent>.AddHandler(OnExecutableExecute_Mutex);
@@ -84,50 +107,82 @@ namespace KernelExtensions
             ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
             KELog.Info("WPTEST registered.");
 
-            // 2. 注册各 Action
+            // ============================================================
+            //  2. Action 注册（按系统分组）
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Registering actions...");
-            ActionManager.RegisterAction<FailTrialAction>("FailTrial");
-            KELog.Info("FailTrial action registered.");
-            ActionManager.RegisterAction<LaunchVMAttackAction>("LaunchVMAttack");
-            KELog.Info("LaunchVMAttack action registered.");
-            ActionManager.RegisterAction<PlaySoundAction>("PlaySound");
-            KELog.Info("PlaySound action registered.");
 
-            ActionManager.RegisterAction<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
-            KELog.Info("StartScreenBleedEffectWCC action registered.");
+            // 2.1 自定义试炼
+            RegisterActionWithFallback<FailTrialAction>("FailTrial");
+            RegisterActionWithFallback<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
 
-            ActionManager.RegisterAction<PhaseSwiftSceneAction>("PhaseSwiftScene");
-            KELog.Info("PhaseSwiftScene action registered.");
-            ActionManager.RegisterAction<PhaseSwiftInitAction>("PhaseSwiftInit");
-            KELog.Info("PhaseSwiftInit action registered.");
-            ActionManager.RegisterAction<PhaseSwiftStopAction>("PhaseSwiftStop");
-            KELog.Info("PhaseSwiftStop action registered.");
-            ActionManager.RegisterAction<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
-            KELog.Info("PhaseSwiftFadeOut action registered.");
-            ActionManager.RegisterAction<PhaseSwiftMusicAction>("PhaseSwiftMusic");
-            KELog.Info("PhaseSwiftMusic action registered.");
-            ActionManager.RegisterAction<BlockNodeAction>("BlockNode");
-            KELog.Info("BlockNode action registered.");
-            ActionManager.RegisterAction<UnblockNodeAction>("UnblockNode");
-            KELog.Info("UnblockNode action registered.");
-            ActionManager.RegisterAction<SwitchThemeAction>("SwitchToThemeKeepLayout");
-            KELog.Info("SwitchToThemeKeepLayout action registered.");
-            ActionManager.RegisterAction<TerminalFocusAction>("TerminalFocus");
-            KELog.Info("TerminalFocus action registered.");
-            ActionManager.RegisterAction<TerminalWriteAction>("TerminalWrite");
-            KELog.Info("TerminalWrite action registered.");
-            ActionManager.RegisterAction<TerminalTypeAction>("TerminalType");
-            KELog.Info("TerminalType action registered.");
-            ActionManager.RegisterAction<RenameNodeAction>("RenameNode");
-            KELog.Info("RenameNode action registered.");
-            ActionManager.RegisterAction<RestoreCustomTrialNodesAction>("RestoreCustomTrialNodes");
-            KELog.Info("RestoreCustomTrialNodes action registered.");
+            // 2.2 VM 攻击
+            RegisterActionWithFallback<LaunchVMAttackAction>("LaunchVMAttack");
 
-            // 2.5 注册节点图标 Action
-            ActionManager.RegisterAction<SetNodeIconAction>("SetNodeIcon");
-            KELog.Info("SetNodeIcon action registered.");
+            // 2.3 PhaseSwift
+            RegisterActionWithFallback<PhaseSwiftInitAction>("PhaseSwiftInit");
+            RegisterActionWithFallback<PhaseSwiftSceneAction>("PhaseSwiftScene");
+            RegisterActionWithFallback<PhaseSwiftMusicAction>("PhaseSwiftMusic");
+            RegisterActionWithFallback<PhaseSwiftStopAction>("PhaseSwiftStop");
+            RegisterActionWithFallback<PhaseSwiftFadeOutAction>("PhaseSwiftFadeOut");
+            RegisterActionWithFallback<BlockNodeAction>("BlockNode");
+            RegisterActionWithFallback<UnblockNodeAction>("UnblockNode");
 
-            // 3. 注册各事件处理器
+            // 2.4 终端与节点
+            RegisterActionWithFallback<TerminalFocusAction>("TerminalFocus");
+            RegisterActionWithFallback<TerminalWriteAction>("TerminalWrite");
+            RegisterActionWithFallback<TerminalTypeAction>("TerminalType");
+            RegisterActionWithFallback<RenameNodeAction>("RenameNode");
+            RegisterActionWithFallback<SetNodeIconAction>("SetNodeIcon");
+            RegisterActionWithFallback<SwitchThemeAction>("SwitchToThemeKeepLayout");
+
+            // 2.5 通用特效与 UI
+            // ⚠️ "PlaySound" 与 Stuxnet.Audio（SASS）注册的同名 Action 冲突：SASS 先加载并占位，
+            //    直接 Register 会抛 ArgumentException，导致**整个 KE Load 中断**（2026-09-22 实机复现）。
+            //    故【全部】Action 一律注册「原名 + KE 前缀名」两个名字（不再按易冲突/独有分类）。
+            RegisterActionWithFallback<PlaySoundAction>("PlaySound");
+            RegisterActionWithFallback<FlashScreenAction>("FlashScreen");
+            RegisterActionWithFallback<StartScreenBleedEffectWCCAction>("StartScreenBleedEffectWCC");
+
+            // 2.6 Clock 定时器
+            RegisterActionWithFallback<ClockStartAction>("ClockStart");
+            RegisterActionWithFallback<ClockStopAction>("ClockStop");
+
+            // 2.7 飞机（Daemon 本体在 5 节注册）
+            RegisterActionWithFallback<AttackAircraftAction>("AttackAircraft");
+            RegisterActionWithFallback<UploadAircraftSysFileAction>("UploadAircraftSysFile");
+            RegisterActionWithFallback<ShowAircraftOverlayAction>("ShowAircraftOverlay");
+            RegisterActionWithFallback<HideAircraftOverlayAction>("HideAircraftOverlay");
+
+            // 2.7b 飞机调试工具——“仅测试用”的门控在各自 Trigger 里（检查 ConfigLoader.Debug）
+            //     不能在注册处判断：ConfigLoader.Load() 发生在注册之后，此处 Debug 恒为 false。
+            RegisterActionWithFallback<FlightDaemonStatusAction>("FlightDaemonStatus");
+            RegisterActionWithFallback<FlightDaemonMapAction>("FlightDaemonMap");
+
+            // 2.8 Porthack 心脏
+            RegisterActionWithFallback<BreakHeartAction>("BreakHeart");
+
+            // 2.9 LinkControl：节点连接控制（org 基线跨会话；共享状态与事件钩子内聚在 Storage/OrgLinksStorage）
+            RegisterActionWithFallback<LinkControlResetAction>("LinkControlReset");
+            RegisterActionWithFallback<LinkControlAddAction>("LinkControlAdd");
+            RegisterActionWithFallback<LinkControlRemoveAction>("LinkControlRemove");
+            EventManager<SaveComputerEvent>.AddHandler(OrgLinksStorage.OnSaveComputer);
+            EventManager<SaveComputerLoadedEvent>.AddHandler(OrgLinksStorage.OnLoadComputer);
+            EventManager<OSLoadedEvent>.AddHandler(OrgLinksStorage.OnOSLoaded);
+
+            // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
+            if (CanExtraPackUse)
+            {
+                RegisterActionWithFallback<ShowTitle>("ShowTitle");
+                RegisterActionWithFallback<StartEnding>("StartEnding");
+            }
+
+            // RAM 显示文字调整：无 KE-Config 段，全由 Action 控制
+            RegisterActionWithFallback<RamDisplayAction>("RamDisplay");
+
+            // ============================================================
+            //  3. 事件处理器
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Registering event handlers...");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_CheckVMInfection);
             KELog.Info("OSLoaded event handler registered.");
@@ -136,16 +191,22 @@ namespace KernelExtensions
             KELog.Info("NodeIcon save/load event handlers registered.");
             EventManager<OSLoadedEvent>.AddHandler(NodeIconEventHandlers.OnOSLoaded);
             KELog.Info("NodeIcon OSLoaded handler registered.");
-            EventManager<OSLoadedEvent>.AddHandler((e) => { try { ConfigLoader.Load(); } catch { } });
-            EventManager<OSLoadedEvent>.AddHandler((e) => { try { KELoc.Load(); } catch { } });
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_LoadConfig);
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_LoadLoc);
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_AutoRestorePhaseSwift);
             KELog.Info("ConfigLoader handler registered.");
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_RestoreClocks);
             KELog.Info("Clock restore handler registered.");
+            EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded_ApplyRamDisplay);
+            KELog.Info("RamDisplay restore handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
+            // 节点自替换符：挂在 Pathfinder 的 TextReplaceEvent 上
+            SelfReplacementPatch.Initialize();
 
-            // 4. 注册自定义存档加载器（用于从存档中读取删除节点）
+            // ============================================================
+            //  4. 存档加载器
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Registering save loaders...");
             SaveLoader.RegisterExecutor<CustomTrialSaveExecutor>("CustomTrialData");
             // ParseInterior：必须解析子元素（DiscoveredScene/OrigLink 等），否则读档时 Children 恒为空
@@ -154,98 +215,170 @@ namespace KernelExtensions
             // Clock 持久化：解析存档 <ClockData> 节点，恢复运行中的 Clock
             SaveLoader.RegisterExecutor<ClockSaveExecutor>("ClockData", ParseOption.ParseInterior);
             KELog.Info("ClockSaveExecutor registered.");
+            // RAM 显示设置：只有两个属性，无子元素
+            SaveLoader.RegisterExecutor<RamDisplaySaveExecutor>("RamDisplayData", ParseOption.None);
+            KELog.Info("RamDisplaySaveExecutor registered.");
 
-            // 4.5 飞机Daemon相关
-            Console.WriteLine("[KernelExtensions] Registering aircraft-related actions and daemons...");
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("[KernelExtensions] Thanks for April_Crystal");
-            Console.ResetColor();
-            ActionManager.RegisterAction<HideAircraftOverlayAction>("HideAircraftOverlay");
-            KELog.Info("HideAircraftOverlay action registered.");
-            ActionManager.RegisterAction<ShowAircraftOverlayAction>("ShowAircraftOverlay");
-            KELog.Info("ShowAircraftOverlay action registered.");
+            // ============================================================
+            //  5. Daemon 注册
+            // ============================================================
             DaemonManager.RegisterDaemon<FlightDaemon>();
             KELog.Info("FlightDaemon registered.");
             DaemonManager.RegisterDaemon<global::KernelExtensions.Daemons.PorthackHeartDaemon>();
             KELog.Info("PorthackHeartDaemon registered.");
-            ActionManager.RegisterAction<UploadAircraftSysFileAction>("UploadAircraftSysFile");
-            KELog.Info("UploadAircraftSysFile action registered.");
-            ActionManager.RegisterAction<AttackAircraftAction>("AttackAircraft");
-            KELog.Info("AttackAircraft action registered.");
-            ActionManager.RegisterAction<FlashScreenAction>("FlashScreen");
-            KELog.Info("FlashScreen action registered.");
-            ActionManager.RegisterAction<ClockStartAction>("ClockStart");
-            KELog.Info("ClockStart action registered.");
-            ActionManager.RegisterAction<ClockStopAction>("ClockStop");
-            KELog.Info("ClockStop action registered.");
-            ActionManager.RegisterAction<BreakHeartAction>("BreakHeart");
-            KELog.Info("BreakHeart action registered.");
 
-            // dev1 合入：Extra Pack 功能（SROS 插件存在时不注册，防冲突）
-            if (CanExtraPackUse)
-            {
-                ExtractImages();
-                ActionManager.RegisterAction<ShowTitle>("ShowTitle");
-                KELog.Info("ShowTitle action registered.");
-                ActionManager.RegisterAction<StartEnding>("StartEnding");
-                KELog.Info("StartEnding action registered.");
-            }
+            // ============================================================
+            //  6. 终端指令
+            // ============================================================
+            // ⚠️ RegisterCommand 带 [MethodImpl(NoInlining)]，内部用 Assembly.GetCallingAssembly()
+            //    判定插件来源（卸载时据此清理）——必须**直接在此调用**，不得抽成辅助方法包装，
+            //    否则程序集归属错、卸载清理失效。重名会抛 ArgumentException，故名字取足够独特。
+            CommandManager.RegisterCommand("kelicense", OnKelicenseCommand);
+            KELog.Info("kelicense command registered.");
 
-            // 5. 加载 Harmony 补丁
+            // ============================================================
+            //  7. Harmony 补丁（PatchAll 之后才能装需要实例的补丁）
+            // ============================================================
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
             _harmony.PatchAll();
             PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
 
-            // 9.25 ConnectControl：节点连接控制（org 基线跨会话，存档钩子内聚在 Action 静态方法）
-            ActionManager.RegisterAction<ConnectionControlAction>("ConnectControl");
-            KELog.Info("ConnectControl action registered.");
-            EventManager<SaveComputerEvent>.AddHandler(ConnectionControlAction.OnSaveComputer);
-            EventManager<SaveComputerLoadedEvent>.AddHandler(ConnectionControlAction.OnLoadComputer);
-            EventManager<OSLoadedEvent>.AddHandler(ConnectionControlAction.OnOSLoaded);
+            // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
+            RegisterActionWithFallback<PortControlAction>("PortControl");
+
+            // PublicCracker（#PC#）：端口破解工具箱的可执行程序
+            ExecutableManager.RegisterExecutable<PublicCracker>("#PC#");
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
+            // RAM 显示：RamModule internal，同样需运行时反射 patch
+            RamDisplayPatch.ApplyPatch(_harmony);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
+            // 致谢分两行：Magenta = 代码贡献者，Cyan = 测试与反馈者（对应仓库根 CONTRIBUTORS.md）
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine("[KernelExtensions] Code contributions: April_Crystal");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("[KernelExtensions] Testing & feedback: ZQG, HN Extension Hub (QQ Group: 940056115) ");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("[KernelExtensions] MIT License - run `kelicense` in the in-game terminal to view it.");
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;
-        }
 
+            }   // try
+            catch (Exception ex)
+            {
+                KELog.Error($"[KernelExtensions] Load threw but was contained — partial initialisation possible: {ex}");
+                return true;
+            }
+        }
+        // 添加公共静态方法用于注册端口
+        public static void LoadActionPorts(string protocol, string displayName, int portNum)
+        {
+            Pathfinder.Port.PortManager.RegisterPort(protocol, displayName, portNum);
+        }
         public override bool Unload()
         {
+            // 结局模块可能把全局音乐音量停在渐弱值（0）上——卸载前先恢复，
+            // 否则卸载 / 切换扩展后，原版与其它模组的音乐会静音（2026-09-22 补）
+            CustomEndingModule.RestoreMusicVolumeIfFaded();
+            // 自定义节点图标纹理：清空并释放，避免重载扩展时残留占用（同 2026-09-22 补）
+            NodeIconRenderPatch.CustomTextures.Clear();
             PhaseSwiftExe.CleanupAll();
             // 清理 IRC 日志静态列表（退出扩展时清空，避免残留到下一局）
             FileEntry.filenames?.Clear();
             FileEntry.fileData?.Clear();
+            // 节点自替换符：取消事件订阅，避免持有已卸载程序集的委托
+            SelfReplacementPatch.Dispose();
             _harmony?.UnpatchSelf();
             _harmony = null;
             return base.Unload();
         }
 
-        /// <summary>把内嵌的标题横幅图标提取到扩展 Images/（首次，存在不覆盖）。</summary>
-        private static void ExtractImages()
+        /// <summary>
+        /// 注册 Action：一律注册【原名】与【"KE" + 原名】两个名字，重名不抛出（返回 false）。
+        /// 第三方模组可能占用通用名（实例：Stuxnet.Audio 占用 "PlaySound"），
+        /// 而 Pathfinder 的 RegisterAction 重名会抛 ArgumentException 并**中断整个 Load**，故必须容错。
+        /// 两名字都注册后：无冲突时两者均可用；任一被占时另一个仍然可用。
+        /// </summary>
+        private static void RegisterActionWithFallback<T>(string xmlName)
+            where T : PathfinderAction
+        {
+            string fallbackName = "KE" + xmlName;
+
+            bool primaryOk = TryRegisterAction<T>(xmlName);
+            bool fallbackOk = TryRegisterAction<T>(fallbackName);
+
+            if (primaryOk && fallbackOk)
+                KELog.Info($"{xmlName} action registered (also as {fallbackName}).");
+            else if (primaryOk)
+                KELog.Warn($"{xmlName} registered; {fallbackName} is taken by another mod.");
+            else if (fallbackOk)
+                KELog.Warn($"{xmlName} is already taken by another mod - registered as {fallbackName} instead.");
+            else
+                KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
+        }
+
+        /// <summary>尝试注册一个 Action 名；重名（ArgumentException）时返回 false，不抛出。</summary>
+        private static bool TryRegisterAction<T>(string xmlName) where T : PathfinderAction
         {
             try
             {
-                string root = ExtensionLoader.ActiveExtensionInfo.FolderPath;
-                string dir = Path.Combine(root, "Images");
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                WriteEmbedded("KernelExtensions.Img.Info.png", Path.Combine(dir, "Info.png"));
-                WriteEmbedded("KernelExtensions.Img.InfoBG.png", Path.Combine(dir, "InfoBG.png"));
+                ActionManager.RegisterAction<T>(xmlName);
+                return true;
             }
-            catch (Exception ex) { KELog.Warn($"[KernelExtensions] image extract failed: {ex.Message}"); }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
 
-        private static void WriteEmbedded(string resourceName, string targetPath)
+        /// <summary>OSLoaded 时重载 KE 配置（具名方法：Pathfinder 按 MethodInfo 去重与卸载清理，具名更确定）。</summary>
+        private static void OnOSLoaded_LoadConfig(OSLoadedEvent e)
         {
-            if (File.Exists(targetPath)) return; // 用户已有不覆盖
-            using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
-            if (s == null) { KELog.Warn($"[KernelExtensions] embedded resource missing: {resourceName}"); return; }
-            using var fs = File.Create(targetPath);
-            s.CopyTo(fs);
-            KELog.Info($"[KernelExtensions] extracted {targetPath}");
+            try { ConfigLoader.Load(); } catch { }
+        }
+
+        /// <summary>OSLoaded 时重载本地化词典（同上，具名方法）。</summary>
+        private static void OnOSLoaded_LoadLoc(OSLoadedEvent e)
+        {
+            try { KELoc.Load(); } catch { }
+        }
+
+        /// <summary>
+        /// `kelicense` 终端指令：输出 KE 的 MIT 许可证全文（内嵌资源，随 dll 分发）。
+        /// 法律文本不翻译；引导行用英文与其它终端输出保持一致。
+        /// </summary>
+        private static void OnKelicenseCommand(OS os, string[] args)
+        {
+            string[] lines = ReadEmbeddedLicense();
+            if (lines == null)
+            {
+                os.write("[KernelExtensions] embedded LICENSE not found - please report this.");
+                KELog.Error("[kelicense] embedded LICENSE resource is missing");
+                return;
+            }
+
+            os.write("[KernelExtensions] MIT License");
+            foreach (string line in lines)
+                os.write(line);
+            os.write("The same text ships as LICENSE with the mod and is listed in NOTICE.md.");
+        }
+
+        /// <summary>读取内嵌 LICENSE（LogicalName 固定为 KernelExtensions.LICENSE.txt）。</summary>
+        private static string[] ReadEmbeddedLicense()
+        {
+            var stream = Assembly.GetExecutingAssembly()
+                .GetManifestResourceStream("KernelExtensions.LICENSE.txt");
+            if (stream == null) return null;
+
+            using (stream)
+            using (var reader = new StreamReader(stream, Encoding.UTF8))
+            {
+                return reader.ReadToEnd().Replace("\r\n", "\n").Split('\n');
+            }
         }
 
         /// <summary>
@@ -357,12 +490,23 @@ namespace KernelExtensions
                         new XAttribute("Timer", c.Timer.ToString("F2"))));
                 e.Save.Add(clockNode);
             }
+
+            // ========== RAM 显示设置==========
+            // 只在被 Action 改过时写入（保持默认的存档不必带这个节点）
+            if (Math.Abs(RamDisplayManager.Multiplier - RamDisplayManager.DefaultMultiplier) > 0.0001f
+                || RamDisplayManager.Unit != RamDisplayManager.DefaultUnit)
+            {
+                e.Save.Add(new XElement("RamDisplayData",
+                    new XAttribute("Multiplier", RamDisplayManager.Multiplier.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture)),
+                    new XAttribute("Unit", RamDisplayManager.Unit)));
+            }
         }
 
         private void OnOSLoaded_CheckVMInfection(OSLoadedEvent e)
         {
             OS os = e.Os;
-            string flag = os.Flags.GetFlagStartingWith("Kernel_VMInfected_");
+            string flag = os.Flags.GetFlagStartingWith(VMInfectionManager.InfectionFlagPrefix);
 
             // 以下是原有感染分支，也加入少量调试
             if (ConfigLoader.Debug) Log.LogDebug("Infection flag found: " + (flag ?? "null"));
@@ -373,12 +517,11 @@ namespace KernelExtensions
                 return;
             }
 
-            string configName = flag.Substring("Kernel_VMInfected_".Length);
-            string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, "VMATK", configName + ".xml");
-
-            if (!File.Exists(configPath))
+            // 反解配置路径（新格式后缀即相对路径；旧格式回退 VMATK/&lt;name&gt;.xml）
+            string configPath = VMInfectionManager.ResolveConfigPathFromFlag(flag);
+            if (configPath == null)
             {
-                if (ConfigLoader.Debug) Log.LogDebug("Config file not found at: " + configPath);
+                if (ConfigLoader.Debug) Log.LogDebug("Config file not found for flag: " + flag);
                 os.Flags.RemoveFlag(flag);
                 return;
             }
@@ -396,13 +539,20 @@ namespace KernelExtensions
                 return;
             }
 
+            config.SourcePath = flag.Substring(VMInfectionManager.InfectionFlagPrefix.Length);
             VMInfectionManager.CurrentConfig = config;
 
             if (ConfigLoader.Debug) Log.LogDebug("Config loaded. Mode = " + config.Mode);
 
             if (config.Mode == RecoveryMode.FileDeletion)
             {
-                string checkPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
+                string checkPath = KEPath.ResolveInsideSaveBase(config.CheckFilePath);
+                if (checkPath == null)
+                {
+                    // 越界无法判定——保守处理：不做恢复，保持感染状态
+                    KELog.Warn($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                    return;
+                }
                 if (!File.Exists(checkPath))
                 {
                     // 播放成功音乐
@@ -413,11 +563,11 @@ namespace KernelExtensions
                         string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                         MusicManager.loadAsCurrentSong(resolved);
                     }
-                    string guideReadFlag = "Kernel_VMGuideRead_" + configName;
+                    string guideReadFlag = "Kernel_VMGuideRead_" + VMInfectionManager.ConfigId(config);
                     if (os.Flags.HasFlag(guideReadFlag))
                         os.Flags.RemoveFlag(guideReadFlag);
                     // 清理引导动作完成 Flag
-                    string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + configName;
+                    string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config);
                     if (os.Flags.HasFlag(guideActionDoneFlag))
                         os.Flags.RemoveFlag(guideActionDoneFlag);
                     os.Flags.RemoveFlag(flag);          // 移除感染 Flag
@@ -427,7 +577,12 @@ namespace KernelExtensions
             }
             else if (config.Mode == RecoveryMode.FileExists)
             {
-                string checkPath = Path.Combine(HostileHackerBreakinSequence.GetBaseDirectory(), config.CheckFilePath);
+                string checkPath = KEPath.ResolveInsideSaveBase(config.CheckFilePath);
+                if (checkPath == null)
+                {
+                    KELog.Warn($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                    return;
+                }
                 if (File.Exists(checkPath))
                 {
                     // CheckFilePattern：文件内容必须与参考文件一致
@@ -436,9 +591,8 @@ namespace KernelExtensions
                     {
                         try
                         {
-                            string extRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath?.Replace('\\', '/');
-                            string refPath = Path.Combine(extRoot, config.CheckFilePattern);
-                            contentMatch = File.Exists(refPath) && FilesMatch(checkPath, refPath);
+                            string refPath = KEPath.ResolveInsideExtension(config.CheckFilePattern);
+                            contentMatch = refPath != null && File.Exists(refPath) && FilesMatch(checkPath, refPath);
                             if (ConfigLoader.Debug)
                                 KELog.Debug($"[VM] CheckFilePattern: comparing with {refPath} -> {(contentMatch ? "match" : "mismatch")}");
                         }
@@ -457,11 +611,11 @@ namespace KernelExtensions
                             string resolved = MusicPathResolver.ResolveMusicPath(config.SuccessMusic, extRoot);
                             MusicManager.loadAsCurrentSong(resolved);
                         }
-                        string guideReadFlag = "Kernel_VMGuideRead_" + configName;
+                        string guideReadFlag = "Kernel_VMGuideRead_" + VMInfectionManager.ConfigId(config);
                         if (os.Flags.HasFlag(guideReadFlag))
                             os.Flags.RemoveFlag(guideReadFlag);
                         // 清理引导动作完成 Flag
-                        string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + configName;
+                        string guideActionDoneFlag = "Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config);
                         if (os.Flags.HasFlag(guideActionDoneFlag))
                             os.Flags.RemoveFlag(guideActionDoneFlag);
                         os.Flags.RemoveFlag(flag);
@@ -638,10 +792,12 @@ namespace KernelExtensions
         {
             OS os = e.Os;
             string flag = os.Flags.GetFlagStartingWith("PhaseSwift_");
+            KELog.Debug($"[PS-diag] AutoRestore: flag={(flag ?? "<null>")}");
             if (flag == null) return;
 
             string configName = flag.Substring("PhaseSwift_".Length);
             var restore = PhaseSwiftManager.PendingRestore;
+            KELog.Debug($"[PS-diag] AutoRestore: configName={configName} pendingRestore={(restore == null ? "<null>" : restore.ConfigName)}");
 
             // 读档恢复条件 = flag（配置声明）AND 存档数据（PhaseSwiftData 仅在 PS 运行时写入）。
             // 有 flag 但无数据 = 存档时 PS 未运行（如 PhaseSwiftInit 加过 flag 但 PS 被 Stop/
@@ -657,6 +813,7 @@ namespace KernelExtensions
             PhaseSwiftManager.OverrideOriginalLinks(restore.OriginalLinkIds, os);
             PhaseSwiftManager.RestorePersistentState(restore);
             PhaseSwiftManager.PendingRestore = null;
+            KELog.Debug("[PS-diag] AutoRestore: calling Start(overrideScene) now");
             PhaseSwiftManager.Start(overrideScene: restore.Scene);
         }
 
@@ -670,6 +827,12 @@ namespace KernelExtensions
             foreach (var state in pending)
                 ClockManager.Restore(e.Os, state);
             KELog.Info($"[Clock] restored {pending.Count} running clock(s) from save");
+        }
+
+        /// <summary>读档后恢复 RAM 显示设置：先回默认，有 &lt;RamDisplayData&gt; 则套用。</summary>
+        private void OnOSLoaded_ApplyRamDisplay(OSLoadedEvent e)
+        {
+            RamDisplayManager.ApplyOnLoaded();
         }
     }
 }

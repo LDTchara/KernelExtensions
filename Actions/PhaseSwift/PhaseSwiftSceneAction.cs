@@ -19,10 +19,10 @@ namespace KernelExtensions.Actions.PhaseSwift
     ///
     /// 参数：
     ///   TargetScene   (int, 必填)    目标场景索引（从 0 开始）
-    ///   FadeDuration  (float, 可选)  音乐渐变时长（秒），不填则用配置默认
+    ///   FadeDuration  (float, 可选)  音乐渐变时长（秒）；负数 / 无效值 / 不填 = 用配置默认
     ///   Theme         (string, 可选) 覆盖主题（预设名或自定义路径）
     /// </summary>
-    public class PhaseSwiftSceneAction : DelayablePathfinderAction
+    public class PhaseSwiftSceneAction : KEAction
     {
         [XMLStorage] public int TargetScene;
         [XMLStorage] public float FadeDuration = -1f;
@@ -42,9 +42,5 @@ namespace KernelExtensions.Actions.PhaseSwift
             }
         }
 
-        public override void LoadFromXml(ElementInfo info)
-        {
-            base.LoadFromXml(info);
-        }
     }
 }

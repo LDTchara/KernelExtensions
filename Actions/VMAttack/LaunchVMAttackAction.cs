@@ -9,21 +9,34 @@ using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Actions.VMAttack
 {
-    public class LaunchVMAttackAction : DelayablePathfinderAction
+    public class LaunchVMAttackAction : KEAction
     {
+        /// <summary>
+        /// 配置文件路径，**相对于扩展根目录**（例：VMATK/MyAttack.xml）。
+        /// 不再需要单独的 ConfigName —— 路径本身就是身份，感染 flag 也由它推导。
+        /// </summary>
         [XMLStorage]
-        public string ConfigName;
+        public string ConfigPath;
 
         public override void Trigger(OS os)
         {
-            if (string.IsNullOrEmpty(ConfigName))
+            string relativePath = VMInfectionManager.NormalizeRelativePath(ConfigPath);
+            if (relativePath == null)
             {
-                KELog.Error("[LaunchVMAttack] ConfigName required.");
+                KELog.Error("[LaunchVMAttack] ConfigPath required (relative to the extension folder, e.g. VMATK/MyAttack.xml).");
                 return;
             }
 
-            // 配置加载路径
-            string configPath = Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, "VMATK", ConfigName + ".xml");
+            // 新一轮攻击：清空越界告警去重表（上一次攻击的告警不应影响本次）
+            VMInfectionManager.ResetEscapeWarnings();
+
+            // 配置加载路径：扩展根目录 + 相对路径（越界则拒绝）
+            string configPath = KEPath.ResolveInsideExtension(relativePath);
+            if (configPath == null)
+            {
+                KELog.Error($"[LaunchVMAttack] ConfigPath escapes the extension folder: {relativePath}");
+                return;
+            }
             if (!File.Exists(configPath))
             {
                 KELog.Error($"[LaunchVMAttack] Config not found: {configPath}");
@@ -37,28 +50,85 @@ namespace KernelExtensions.Actions.VMAttack
                 config = (VMAttackConfig)serializer.Deserialize(fs);
             }
 
+            // 记录来源路径：感染 flag 与引导标记都以它作标识
+            config.SourcePath = relativePath;
+
+            // 可恢复性校验：非密码模式的恢复依赖 CheckFilePath 指向的文件条件被满足。
+            // 若该路径越界，条件将**永远不满足** → 玩家永远无法恢复，而感染 flag 会永久留在存档里。
+            // 这种「注定卡死」的攻击应当拒绝启动，而不是留下一个无法清除的状态。
+            // （FakeFiles / Source 的越界仍为「跳过该项」，它们不影响可恢复性。）
+            if (config.Mode != RecoveryMode.Password && !ConfigValue.IsNone(config.CheckFilePath)
+                && KEPath.ResolveInsideSaveBase(config.CheckFilePath) == null)
+            {
+                KELog.Error($"[LaunchVMAttack] CheckFilePath escapes the save directory ({config.CheckFilePath}) "
+                    + $"while mode is {config.Mode} - this attack could never be recovered; aborting.");
+                return;
+            }
+
             // 新增：立即保存至 CurrentConfig，覆盖旧配置
             VMInfectionManager.CurrentConfig = config;
 
-            // 生成虚假文件
-            string baseDir = HostileHackerBreakinSequence.GetBaseDirectory();
+            // 生成虚假文件（路径均需落在各自的根目录内，越界则跳过不写）
+            // 大小限制仅适用于「凭空生成」（new byte[Size]）：单个 ≤ MaxFakeFileSize、合计 ≤ MaxFakeFilesTotalSize。
+            //   —— 写入是同步的（阻塞主线程），且 new byte[Size] 是一次性分配，
+            //      不限制的话一个手滑/恶意配置就能写满磁盘或直接抛 OutOfMemory。
+            //   走 Source 的 File.Copy **不受此限**（源文件已在扩展目录，且无内存分配）。
+            const long MaxFakeFileSize = 64L * 1024 * 1024;          // 64 MB
+            const long MaxFakeFilesTotalSize = 200L * 1024 * 1024;   // 200 MB（所有假文件合计）
+            long totalBytes = 0;
+
             foreach (var f in config.FakeFiles)
             {
                 // 如果 Path 为空则跳过
                 if (string.IsNullOrEmpty(f.Path)) continue;
-                string filePath = Path.Combine(baseDir, f.Path);
+                string filePath = KEPath.ResolveInsideSaveBase(f.Path);
+                if (filePath == null)
+                {
+                    KELog.Warn($"[LaunchVMAttack] FakeFiles Path escapes the save directory, skipped: {f.Path}");
+                    continue;
+                }
+
                 // 确保目录存在
                 string dir = Path.GetDirectoryName(filePath);
                 if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
-                if (!string.IsNullOrEmpty(f.Source) && File.Exists(Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, f.Source)))
-                    File.Copy(Path.Combine(ExtensionLoader.ActiveExtensionInfo.FolderPath, f.Source), filePath, true);
-                else
-                    File.WriteAllBytes(filePath, new byte[f.Size]);
+
+                string source = string.IsNullOrEmpty(f.Source) ? null : KEPath.ResolveInsideExtension(f.Source);
+                if (source != null && File.Exists(source))
+                {
+                    // 有 Source：直接复制，**不做大小限制**。
+                    //   源文件本就存在于扩展目录（作者已经占了那份磁盘），复制也不涉及
+                    //   一次性内存分配；限制它只会妨碍正当创作（例：把一整个小游戏拷过去
+                    //   当解谜道具，玩家要进游戏里找线索才能解除攻击）。
+                    File.Copy(source, filePath, true);
+                    continue;
+                }
+                if (!string.IsNullOrEmpty(f.Source) && source == null)
+                    KELog.Warn($"[LaunchVMAttack] FakeFiles Source escapes the extension folder, writing an empty file instead: {f.Source}");
+
+                // 凭空生成（new byte[Size]）：**只有这条路**受大小限制 ——
+                //   写入同步阻塞主线程，且 new byte[] 是一次性分配（32 位进程下大块尤为危险）。
+                long size = f.Size < 0 ? 0 : f.Size;   // 负数按 0（对齐「负数 = 默认」约定）
+                if (size > MaxFakeFileSize)
+                {
+                    KELog.Warn($"[LaunchVMAttack] FakeFiles '{f.Path}' is {size} bytes, over the {MaxFakeFileSize}-byte per-file limit; skipped.");
+                    continue;
+                }
+                if (totalBytes + size > MaxFakeFilesTotalSize)
+                {
+                    KELog.Warn($"[LaunchVMAttack] FakeFiles total would exceed the {MaxFakeFilesTotalSize}-byte limit; skipped: {f.Path}");
+                    continue;
+                }
+
+                File.WriteAllBytes(filePath, new byte[size]);
+                totalBytes += size;
             }
 
-            // 添加 Flag
-            os.Flags.AddFlag("Kernel_VMInfected_" + config.ConfigName);
+            // 添加 Flag（由相对路径推导，可无损反解回配置文件）
+            // 攻击是单例：写新 flag 前先清掉所有旧的（含异常残留），
+            // 避免累积，也避免旧 flag 被当作「当前攻击」而劫持后续攻击。
+            VMInfectionManager.ClearAllInfectionFlags(os);
+            os.Flags.AddFlag(VMInfectionManager.BuildInfectionFlag(relativePath));
             // 保存
             os.threadedSaveExecute(true);
             // ====== 模拟原版 systakeover 的崩溃前特效 ======

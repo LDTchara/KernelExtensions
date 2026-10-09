@@ -27,7 +27,12 @@ namespace KernelExtensions.Utilities
             }
 
             string cleanPath = soundPath.Replace('\\', '/');
-            string fullPath = Path.Combine(extensionRoot, cleanPath);
+            string fullPath = KEPath.ResolveInside(cleanPath, extensionRoot);
+            if (fullPath == null)
+            {
+                KELog.Warn($"[SoundHelper] path escapes the extension folder: {soundPath}");
+                return;
+            }
 
             if (!File.Exists(fullPath))
             {
