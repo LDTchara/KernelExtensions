@@ -410,26 +410,29 @@ namespace KernelExtensions.Executables
             // 第二行：负荷 + 各效果的关键参数
             string load = "load " + (LoadRamp() * 100f).ToString("000") + "%";
             if (cur.Draw2D != null && cur.Name == "FlowField")
-                load += $"  speed x{_flowField.MinSpeedFactor:0.00}~x{_flowField.MaxSpeedFactor:0.00}"
-                     + $" /{_flowField.SpeedTiers}tier  life x{_flowField.LifeGain:0.00}"
-                     + $"  trail {_flowField.TrailPixels:0}px x{_flowField.LoadTrailGain:0.0}"
-                     + $"  n={_flowField.EffectiveCount(bg.Height)}"
-                     + $"  spd {_flowField.SpeedPxPerSecond(bg.Height):0}px/s";
-            // 立方体序列报驱动状态：相位、目标角速度、累计旋转角，以及**每帧喂进去的内部秒数**。
-            // t/frame 是关键：原生速度应约 0.016（=一帧）；若显示成 1.6 左右，
-            // 就说明又把累计时钟当帧增量传了（那正是之前"一秒几十圈"的原因）。
+                load += $"  粒子 {_flowField.EffectiveCount(bg.Height)} 个"
+                     + $"   速度 {_flowField.SpeedPxPerSecond(bg.Height):0} px/s"
+                     + $"   拖尾 {_flowField.TrailPixels:0}px ×{_flowField.LoadTrailGain:0.0}"
+                     + $"   档位 {_flowField.SpeedTiers}"
+                     + $"   最慢/最快 x{_flowField.MinSpeedFactor:0.00}~x{_flowField.MaxSpeedFactor:0.00}";
+            // 立方体序列：报"看起来在看什么"。
+            // 一圈秒数 = 360 / 目标角速度，是判断快慢最直接的量；
+            // 每帧推进量（秒）用来核对帧率无关性——它应约等于 1/fps × 目标速率/原生速率，
+            // 且 fps 越高这个数越小，而**总速率不变**。
             if (cur.Name == "PortHackCubeSequence")
             {
                 _cubeRealTime += _lastDt;
                 _cubeFrames++;
 
-                string phase = _cubeTime < STARTUP_S ? "startup" :
-                               _cubeTime < STARTUP_S + SPINUP_S ? "spinup" : "runtime";
+                string phase = _cubeTime < STARTUP_S ? "浮现中" :
+                               _cubeTime < STARTUP_S + SPINUP_S ? "起转中" : "匀速中";
                 float spinDeg = MathHelper.ToDegrees(Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f) % 360f;
                 float fps = _cubeRealTime > 0.01f ? _cubeFrames / _cubeRealTime : 0f;
 
-                load += $"  {phase}  target {CUBE_RATE_DEG_PER_SEC:0.#}deg/s  spin={spinDeg:0.0}deg"
-                     + $"  t/frame={_cubeFrameAdvance:0.0000}s  inner={_cubeTime:0.0}s  fps={fps:0}";
+                load += $"  {phase}"
+                     + $"   目标 {CUBE_RATE_DEG_PER_SEC:0.#} 度/秒（一圈 {360f / CUBE_RATE_DEG_PER_SEC:0} 秒）"
+                     + $"   已转 {spinDeg:0.0} 度"
+                     + $"   每帧推进 {_cubeFrameAdvance:0.00000} 秒  fps {fps:0}";
             }
             TextItem.doFontLabel(new Vector2(info.X + 6, info.Y + 16), load,
                 GuiData.smallfont, Color.White * 0.7f);
