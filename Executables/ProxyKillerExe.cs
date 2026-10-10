@@ -352,19 +352,26 @@ public class ProxyKillerExe : GameExecutable
         drawOutline();
         drawTarget();
 
-        // 退出瞬间整体停画（背景与文字一起消失，不参与淡出）
-        if (isExiting) return;
+        // ⚠️ 这里**不能**因为 isExiting 就整体停画。
+        //
+        // 原版的退出机制是 ExeModule.Update 里 "ramCost = baseRamCost * fade; bounds.Height = ramCost"
+        // —— 靠**窗口高度收缩到 0** 来退场（2 秒，FADEOUT_RATE = 0.5），不是靠绘制端淡出。
+        // 原版 DLCTraceSlower 因此退出时不带任何 isExiting 判断，照常画，内容随窗口一起缩小消失。
+        // 早退会让窗口框（drawOutline 画的那层）继续存在 2 秒、里面却全空 —— 看起来像"窗口还在但全没了"。
+        //
+        // 锁定屏是唯一例外：它要么整屏在，要么整屏不在（见下面的 isExiting 判断）。
 
         // 内容区：原版 SignalScramble 就是 Utils.InsetRectangle(bounds 去掉面板高, 2)
         Rectangle content = Utils.InsetRectangle(
             new Rectangle(bounds.X, bounds.Y + Module.PANEL_HEIGHT, bounds.Width, bounds.Height - Module.PANEL_HEIGHT), 2);
-        if (content.Width <= 8 || content.Height <= 8) return;
 
-        DrawGrid(content);
+        // 窗口被 fade 收缩到内容装不下时，连背景也不用画了（原版在同一位置也有这道闸）
+        if (content.Width <= 8 || content.Height <= 8) return;
 
         if (_locked)
         {
-            // 锁定时只留一行原因（3 秒后自己关）
+            // 锁定屏是"要么全在、要么全无"：退出瞬间连背景一起停画（不参与淡出）
+            if (isExiting) return;
             if (!string.IsNullOrEmpty(_lockedReason))
                 TextItem.doFontLabelToSize(
                     new Rectangle(content.X + 6, content.Y + content.Height / 2 - 10, content.Width - 12, 20),
@@ -372,6 +379,8 @@ public class ProxyKillerExe : GameExecutable
             return;
         }
         if (_cfg == null) return;
+
+        DrawGrid(content);
 
         // 状态文字带（原版 SignalScramble 在"图形区底部往上 2 行"的位置放它）
         const int bandH = 25;
@@ -385,15 +394,22 @@ public class ProxyKillerExe : GameExecutable
 
         // 文本：把原版"减速 trace"的说法换成"加速 shell 过载"，
         // 并把原版的假进度换成**真实**的 RAM 爬升进度（同样的版式，但数字不骗人）。
+        //
+        // 三种状态与原版 DLCTraceSlower 一一对应：
+        //   退出中且没爬满 → "Spinning down..."（原版同款状态，退出时窗口正在收缩，读它有意义）
+        //   没爬满        → "Spinning up..." + 进度读数
+        //   爬满          → "Accelerating"（原版此处是 "Suppression Active" / 无 admin 时的提示）
         float progress = RampProgress();
         bool rampDone = _ram >= _target;
-        string label = rampDone
-            ? KELoc.Loc("PROXY_KILLER_ACTIVE", "Accelerating")
-            : KELoc.Loc("PROXY_KILLER_SPINUP", "Spinning up...");
+        string label = isExiting
+            ? KELoc.Loc("PROXY_KILLER_SPINDOWN", "Spinning down...")
+            : rampDone
+                ? KELoc.Loc("PROXY_KILLER_ACTIVE", "Accelerating")
+                : KELoc.Loc("PROXY_KILLER_SPINUP", "Spinning up...");
         string text = "[ " + label + " ]";
-        string readout = rampDone
-            ? null
-            : (progress * 100f).ToString("00.00", System.Globalization.CultureInfo.InvariantCulture) + "%";
+        string readout = (!isExiting && !rampDone)
+            ? (progress * 100f).ToString("00.00", System.Globalization.CultureInfo.InvariantCulture) + "%"
+            : null;
 
         Vector2 size = GuiData.font.MeasureString(text);
         float readoutScale = readout != null ? 0.7f : 1f;
