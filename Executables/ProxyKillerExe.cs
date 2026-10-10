@@ -154,7 +154,7 @@ public class ProxyKillerExe : GameExecutable
         // 反射可用性一次报清 —— 失败时加速会静默失效，必须让它可见
         if (ReflectionReady)
         {
-            KELog.Info($"{LogTag} shell hooks resolved (OS.exes, ShellExe.destComp).");
+            KELog.Debug($"{LogTag} shell hooks resolved (OS.exes, ShellExe.destComp).");
         }
         else
         {
@@ -363,7 +363,7 @@ public class ProxyKillerExe : GameExecutable
             if (hit > 0 && !_accelerating)
             {
                 _accelerating = true;
-                KELog.Info($"{LogTag} accelerating {hit} shell(s) overload.");
+                KELog.Debug($"{LogTag} accelerating {hit} shell(s) overload.");
             }
             else if (hit == 0)
             {
@@ -443,27 +443,45 @@ public class ProxyKillerExe : GameExecutable
 
         DrawFlowBackground(content);
 
-        // 状态文字带（原版 SignalScramble 在"图形区底部往上 2 行"的位置放它）
+        // ── 底部一条通栏：左边是 Exit 按钮，右边是状态文字，两者**叠在同一条上** ──
+        //
+        // 原版 SignalScramble 是"状态文字带"与"按钮条"两条分开的（文字带在按钮上方）。
+        // 这里合成一条：黑框只从按钮右侧开始，状态文字直接落在按钮条上。
+        // ⚠️ 绘制顺序必须是 通栏底 → 按钮 → 文字。按钮后画会盖住文字，反过来才能让
+        // 文字叠在按钮条上（这正是要的效果）。
         const int bandH = 25;
-        Rectangle band = new(content.X, content.Y + content.Height - bandH - 10 - bandH,
-            (int)(content.Width * 0.92f), bandH + 2);
-        band.Width += 8;
-        spriteBatch.Draw(Utils.white, band, Color.Black * 0.9f);
-        band.Width -= 8;
-        band.Y += 4;
-        band.Height -= 8;
+        Rectangle bar = new(content.X, content.Y + content.Height - bandH, content.Width, bandH);
+
+        // 退出时整条随 fade 淡出（原版退场靠窗口收缩，但内容是按帧画的，加一层淡出更顺）
+        float barFade = isExiting ? MathHelper.Clamp(fade, 0f, 1f) : 1f;
+
+        // 通栏底色
+        spriteBatch.Draw(Utils.white, bar, Color.Black * (0.95f * barFade));
+
+        // Exit 按钮占左边一小块；其余留给状态文字（黑框"起始位置在右边" = 只压住右半边）
+        int btnW = Math.Min(bar.Width, 60);
+        Rectangle btn = new(bar.X, bar.Y, btnW, bar.Height);
+        if (Button.doButton(PID + ID_EXIT, btn.X + 1, btn.Y, btn.Width - 2, btn.Height,
+                KELoc.Loc("PROXY_KILLER_BTN_EXIT", "Exit"), os.lockedColor))
+        {
+            KELog.Info($"{LogTag} exit requested by player.");
+            isExiting = true;
+        }
+
+        // 状态文字区：按钮右侧，留 4px 间隙
+        Rectangle textArea = new(btn.X + btn.Width + 4, bar.Y + 2,
+            Math.Max(10, bar.Right - (btn.X + btn.Width + 4) - 2), bar.Height - 4);
 
         // 状态文字：语义对齐原版 DLCTraceSlower，但把"抑制追踪"换成"加速 shell 过载"。
         //
         // 原版是三个状态词（"[ Spinning up... ]" / "[ Suppression Active ]" /
-        // "[ Spinning down... ]"），长句、括号包起来、读起来像机器在报自己的状态。
-        // 这里照这个语气来：
+        // "[ Spinning down... ]"），括号包起来、读起来像机器在报自己的状态。
         //   爬升中   → "Spinning up..." + 进度读数（机械起转，原版同款词）
         //   已爬满   → "Overdrive"（**超负荷运转** —— 对应原版的 "Suppression Active"）
         //   退出中   → "Spinning down..."（卸荷，原版同款）
         //
         // 三级连起来是一条完整的负载曲线：升速 → 被逼到超负荷 → 降速。
-        // 刻意不用 "Accelerating" 这类词：那是描述**动作**，而这里要的是报**负载状态**。
+        // 刻意不用 "Accelerating" 这类词：那是描述**动作**，而这里要报的是**负载状态**。
         float progress = RampProgress();
         bool rampDone = _ram >= _target;
         string label = isExiting
@@ -478,16 +496,18 @@ public class ProxyKillerExe : GameExecutable
 
         Vector2 size = GuiData.font.MeasureString(text);
         float readoutScale = readout != null ? 0.7f : 1f;
-        float scale = Math.Min(1f, Math.Min(band.Width * readoutScale / size.X, band.Height / size.Y));
-        Vector2 offset = new(band.Width - size.X * scale, band.Height / 2f - size.Y * scale / 2f);
-        Color textColor = Color.Lerp(Color.White, os.highlightColor, 0.4f + Utils.randm(0.1f));
-        spriteBatch.DrawString(GuiData.font, text, new Vector2(band.X, band.Y) + offset,
+        float scale = Math.Min(1f, Math.Min(textArea.Width * readoutScale / size.X,
+            textArea.Height / size.Y));
+        Vector2 offset = new(textArea.Width - size.X * scale,
+            textArea.Height / 2f - size.Y * scale / 2f);
+        Color textColor = Color.Lerp(Color.White, os.highlightColor, 0.4f + Utils.randm(0.1f)) * barFade;
+        spriteBatch.DrawString(GuiData.font, text, new Vector2(textArea.X, textArea.Y) + offset,
             textColor, 0f, Vector2.Zero, new Vector2(scale), SpriteEffects.None, 0.5f);
 
         // 读数逐字符铺在文字左侧（原版同款版式）
         if (readout != null)
         {
-            Vector2 pos = new(band.X + 2f, band.Y + offset.Y);
+            Vector2 pos = new(textArea.X + 2f, textArea.Y + offset.Y);
             for (int i = 0; i < readout.Length; i++)
             {
                 spriteBatch.DrawString(GuiData.font, readout[i].ToString(),
@@ -495,17 +515,6 @@ public class ProxyKillerExe : GameExecutable
                     textColor, 0f, Vector2.Zero, new Vector2(scale), SpriteEffects.None, 0.5f);
                 pos.X += size.X / text.Length * scale + 2f;
             }
-        }
-
-        // 底部 Exit 按钮（原版 SignalScramble 就是这条满宽黑条 + 按钮）
-        // 按钮条画在内容区**内部底部**（压住一点背景没关系；放到内容区外面会盖到别的 exe 窗口）
-        Rectangle btn = new(content.X, content.Y + content.Height - bandH, content.Width, bandH);
-        spriteBatch.Draw(Utils.white, btn, Color.Black);
-        if (Button.doButton(PID + ID_EXIT, btn.X + 1, btn.Y, btn.Width - 2, btn.Height,
-                KELoc.Loc("PROXY_KILLER_BTN_EXIT", "Exit"), os.lockedColor))
-        {
-            KELog.Info($"{LogTag} exit requested by player.");
-            isExiting = true;
         }
     }
 
