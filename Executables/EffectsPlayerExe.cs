@@ -218,7 +218,6 @@ namespace KernelExtensions.Executables
                 Update = dt => _cubeTime += dt * CubeTimeScale,
                 Draw3D = (gd, sb, b, t) => _cubeSeq.DrawSequence(b, _cubeTime, 10f)
             });
-
             if (_effects.Count > 0)
                 _statusText = StatusFor(0);
         }
@@ -300,9 +299,16 @@ namespace KernelExtensions.Executables
         ///
         /// <para>
         /// 原版 <c>PortHackExe</c> 的参数是 <c>CRACK_TIME = 6f</c>，
-        /// 调用 <c>DrawSequence(dest, t, CRACK_TIME)</c> 且 <c>t</c> 是**真实帧间隔** ——
-        /// 也就是 6 秒里转约 5.3 弧度（**平均约 50°/秒**，内层还更快），
-        /// 它本来就是设计成一闪而过的破解动画。预览里必须大幅减速才看得清层级。
+        /// 调用 <c>DrawSequence(dest, t, CRACK_TIME)</c> 且 <c>t</c> 是**真实帧间隔**。
+        /// </para>
+        ///
+        /// <para>
+        /// ⚠️ 关键：这个 t **不只是转速** —— 序列内部把累计时间切成四段推进
+        /// （0.6s startup 浮现 → 1s spinup 加速 → 到 totalTime-1.7s 为止 runtime 匀速
+        /// → 之后 spindown → idle），所以缩放 t 等于**把整条时间线一起拉长**：
+        /// startup 那 0.6 秒会被拉成 0.6/scale 真实秒。缩得越小，前两段（浮现与起转）
+        /// 占掉的时间越长，看上去越像"卡住不动"，而真正需要观察的 runtime 匀速段要等很久才来。
+        /// 若观感不对，先看面板上的 <c>cubeT=</c> 与相位名判断它落在哪一段。
         /// </para>
         ///
         /// <para>
@@ -312,6 +318,11 @@ namespace KernelExtensions.Executables
         /// </para>
         /// </summary>
         private const float CubeTimeScale = 0.025f;
+
+        // 原版 PortHackCubeSequence 的四段时间线（用于面板显示当前相位）
+        private const float STARTUP_S = 0.6f;      // 浮现
+        private const float SPINUP_S = 1f;         // 起转加速
+        private const float RUNTIME_END_S = 10f - 1.7f;   // totalTime - 1.7f
 
         private float _cubeTime;
 
@@ -359,6 +370,18 @@ namespace KernelExtensions.Executables
                      + $"  n={_flowField.EffectiveCount(bg.Height)}"
                      + $" = {_flowField.DensityCoefficient:0.###}xh^{_flowField.DensityExponent:0.###}"
                      + $"  spd {_flowField.SpeedPxPerSecond(bg.Height):0}px/s";
+            // 立方体序列报时间线 —— 它内部按 startup/spinup/runtime/spindown 分段推进，
+            // 只有 runtime 段才匀速转；看不出快慢时先看它落在哪一段。
+            if (cur.Name == "PortHackCubeSequence")
+            {
+                string phase = _cubeTime < STARTUP_S ? "startup" :
+                               _cubeTime < STARTUP_S + SPINUP_S ? "spinup" :
+                               _cubeTime < RUNTIME_END_S ? "runtime" : "spindown";
+                // 外层的 Y 旋转量：rotTime * 1.5 弧度（rotTime ≈ 进入匀速后累计的时间）
+                float rot = Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f;
+                load += $"  cubeT={_cubeTime:0.00}s scale x{CubeTimeScale:0.###} {phase}"
+                     + $"  rot={MathHelper.ToDegrees(rot) % 360f:0.0}deg";
+            }
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
 

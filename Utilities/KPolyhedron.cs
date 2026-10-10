@@ -125,35 +125,63 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
-        /// 把 <see cref="SpinAxis"/> 那根轴转到**竖直**的固定姿态矩阵（纯旋转，无缩放无镜像）。
+        /// 把 <paramref name="axis"/> 转到竖直的**最小旋转**矩阵（纯旋转，无缩放无镜像）。
         ///
         /// <para>
-        /// 用法：<c>World = Scale * OrientationMatrix(shape) * Spin(angle)</c> ——
-        /// 摆正在内、自转在外，于是自转始终绕世界竖直轴，而该立体自己的 n 重轴正好与它重合。
+        /// 用法：<c>World = Scale * OrientationMatrix(axis) * Spin(angle)</c> ——
+        /// 摆正在内、自转在外，于是自转始终绕世界竖直轴，而该立体自己的对称轴正好与它重合。
         /// </para>
         ///
         /// <para>
-        /// 构造方式：取 <paramref name="axis"/> 为新的局部 Y 轴，它与世界 Y 轴叉乘得到局部 X 轴
-        /// （axis 已平行于 Y 时用世界 Z 轴兜底避免退化），X×Y 得到局部 Z 轴。
-        /// 三个基向量正交单位，故矩阵是纯旋转（行列式 +1）。
+        /// ⚠️ 必须用**最小旋转**（按两轴夹角转过去），不能用"取 axis 当局部 Y、再随便挑一根 X"
+        /// 那种构造 —— 后者会在轴上叠加一个任意滚转角，把立体转到一个陌生的姿态，
+        /// 观感上就是"形状不对了"。最小旋转保证立体只是被"扶正"，其余朝向尽量不变。
+        /// </para>
+        ///
+        /// <para>
+        /// 用 Rodrigues 公式：<c>R = I + [k]×sinθ + [k]×²(1-cosθ)</c>，
+        /// 其中 <c>k = a×b/|a×b|</c>、<c>θ = angle(a,b)</c>。轴已竖直时 a×b=0，
+        /// 直接返回单位矩阵；两轴恰好反向时退化，做一次取反（保底，正常不会走到）。
         /// </para>
         /// </summary>
-        /// <param name="axis">要摆到竖直的那根轴；传零向量则返回单位矩阵。</param>
+        /// <param name="axis">要摆到竖直的那根轴；零向量返回单位矩阵。</param>
         public static Matrix OrientationMatrix(Vector3 axis)
         {
             if (axis.LengthSquared() < 1e-12f) return Matrix.Identity;
 
-            Vector3 y = Vector3.Normalize(axis);
-            Vector3 x = Vector3.Cross(Vector3.Up, y);
-            if (x.LengthSquared() < 1e-8f) x = Vector3.Cross(Vector3.UnitZ, y);   // axis 已竖直：换一根参考轴
-            x = Vector3.Normalize(x);
-            Vector3 z = Vector3.Cross(x, y);
+            Vector3 a = Vector3.Normalize(axis);
+            Vector3 b = Vector3.UnitY;
 
-            // 行优先：局部 X/Y/Z 三行分别是 x / y / z
+            Vector3 c = Vector3.Cross(a, b);
+            float sinT = c.Length();
+            if (sinT < 1e-6f)
+            {
+                // 已经竖直（a≈b）；或恰好反向 —— 后者罕见，做一次取反保底
+                return Vector3.Dot(a, b) > 0f ? Matrix.Identity : Matrix.CreateScale(-1f, 1f, 1f);
+            }
+
+            Vector3 k = c / sinT;                     // 旋转轴（单位）
+            float cosT = MathHelper.Clamp(Vector3.Dot(a, b), -1f, 1f);
+            float x = k.X, y = k.Y, z = k.Z;
+            float oneMinusCos = 1f - cosT;
+
+            // 行优先：I + [k]× sinθ + [k]×²(1-cosθ)
             return new Matrix(
-                x.X, x.Y, x.Z, 0f,
-                y.X, y.Y, y.Z, 0f,
-                z.X, z.Y, z.Z, 0f,
+                cosT + x * x * oneMinusCos,
+                x * y * oneMinusCos - z * sinT,
+                x * z * oneMinusCos + y * sinT,
+                0f,
+
+                y * x * oneMinusCos + z * sinT,
+                cosT + y * y * oneMinusCos,
+                y * z * oneMinusCos - x * sinT,
+                0f,
+
+                z * x * oneMinusCos - y * sinT,
+                z * y * oneMinusCos + x * sinT,
+                cosT + z * z * oneMinusCos,
+                0f,
+
                 0f, 0f, 0f, 1f);
         }
 
