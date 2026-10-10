@@ -193,6 +193,25 @@
        某个协议有没有破开由该协议自己的 <OnFail> 表达。
        There is no root-level OnFail: the root has no RNG, so the total time running out always
        settles. Whether a protocol broke is expressed by that protocol's own <OnFail>. -->
+  <!-- ── 动作点 / Action hooks ──
+       两种写法都支持，可混用：
+       Both forms are supported and can be combined:
+
+       1) 内联 —— 直接写动作，不用为一两行动作单独建文件。
+          Inline: write the actions right here; no need to create a file for one or two actions.
+          内容原样交给 Pathfinder 解析，写法与动作文件完全一致：
+          The content goes straight to Pathfinder, so the syntax is identical to an action file:
+            · <Actions>           —— 其中动作**立即**逐个执行 / runs each action immediately
+            · <ConditionalActions> —— 由条件决定何时执行；<Instantly> 在加载后立即触发，
+                                      <OnConnect> / <HasFlags> 等则等待条件满足
+                                      gated by a condition; <Instantly> fires on load, while
+                                      <OnConnect> / <HasFlags> wait for their condition
+
+       2) 路径 —— 引用一个动作文件（相对于扩展根）。
+          Path: reference an action file, relative to the extension root.
+
+       两者同时写时：先执行内联的那部分，再执行文件。
+       When both are present the inline part runs first, then the file. -->
   <OnStart>Actions/crackStart.xml</OnStart>
   <OnComplete>Actions/crackSuccess.xml</OnComplete>
 
@@ -242,6 +261,34 @@
 
     [换一个立体 / Use a different solid]
       <Polyhedron>Icosahedron</Polyhedron>
+
+    [动作点写成内联 / Action hook written inline]
+      不用建文件，直接写在钩子里（同样可挂在协议级的 <OnStart> / <OnComplete> / <OnFail>）：
+      No file needed - write it straight into the hook (works on protocol-level hooks too):
+      <OnStart>
+        <Actions>
+          <TerminalWrite Text="bypassing firewall..." />
+          <PortControl TargetID="targetNode" Protocol="ssh" DisplayName="SSH" PortNum="22" />
+        </Actions>
+      </OnStart>
+
+    [动作点内联 + 条件 / Action hook inline with a condition]
+      <ConditionalActions> 里的条件满足后才执行；<Instantly> 是"加载后立即触发"：
+      Gated by the condition inside <ConditionalActions>; <Instantly> fires as soon as it loads:
+      <OnComplete>
+        <ConditionalActions>
+          <Instantly>
+            <TerminalWrite Text="crack complete" />
+          </Instantly>
+        </ConditionalActions>
+      </OnComplete>
+
+    [内联与文件同时用 / Inline and file together]
+      先跑内联部分，再跑文件：
+      The inline part runs first, then the file:
+      <OnComplete>Actions/crackSuccess.xml
+        <Actions><TerminalWrite Text="done" /></Actions>
+      </OnComplete>
 
     [起转用绝对秒数而不是比例 / Absolute ramp-up instead of a ratio]
       <SpinUpTime>0.5</SpinUpTime>

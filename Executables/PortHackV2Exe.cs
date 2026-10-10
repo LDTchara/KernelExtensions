@@ -352,7 +352,7 @@ public class PortHackV2Exe : GameExecutable
         }
 
         string source = CurrentConfig.SourceName;
-        PortHackV2Hooks.Run(os, CurrentConfig.OnStart, source, "OnStart");
+        CurrentConfig.OnStart?.Execute(os, source, "OnStart");
 
         // 全局：破解一开始就算一次敌对行为（对齐原版 Shell 过载那种"动手了"的信号）
         MarkHostile("cracking started");
@@ -412,7 +412,7 @@ public class PortHackV2Exe : GameExecutable
             // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
             rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
             string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
-            PortHackV2Hooks.Run(os, rt.Def.OnStart, protoSource, "OnStart");
+            rt.Def.OnStart?.Execute(os, protoSource, "OnStart");
 
             // 每个协议启动时也记一次敌对行为 —— 多协议是错开启动的，
             // 于是"动手"的信号会随着后续协议陆续到达而反复出现，而不是只在开头响一次。
@@ -450,11 +450,11 @@ public class PortHackV2Exe : GameExecutable
             {
                 KELog.Warn($"[PortHackV2] '{protoSource}': could not open port: {ex.Message}");
             }
-            PortHackV2Hooks.Run(os, rt.Def.OnComplete, protoSource, "OnComplete");
+            rt.Def.OnComplete?.Execute(os, protoSource, "OnComplete");
         }
         else
         {
-            PortHackV2Hooks.Run(os, rt.Def.OnFail, protoSource, "OnFail");
+            rt.Def.OnFail?.Execute(os, protoSource, "OnFail");
             if (forced)
                 KELog.Warn($"[PortHackV2] '{protoSource}': did not finish within the root <Time>; "
                     + "recorded as failed - check the timing in this configuration.");
@@ -491,7 +491,7 @@ public class PortHackV2Exe : GameExecutable
         // 急刹从这一刻（根级 <Time> 跑满）才开始，而不是"匀速区间用完"时
         _sequence.CrackingFinished = true;
         _sequence.IdleSpin = true;      // 成功演出期间背景立体继续慢转
-        PortHackV2Hooks.Run(os, CurrentConfig.OnComplete, source, "OnComplete");
+        CurrentConfig.OnComplete?.Execute(os, source, "OnComplete");
         KELog.Info($"[PortHackV2] '{source}': crack finished, {_successCount}/{_runtimes.Count} protocol(s) succeeded.");
     }
 

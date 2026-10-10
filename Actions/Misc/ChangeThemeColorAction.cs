@@ -13,12 +13,12 @@ namespace KernelExtensions.Actions.Misc
     /// 临时修改当前 OS 的主题颜色字段——**只灌颜色，不切换主题**（布局与背景保持原样）。
     ///
     /// XML 用法：
-    ///   &lt;ChangeThemeColor Locate="defaultHighlightColor:Red,warningColor:#FF0000" /&gt;
-    ///   &lt;ChangeThemeColor Locate="defaultHighlightColor:Rainbow,warningColor:#FF0000" Duration="10" /&gt;
+    ///   &lt;ChangeThemeColor Fields="defaultHighlightColor:Red,warningColor:#FF0000" /&gt;
+    ///   &lt;ChangeThemeColor Fields="defaultHighlightColor:Rainbow,warningColor:#FF0000" Duration="10" /&gt;
     ///
-    /// · Locate 为逗号分隔的「字段名:颜色值」列表；字段名须是主题的颜色字段
+    /// · Fields 为逗号分隔的「字段名:颜色值」列表；字段名须是主题的颜色字段
     ///   （如 defaultHighlightColor / warningColor / moduleColorSolidDefault / terminalTextColor 等）。
-    /// · 颜色值分静态与动态两类，同一条 Locate 里可混用：
+    /// · 颜色值分静态与动态两类，同一条 Fields 里可混用：
     ///     静态 —— XNA 命名色（如 Red，大小写不敏感）、#RGB、#RRGGBB、#AARRGGBB、R,G,B[,A]，
     ///             走 <see cref="ColorHelper.ParseStaticColor"/>，只在触发时写一次；
     ///     动态 —— LDTchara[:速度[:透明度[:饱和度[:明度]]]]、Rainbow（LDTchara 的别名）、
@@ -42,7 +42,7 @@ namespace KernelExtensions.Actions.Misc
     public class ChangeThemeColorAction : KEAction
     {
         /// <summary>逗号分隔的「字段名:颜色值」列表，如 defaultHighlightColor:Red,warningColor:#FF0000。</summary>
-        [XMLStorage] public string Locate = "";
+        [XMLStorage] public string Fields = "";
 
         /// <summary>
         /// 动态色的持续秒数。不写 / ≤ 0 / NaN / Infinity = 不限期（到玩家切主题为止）。
@@ -66,7 +66,7 @@ namespace KernelExtensions.Actions.Misc
 
         public override void Trigger(OS os)
         {
-            if (os == null || string.IsNullOrWhiteSpace(Locate)) return;
+            if (os == null || string.IsNullOrWhiteSpace(Fields)) return;
 
             Type themeType = typeof(CustomTheme);
             Type osType = typeof(OS);
@@ -75,7 +75,7 @@ namespace KernelExtensions.Actions.Misc
             var statics = new List<KeyValuePair<string, string>>();
             var dynamics = new List<DynamicTarget>();
 
-            foreach (string pair in Locate.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (string pair in Fields.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 string[] kv = pair.Split(new[] { ':' }, 2);
                 if (kv.Length != 2)

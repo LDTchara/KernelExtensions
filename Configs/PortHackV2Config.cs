@@ -70,14 +70,14 @@ public class PortHackV2ProtocolConfig
     /// <summary>启动延迟的解析结果（秒）。</summary>
     [XmlIgnore] public float StartDelay { get; private set; }
 
-    /// <summary>动作点：本协议开始破解时执行（相对扩展根的动作文件路径）。</summary>
-    public string OnStart { get; set; } = string.Empty;
+    /// <summary>动作点：本协议开始破解时执行。支持内联动作与动作文件路径，见 <see cref="ActionHook"/>。</summary>
+    public ActionHook OnStart { get; set; }
 
-    /// <summary>动作点：本协议破解成功时执行。</summary>
-    public string OnComplete { get; set; } = string.Empty;
+    /// <summary>动作点：本协议破解成功时执行。支持内联动作与动作文件路径，见 <see cref="ActionHook"/>。</summary>
+    public ActionHook OnComplete { get; set; }
 
-    /// <summary>动作点：本协议破解失败时执行。</summary>
-    public string OnFail { get; set; } = string.Empty;
+    /// <summary>动作点：本协议破解失败时执行。支持内联动作与动作文件路径，见 <see cref="ActionHook"/>。</summary>
+    public ActionHook OnFail { get; set; }
 
     public PortHackV2ProtocolConfig() { }
 
@@ -254,15 +254,15 @@ public class PortHackV2Config
     /// </summary>
     public bool AutoExitOnLeave { get; set; } = true;
 
-    /// <summary>动作点：开始破解时执行（相对扩展根的动作文件路径）。</summary>
-    public string OnStart { get; set; } = string.Empty;
+    /// <summary>动作点：开始破解时执行。支持内联动作与动作文件路径，见 <see cref="ActionHook"/>。</summary>
+    public ActionHook OnStart { get; set; }
 
     /// <summary>
-    /// 动作点：整体收尾时执行（相对扩展根的动作文件路径）。
+    /// 动作点：整体收尾时执行。支持内联动作与动作文件路径，见 <see cref="ActionHook"/>。
     /// 根级**没有 RNG**，总时长跑满固定走成功演出，因此没有对应的失败动作点：
     /// 某个协议有没有破开由它自己的 <c>OnFail</c> 表达。
     /// </summary>
-    public string OnComplete { get; set; } = string.Empty;
+    public ActionHook OnComplete { get; set; }
 
     // ---- 一次性效果一律走动作文件 ----
     // 效果不再有专门的 XML 字段：要做的事写在动作点里（OnStart / OnComplete / OnFail），
