@@ -2,51 +2,83 @@
 <!--
     ============================================================
     KernelExtensions PortHackV2 配置示例
-    PortHackV2 Configuration Example
+    KernelExtensions PortHackV2 Configuration Example
     ============================================================
     定位：剧情资产。每份配置对应一次破解，放 <扩展根>/PortHackV2/ 下。
     Position: story asset. One config per crack, under <extensionRoot>/PortHackV2/.
 
-    启用方式 / How to enable:
-      给玩家挂上存档 flag  CustomPortHackV2_<文件名>（不含 .xml）
-      flag 就是"入口牌"：无 flag 程序锁定；出现多个 flag 视为作者配置错误（锁定 + 日志报错）
-      Set the save flag CustomPortHackV2_<fileName> on the player.
-      The flag is the entry token: none means locked; more than one is an authoring error.
+    启用方式：给玩家挂上存档 flag CustomPortHackV2_<文件名>（不含 .xml）。
+    flag 就是"入口牌"：无 flag 程序锁定；出现多个 flag 视为作者配置错误（锁定 + 日志报错）。
+    How to enable: set the save flag CustomPortHackV2_<fileName> (without .xml) on the player.
+    The flag is the entry token: none means locked; more than one is an authoring error.
+
+    颜色：支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
+    以及 #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色。
+    Colors accept CustomColor preset names, dynamic colors, hex, numeric RGB(A) and XNA names.
 
     本文件是参考示例。为保证 XML 单根校验通过，只保留一个 <PortHackV2Config>；
     其余变体以注释附在文末。
+    This is a reference example; variants are listed as comments at the end.
 -->
 <PortHackV2Config>
 
   <!-- ── 程序名 / Program name ──
        终端里显示的名字。留空 = PortHackV2。
-       程序在终端里的注册名 #KE_PORTHACKV2# 不受此处影响。 -->
+       Name shown in the terminal. Empty = PortHackV2.
+       程序在终端里的注册名 #PORTHACKV2# 不受此处影响。
+       The registration name #PORTHACKV2# is not affected by this. -->
   <ProgramName>PortHackV2</ProgramName>
 
   <!-- ── 界面标题 / Screen title ──
-       破解界面左上角显示的文字。留空 = 用第一个协议名。 -->
+       破解界面左上角显示的文字。留空 = 用第一个协议名。
+       Text drawn at the top-left of the window. Empty = the first protocol name. -->
   <Title>SSH Brute Force</Title>
 
-  <!-- ── 根级时长（秒）/ Root-level time ──
-       **Cracking 阶段的总时长** —— 底部进度条走的就是它。留空 = 10。
-       多协议**并行**推进，每个协议由自己的 <StartDelay> 错开启动。 -->
+  <!-- ── 根级时长（秒）/ Root-level time (seconds) ──
+       Cracking 阶段的总时长 —— 底部进度条走的就是它。留空 = 10。
+       Total length of the Cracking phase; the bottom progress bar follows it. Empty = 10.
+       多协议并行推进，每个协议由自己的 <StartDelay> 错开启动。
+       Protocols run in parallel, staggered by each one's own <StartDelay>. -->
   <Time>30</Time>
+
+  <!-- ── 强调色 / Accent color ──
+       界面标题、底部总进度条、动画立体线框都用它。
+       Used by the screen title, the bottom progress bar and the wireframe solid.
+       留空 / NONE = 白色。
+       Empty or NONE = white.
+       支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
+       以及 #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色。
+       Accepts CustomColor preset names and dynamic colors, hex, numeric RGB(A) and XNA names.
+       目标机状态的语义色（满足 / 未满足）仍走主题色，不归此项管。
+       The state colours (met / unmet) still come from the theme and are not affected. -->
+  <AccentColor>White</AccentColor>
 
   <!-- ── 待破解协议 / Protocols ──
        每个 <Protocol> 自带协议名、成功率、启动延迟与两条分支时长。可以放一个或多个，
-       **多协议并行**推进。协议名须已被注册（ssh / ftp / smtp / http 等）。
+       多协议并行推进。协议名须已被注册（ssh / ftp / smtp / http 等）。
+       Each <Protocol> carries its own name, success rate, start delay and branch durations.
+       Protocols run in parallel; the name must already be registered (ssh / ftp / smtp / http).
 
        <Name>          协议名（必填）
+                       Protocol name (required).
        <StartDelay>    本协议在 Cracking 开始后等待多久才启动（秒）；留空 = 0。
                        并行时用它错开各协议的进度条。
+                       Seconds to wait after Cracking starts before this protocol begins. Empty = 0.
        <Rng>           百分比 0~100。留空 = 100（必定成功）。
-                       在本协议**启动时**掷一次，决定走成功分支还是失败分支；
+                       Percentage 0~100. Empty = 100 (always succeeds).
+                       在本协议启动时掷一次，决定走成功分支还是失败分支；
                        演出上不提前暴露结果（进度条与动画在两条分支上完全一样）。
+                       Rolled once when the protocol starts; the presentation never reveals it
+                       (both branches look identical, only the duration differs).
                        写错只回退 100 并记 Warn，不会让整份配置失效。
+                       A malformed value falls back to 100 with a warning; the config still loads.
        <TimeIfSuccess> 本协议成功分支时长（秒）。留空 = 10；<= 0 = 瞬满。
+                       Duration of the success branch (seconds). Empty = 10; <= 0 = instant.
        <TimeIfFail>    本协议失败分支时长（秒）。留空 = 3； <= 0 = 瞬满。
+                       Duration of the failure branch (seconds). Empty = 3; <= 0 = instant.
        <OnStart> / <OnComplete> / <OnFail>
-                       本协议级别的动作点（相对扩展根）；与根级同名钩子叠加。 -->
+                       本协议级别的动作点（相对扩展根）；与根级同名钩子叠加。
+                       Protocol-level action hooks (relative to the extension root). -->
   <Protocols>
     <Protocol>
       <Name>ssh</Name>
@@ -68,12 +100,18 @@
   </Protocols>
 
   <!-- ── 动画 / Animation ──
-       Polyhedron：破解时旋转的立体。Tetrahedron / Cube / Octahedron /
-                   Dodecahedron / Icosahedron（大小写不敏感）。留空 = Cube。
-       节奏：浮现 → 起转（加速）→ 匀速 → 总时长到点后急刹（减速）→ 慢转。
-       SpinUpRatio ：起转时长**占总时长的比例**。留空 = 0.1（10%）。
-       SpinUpTime  ：起转时长的**绝对秒数**；写了就以它为准，留空或负数 = 用比例。
-       SpinDownTime：急刹时长（秒）。留空 = 1.7；剩余时间不够时自动截断。 -->
+       节奏：浮现并加速转 → 加速完匀速 → 总时长到点后急刹（减速）→ 减速完继续匀速慢转。
+       Rhythm: fade in while ramping up, steady spin, brake when the total time is up,
+       then keep spinning slowly at the idle rate.
+       Polyhedron   ：破解时旋转的立体。Tetrahedron / Cube / Octahedron /
+                      Dodecahedron / Icosahedron（大小写不敏感）。留空 = Cube。
+                      The solid that spins during the crack. Case-insensitive. Empty = Cube.
+       SpinUpRatio  ：起转时长占总时长的比例。留空 = 0.1（10%）。
+                      Ramp-up duration as a fraction of the total time. Empty = 0.1.
+       SpinUpTime   ：起转时长的绝对秒数；写了就以它为准，留空或负数 = 用比例。
+                      Absolute ramp-up seconds; overrides the ratio. Empty or negative = use ratio.
+       SpinDownTime ：急刹时长（秒）。留空 = 1.7；剩余时间不够时自动截断。
+                      Brake duration in seconds. Empty = 1.7; truncated if time runs short. -->
   <Polyhedron>Cube</Polyhedron>
   <SpinUpRatio>0.1</SpinUpRatio>
   <SpinDownTime>1.7</SpinDownTime>
@@ -81,79 +119,109 @@
   <!-- ── 结束后行为 / On-finish behaviour ──
        TakeAdmin：成功后是否像原版 PortHack 一样取得目标机管理员权限（把 owner 设为玩家）。
                   留空 = false，即只开端口、不给 admin。
+                  Grant admin on the target like vanilla PortHack does. Empty = false.
        AutoExitOnLeave：玩家离开本程序所在节点时是否自动关闭程序。
                         留空 = true（原版 PortHack 行为）；false = 程序跨节点常驻。
-       CompleteDelay：成功演出（乱序字 + 上下白线）结束后、退出前的停留秒数。留空 = 5。 -->
+                        Close the program when the player leaves the node it runs on.
+                        Empty = true (vanilla behaviour); false = keep running across nodes.
+       CompleteDelay：成功演出（乱序字 + 上下白线）结束后、退出前的停留秒数。留空 = 5。
+                      Seconds to stay on screen after the success sequence. Empty = 5. -->
   <TakeAdmin>true</TakeAdmin>
   <AutoExitOnLeave>true</AutoExitOnLeave>
   <CompleteDelay>5</CompleteDelay>
 
   <!-- ── 资源占用 / Resource cost ──
-       运行本程序占用的内存（MB）。留空 = 0。 -->
+       运行本程序占用的内存（MB）。留空 = 0。
+       Memory the program occupies, in MB. Empty = 0. -->
   <RamCost>30</RamCost>
 
   <!-- ── 可用性 / Usable ──
-       false 时本程序整体报告为不可用（Listing 里对应行显示未满足）。留空 = true。 -->
+       false 时本程序整体报告为不可用（Listing 里对应行显示未满足）。留空 = true。
+       When false the program reports itself as unusable. Empty = true. -->
   <Usable>true</Usable>
 
   <!-- ── 前置要求 / Prerequisites ──
        未满足时 Listing 屏对应行显示为 lockedColor，全部满足后自动进入破解。
-       RequireOpenPortsBefore 是端口协议名列表，每个协议一行。 -->
+       Unmet rows are drawn in the locked colour; the crack starts automatically once all are met.
+       RequireOpenPortsBefore 是端口协议名列表，每个协议一行。
+       RequireOpenPortsBefore is a list of port protocol names, one row each. -->
   <RequireOpenPortsBefore>
     <string>ftp</string>
   </RequireOpenPortsBefore>
   <RequireSolveFirewall>false</RequireSolveFirewall>
   <RequireProxyOverload>false</RequireProxyOverload>
 
-  <!-- ── 动作点 / Action hooks（根级）──
+  <!-- ── 动作点 / Action hooks（根级 / root level）──
        相对扩展根目录的动作文件路径。路径越界或文件不存在时跳过并记 Warn，不中断流程。
+       Paths are relative to the extension root. Out-of-bounds or missing files are skipped
+       with a warning and never interrupt the crack.
        OnStart   ：Cracking 开始时（每个协议的 <OnStart> 则在各自启动时）
+                   When Cracking starts (each protocol's own <OnStart> fires when it starts).
        OnComplete：整体收尾时（总时长跑满，固定走成功演出）
-       ⚠️ 根级没有 OnFail：根级不掷 RNG，总时长跑满即视为整体收尾，
-          某个协议有没有破开由**该协议自己的** <OnFail> 表达。 -->
+                   At the final settle (the total time elapsed, which always ends in success).
+       根级没有 OnFail：根级不掷 RNG，总时长跑满即视为整体收尾，
+       某个协议有没有破开由该协议自己的 <OnFail> 表达。
+       There is no root-level OnFail: the root has no RNG, so the total time running out always
+       settles. Whether a protocol broke is expressed by that protocol's own <OnFail>. -->
   <OnStart>Actions/crackStart.xml</OnStart>
   <OnComplete>Actions/crackSuccess.xml</OnComplete>
 
   <!-- ── 一次性效果 / One-shot effects ──
-       ⚠️ 已取消效果串字段：要开的端口由程序按"成功的协议"各自打开，
-          其余效果（关端口 / 加减防火墙 / 代理 / 解防火墙……）一律写在动作点里，
-          用普通动作文件表达即可，不必再学一套效果串语法。 -->
+       已取消效果串字段：要开的端口由程序按"成功的协议"各自打开，
+       其余效果（关端口 / 加减防火墙 / 代理 / 解防火墙……）一律写在动作点里，
+       用普通动作文件表达即可，不必再学一套效果串语法。
+       There are no effect-string fields any more. Ports are opened by the program for each
+       successful protocol; every other effect goes into an action hook as a normal action file. -->
 
 </PortHackV2Config>
 
 <!--
     ============================================================
     变体 / Variants（把对应行放进上面的根元素或某个 <Protocol> 里）
+    Variants (put the line into the root element or into a <Protocol>)
     ============================================================
 
-    [必定失败 —— 剧情用]
-      在某个 <Protocol> 里写 <Rng>0</Rng>
+    [必定失败 —— 剧情用 / Always fails, for story use]
+      在某个 <Protocol> 里写 / Put <Rng>0</Rng> inside a <Protocol>:
+      <Rng>0</Rng>
 
-    [必定成功 —— 最简单]
-      省略 <Rng>
+    [必定成功 —— 最简单 / Always succeeds, simplest form]
+      省略 <Rng> / Omit <Rng>
 
-    [单协议]
-      <Protocols> 里只放一个 <Protocol>
+    [单协议 / Single protocol]
+      <Protocols> 里只放一个 <Protocol> / Put a single <Protocol> inside <Protocols>
 
-    [不给管理员权限 —— 只开端口]
-      省略 <TakeAdmin>（等价于 false）
+    [不给管理员权限 —— 只开端口 / No admin, just open the port]
+      省略 <TakeAdmin>（等价于 false）/ Omit <TakeAdmin> (same as false)
 
-    [程序跨节点常驻]
+    [程序跨节点常驻 / Keep running across nodes]
       <AutoExitOnLeave>false</AutoExitOnLeave>
 
-    [跳过进度条，直接演出]
+    [跳过进度条，直接演出 / Skip the progress bar]
       <TimeIfSuccess>0</TimeIfSuccess>
 
-    [无任何前置要求，打开即可破解]
+    [无任何前置要求，打开即可破解 / No prerequisites at all]
       删掉 <RequireOpenPortsBefore> / <RequireSolveFirewall> / <RequireProxyOverload>
+      Remove those three elements.
 
-    [总时长很短，但想让急刹看得清]
+    [总时长很短，但想让急刹看得清 / Very short total time, but a visible brake]
       总时长不够时急刹会自动截断（并保证起转至少有一点时长）。
       原型阶段想看完整的 1.7s 急刹，就把 <Time> 加到至少 2.7 左右。
+      The brake is truncated when the total time is short. To see the full 1.7s brake,
+      raise <Time> to roughly 2.7 or more.
 
-    [换一个立体]
+    [换一个立体 / Use a different solid]
       <Polyhedron>Icosahedron</Polyhedron>
 
-    [起转用绝对秒数而不是比例]
+    [起转用绝对秒数而不是比例 / Absolute ramp-up instead of a ratio]
       <SpinUpTime>0.5</SpinUpTime>
+
+    [换强调色 —— 预设 / Another accent colour, preset]
+      <AccentColor>Riptide</AccentColor>
+
+    [换强调色 —— 动态彩虹 / Another accent colour, dynamic rainbow]
+      <AccentColor>Rainbow</AccentColor>
+
+    [强调色留空 = 白色 / Empty accent = white]
+      省略 <AccentColor> / Omit <AccentColor>
 -->

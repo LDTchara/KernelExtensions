@@ -2,33 +2,48 @@
 <!--
     ============================================================
     KernelExtensions 目标机操作动作示例
-    Target-computer action examples
+    KernelExtensions Target-computer Action Examples
     ============================================================
     这 9 个动作各自只做一件事，可以自由组合成动作序列。
-    Each action does exactly one thing; combine them freely.
+    These nine actions each do exactly one thing; combine them freely into sequences.
 
     共同约定 / Common conventions
       · TargetComp ：目标机 idName。留空 / NONE = 当前连接的节点。
+                     Target computer idName. Empty or NONE = the currently connected node.
       · Delay      ：延迟多少秒后才执行本动作（基类提供）。留空 = 立即。
+                     Seconds to wait before this action runs (provided by the base class).
+                     Empty = immediately.
       · 目标机找不到 → 记一条 Warn 并跳过，不会崩、也不会静默。
+                     A missing target logs a warning and skips; it never crashes and never
+                     fails silently.
       · 端口协议名列表用逗号或分号分隔都行（ssh,ftp / ssh;ftp）。
+                     Port protocol lists accept either commas or semicolons.
 
-    ⚠️ 这些动作**不做**权限检查：它们像剧情脚本一样直接改目标机状态。
-       要"玩家破解成功后才生效"，就把它挂在对应动作点上（OnComplete 等）。
+    这些动作不做权限检查：它们像剧情脚本一样直接改目标机状态。
+    要"玩家破解成功后才生效"，就把它挂在对应动作点上（OnComplete 等）。
+    These actions perform no permission checks: they change the target directly, like a story
+    script. To make something happen only after the player succeeds, hang it on the matching
+    action hook (OnComplete and friends).
 -->
 <Actions>
 
   <!-- ── 端口 / Ports ──
        PortOpen  ：打开端口        PortClose ：关闭端口
-       Ports 必填；协议须已在目标机上存在。 -->
+       PortOpen opens ports; PortClose closes them.
+       Ports 必填；协议须已在目标机上存在。
+       Ports is required; each protocol must already exist on the target. -->
   <PortOpen Ports="ssh,ftp" />
   <PortClose Ports="smtp" TargetComp="targetNode" />
 
   <!-- ── 防火墙 / Firewall ──
        PortFirewallAdd       ：放一份新防火墙（写完 solved=false）
+                               Place a new firewall (leaves solved = false).
        PortFirewallSolve     ：解开防火墙
+                               Solve the firewall.
        PortFirewallReroll    ：换掉解法（防火墙还在，解法变了）
+                               Reroll the solution (the firewall stays, its answer changes).
        PortFirewallConfigure ：调整现有防火墙的参数
+                               Adjust the parameters of the existing firewall.
      -->
   <PortFirewallAdd Solution="@random" Length="12" AdditionalDelay="0.1" />
   <PortFirewallSolve />
@@ -37,20 +52,27 @@
 
   <!-- ── 代理 / Proxy ──
        PortProxyAdd   ：给目标机加代理（proxyActive = true）
+                       Add a proxy to the target (proxyActive = true).
        PortProxySolve ：解除代理（proxyActive = false，正在跑的破解进程随之结束）
+                       Solve the proxy (proxyActive = false; a running crack process ends too).
        PortProxyReset ：过载进度归零、代理仍生效（"对手把进度打回去了"）
+                       Reset overload progress while the proxy stays active (the opponent
+                       pushed your progress back).
      -->
   <PortProxyAdd Time="10" />
   <PortProxySolve />
   <PortProxyReset />
 
-  <!-- ── 延迟执行 / Delayed ──
+  <!-- ── 延迟执行 / Delayed execution ──
        Delay 是基类属性，任何动作都能用。
-       例：破解成功 12 秒后，对手反应过来补一道防火墙。 -->
+       Delay comes from the base class and works on every action.
+       例：破解成功 12 秒后，对手反应过来补一道防火墙。
+       Example: 12 seconds after the crack succeeds, the target reacts and adds a firewall. -->
   <PortFirewallAdd Solution="@random" Length="16" Delay="12" />
 
   <!-- ── 一个完整的"反制"序列 / A full counter-play sequence ──
-       目标机在玩家破解成功后：关掉 ftp、补一道随机防火墙、把代理进度清零。 -->
+       目标机在玩家破解成功后：关掉 ftp、补一道随机防火墙、把代理进度清零。
+       After the player cracks in: close ftp, add a random firewall, reset the proxy progress. -->
   <PortClose Ports="ftp" />
   <PortFirewallAdd Solution="@random" Length="16" AdditionalDelay="0.3" />
   <PortProxyReset />
@@ -62,9 +84,11 @@
     用法备忘 / Usage notes
     ============================================================
 
-    [放进 PortHackV2 的动作点]
+    [放进 PortHackV2 的动作点 / Hooking them into PortHackV2]
       PortHackV2 不再有 <Buffs>/<Debuffs> 效果串 —— 一次性效果一律写成动作文件，
       再由配置的动作点引用：
+      PortHackV2 has no <Buffs>/<Debuffs> effect strings any more: one-shot effects are written
+      as action files and referenced from an action hook:
         <PortHackV2Config>
           <OnComplete>Actions/crackSuccess.xml</OnComplete>
           ...
@@ -74,13 +98,22 @@
           </Protocol>
         </PortHackV2Config>
       · 根级 OnComplete ：总时长跑满、整体收尾时
-      · 协议级 OnComplete / OnFail ：该协议自己的时长跑完时**立即**执行（不等其它协议）
+                          Root OnComplete: when the total time elapses and everything settles.
+      · 协议级 OnComplete / OnFail ：该协议自己的时长跑完时立即执行（不等其它协议）
+                          Protocol-level OnComplete / OnFail: fire as soon as that protocol's
+                          own duration elapses, without waiting for the others.
       · 根级没有 OnFail（根级不掷 RNG，不会有"整体失败"）
+                          There is no root-level OnFail (the root has no RNG, so there is no
+                          "overall failure").
 
-    [只做一件事]
+    [只做一件事 / One thing per action]
       需要"开端口 + 加防火墙"就写两条动作，不要期待一个动作有多种模式 ——
       这样作者读配置时一眼能看出到底做了什么。
+      Need "open a port and add a firewall"? Write two actions. No action has modes, so a
+      reader can see at a glance what a config actually does.
 
-    [路径]
+    [路径 / Paths]
       动作文件路径相对扩展根目录，且不得越界（`..` / 绝对路径会被拒绝并记 Warn）。
+      Action file paths are relative to the extension root and must not escape it
+      (`..` and absolute paths are rejected with a warning).
 -->
