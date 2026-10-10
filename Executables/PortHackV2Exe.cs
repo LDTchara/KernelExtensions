@@ -351,6 +351,15 @@ public class PortHackV2Exe : GameExecutable
             _runtimes.Add(new ProtocolRuntime { Def = p });
         }
 
+        // 排错用：列出实际建成的运行时与各自的关键数值。
+        // "某协议从不启动"只能靠这几个数区分（名字、StartDelay 解析值、Def 是否为 null）。
+        foreach (ProtocolRuntime rt in _runtimes)
+        {
+            KELog.Debug($"[PortHackV2] runtime built: name='{rt.Def?.Name}'"
+                + $" startDelay={rt.Def?.StartDelay ?? -1f:0.###}"
+                + $" timeIfSuccess={rt.Def?.TimeIfSuccess ?? -1f:0.###}");
+        }
+
         string source = CurrentConfig.SourceName;
         SafeHook(() => CurrentConfig.OnStart?.Execute(os, source, "OnStart"), source, "OnStart");
 
@@ -447,6 +456,9 @@ public class PortHackV2Exe : GameExecutable
                 }
                 return;    // 本帧还没到启动点
             }
+
+            KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}': protocol "
+                + $"'{rt.Def?.Name}' entering start branch (delayElapsed={rt.DelayElapsed:0.###}).");
 
             // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
             rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
