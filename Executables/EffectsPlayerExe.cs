@@ -270,6 +270,7 @@ namespace KernelExtensions.Executables
             if (_effects.Count == 0) return;
 
             if (!_paused) _timer += dt;
+            _lastDt = dt;   // Draw 里的诊断要用它累计真实时间
 
             // Update 一直跑（暂停时也传染 dt=0，让效果停住而不是累积跳变）
             float use = _paused ? 0f : dt;
@@ -288,6 +289,8 @@ namespace KernelExtensions.Executables
             _polySeq.Reset();
             _cubeSeq.Reset();
             _cubeTime = 0f;
+            _cubeRealTime = 0f;
+            _cubeFrames = 0;
             _flowField.Reset();
             _timer = 0f;
             _currentIndex = index;
@@ -325,6 +328,12 @@ namespace KernelExtensions.Executables
         private const float RUNTIME_END_S = 10f - 1.7f;   // totalTime - 1.7f
 
         private float _cubeTime;
+
+        /// <summary>最近一帧的 dt。诊断用：Draw 里累计真实时间来核对 cubeT 的增长速率。</summary>
+        private float _lastDt;
+        /// <summary>立方体条目激活以来的真实累计秒数与帧数（切条目时清）。</summary>
+        private float _cubeRealTime;
+        private int _cubeFrames;
 
         public override void Draw(float t)
         {
@@ -372,15 +381,26 @@ namespace KernelExtensions.Executables
                      + $"  spd {_flowField.SpeedPxPerSecond(bg.Height):0}px/s";
             // 立方体序列报时间线 —— 它内部按 startup/spinup/runtime/spindown 分段推进，
             // 只有 runtime 段才匀速转；看不出快慢时先看它落在哪一段。
+            //
+            // 这里同时报 **cubeT / 真实秒** 的比值：正常情况下应等于 CubeTimeScale（0.025），
+            // 若明显大于它，说明 Update 被调用的次数远多于真实帧数（本诊断就是为查这个加的）。
             if (cur.Name == "PortHackCubeSequence")
             {
+                _cubeRealTime += _lastDt;
+                _cubeFrames++;
+
                 string phase = _cubeTime < STARTUP_S ? "startup" :
                                _cubeTime < STARTUP_S + SPINUP_S ? "spinup" :
                                _cubeTime < RUNTIME_END_S ? "runtime" : "spindown";
                 // 外层的 Y 旋转量：rotTime * 1.5 弧度（rotTime ≈ 进入匀速后累计的时间）
                 float rot = Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f;
-                load += $"  cubeT={_cubeTime:0.00}s scale x{CubeTimeScale:0.###} {phase}"
-                     + $"  rot={MathHelper.ToDegrees(rot) % 360f:0.0}deg";
+                float rate = _cubeRealTime > 0.01f ? _cubeTime / _cubeRealTime : 0f;
+                float fps = _cubeRealTime > 0.01f ? _cubeFrames / _cubeRealTime : 0f;
+
+                load += $"  cubeT={_cubeTime:0.000}s scale x{CubeTimeScale:0.###} {phase}"
+                     + $"  rot={MathHelper.ToDegrees(rot) % 360f:0.0}deg"
+                     + $"  cubeT/real={rate:0.0000} (expect {CubeTimeScale:0.###})"
+                     + $"  fps={fps:0}";
             }
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
