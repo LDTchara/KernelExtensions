@@ -353,8 +353,47 @@ public class PortHackV2Exe : GameExecutable
 
         string source = CurrentConfig.SourceName;
         PortHackV2Hooks.Run(os, CurrentConfig.OnStart, source, "OnStart");
+
+        // 全局：破解一开始就算一次敌对行为（对齐原版 Shell 过载那种"动手了"的信号）
+        MarkHostile("cracking started");
+
         KELog.Info($"[PortHackV2] '{source}': cracking started with {_runtimes.Count} protocol(s), "
             + $"root time {CurrentConfig.Time}s.");
+    }
+
+    /// <summary>
+    /// 记一次对目标机的敌对行为。
+    ///
+    /// <para>
+    /// <c>Computer.hostileActionTaken()</c> 是原版"你正在动这台机器"的信号：
+    /// <c>traceTime &gt; 0</c> 时**启动追踪倒计时**，并每隔 0.35 秒在节点上闪一个红圈。
+    /// 原版 <c>ShellExe</c> 在代理过载的每一帧都调它，所以"动手"是会立刻被察觉的。
+    /// </para>
+    ///
+    /// <para>
+    /// 本程序只在**两个关键时刻**各调一次：全局破解开始、以及各协议各自启动时。
+    /// 不每帧调 —— 那样只会把 `timeLastPinged` 一直刷满、红圈闪个不停，
+    /// 而追踪倒计时本来就是 <c>traceTracker.start()</c> 一次性的，重复调用没有额外含义。
+    /// </para>
+    ///
+    /// <para>
+    /// 该方法内部只对"当前所连的那台"生效（<c>os.connectedComp.ip == ip</c> 才做事），
+    /// 所以目标机不是当前连接时调用是安全的空操作。
+    /// </para>
+    /// </summary>
+    private void MarkHostile(string what)
+    {
+        try
+        {
+            Computer t = Target;
+            if (t == null) return;
+            t.hostileActionTaken();
+            KELog.Debug($"[PortHackV2] hostile action taken on '{t.ip}' ({what}).");
+        }
+        catch (Exception ex)
+        {
+            KELog.Warn($"[PortHackV2] could not mark hostile action: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -374,6 +413,11 @@ public class PortHackV2Exe : GameExecutable
             rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
             string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
             PortHackV2Hooks.Run(os, rt.Def.OnStart, protoSource, "OnStart");
+
+            // 每个协议启动时也记一次敌对行为 —— 多协议是错开启动的，
+            // 于是"动手"的信号会随着后续协议陆续到达而反复出现，而不是只在开头响一次。
+            MarkHostile($"protocol '{rt.Def.Name}' started");
+
             KELog.Info($"[PortHackV2] '{protoSource}': started "
                 + $"(success shape={rt.Succeeded}, duration={(rt.Succeeded ? rt.Def.TimeIfSuccess : rt.Def.TimeIfFail)}s).");
         }

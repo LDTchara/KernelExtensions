@@ -74,23 +74,88 @@ namespace KernelExtensions.Utilities
         public static (int A, int B)[] Edges(KPlatonicShape s) => ((int A, int B)[])Get(s).Edges.Clone();
 
         /// <summary>
-        /// 自转轴。**五种立体统一取竖直 Y 轴**。
+        /// 该立体的旋转对称轴（已归一化）—— 取**重数最高、且方向最接近竖直**的那一根。
         ///
         /// <para>
-        /// 原先按"过顶点的 n 重对称轴"给：四面体/立方体/十二面体取体对角线 (1,1,1)、
-        /// 八面体取 (1,0,0)、二十面体取 (0,1,φ)。那在几何上确实是最"对称"的选择，
-        /// 但五种立体的动作**各不相同** —— 有的在翻滚、有的横滚、有的斜晃，
-        /// 观感是"转的方向不对"而不是自转。
+        /// 取"最接近竖直"而不是任意一根：调用方会先用 <see cref="OrientationMatrix"/> 把它摆正，
+        /// 摆正角度越小、立体的姿态越接近它在本坐标里的原始朝向，观感越自然
+        /// （摆 90° 会把一个恰好正立的立体翻倒）。
         /// </para>
         ///
+        /// <list type="bullet">
+        ///   <item><b>正四面体</b>：3 重轴 (1,1,1)/√3 —— 顶点连到对面那个面的中心，
+        ///     也就是"顶点向底面作的垂线"。与竖直夹角 54.7°（最竖直的 3 重轴）。</item>
+        ///   <item><b>立方体</b>：4 重轴 (0,1,0) —— **本来就竖直**，摆正矩阵是单位矩阵。</item>
+        ///   <item><b>正八面体</b>：4 重轴 (0,1,0) —— 同样本来就竖直。</item>
+        ///   <item><b>正十二面体</b>：3 重轴 (1/φ, φ, 0) —— 过两个相对顶点，与竖直夹角 **20.9°**
+        ///     （最竖直的一根）。⚠️ Y 轴对它只是 **2 重轴**（过对棱中点），所以早先给 UnitY 是
+        ///     "转得动但不够正"，观感上就是那点细微差别；另一根 3 重轴 (0,1,φ) 夹角 58.3°，更歪。</item>
+        ///   <item><b>正二十面体</b>：5 重轴 (1, φ, 0) —— 与竖直夹角 **31.7°**，即上下两个相对顶点
+        ///     连成的线、两端在旋转中固定不动。⚠️ 另一根 5 重轴 (0,1,φ) 夹角达 58.3°，歪近一倍；
+        ///     这两个方向恰好体现十二面体/二十面体互为对偶。</item>
+        /// </list>
+        ///
         /// <para>
-        /// 取 Y 轴之后所有立体都是同一个动作：**绕竖直轴的水平自转**，
-        /// 从屏幕上看就是轮廓从左向右转。代价是大立方体/大十二面体绕 Y 轴转时会短暂
-        /// 出现"正对一条棱"的瞬时轮廓，但这是可预期的规则运动，优于五种不同的晃动。
+        /// 上表的重数与夹角是用脚本暴力验证过的：枚举每个几何候选轴（顶点对连线、顶点方向、
+        /// 棱中点方向），检查"把顶点集合绕它转 2π/n 是否映射回自身"，再取重数最高且最竖直的。
+        /// 每种的完整轴表：四面体 4 根 3 重轴；立方体/八面体 3 根 4 重轴；
+        /// 十二面体 10 根 3 重轴 + 15 根 2 重轴；二十面体 6 根 5 重轴。
         /// </para>
         /// </summary>
-        /// <param name="s">立体种类（本方法对五种返回同一根轴，保留参数是为了签名稳定）。</param>
-        public static Vector3 SpinAxis(KPlatonicShape s) => Vector3.UnitY;
+        /// <param name="s">立体种类；越界值退回立方体的对称轴。</param>
+        public static Vector3 SpinAxis(KPlatonicShape s)
+        {
+            switch (Index(s))
+            {
+                case (int)KPlatonicShape.Tetrahedron:
+                    // 顶点向对底面中心作的垂线 = 体对角线方向（3 重轴）
+                    return Vector3.Normalize(new Vector3(1f, 1f, 1f));
+                case (int)KPlatonicShape.Dodecahedron:
+                    // 最竖直的 3 重轴 —— 过两个相对顶点（(1/φ, φ, 0) 正是它的顶点向量之一）。
+                    // 与竖直夹角 20.9°（比 (0,1,φ) 的 58.3° 正得多；Y 轴对它只是 2 重轴）
+                    return Vector3.Normalize(new Vector3(1f / (float)Phi, (float)Phi, 0f));
+                case (int)KPlatonicShape.Icosahedron:
+                    // 最竖直的 5 重轴 —— 上下两个相对顶点连成的线，两端在旋转中固定不动。
+                    // 与竖直夹角 31.7°（另一根 5 重轴 (0,1,φ) 是 58.3°，歪近一倍）
+                    return Vector3.Normalize(new Vector3(1f, (float)Phi, 0f));
+                default:
+                    // 立方体 / 八面体：它们的 4 重轴恰好就是 Y 轴，无需摆正
+                    return Vector3.UnitY;
+            }
+        }
+
+        /// <summary>
+        /// 把 <see cref="SpinAxis"/> 那根轴转到**竖直**的固定姿态矩阵（纯旋转，无缩放无镜像）。
+        ///
+        /// <para>
+        /// 用法：<c>World = Scale * OrientationMatrix(shape) * Spin(angle)</c> ——
+        /// 摆正在内、自转在外，于是自转始终绕世界竖直轴，而该立体自己的 n 重轴正好与它重合。
+        /// </para>
+        ///
+        /// <para>
+        /// 构造方式：取 <paramref name="axis"/> 为新的局部 Y 轴，它与世界 Y 轴叉乘得到局部 X 轴
+        /// （axis 已平行于 Y 时用世界 Z 轴兜底避免退化），X×Y 得到局部 Z 轴。
+        /// 三个基向量正交单位，故矩阵是纯旋转（行列式 +1）。
+        /// </para>
+        /// </summary>
+        /// <param name="axis">要摆到竖直的那根轴；传零向量则返回单位矩阵。</param>
+        public static Matrix OrientationMatrix(Vector3 axis)
+        {
+            if (axis.LengthSquared() < 1e-12f) return Matrix.Identity;
+
+            Vector3 y = Vector3.Normalize(axis);
+            Vector3 x = Vector3.Cross(Vector3.Up, y);
+            if (x.LengthSquared() < 1e-8f) x = Vector3.Cross(Vector3.UnitZ, y);   // axis 已竖直：换一根参考轴
+            x = Vector3.Normalize(x);
+            Vector3 z = Vector3.Cross(x, y);
+
+            // 行优先：局部 X/Y/Z 三行分别是 x / y / z
+            return new Matrix(
+                x.X, x.Y, x.Z, 0f,
+                y.X, y.Y, y.Z, 0f,
+                z.X, z.Y, z.Z, 0f,
+                0f, 0f, 0f, 1f);
+        }
 
         /// <summary>
         /// 非实机自检：核对五种形状的 v / e / f 计数、棱表（无重复、无自环、下标不越界、

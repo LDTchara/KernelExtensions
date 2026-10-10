@@ -49,10 +49,10 @@ public class PortHackV2Sequence : IDisposable
     private const float CAMERA_YAW_DEG = 0f;            // 正对 Z 轴；水平自转的"从左向右"要正对着看才正
 
     /// <summary>
-    /// 自转方向。角度增大时前面的面向 +X（屏幕**右**）移动，看起来是逆时针；
-    /// 取负号才是"前面的面往右边走"的**顺时针**观感，与预期一致。
+    /// 自转方向。角度增大时**前面的面向屏幕右方移动** —— 正面看就是"从左往右"，
+    /// 用户确认这个是**逆时针**（我先前按俯视判断成顺时针，判错了）。
     /// </summary>
-    private const float SPIN_DIRECTION_SIGN = -1f;
+    private const float SPIN_DIRECTION_SIGN = 1f;
     private const float FOV_Y_DEG = 45f;            // 纵向视场角；窄窗口按宽高比放大，保证横向也装得下
 
     /// <summary>相机方向（单位向量，从原点指向相机位置）。</summary>
@@ -79,6 +79,8 @@ public class PortHackV2Sequence : IDisposable
     private KPlatonicShape _vertexBufferShape = (KPlatonicShape)(-1);
     private KPlatonicShape _axisShape = (KPlatonicShape)(-1);
     private Vector3 _axis = Vector3.UnitY;
+    /// <summary>把自转轴摆到竖直的固定姿态矩阵（见 <see cref="KPolyhedron.OrientationMatrix"/>）。</summary>
+    private Matrix _orientation = Matrix.Identity;
     private int _edgeCount;
     private Color _lastColor = Color.White;
     private bool _renderFailed;
@@ -328,6 +330,11 @@ public class PortHackV2Sequence : IDisposable
         if (_axisShape != Shape)
         {
             _axis = KPolyhedron.SpinAxis(Shape);
+            // 摆正姿态：把这根轴转到竖直，之后自转就绕世界 Y 轴 —— 正四面体于是绕
+            // "顶点向底面作的垂线"转、二十面体绕"上下两个相对顶点连成的线"转，
+            // 而不是绕一根歪轴晃。立方体/八面体/十二面体的轴本来就是竖直的，
+            // 这个矩阵对它们是单位矩阵。
+            _orientation = KPolyhedron.OrientationMatrix(_axis);
             _axisShape = Shape;
         }
     }
@@ -392,7 +399,8 @@ public class PortHackV2Sequence : IDisposable
             _effect.Projection = Matrix.CreatePerspectiveFieldOfView(halfFov * 2f, aspect, 0.1f, CAMERA_DISTANCE * 2f);
             _effect.View = Matrix.CreateLookAt(CameraDirection * CAMERA_DISTANCE, Vector3.Zero, Vector3.Up);
             _effect.World = Matrix.CreateScale(_scale)
-                * Matrix.CreateFromAxisAngle(_axis, _angle * SPIN_DIRECTION_SIGN);
+                * _orientation                                          // 先把该立体的 n 重轴摆到竖直
+                * Matrix.CreateFromAxisAngle(Vector3.UnitY, _angle * SPIN_DIRECTION_SIGN);
 
             gd.RasterizerState = _rasterizer;
             gd.DepthStencilState = DepthStencilState.None; // 不挂深度缓冲：线框本来就该看见背面那几条棱
