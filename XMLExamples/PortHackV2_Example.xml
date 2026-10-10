@@ -67,6 +67,17 @@
     </Protocol>
   </Protocols>
 
+  <!-- ── 动画 / Animation ──
+       Polyhedron：破解时旋转的立体。Tetrahedron / Cube / Octahedron /
+                   Dodecahedron / Icosahedron（大小写不敏感）。留空 = Cube。
+       节奏：浮现 → 起转（加速）→ 匀速 → 总时长到点后急刹（减速）→ 慢转。
+       SpinUpRatio ：起转时长**占总时长的比例**。留空 = 0.1（10%）。
+       SpinUpTime  ：起转时长的**绝对秒数**；写了就以它为准，留空或负数 = 用比例。
+       SpinDownTime：急刹时长（秒）。留空 = 1.7；剩余时间不够时自动截断。 -->
+  <Polyhedron>Cube</Polyhedron>
+  <SpinUpRatio>0.1</SpinUpRatio>
+  <SpinDownTime>1.7</SpinDownTime>
+
   <!-- ── 结束后行为 / On-finish behaviour ──
        TakeAdmin：成功后是否像原版 PortHack 一样取得目标机管理员权限（把 owner 设为玩家）。
                   留空 = false，即只开端口、不给 admin。
@@ -97,26 +108,16 @@
   <!-- ── 动作点 / Action hooks（根级）──
        相对扩展根目录的动作文件路径。路径越界或文件不存在时跳过并记 Warn，不中断流程。
        OnStart   ：Cracking 开始时（每个协议的 <OnStart> 则在各自启动时）
-       OnComplete：整体成功（至少一个协议成功且已达终止条件）
-       OnFail    ：整体失败 -->
+       OnComplete：整体收尾时（总时长跑满，固定走成功演出）
+       ⚠️ 根级没有 OnFail：根级不掷 RNG，总时长跑满即视为整体收尾，
+          某个协议有没有破开由**该协议自己的** <OnFail> 表达。 -->
   <OnStart>Actions/crackStart.xml</OnStart>
   <OnComplete>Actions/crackSuccess.xml</OnComplete>
-  <OnFail>Actions/crackFailed.xml</OnFail>
 
   <!-- ── 一次性效果 / One-shot effects ──
-       沿用字符串语法，多个效果用逗号分隔：
-         closeports_<协议>[;<协议>...]            关闭这些端口
-         openports_<协议>[;<协议>...]             打开这些端口
-         addfirewall_<参数1>:<值>_<参数2>:<值>    加防火墙（参数内部 : 等价于 =）
-         addproxy_<数值>                          加代理
-         solvefirewall_delay:<秒>                 解开防火墙（可带延时）
-         solveproxy_delay:<秒>                    解开代理
-         ProxyOverloadSpeedHelper_<倍数>x         代理过载速度倍率（如 1.2x / 0.7x）
-         AutoOverloadProxy_<数值>                 自动过载（proxyoverloadtick += dt * 数值）
-         ReRandomFirewall / ResetFirewall / ResetProxy / SetFirewallConfig
-       留空 = 无效果。 -->
-  <Debuffs>closeports_ftp;addfirewall_lenth:12_additiontime:0.1</Debuffs>
-  <Buffs>openports_ssh</Buffs>
+       ⚠️ 已取消效果串字段：要开的端口由程序按"成功的协议"各自打开，
+          其余效果（关端口 / 加减防火墙 / 代理 / 解防火墙……）一律写在动作点里，
+          用普通动作文件表达即可，不必再学一套效果串语法。 -->
 
 </PortHackV2Config>
 
@@ -145,4 +146,14 @@
 
     [无任何前置要求，打开即可破解]
       删掉 <RequireOpenPortsBefore> / <RequireSolveFirewall> / <RequireProxyOverload>
+
+    [总时长很短，但想让急刹看得清]
+      总时长不够时急刹会自动截断（并保证起转至少有一点时长）。
+      原型阶段想看完整的 1.7s 急刹，就把 <Time> 加到至少 2.7 左右。
+
+    [换一个立体]
+      <Polyhedron>Icosahedron</Polyhedron>
+
+    [起转用绝对秒数而不是比例]
+      <SpinUpTime>0.5</SpinUpTime>
 -->

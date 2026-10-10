@@ -9,6 +9,14 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace KernelExtensions.Utilities;
+
+/// <summary>
+/// 目标机效果的操作实现（开/关端口、加减与重置防火墙、代理过载等）。
+///
+/// 目前没有调用方：这些效果以前由配置里的效果串驱动，现已改为全部走动作点
+/// （见 <see cref="Configs.PortHackV2Config"/> 的说明）。本类保留作**目标机原子动作的实现后端** ——
+/// 每种效果对应一个独立 Action，参数由 Action 自己解析。
+/// </summary>
 public class PortHackV2Effects
 {
     public static void ClosePortsFromProtocol(List<string> Org_ptcls,OS os,string CompID)

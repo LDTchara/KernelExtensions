@@ -60,7 +60,7 @@ public class PortHackV2Exe : GameExecutable
         Cracking,
         /// <summary>成功演出。</summary>
         Complete,
-        /// <summary>失败演出。</summary>
+        /// <summary>中途中断（断连 / 离开目标节点）的收尾演出。</summary>
         Failed
     }
 
@@ -166,7 +166,13 @@ public class PortHackV2Exe : GameExecutable
         }
 
         ramCost = CurrentConfig.RamCost;
+
+        // 动画参数交给序列；每帧还会按总时长重算一次时间轴，所以中途改配置也能立刻生效
         _sequence.Shape = CurrentConfig.PolyhedronShape;
+        _sequence.SpinUpSeconds = CurrentConfig.SpinUpSeconds;
+        _sequence.SpinUpRatio = CurrentConfig.SpinUpRatio;
+        _sequence.SpinDownSeconds = CurrentConfig.SpinDownSeconds;
+
         CurrentState = PortHackV2State.Listing;
     }
 
@@ -345,8 +351,9 @@ public class PortHackV2Exe : GameExecutable
     }
 
     /// <summary>
-    /// 根级结算：整体成功 = 根级总时长跑满（根级没有 RNG）。
-    /// 到期时仍未跑完的协议强制收尾（记为失败 + Warn），然后统一结算效果并进成功演出。
+    /// 根级结算：整体成功 = 根级总时长跑满（根级没有 RNG，故固定进成功演出）。
+    /// 到期时仍未跑完的协议强制收尾（记为失败 + Warn）。
+    /// 效果不在这里结算 —— 要做的事写在动作点里（见配置类的说明）。
     /// </summary>
     private void SettleRoot()
     {
@@ -359,16 +366,11 @@ public class PortHackV2Exe : GameExecutable
         foreach (ProtocolRuntime rt in _runtimes)
             if (!rt.Finished) CompleteProtocol(rt, forced: true);
 
-        // 至少一个协议成功才给药：全灭时不该白送端口与 admin
-        if (_successCount > 0)
+        // 至少一个协议成功才夺 admin：全灭时不该白送管理员权限
+        if (_successCount > 0 && CurrentConfig.TakeAdmin)
         {
-            SettleEffects(CurrentConfig);
-
-            if (CurrentConfig.TakeAdmin)
-            {
-                try { os.takeAdmin(_targetIp); }
-                catch (Exception ex) { KELog.Warn($"[PortHackV2] '{source}': takeAdmin failed: {ex.Message}"); }
-            }
+            try { os.takeAdmin(_targetIp); }
+            catch (Exception ex) { KELog.Warn($"[PortHackV2] '{source}': takeAdmin failed: {ex.Message}"); }
         }
 
         CurrentState = PortHackV2State.Complete;
@@ -376,64 +378,6 @@ public class PortHackV2Exe : GameExecutable
         _sequence.IdleSpin = true;      // 成功演出期间背景立体继续慢转
         PortHackV2Hooks.Run(os, CurrentConfig.OnComplete, source, "OnComplete");
         KELog.Info($"[PortHackV2] '{source}': crack finished, {_successCount}/{_runtimes.Count} protocol(s) succeeded.");
-    }
-
-    /// <summary>
-    /// 一次性结算配置里的 debuff / buff 效果（先 debuffs 后 buffs）。
-    /// 逐帧持续的代理辅助（ProxyOverloadSpeedHelper / AutoOverloadProxy）也在这里一并施加，
-    /// 它们的生命周期跟"破解期间"而不是本程序实例绑定。
-    /// </summary>
-    private void SettleEffects(PortHackV2Config cfg)
-    {
-        if (cfg == null) return;
-
-        foreach (var k in cfg.Debuffs)
-        {
-            string key = k.Key;
-            List<string> kvp = k.Value;
-            if (key == "closeports" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.ClosePortsFromProtocol(kvp, os, _targetIp);
-            if (key == "addfirewall" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.addFirewall(os, _targetIp, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"));
-            if (key == "addproxy" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.addProxy(os, _targetIp, int.Parse(kvp[0]));
-            if (key == "ReRandomFirewall" && kvp.Count > 0 && kvp[0] != "")
-            {
-                int lenth = PortHackV2Effects.GetValue<int>(kvp, "lenth");
-                float additiontime = PortHackV2Effects.GetValue<float>(kvp, "additiontime");
-                bool reset = string.IsNullOrEmpty(PortHackV2Effects.GetValue(kvp, "reset")) ? true : PortHackV2Effects.GetValue<bool>(kvp, "reset");
-                PortHackV2Effects.ReRandomFirewallSolution(os, _targetIp, lenth, additiontime, reset);
-            }
-            if (key == "ResetFirewall" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.ResetFirewall(os, _targetIp);
-            if (key == "ResetProxy" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.ResetProxy(os, _targetIp);
-            if (key == "SetFirewallConfig" && kvp.Count > 0 && kvp[0] != "")
-            {
-                bool reset = string.IsNullOrEmpty(PortHackV2Effects.GetValue(kvp, "reset")) ? true : PortHackV2Effects.GetValue<bool>(kvp, "reset");
-                PortHackV2Effects.SetFirewallConfig(os, _targetIp, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"), reset);
-            }
-        }
-
-        foreach (var k in cfg.Buffs)
-        {
-            string key = k.Key;
-            List<string> kvp = k.Value;
-            if (key == "openports" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.OpenPortsFromProtocol(kvp, os, _targetIp);
-            if (key == "solvefirewall" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.solveFirewall(os, _targetIp, float.Parse(kvp[0]));
-            if (key == "solveproxy" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.solveProxy(os, _targetIp, float.Parse(kvp[0]));
-            // ⚠️ ProxyOverloadSpeedHelper / AutoOverloadProxy 是**逐帧**推进的效果（每次带一个 dt）；
-            // 破解结束时已没有后续帧可供推进，所以不在这里结算 —— 它们属于"破解期间持续生效"，
-            // 需要持续代理辅助的配置应在 OnComplete 动作点里挂对应 Action。
-            if (key == "SetFirewallConfig" && kvp.Count > 0 && kvp[0] != "")
-            {
-                bool reset = string.IsNullOrEmpty(PortHackV2Effects.GetValue(kvp, "reset")) ? true : PortHackV2Effects.GetValue<bool>(kvp, "reset");
-                PortHackV2Effects.SetFirewallConfig(os, _targetIp, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"), reset);
-            }
-        }
     }
 
     // ======================= Update =======================
@@ -465,7 +409,8 @@ public class PortHackV2Exe : GameExecutable
 
             case PortHackV2State.Complete:
                 _completeElapsed += t;
-                _sequence.Update(t, 1f);
+                // 总时长已跑满（_crackTime 不再增长），序列据此走急刹 → 慢转
+                _sequence.Update(t, _crackTime, CurrentConfig.Time);
                 if (_completeElapsed >= CurrentConfig.CompleteDelay) isExiting = true;
                 return;
 
@@ -481,32 +426,35 @@ public class PortHackV2Exe : GameExecutable
         // 断连即停（对齐原版）：这与 AutoExitOnLeave 是两回事
         if (!TargetStillReachable()) { isExiting = true; return; }
 
-        // AutoExitOnLeave：玩家切走节点就关程序；关掉时走失败收尾（没跑完就中断）
+        // AutoExitOnLeave：玩家切走节点就关程序；关掉时走中断收尾（没跑完就中断）
         if (CurrentConfig.AutoExitOnLeave && os.connectedComp != null && os.connectedComp.ip != _targetIp)
         {
             KELog.Info($"[PortHackV2] '{CurrentConfig.SourceName}': left the target node; exiting.");
-            EnterFailed();
+            EnterInterrupted();
             return;
         }
 
         _crackTime += t;
         foreach (ProtocolRuntime rt in _runtimes) UpdateProtocol(rt, t);
 
-        float progress = CurrentConfig.Time <= 0f ? 1f : MathHelper.Clamp(_crackTime / CurrentConfig.Time, 0f, 1f);
-        _sequence.Update(t, progress);
+        _sequence.Update(t, _crackTime, CurrentConfig.Time);
 
         // 总时长跑满 → 整体结算（根级没有 RNG，故固定走成功演出）
         if (_crackTime >= CurrentConfig.Time) SettleRoot();
     }
 
-    private void EnterFailed()
+    /// <summary>
+    /// 中途中断收尾（断连 / 玩家离开目标节点）。
+    /// 注意这里**不跑任何根级动作点**：根级没有 RNG，也就没有"破解失败"这回事 ——
+    /// 没破开的协议由它自己的 OnFail 表达，而且那个 OnFail 在它自己的时长跑完时就执行了。
+    /// </summary>
+    private void EnterInterrupted()
     {
         if (_rootHooksFired) return;
         _rootHooksFired = true;
         CurrentState = PortHackV2State.Failed;
         _stateTimer = FAILED_EXIT_SECONDS;
-        PortHackV2Hooks.Run(os, CurrentConfig.OnFail, CurrentConfig.SourceName, "OnFail");
-        KELog.Info($"[PortHackV2] '{CurrentConfig.SourceName}': crack failed.");
+        KELog.Info($"[PortHackV2] '{CurrentConfig.SourceName}': interrupted before finishing.");
     }
 
     // ======================= Draw =======================
@@ -782,12 +730,14 @@ public class PortHackV2Exe : GameExecutable
         DrawAnimationArea(anim, opacity: CurrentState == PortHackV2State.Complete ? 0.2f : 0.35f);
 
         bool win = CurrentState == PortHackV2State.Complete;
+        // 中断收尾不是"破解失败"：根级没有 RNG，单个协议没破开由该协议自己的 OnFail 表达。
+        // 这里的文案只说明"连接断了/人走了"。
         string line1 = win
             ? KELoc.Loc("PORT_HACK_V2_COMPLETE_1", "PASSWORD")
-            : KELoc.Loc("PORT_HACK_V2_FAILED_1", "ACCESS");
+            : KELoc.Loc("PORT_HACK_V2_INTERRUPT_1", "CONNECTION");
         string line2 = win
             ? KELoc.Loc("PORT_HACK_V2_COMPLETE_2", "FOUND")
-            : KELoc.Loc("PORT_HACK_V2_FAILED_2", "DENIED");
+            : KELoc.Loc("PORT_HACK_V2_INTERRUPT_2", "LOST");
 
         int cx = bounds.X + bounds.Width / 2;
         int cy = bounds.Y + bounds.Height / 2;
