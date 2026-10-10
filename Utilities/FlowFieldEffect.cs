@@ -73,8 +73,11 @@ namespace KernelExtensions.Utilities
         /// <para>
         /// <b>2.0</b> = 维持恒定覆盖率（面积是二维的，所以面积等比就是平方）。
         /// 但实测下来这个太陡：大窗口铺 1000+ 粒子显得太密，而小窗口只有 45 个又太少
-        /// —— 也就是说"画面越大越能容忍低覆盖率"。所以默认取 <b>1.65</b>：
-        /// 小窗口相对更密一点、大窗口相对更疏一点，两头观感都正常。
+        /// —— 也就是说"画面越大越能容忍低覆盖率"。默认取 <b>1.4</b>（由 1.65 再下调）。
+        ///
+        /// ⚠️ 注意覆盖率不能只按头部面积估：粒子尺寸固定时**拖尾才是视觉主体**
+        /// （实测拖尾占视觉体积约 3/4，头只占 1/4），所以同一个数量看起来比"按头算"
+        /// 密得多。调这个指数前先看 EffectPlayer 面板上的 n= 与 p= 两个数。
         /// </para>
         ///
         /// <para>
@@ -82,7 +85,7 @@ namespace KernelExtensions.Utilities
         /// 调大 → 大窗口更多、小窗口更少；调小 → 反过来。
         /// </para>
         /// </summary>
-        public float DensityExponent { get; set; } = 1.65f;
+        public float DensityExponent { get; set; } = 1.4f;
 
         /// <summary>折算后的实际数量下限 / 上限（防止极端尺寸下几乎没有粒子或卡顿）。</summary>
         public int MinEffectiveCount { get; set; } = 24;
@@ -242,6 +245,11 @@ namespace KernelExtensions.Utilities
             float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
             int count = EffectiveCount(destHeight);
 
+            // 当前拖尾长度（归一化）。粒子必须**整条尾巴都出顶**才算飞完 ——
+            // 否则头一触顶就重生，尾巴还在画面里，看着是被生生截断的。
+            float trailNorm = CurrentTrailPixels(load)
+                / Math.Max(1f, destHeight > 0 ? destHeight : ReferenceHeight);
+
             for (int i = 0; i < count; i++)
             {
                 Particle p = _particles[i];
@@ -253,8 +261,12 @@ namespace KernelExtensions.Utilities
                 p.Pos.Y -= p.Speed * speedGain * dt;
                 p.Life -= dt;
 
-                // 出顶 / 出侧 / 寿命尽 → 从底边重新起飞
-                if (p.Pos.Y < -0.05f || p.Life <= 0f || p.Pos.X < -0.05f || p.Pos.X > 1.05f)
+                // 整条尾巴（头 + 拖尾）都离开顶边才算飞完，配合 Draw 里的顶端淡出，
+                // 观感是"尾巴一点点滑出去"，而不是头顶一碰边就整体蒸发。
+                float despawnY = -trailNorm - 0.02f;
+
+                // 飞完 / 出侧 / 寿命尽 → 从底边重新起飞
+                if (p.Pos.Y < despawnY || p.Life <= 0f || p.Pos.X < -0.05f || p.Pos.X > 1.05f)
                 {
                     p = NewParticle(seedPos: false);
                     // 重生点横向随机化，否则会形成一条固定的"起飞线"
@@ -263,6 +275,17 @@ namespace KernelExtensions.Utilities
 
                 _particles[i] = p;
             }
+        }
+
+        /// <summary>
+        /// 当前拖尾长度（像素）。抽出来是因为 <see cref="Update"/> 与 <see cref="Draw"/> 都要用它：
+        /// Update 用它决定"整条尾巴何时出顶"，Draw 用它画线 ——
+        /// 两边必须取同一个值，否则会出现"还没飞完就重生"或"画到一半被清掉"。
+        /// </summary>
+        private int CurrentTrailPixels(float load)
+        {
+            float px = TrailPixels * MathHelper.Lerp(1f, LoadTrailGain, MathHelper.Clamp(load, 0f, 1f));
+            return Math.Max(2, (int)Math.Round(px));
         }
 
         /// <summary>
@@ -280,7 +303,7 @@ namespace KernelExtensions.Utilities
 
             // 固定像素：轨迹宽 = 头部宽，两者比例在任何窗口下都一致
             int w = Math.Max(1, (int)Math.Round(ParticlePixels));
-            int trailLen = Math.Max(2, (int)Math.Round(TrailPixels * MathHelper.Lerp(1f, LoadTrailGain, load)));
+            int trailLen = CurrentTrailPixels(load);   // 与 Update 的 despawn 判定取同一个值
 
             if (ShowGrid) DrawGrid(sb, dest, color, load);
 
@@ -299,7 +322,9 @@ namespace KernelExtensions.Utilities
                 // ⚠️ 不在生成处做"透明淡入"：原先 y 靠近 1 时亮度趋近 0，粒子一出生
                 // 几乎看不见、要等一会儿才浮现，观感就是"凭空出现/凭空消失"。
                 // 现在只在顶端做一点收尾淡出（那里本来就要重生），底部全亮。
-                float fade = MathHelper.Clamp((1.05f - p.Pos.Y) * 3f, 0f, 1f);
+                // 淡出区宽度按拖尾长度的比例给 —— 拖尾越长，越早开始淡，才够时间滑出去。
+                float fadeSpan = MathHelper.Clamp(trailLen / (float)Math.Max(1, dest.Height) * 2.5f, 0.06f, 0.35f);
+                float fade = MathHelper.Clamp((1.05f - p.Pos.Y) / fadeSpan, 0f, 1f);
                 Color c = color * (brightness * MathHelper.Lerp(0.55f, 1f, fade));
 
                 // 拖尾：从头部往下（来路）的一条竖线，上下端夹进 dest
