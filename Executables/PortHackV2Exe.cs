@@ -352,13 +352,38 @@ public class PortHackV2Exe : GameExecutable
         }
 
         string source = CurrentConfig.SourceName;
-        CurrentConfig.OnStart?.Execute(os, source, "OnStart");
+        SafeHook(() => CurrentConfig.OnStart?.Execute(os, source, "OnStart"), source, "OnStart");
 
         // 全局：破解一开始就算一次敌对行为（对齐原版 Shell 过载那种"动手了"的信号）
         MarkHostile("cracking started");
 
         KELog.Info($"[PortHackV2] '{source}': cracking started with {_runtimes.Count} protocol(s), "
             + $"root time {CurrentConfig.Time}s.");
+    }
+
+    /// <summary>
+    /// 执行一个动作点，并**保证它的失败不会打断调用方**。
+    ///
+    /// <para>
+    /// 为什么必须包：动作点由作者配置，可能引用不存在的文件或写错内容；而调用点位于
+    /// <c>OS.Update</c> 驱动的流程里（例如"协议启动"）。一旦异常冒出去会被上层吞掉，
+    /// 结果是**协议永远不启动、而且没有任何日志** —— 实机出现过这个症状，极难定位。
+    /// 这里统一兜底并记 Error（附完整异常）。
+    /// </para>
+    /// </summary>
+    /// <param name="run">要执行的动作点调用。</param>
+    /// <param name="source">日志定位用。</param>
+    /// <param name="point">动作点名（如 OnStart）。</param>
+    private static void SafeHook(Action run, string source, string point)
+    {
+        try
+        {
+            run();
+        }
+        catch (Exception ex)
+        {
+            KELog.Error($"[PortHackV2] '{source}': <{point}> threw but was contained: {ex}");
+        }
     }
 
     /// <summary>
@@ -412,7 +437,11 @@ public class PortHackV2Exe : GameExecutable
             // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
             rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
             string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
-            rt.Def.OnStart?.Execute(os, protoSource, "OnStart");
+
+            // ⚠️ 钩子失败**绝不能**打断协议启动：这里若抛异常会一路冒到 OS.Update 被上层吞掉，
+            // 于是本协议永远进不了 started、最后被总时长强制收尾，而且**连日志都没有** ——
+            // 实机曾出现过这个症状。
+            SafeHook(() => rt.Def.OnStart?.Execute(os, protoSource, "OnStart"), protoSource, "OnStart");
 
             // 每个协议启动时也记一次敌对行为 —— 多协议是错开启动的，
             // 于是"动手"的信号会随着后续协议陆续到达而反复出现，而不是只在开头响一次。
@@ -450,11 +479,11 @@ public class PortHackV2Exe : GameExecutable
             {
                 KELog.Warn($"[PortHackV2] '{protoSource}': could not open port: {ex.Message}");
             }
-            rt.Def.OnComplete?.Execute(os, protoSource, "OnComplete");
+            SafeHook(() => rt.Def.OnComplete?.Execute(os, protoSource, "OnComplete"), protoSource, "OnComplete");
         }
         else
         {
-            rt.Def.OnFail?.Execute(os, protoSource, "OnFail");
+            SafeHook(() => rt.Def.OnFail?.Execute(os, protoSource, "OnFail"), protoSource, "OnFail");
             if (forced)
                 KELog.Warn($"[PortHackV2] '{protoSource}': did not finish within the root <Time>; "
                     + "recorded as failed - check the timing in this configuration.");
@@ -491,7 +520,7 @@ public class PortHackV2Exe : GameExecutable
         // 急刹从这一刻（根级 <Time> 跑满）才开始，而不是"匀速区间用完"时
         _sequence.CrackingFinished = true;
         _sequence.IdleSpin = true;      // 成功演出期间背景立体继续慢转
-        CurrentConfig.OnComplete?.Execute(os, source, "OnComplete");
+        SafeHook(() => CurrentConfig.OnComplete?.Execute(os, source, "OnComplete"), source, "OnComplete");
         KELog.Info($"[PortHackV2] '{source}': crack finished, {_successCount}/{_runtimes.Count} protocol(s) succeeded.");
     }
 

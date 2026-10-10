@@ -8,10 +8,6 @@ namespace KernelExtensions.Configs
     /// <summary>
     /// 一个**动作点**（action hook）。
     ///
-    /// <para>
-    /// 两种写法都支持，且可以同时出现在同一个钩子里：
-    /// </para>
-    ///
     /// <para><b>内联</b>（推荐 —— 逻辑与配置放在一起，不用为一两行动作单独建文件）：</para>
     /// <code>
     /// &lt;OnStart&gt;
@@ -27,40 +23,29 @@ namespace KernelExtensions.Configs
     /// </code>
     ///
     /// <para>
-    /// 内联内容原样交给 Pathfinder 的 <c>EventExecutor</c> 解析，因此写法与动作文件**完全一致**：
+    /// 内联内容原样交给 Pathfinder 的动作装载器，写法与动作文件**完全一致**：
     /// <list type="bullet">
     ///   <item><c>&lt;Actions&gt;</c> —— 列表内的动作**立即**逐个执行；</item>
     ///   <item><c>&lt;ConditionalActions&gt;</c> —— 交给 <c>os.ConditionalActions</c>，
-    ///     由其中的条件决定何时执行，例如 <c>&lt;Instantly&gt;</c> 在加载后立即触发、
-    ///     <c>&lt;OnConnect&gt;</c> / <c>&lt;HasFlags&gt;</c> 等则等待条件满足。</item>
+    ///     由其中的条件决定何时执行（<c>&lt;Instantly&gt;</c> 加载后立即触发，
+    ///     <c>&lt;OnConnect&gt;</c> / <c>&lt;HasFlags&gt;</c> 等等待条件满足）。</item>
     /// </list>
-    /// 两者可混用。
+    /// 两者可混用，也可与路径写法同时使用（先文件、后内联）。
     /// </para>
     ///
     /// <para>
-    /// ⚠️ 实现要点：用 <see cref="XmlAnyElementAttribute"/> 接住节点，**不做反序列化** ——
-    /// 于是"元素内是纯文本路径"与"元素内是子元素"都能原样拿到。
-    /// （若改成 <c>XElement</c> 属性，纯文本内容会因 XmlSerializer 把文本当 XML 解析而抛异常，
-    /// 现有路径写法会全部失效。）
+    /// ⚠️ 实现要点：<c>[XmlText]</c> 接**纯文本**（= 路径）、<c>[XmlAnyElement]</c> 接**子元素**（= 内联）。
+    /// 两者分工明确 —— <c>[XmlAnyElement]</c> **只捕获元素、不捕获文本**（实测：纯文本时它整个为 null，
+    /// 路径会被静默丢掉），所以文本必须单独用 <c>[XmlText]</c> 接。
+    /// 该组合已用真实的 <c>ActionHook</c> 类验证：独立反序列化与**作为配置类的嵌套属性**
+    /// 两种情况都正确（含内联、纯路径、路径+内联、并列双容器）。
     /// </para>
-    /// </summary>
-    /// <summary>
-    /// ⚠️ <see cref="XmlTypeAttribute"/> 是**必需**的，不是装饰：<c>XmlSerializer</c> 默认按
-    /// .NET 类名决定元素名，而本类被用作 <c>OnStart</c> / <c>OnComplete</c> / <c>OnFail</c>
-    /// 等属性的类型时，元素名取自**属性名**；若这里不显式声明，一旦类名被重命名，
-    /// 序列化元数据会跟着变，而 XML 里的写法是作者的契约、不能跟着变。
     /// </summary>
     [XmlType("ActionHook")]
     public class ActionHook
     {
         /// <summary>
         /// 钩子元素里的**纯文本** —— 视为动作文件路径（相对于扩展根）。
-        ///
-        /// <para>
-        /// 用 <see cref="XmlTextAttribute"/> 而不是 <c>XmlAnyElement</c> 接文本：
-        /// <c>XmlAnyElement</c> **只捕获元素节点、不捕获文本**（实测：纯文本时它整个是 null，
-        /// 路径会被静默丢掉）。两者分工明确 —— 文本走这里，元素走下面那个。
-        /// </para>
         /// </summary>
         [XmlText]
         public string FilePath { get; set; }
@@ -72,18 +57,9 @@ namespace KernelExtensions.Configs
         [XmlAnyElement]
         public XmlElement[] InlineActions { get; set; }
 
-        /// <summary>是否有任何内容（空元素 / 纯空白 = 没配这个钩子）。</summary>
-        public bool HasContent
-        {
-            get
-            {
-                bool hasPath = !string.IsNullOrWhiteSpace(FilePath)
-                               || (InlineActions != null && InlineActions.Length > 0);
-                return hasPath;
-            }
-        }
-
-        /// <summary>内联内容（元素部分，拼成 XML 文本）；没有内联元素时返回 null。</summary>
+        /// <summary>
+        /// 内联内容（元素部分，拼成 XML 文本）；没有内联元素时返回 null。
+        /// </summary>
         public string InlineXml
         {
             get
@@ -96,12 +72,16 @@ namespace KernelExtensions.Configs
             }
         }
 
+        /// <summary>是否有任何内容（空元素 / 纯空白 = 没配这个钩子）。</summary>
+        public bool HasContent
+            => !string.IsNullOrWhiteSpace(FilePath) || (InlineActions != null && InlineActions.Length > 0);
+
         /// <summary>
         /// 执行本钩子：先文件（若有）再内联（若有），两者都执行。
         ///
         /// <para>
-        /// ⚠️ <b>顺序是"先路径、后内联"</b>：两条路各自已有兜底，但把内联放后面更稳妥 ——
-        /// 内联内容由作者直接写、出错概率更高，放在后面就不会挡住已经写好并验证过的动作文件。
+        /// ⚠️ 整个方法兜底：调用方位于 <c>OS.Update</c> 驱动的流程里，异常冒出去会被上层吞掉、
+        /// <b>连日志都不留</b>。这里连同属性读取一起包住，保证任何失败都留下可查的记录。
         /// </para>
         /// </summary>
         /// <param name="os">当前 OS。</param>
@@ -109,13 +89,35 @@ namespace KernelExtensions.Configs
         /// <param name="point">日志定位用，动作点名（如 <c>OnComplete</c>）。</param>
         public void Execute(OS os, string source, string point)
         {
-            if (os == null || !HasContent) return;   // 作者没配这个钩子：正常情况，不记日志
+            if (os == null) return;
 
-            string path = FilePath?.Trim();
-            if (!string.IsNullOrEmpty(path)) ActionHelper.ExecuteFile(os, path, $"{source}:<{point}>");
+            try
+            {
+                if (!HasContent)
+                {
+                    // 记 Debug 而不是静默返回：钩子是否被识别是排查的关键线索
+                    KELog.Debug($"[ActionHook] '{source}:<{point}>' has no content, skipped.");
+                    return;
+                }
 
-            string inline = InlineXml;
-            if (inline != null) ActionHelper.ExecuteInline(os, inline, $"{source}:<{point}>");
+                string path = FilePath?.Trim();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    KELog.Debug($"[ActionHook] '{source}:<{point}>' file = '{path}'");
+                    ActionHelper.ExecuteFile(os, path, $"{source}:<{point}>");
+                }
+
+                string inline = InlineXml;
+                if (inline != null)
+                {
+                    KELog.Debug($"[ActionHook] '{source}:<{point}>' inline = {inline}");
+                    ActionHelper.ExecuteInline(os, inline, $"{source}:<{point}>");
+                }
+            }
+            catch (Exception e)
+            {
+                KELog.Error($"[ActionHook] '{source}:<{point}>' aborted: {e}");
+            }
         }
     }
 }
