@@ -1,6 +1,6 @@
 # 🔧 KernelExtensions Documentation (English)
 
-**KernelExtensions** is a Hacknet mod built on the **Pathfinder API**. It gives extension authors a full set of reusable systems and components: Phase Swift, Custom Trial, VM Attack, the aircraft daemon, custom timers, node icons, custom endings, the dynamic colour engine, and a collection of composable custom Actions / Executables / Daemons.
+**KernelExtensions** is a Hacknet mod built on the **Pathfinder API**. It gives extension authors a full set of reusable systems and components: Phase Swift, Custom Trial, PortHackV2, VM Attack, the aircraft daemon, custom timers, node icons, custom endings, the dynamic colour engine, and a collection of composable custom Actions / Executables / Daemons.
 
 > This documentation corresponds to **KernelExtensions 0.7**.
 
@@ -10,6 +10,7 @@
 |--------|------|
 | Phase Swift | [Phase Swift System (PhaseSwift)](./systems/phase-swift.md) |
 | Custom Trial | [Custom Trial System](./systems/custom-trial.md) |
+| PortHackV2 | [PortHackV2 Cracker](./systems/port-hack-v2.md) |
 | VM Attack | [VM Attack System](./systems/vm-attack.md) |
 | Aircraft Daemon | [Aircraft Daemon System](./systems/aircraft.md) |
 | Timer | [Custom Timer System (Clock)](./systems/clock.md) |

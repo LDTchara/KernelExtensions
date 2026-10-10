@@ -1,7 +1,7 @@
 # 🔧 KernelExtensions 文档（简体中文）
 
 **KernelExtensions** 是一个基于 **Pathfinder API** 的 Hacknet 模组。它为扩展作者提供了一整套可复用的系统与组件：
-相位穿梭、自定义试炼、VM 攻击、飞机守护进程、自定义定时器、节点图标、自定义结局、动态色引擎，
+相位穿梭、自定义试炼、PortHackV2 破解程序、VM 攻击、飞机守护进程、自定义定时器、节点图标、自定义结局、动态色引擎，
 以及一系列可拼装的自定义 Action / Executable / Daemon。
 
 > 本文档对应 **KernelExtensions 0.7**。
@@ -12,6 +12,7 @@
 |------|------|
 | 相位穿梭 | [相位穿梭系统（PhaseSwift）](./systems/phase-swift.md) |
 | 自定义试炼 | [自定义试炼系统](./systems/custom-trial.md) |
+| PortHackV2 | [PortHackV2 破解程序](./systems/port-hack-v2.md) |
 | 虚拟机攻击 | [VM攻击系统](./systems/vm-attack.md) |
 | 飞机 Daemon | [飞机Daemon系统](./systems/aircraft.md) |
 | 定时器 | [自定义定时器系统（Clock）](./systems/clock.md) |

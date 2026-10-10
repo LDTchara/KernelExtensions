@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.7.0 — Unreleased
+
+> In development · 2026
+>
+> This section lists only what has been documented so far; the full list will be filled in at release.
+
+### New Features
+
+- **PortHackV2 Cracker (`#PORTHACKV2#`)**
+  - A configurable remake of vanilla `PortHack`: cracking flow, durations, appearance, prerequisites and finishing actions are all driven by XML.
+  - Protocols run **in parallel**, each staggered by its own `StartDelay`; every protocol rolls its own outcome, but both branches look identical (only the duration differs).
+  - Two levels of action points — root and per-protocol (`OnStart` / `OnComplete` / `OnFail`); one-shot effects always go through action files.
+  - Optional prerequisites: firewall, proxy overload, specific ports, and the number of **already-cracked ports** on the target (`auto` aligns with the node's own requirement).
+  - Five Platonic solid wireframe animations rendered off-screen; every solid spins around its own rotational symmetry axis, and that axis is kept vertical.
+  - See [PortHackV2 Cracker](./../systems/port-hack-v2.md).
+- **ProxyKiller Resident Accelerator (`#PROXYKILLER#`)**
+  - Speeds up **every shell that is currently overloading**, so proxies crash sooner. It does **not** overload any proxy itself — running a shell requires admin on the target, and that guard rail is not removed.
+  - The multiplier is driven linearly by the RAM ramp (starting at 50MB); it re-scans every frame, so shells started after it are accelerated just the same.
+  - Background is a self-drawn upward data stream; the bottom status text has three levels: `Spinning up...` → `Overdrive` → `Spinning down...`.
+  - See [Executables](./../components/executables.md).
+
+### Improvements & Optimisations
+
+- **Unified colour string parsing**: named colours, `#RGB` / `#RRGGBB` / `#AARRGGBB` (alpha first), `R,G,B[,A]`, CustomColor preset names and dynamic colours (`LDTchara` / `Rainbow` / `Gradient:…`) all go through one parsing chain; the scattered `ColorConverter` fallbacks that silently failed under FNA have been removed. See the [Custom Color System](./../systems/custom-color.md).
+- **Unified configuration conventions**: string options use `NONE` (case-insensitive) or empty for "disabled"; numeric options treat **negative as "use the default / inherit / unlimited"** (`NaN` / `Infinity` likewise fall back to the default).
+- **Unified log levels**: Debug (source-level troubleshooting, off by default) / Info (action-level results) / Warn (recoverable) / Error (should not happen); log text is plain ASCII English while player-facing terminal output is localised.
+
+### Still under test
+
+Implemented but not yet verified in-game; details will be filled in before release:
+
+- The node connection control action trio
+- Phase Swift: configurable topology restore on stop, custom loop points for music phases
+- Further work on the built-in text localisation system
+- Linux support for the VM attack restore module
+- Third-party mod compatibility (audio chain coexistence, etc.)
+
 ## 0.6.0 — Aircraft Daemon, Watermark & Stability Enhancements
 
 > Pre‑release · 2025
