@@ -355,6 +355,11 @@ namespace KernelExtensions.Executables
 
         private float _cubeTime;
 
+        /// <summary>底部按钮条高度（内容区之外、窗口之内）。</summary>
+        private const int BUTTON_ROW_H = 30;
+        /// <summary>底部信息条高度（两行文字：说明 + 参数）。</summary>
+        private const int INFO_H = 32;
+
         /// <summary>最近一帧的 dt。诊断用：Draw 里累计真实时间来核对 cubeT 的增长速率。</summary>
         private float _lastDt;
         /// <summary>立方体条目激活以来的真实累计秒数与帧数（切条目时清）。</summary>
@@ -370,10 +375,10 @@ namespace KernelExtensions.Executables
             // 内容区**紧跟标题栏**（bounds 去掉面板高），与 ProxyKiller / PortHackV2 一致。
             // 原先这里多减了 14（标题栏高度），等于内容区凭空下移一条标题栏 ——
             // 效果绘制区整体偏低。
-            // ⚠️ 按钮条画在内容区**内部底部**：放到内容区外面会盖到相邻的 exe 窗口。
-            const int BUTTON_ROW_H = 30;
+            // ⚠️ 按钮条与**信息条**都画在内容区**内部底部**：放到内容区外面会盖到相邻的 exe 窗口。
+            // 信息条单独留出来（原先诊断文字挤在右上角、还靠 doFontLabel 硬画，长了就溢出看不清）。
             Rectangle bg = new(bounds.X + 2, bounds.Y + PANEL_HEIGHT,
-                               bounds.Width - 4, bounds.Height - PANEL_HEIGHT - BUTTON_ROW_H);
+                               bounds.Width - 4, bounds.Height - PANEL_HEIGHT - BUTTON_ROW_H - INFO_H);
             if (bg.Width <= 8 || bg.Height <= 8) return;
             _lastContentH = bg.Height;
             spriteBatch.Draw(Utils.white, bg, new Color(10, 10, 10));
@@ -389,28 +394,30 @@ namespace KernelExtensions.Executables
             if (cur.Draw3D != null) DrawOffscreen(cur.Draw3D, bg);
             else cur.Draw2D?.Invoke(spriteBatch, bg, _timer);
 
-            // 顶部：序号 + 名称；左下角：一句话说明
-            TextItem.doFontLabel(new Vector2(bg.X + 6, bg.Y + 4), _statusText, GuiData.font, GetRainbowColor());
-            if (!string.IsNullOrEmpty(cur.Note))
-                TextItem.doFontLabel(new Vector2(bg.X + 6, bg.Y + bg.Height - 20), cur.Note,
-                    GuiData.smallfont, Color.White * 0.6f);
+            // 顶部只留序号 + 名称（醒目，用彩色字体）
+            TextItem.doFontLabel(new Vector2(bg.X + 6, bg.Y + 2), _statusText, GuiData.font, GetRainbowColor());
 
-            // 负荷指示：只有自绘流场在乎它，但统一显示便于对照
+            // ---- 底部信息条：名称/说明 + 负荷 + 各效果的关键参数，**左对齐**、有底衬 ----
+            // 原先挤在右上角、还靠 doFontLabel 硬画 —— 文本一长就溢出到看不见，也读不清。
+            Rectangle info = new(bg.X, bg.Bottom, bg.Width, INFO_H);
+            spriteBatch.Draw(Utils.white, info, Color.Black * 0.85f);
+
+            // 第一行：一句话说明
+            if (!string.IsNullOrEmpty(cur.Note))
+                TextItem.doFontLabel(new Vector2(info.X + 6, info.Y + 2), cur.Note,
+                    GuiData.smallfont, Color.White * 0.75f);
+
+            // 第二行：负荷 + 各效果的关键参数
             string load = "load " + (LoadRamp() * 100f).ToString("000") + "%";
-            // 流场额外报一段参数 —— 排查"分层""粒子消失""速度不够"时看它最直接
             if (cur.Draw2D != null && cur.Name == "FlowField")
                 load += $"  speed x{_flowField.MinSpeedFactor:0.00}~x{_flowField.MaxSpeedFactor:0.00}"
                      + $" /{_flowField.SpeedTiers}tier  life x{_flowField.LifeGain:0.00}"
                      + $"  trail {_flowField.TrailPixels:0}px x{_flowField.LoadTrailGain:0.0}"
                      + $"  n={_flowField.EffectiveCount(bg.Height)}"
-                     + $" = {_flowField.DensityCoefficient:0.###}xh^{_flowField.DensityExponent:0.###}"
                      + $"  spd {_flowField.SpeedPxPerSecond(bg.Height):0}px/s";
-            // 立方体序列报时间线 —— 它内部按 startup/spinup/runtime/spindown 分段推进，
-            // 只有 runtime 段才匀速转；看不出快慢时先看它落在哪一段。
-            //
-            // 这里同时报 **cubeT / 真实秒** 的比值：正常情况下应等于 CubeTimeScale（0.025），
-            // 立方体序列报驱动状态：我们自己接管了时间线，所以显示的是
-            // 目标角速度、当前内部时间与实测帧率（用于确认驱动按真实时间推进）。
+            // 立方体序列报驱动状态：相位、目标角速度、累计旋转角，以及**每帧喂进去的内部秒数**。
+            // t/frame 是关键：原生速度应约 0.016（=一帧）；若显示成 1.6 左右，
+            // 就说明又把累计时钟当帧增量传了（那正是之前"一秒几十圈"的原因）。
             if (cur.Name == "PortHackCubeSequence")
             {
                 _cubeRealTime += _lastDt;
@@ -418,17 +425,14 @@ namespace KernelExtensions.Executables
 
                 string phase = _cubeTime < STARTUP_S ? "startup" :
                                _cubeTime < STARTUP_S + SPINUP_S ? "spinup" : "runtime";
-                // 外层的 Y 旋转量：45deg + rotTime * 1.5 弧度
                 float spinDeg = MathHelper.ToDegrees(Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f) % 360f;
                 float fps = _cubeRealTime > 0.01f ? _cubeFrames / _cubeRealTime : 0f;
 
-                // 关键诊断：每帧喂给序列的内部秒数。原生速度应为 ~0.016（=一帧），
-                // 若显示成 1.6 左右就说明又把累计时钟当帧增量传了（那就是狂转的原因）。
                 load += $"  {phase}  target {CUBE_RATE_DEG_PER_SEC:0.#}deg/s  spin={spinDeg:0.0}deg"
                      + $"  t/frame={_cubeFrameAdvance:0.0000}s  inner={_cubeTime:0.0}s  fps={fps:0}";
             }
-            TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
-                GuiData.smallfont, Color.White * 0.5f);
+            TextItem.doFontLabel(new Vector2(info.X + 6, info.Y + 16), load,
+                GuiData.smallfont, Color.White * 0.7f);
 
             // 按钮条贴内容区底部内侧
             int btnY = bg.Y + bg.Height - 26;
@@ -454,7 +458,7 @@ namespace KernelExtensions.Executables
             int[] heights = { 100, 200, 400, 600 };
             _sizeIndex = (_sizeIndex + 1) % heights.Length;
             int h = heights[_sizeIndex];
-            int minH = PANEL_HEIGHT + 30 + 20;    // 面板高 + 按钮条 + 内容区最少 20
+            int minH = PANEL_HEIGHT + BUTTON_ROW_H + INFO_H + 20;   // 面板高 + 按钮条 + 信息条 + 内容区最少 20
             bounds.Height = Math.Max(minH, h);
             // ⚠️ 原版 ExeModule.Update 每帧执行 bounds.Height = ramCost，所以光改 bounds 会被覆盖回去
             ramCost = bounds.Height;
