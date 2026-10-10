@@ -1,36 +1,77 @@
 using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Gui;
+using HarmonyLib;
+using KernelExtensions.Configs;
+using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
 
-using KernelExtensions.Managers;
 namespace KernelExtensions.Executables
 {
+    /// <summary>
+    /// 效果预览器（<c>#EFFECTS#</c>）：把项目里所有可选背景/动画效果放进一个可翻页的窗口里看。
+    ///
+    /// <para>
+    /// 它存在的意义是**在真实 exe 环境里预览**：<c>Hacknet.Effects</c> 里的效果有的需要
+    /// RenderTarget、有的需要 ContentManager、有的要 Update+Draw 配对，光看源码判断不了观感，
+    /// 也不知道不同窗口尺寸下会变成什么样。这个程序用 ←/→ 逐个翻。
+    /// </para>
+    ///
+    /// <para>
+    /// 三类条目：
+    /// <list type="bullet">
+    ///   <item><b>2D</b>：直接画在当前 spriteBatch 上（原版大部分背景效果）</item>
+    ///   <item><b>3D</b>：需要离屏 RenderTarget + 专用 SpriteBatch（<c>OS.Draw</c> 已经 Begin 过了，
+    ///     中途 End 不了，所以必须离屏再贴回来）</item>
+    ///   <item><b>自绘</b>：项目自己实现的几何/流场类效果</item>
+    /// </list>
+    /// </para>
+    /// </summary>
     public class EffectsPlayerExe : GameExecutable
     {
-        private class EffectEntry
+        /// <summary>
+        /// 一个可预览的效果条目。
+        /// 2D 与 3D 分成两个委托，因为 3D 需要 <see cref="GraphicsDevice"/> 与离屏批次，
+        /// 而 2D 只要当前批次 —— 用一个委托塞不下，会逼所有 2D 效果也走 RT（白白多一次全屏拷贝）。
+        /// </summary>
+        private sealed class EffectEntry
         {
             public string Name;
+            /// <summary>一句话说明（显示在左下角，帮助回忆这效果是干嘛的）。</summary>
+            public string Note = "";
             public float Duration = 8f;
-            public Action<SpriteBatch, Rectangle, float> DrawAction;
-            public Action<float> UpdateAction;
+            /// <summary>2D 绘制：画在外部传入的批次与矩形上。</summary>
+            public Action<SpriteBatch, Rectangle, float> Draw2D;
+            /// <summary>3D 绘制：在<b>已绑定好的</b>离屏目标与专用批次上画（坐标从 (0,0) 起）。</summary>
+            public Action<GraphicsDevice, SpriteBatch, Rectangle, float> Draw3D;
+            /// <summary>每帧推进（2D/3D 都可能需要）。</summary>
+            public Action<float> Update;
         }
 
-        private List<EffectEntry> _effects = new();
-        private int _currentIndex = 0;
-        private float _timer = 0f;
-        private bool _paused = false;
+        private readonly List<EffectEntry> _effects = new();
+        private int _currentIndex;
+        private float _timer;
+        private bool _paused;
         private string _statusText = "";
 
-        // 特效实例
+        // ---- 效果实例 ----
         private HexGridBackground _hexGrid;
         private ShiftingGridEffect _shiftingGrid;
         private MovingBarsEffect _movingBars;
         private RaindropsEffect _raindrops;
         private DepthDotGridEffect _depthDot;
         private Managers.CustomColorManager.DynColorConfig _rainbowConfig;
+
+        // ---- 3D：离屏渲染资源（懒建）----
+        private RenderTarget2D _rt;
+        private SpriteBatch _rtBatch;
+        private PortHackCubeSequence _cubeSeq;
+        private readonly PortHackV2Sequence _polySeq = new();
+
+        // ---- 新建的自绘效果 ----
+        private FlowFieldEffect _flowField;
 
         public EffectsPlayerExe() : base()
         {
@@ -55,142 +96,279 @@ namespace KernelExtensions.Executables
             _raindrops.Init(os.content);
             _depthDot = new DepthDotGridEffect(os.content);
             _rainbowConfig = Managers.CustomColorManager.ParseColorString("LDTchara");
+            _cubeSeq = new PortHackCubeSequence();
+            _flowField = new FlowFieldEffect();
         }
 
         private void LoadEffects()
         {
-            // ——— 1) ZoomingDotGridEffect ———
-            // 静态方法。绘制从中心向外扩散/旋转的点阵，模拟星空隧道。
-            // Render(dest, sb, timer, themeColor)
-            //   timer: 驱动循环，内部模 12 取余，timer*0.3≈3.6s 一周期
-            //   themeColor: 点阵颜色
-            _effects.Add(new EffectEntry { Name = "ZoomingDotGrid", Duration = 8f,
-                DrawAction = (sb, b, t) => ZoomingDotGridEffect.Render(b, sb, t * 0.3f, GetRainbowColor()) });
+            // ============ 原版 2D 背景效果 ============
 
-            // ——— 2) GridEffect ———
-            // 静态方法。绘制交叉网格线，每个交叉点有十字标记。
-            // DrawGridBackground(dest, sb, desiredNumOfBlocks, CrossColor)
-            //   desiredNumOfBlocks: 横向块数，影响网格密度
-            //   CrossColor: 十字标记的颜色
-            _effects.Add(new EffectEntry { Name = "GridEffect", Duration = 5f,
-                DrawAction = (sb, b, t) => GridEffect.DrawGridBackground(b, sb, 12, GetRainbowColor() * 0.3f) });
+            _effects.Add(new EffectEntry
+            {
+                Name = "ZoomingDotGrid",
+                Note = "starfield tunnel",
+                Duration = 8f,
+                Draw2D = (sb, b, t) => ZoomingDotGridEffect.Render(b, sb, t * 0.3f, GetRainbowColor())
+            });
 
-            // ——— 3) HexGridBackground ———
-            // 需要 Update + Draw。六边形蜂窝网格背景，原版 KaguyaTrial 使用。
-            // Draw(dest, sb, first, second, algorithm, angle)
-            //   first: 背景填充色（未被网格覆盖的区域）
-            //   second: 网格线和六边形颜色
-            //   algorithm: 枚举值 StandardMono / SinWash / CorrectedSinWash，控制颜色抖动算法
-            //   angle: 作用不明，源码里传 0
-            _effects.Add(new EffectEntry { Name = "HexGrid", Duration = 8f,
-                UpdateAction = (dt) => _hexGrid.Update(dt),
-                DrawAction = (sb, b, t) => _hexGrid.Draw(b, sb, Color.Black, GetRainbowColor() * 0.2f,
-                    HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f) });
+            _effects.Add(new EffectEntry
+            {
+                Name = "GridEffect",
+                Note = "cross grid",
+                Duration = 5f,
+                Draw2D = (sb, b, t) => GridEffect.DrawGridBackground(b, sb, 12, GetRainbowColor() * 0.3f)
+            });
 
-            // ——— 4) ShiftingGridEffect ———
-            // 需要 Update + Draw。移动网格线，每个网格块独立做颜色过渡动画。
-            // RenderGrid(bounds, sb, c1, c2, c3, centreEffect)
-            //   c1/c2/c3: 三层颜色，由网格块的内插值（0~1）决定实际颜色
-            //   centreEffect: 是否偏移网格以居中（仅影响 X 起点对齐方式）
-            _effects.Add(new EffectEntry { Name = "ShiftingGrid", Duration = 8f,
-                UpdateAction = (dt) => _shiftingGrid.Update(dt),
-                DrawAction = (sb, b, t) => _shiftingGrid.RenderGrid(b, sb,
-                    GetRainbowColor() * 0.3f, GetRainbowColor() * 0.15f, Color.White * 0.05f, false) });
+            _effects.Add(new EffectEntry
+            {
+                Name = "HexGrid",
+                Note = "honeycomb (vanilla KaguyaTrial)",
+                Duration = 8f,
+                Update = dt => _hexGrid.Update(dt),
+                Draw2D = (sb, b, t) => _hexGrid.Draw(b, sb, Color.Black, GetRainbowColor() * 0.2f,
+                    HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f)
+            });
 
-            // ——— 5) MovingBarsEffect ———
-            // 需要 Update + Draw。模拟音频频谱条（纵向条随机变化高度）。
-            // Draw(sb, bounds, minHeight, lineWidth, lineSeperation, drawColor)
-            //   minHeight: 最短条高度（像素）
-            //   lineWidth: 每条宽度（像素）
-            //   lineSeperation: 条间距（像素）
-            // 另有公共字段 MinLineChangeTime/MaxLineChangeTime 控制变化速率（默认 0.2~2s）
-            _effects.Add(new EffectEntry { Name = "MovingBars", Duration = 8f,
-                UpdateAction = (dt) => _movingBars.Update(dt),
-                DrawAction = (sb, b, t) => _movingBars.Draw(sb, b, 5f, 6f, 4f, GetRainbowColor() * 0.3f) });
+            _effects.Add(new EffectEntry
+            {
+                Name = "ShiftingGrid",
+                Note = "travelling grid",
+                Duration = 8f,
+                Update = dt => _shiftingGrid.Update(dt),
+                Draw2D = (sb, b, t) => _shiftingGrid.RenderGrid(b, sb,
+                    GetRainbowColor() * 0.3f, GetRainbowColor() * 0.15f, Color.White * 0.05f, false)
+            });
 
-            // ——— 6) RaindropsEffect ———
-            // 需要 Update + Render。Matrix 风格数字雨 / 雨滴效果。
-            // Update(dt, dropsAddedPerSecond): 每帧更新粒子，dropsPerSec 控制生成速率
-            // Render(dest, sb, DropColor, maxCircleRadius, maxFlashWidth):
-            //   DropColor: 雨滴颜色
-            //   maxCircleRadius: 落地溅射圈最大半径
-            //   maxFlashWidth: 落地闪光最大宽度
-            // 另有公共字段 FallRate(下落速度)/CircleExpandRate(溅射扩散速度) 等
-            _effects.Add(new EffectEntry { Name = "Raindrops", Duration = 10f,
-                UpdateAction = (dt) => _raindrops.Update(dt, 8f),
-                DrawAction = (sb, b, t) => _raindrops.Render(b, sb, GetRainbowColor() * 0.5f, 15f, 20f) });
+            _effects.Add(new EffectEntry
+            {
+                Name = "MovingBars",
+                Note = "audio bars",
+                Duration = 8f,
+                Update = dt => _movingBars.Update(dt),
+                Draw2D = (sb, b, t) => _movingBars.Draw(sb, b, 5f, 6f, 4f, GetRainbowColor() * 0.3f)
+            });
 
-            // ——— 7) DepthDotGridEffect ———
-            // 纯 Draw。递归绘制多层点阵，产生 3D 景深感。
-            // DrawGrid(fullAreaDest, xyOffset, sb, pixelsInOnRecurse, recursionSteps,
-            //          dotColor, dotSeperation, dotSize, MaxDepthEffectDistance, timer, chaosPercent)
-            //   其中后 8 个参数的含义我无法完全确定，以下是我的理解：
-            //   pixelsInOnRecurse=1f    — 递归深度每层增加多少像素偏移？不确定
-            //   recursionSteps=3         — 递归层数（这里 3 层）
-            //   dotColor=...             — 最外层点颜色
-            //   dotSeperation=15f        — 点间距
-            //   dotSize=3f               — 点大小
-            //   MaxDepthEffectDistance=30f — 最大景深偏移距离
-            //   timer=t*0.2f             — 时间驱动
-            //   chaosPercent=0.3f        — 随机扰动程度
-            _effects.Add(new EffectEntry { Name = "DepthDotGrid", Duration = 8f,
-                DrawAction = (sb, b, t) => _depthDot.DrawGrid(b, Vector2.Zero, sb,
-                    1f, 3, GetRainbowColor() * 0.2f, 15f, 3f, 30f, t * 0.2f, 0.3f) });
+            _effects.Add(new EffectEntry
+            {
+                Name = "Raindrops",
+                Note = "matrix rain",
+                Duration = 10f,
+                Update = dt => _raindrops.Update(dt, 8f),
+                Draw2D = (sb, b, t) => _raindrops.Render(b, sb, GetRainbowColor() * 0.5f, 15f, 20f)
+            });
+
+            _effects.Add(new EffectEntry
+            {
+                Name = "DepthDotGrid",
+                Note = "depth dots (vanilla SignalScramble)",
+                Duration = 8f,
+                Draw2D = (sb, b, t) => _depthDot.DrawGrid(b, Vector2.Zero, sb,
+                    30f, 10, GetRainbowColor() * 0.2f, 60f, 10f, 0f, t * 0.2f, 1f - MathHelper.Clamp(t / 6f, 0f, 1f))
+            });
+
+            // ============ 项目自绘 ============
+
+            _effects.Add(new EffectEntry
+            {
+                Name = "FlowField",
+                Note = "data torrent (load-driven)",
+                Duration = 0f,   // 0 = 不限时（它是无缝循环的）
+                Update = dt => _flowField.Update(dt, LoadRamp()),
+                Draw2D = (sb, b, t) => _flowField.Draw(sb, b, GetRainbowColor(), LoadRamp())
+            });
+
+            // ============ 5 个柏拉图立体（3D，走离屏）============
+
+            foreach (KPlatonicShape shape in new[]
+                     {
+                         KPlatonicShape.Tetrahedron, KPlatonicShape.Cube, KPlatonicShape.Octahedron,
+                         KPlatonicShape.Dodecahedron, KPlatonicShape.Icosahedron
+                     })
+            {
+                KPlatonicShape captured = shape;
+                _effects.Add(new EffectEntry
+                {
+                    Name = "Poly-" + captured,
+                    Note = "platonic solid (PortHackV2 animation; spins up, then brakes)",
+                    Duration = 0f,
+                    Update = dt => UpdatePolyPreview(captured, dt),
+                    Draw3D = (gd, sb, b, t) =>
+                    {
+                        _polySeq.Shape = captured;
+                        _polySeq.RenderFrame(gd, sb, b, GetRainbowColor());
+                    }
+                });
+            }
+
+            // ============ 原版 PortHack 立方体序列（3D，走离屏）============
+
+            _effects.Add(new EffectEntry
+            {
+                Name = "PortHackCubeSequence",
+                Note = "vanilla PortHack 20-layer cube",
+                Duration = 0f,
+                Draw3D = (gd, sb, b, t) => _cubeSeq.DrawSequence(b, t, 10f)
+            });
 
             if (_effects.Count > 0)
-                _statusText = $"{_effects[0].Name}  —  1/{_effects.Count}";
+                _statusText = StatusFor(0);
         }
+
+        /// <summary>
+        /// 多边体预览的时间线：跑一轮完整的"起转 → 匀速 → 收尾急刹 → 慢转"，然后重来。
+        ///
+        /// <para>
+        /// 为什么要自己驱动时间线：<see cref="PortHackV2Sequence.CrackingFinished"/> 置位前，
+        /// 内部时钟被夹在总时长以内、永远停在匀速全速段（那是给 Cracking 用的：
+        /// 破解途中不该自己慢下来）。预览要看的是**整个动画的性格**，
+        /// 所以这里到点就置位让它进急刹窗口，循环展示。
+        /// </para>
+        /// </summary>
+        private void UpdatePolyPreview(KPlatonicShape shape, float dt)
+        {
+            const float total = 6f;          // 匀速段时长（够看清转速）
+            const float cycle = total + 3.5f; // 匀速 + 收尾窗口，之后重来
+            _polySeq.Shape = shape;
+
+            if (_timer >= cycle)
+            {
+                _polySeq.Reset();
+                _timer = 0f;
+            }
+            _polySeq.CrackingFinished = _timer >= total;
+            _polySeq.Update(dt, _timer, total);
+        }
+
+        /// <summary>预览用的"负荷"曲线：6 秒内 0 → 1 再回到 0，循环，方便看负荷上升/下降两种极端。</summary>
+        private float LoadRamp()
+        {
+            const float period = 12f;
+            float p = (_timer % period) / period;         // 0~1
+            return p < 0.5f ? p * 2f : (1f - p) * 2f;     // 0→1→0
+        }
+
+        private string StatusFor(int i)
+            => $"{_effects[i].Name}  -  {i + 1}/{_effects.Count}";
 
         public override void OnUpdate(float dt)
         {
             base.OnUpdate(dt);
-            if (_effects.Count == 0 || _paused) return;
-            _timer += dt;
-            _effects[_currentIndex].UpdateAction?.Invoke(dt);
+            if (_effects.Count == 0) return;
+
+            if (!_paused) _timer += dt;
+
+            // Update 一直跑（暂停时也传染 dt=0，让效果停住而不是累积跳变）
+            float use = _paused ? 0f : dt;
+            _effects[_currentIndex].Update?.Invoke(use);
+
+            EffectEntry cur = _effects[_currentIndex];
+            if (cur.Duration > 0f && _timer >= cur.Duration) NextEffect();
         }
 
-        private void NextEffect()
-        {
-            _timer = 0f;
-            _currentIndex = (_currentIndex + 1) % _effects.Count;
-            _statusText = $"{_effects[_currentIndex].Name}  —  {_currentIndex + 1}/{_effects.Count}";
-        }
+        private void NextEffect() => Goto((_currentIndex + 1) % _effects.Count);
+        private void PrevEffect() => Goto((_currentIndex - 1 + _effects.Count) % _effects.Count);
 
-        private void PrevEffect()
+        private void Goto(int index)
         {
+            // 换条目时重置一次性状态，否则上一个效果的残留会让观感串味
+            _polySeq.Reset();
+            _cubeSeq.Reset();
+            _flowField.Reset();
             _timer = 0f;
-            _currentIndex = (_currentIndex - 1 + _effects.Count) % _effects.Count;
-            _statusText = $"{_effects[_currentIndex].Name}  —  {_currentIndex + 1}/{_effects.Count}";
+            _currentIndex = index;
+            _statusText = StatusFor(index);
         }
 
         public override void Draw(float t)
         {
             base.Draw(t);
             drawOutline();
-            Rectangle bg = new(bounds.X + 2, bounds.Y + PANEL_HEIGHT,
-                               bounds.Width - 4, bounds.Height - PANEL_HEIGHT - 2);
-            spriteBatch.Draw(Utils.white, bg, new Color(10, 10, 10));
-            if (_effects.Count == 0) return;
-            var cur = _effects[_currentIndex];
-            cur.DrawAction?.Invoke(spriteBatch, bg, _timer);
-            TextItem.doFontLabel(new Vector2(bg.X + 10, bg.Y + 5),
-                _statusText, GuiData.font, GetRainbowColor());
-            TextItem.doFontLabel(new Vector2(bg.X + 10, bg.Y + bg.Height - 40),
-                cur.Name, GuiData.smallfont, Color.White * 0.7f);
-            // 进度条已取消
-            int btnY = bg.Y + bg.Height - 28;
-            if (Button.doButton(9001 + PID, bg.X + 10, btnY, 50, 22, "上一个", os.highlightColor))
-                PrevEffect();
-            if (Button.doButton(9002 + PID, bg.X + 66, btnY, 40, 22, _paused ? "继续" : "暂停", os.lockedColor))
-                _paused = !_paused;
-            if (Button.doButton(9003 + PID, bg.X + 112, btnY, 50, 22, "下一个", os.highlightColor))
-                NextEffect();
-            if (Button.doButton(9004 + PID, bg.X + bg.Width - 40, btnY, 30, 22, "X", os.brightLockedColor))
-                isExiting = true;
+            drawTarget();
 
-            // 去掉进度条
+            Rectangle bg = new(bounds.X + 2, bounds.Y + PANEL_HEIGHT + 14,
+                               bounds.Width - 4, bounds.Height - PANEL_HEIGHT - 16);
+            if (bg.Width <= 8 || bg.Height <= 8) return;
+            spriteBatch.Draw(Utils.white, bg, new Color(10, 10, 10));
+
+            if (_effects.Count == 0) return;
+            EffectEntry cur = _effects[_currentIndex];
+
+            if (cur.Draw3D != null) DrawOffscreen(cur.Draw3D, bg);
+            else cur.Draw2D?.Invoke(spriteBatch, bg, _timer);
+
+            // 顶部：序号 + 名称；左下角：一句话说明
+            TextItem.doFontLabel(new Vector2(bg.X + 6, bg.Y + 4), _statusText, GuiData.font, GetRainbowColor());
+            if (!string.IsNullOrEmpty(cur.Note))
+                TextItem.doFontLabel(new Vector2(bg.X + 6, bg.Y + bg.Height - 20), cur.Note,
+                    GuiData.smallfont, Color.White * 0.6f);
+
+            // 负荷指示：只有自绘流场在乎它，但统一显示便于对照
+            string load = "load " + (LoadRamp() * 100f).ToString("000") + "%";
+            TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
+                GuiData.smallfont, Color.White * 0.5f);
+
+            int btnY = bounds.Y + bounds.Height - 26;
+            if (Button.doButton(9001 + PID, bg.X + 6, btnY, 50, 22, "Prev", os.highlightColor))
+                PrevEffect();
+            if (Button.doButton(9002 + PID, bg.X + 62, btnY, 46, 22, _paused ? "Play" : "Pause", os.lockedColor))
+                _paused = !_paused;
+            if (Button.doButton(9003 + PID, bg.X + 114, btnY, 50, 22, "Next", os.highlightColor))
+                NextEffect();
+            if (Button.doButton(9004 + PID, bounds.X + bounds.Width - 34, btnY, 28, 22, "X", os.brightLockedColor))
+                isExiting = true;
         }
-        /// <summary>返回当前帧的彩虹色（来自 CustomColor 系统），供特效 Draw 使用</summary>
+
+        /// <summary>
+        /// 走离屏渲染再贴回来。
+        ///
+        /// <para>
+        /// 为什么必须离屏：<c>OS.Draw</c> 在所有 exe 的 <c>Draw</c> 之前已经 <c>spriteBatch.Begin()</c>
+        /// 且中途不会 <c>End</c>，所以这里既不能直接开始第二个批次（会抛
+        /// "Begin cannot be called again until End has been successfully called"），
+        /// 也不能带着活动批次切 RenderTarget。做法与 PortHackV2 动画、CustomHeartDaemon 一致：
+        /// 切到离屏目标 → 专用批次 Begin/Draw/End → 切回来 → 用主批次贴图。
+        /// </para>
+        /// </summary>
+        private void DrawOffscreen(Action<GraphicsDevice, SpriteBatch, Rectangle, float> draw, Rectangle dest)
+        {
+            GraphicsDevice gd = spriteBatch.GraphicsDevice;
+            try
+            {
+                if (_rt == null || _rt.Width != dest.Width || _rt.Height != dest.Height)
+                {
+                    _rtBatch ??= new SpriteBatch(gd);
+                    _rt?.Dispose();
+                    _rt = new RenderTarget2D(gd, dest.Width, dest.Height);
+                }
+
+                RenderTarget2D prev = Utils.GetCurrentRenderTarget();
+                gd.SetRenderTarget(_rt);
+                gd.Clear(Color.Transparent);
+                _rtBatch.Begin();
+                // 离屏坐标从 (0,0) 起 —— 效果自己不知道它最终会被贴到哪
+                draw(gd, _rtBatch, new Rectangle(0, 0, dest.Width, dest.Height), _timer);
+                _rtBatch.End();
+                gd.SetRenderTarget(prev);
+
+                // AddativeWhite 让线条叠加发光（原版 PortHack 也是这么贴它的立方体的）
+                spriteBatch.Draw(_rt, dest, Utils.AddativeWhite);
+            }
+            catch (Exception ex)
+            {
+                if (!_rtWarned)
+                {
+                    _rtWarned = true;
+                    KELog.Warn($"[EffectsPlayer] offscreen draw failed: {ex.Message}");
+                }
+                // 失败时至少让面板可见，而不是静默全黑
+                spriteBatch.Draw(Utils.white, dest, Color.Black * 0.6f);
+            }
+        }
+
+        private bool _rtWarned;
+
+        /// <summary>返回当前帧的彩虹色（来自 CustomColor 系统），供特效 Draw 使用。</summary>
         private Color GetRainbowColor()
         {
             if (_rainbowConfig != null)
