@@ -73,7 +73,7 @@ namespace KernelExtensions.Utilities
         /// <para>
         /// <b>2.0</b> = 维持恒定覆盖率（面积是二维的，所以面积等比就是平方）。
         /// 但实测下来这个太陡：大窗口铺 1000+ 粒子显得太密，而小窗口只有 45 个又太少
-        /// —— 也就是说"画面越大越能容忍低覆盖率"。默认取 <b>1.4</b>（由 1.65 再下调）。
+        /// —— 也就是说"画面越大越能容忍低覆盖率"。默认取 <b>1.2</b>（由 1.65 → 1.4 → 1.2 逐步下调）。
         ///
         /// ⚠️ 注意覆盖率不能只按头部面积估：粒子尺寸固定时**拖尾才是视觉主体**
         /// （实测拖尾占视觉体积约 3/4，头只占 1/4），所以同一个数量看起来比"按头算"
@@ -85,7 +85,7 @@ namespace KernelExtensions.Utilities
         /// 调大 → 大窗口更多、小窗口更少；调小 → 反过来。
         /// </para>
         /// </summary>
-        public float DensityExponent { get; set; } = 1.4f;
+        public float DensityExponent { get; set; } = 1.2f;
 
         /// <summary>折算后的实际数量下限 / 上限（防止极端尺寸下几乎没有粒子或卡顿）。</summary>
         public int MinEffectiveCount { get; set; } = 24;
@@ -245,8 +245,7 @@ namespace KernelExtensions.Utilities
             float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
             int count = EffectiveCount(destHeight);
 
-            // 当前拖尾长度（归一化）。粒子必须**整条尾巴都出顶**才算飞完 ——
-            // 否则头一触顶就重生，尾巴还在画面里，看着是被生生截断的。
+            // 拖尾长度（归一化）：头出顶后尾巴还要滑出去，淡出要按尾巴位置算，所以这里要它。
             float trailNorm = CurrentTrailPixels(load)
                 / Math.Max(1f, destHeight > 0 ? destHeight : ReferenceHeight);
 
@@ -261,9 +260,11 @@ namespace KernelExtensions.Utilities
                 p.Pos.Y -= p.Speed * speedGain * dt;
                 p.Life -= dt;
 
-                // 整条尾巴（头 + 拖尾）都离开顶边才算飞完，配合 Draw 里的顶端淡出，
-                // 观感是"尾巴一点点滑出去"，而不是头顶一碰边就整体蒸发。
-                float despawnY = -trailNorm - 0.02f;
+                // ⚠️ 判据是"**头部出顶**"，不是"整条尾巴出顶"。
+                // 用后者粒子会在顶部多活一大截（实测 100px 窗口下头出顶后还要飘 1.6~3.4 秒），
+                // 观感就是"在顶部停了一会才消失"。头一出顶就重生，尾巴被顶边自然裁掉，
+                // 看起来仍是尾巴一点点滑出去（淡出在 Draw 里按尾巴位置算）。
+                float despawnY = -trailNorm * 0.5f;
 
                 // 飞完 / 出侧 / 寿命尽 → 从底边重新起飞
                 if (p.Pos.Y < despawnY || p.Life <= 0f || p.Pos.X < -0.05f || p.Pos.X > 1.05f)
@@ -279,7 +280,7 @@ namespace KernelExtensions.Utilities
 
         /// <summary>
         /// 当前拖尾长度（像素）。抽出来是因为 <see cref="Update"/> 与 <see cref="Draw"/> 都要用它：
-        /// Update 用它决定"整条尾巴何时出顶"，Draw 用它画线 ——
+        /// Update 用它算重生判定与归一化拖尾长度，Draw 用它画线 ——
         /// 两边必须取同一个值，否则会出现"还没飞完就重生"或"画到一半被清掉"。
         /// </summary>
         private int CurrentTrailPixels(float load)
@@ -319,13 +320,14 @@ namespace KernelExtensions.Utilities
                 float speedRatio = p.Speed * speedGain / Math.Max(0.02f, BaseSpeed);
                 int tailLen = Math.Max(2, (int)(trailLen * MathHelper.Clamp(speedRatio, 0.5f, 2.2f)));
 
-                // ⚠️ 不在生成处做"透明淡入"：原先 y 靠近 1 时亮度趋近 0，粒子一出生
-                // 几乎看不见、要等一会儿才浮现，观感就是"凭空出现/凭空消失"。
-                // 现在只在顶端做一点收尾淡出（那里本来就要重生），底部全亮。
-                // 淡出区宽度按拖尾长度的比例给 —— 拖尾越长，越早开始淡，才够时间滑出去。
-                float fadeSpan = MathHelper.Clamp(trailLen / (float)Math.Max(1, dest.Height) * 2.5f, 0.06f, 0.35f);
-                float fade = MathHelper.Clamp((1.05f - p.Pos.Y) / fadeSpan, 0f, 1f);
-                Color c = color * (brightness * MathHelper.Lerp(0.55f, 1f, fade));
+                // ⚠️ 淡出按**尾巴位置**算，不按头部 —— 这是"看着像在顶部停了一会"的另一半原因。
+                //
+                // 头顶先出顶，此时尾巴还大段露在画面里；如果按头的 y 算淡出，头一出顶
+                // 整条（含还在画面里的尾巴）就已经淡到很暗，剩下的时间就是"隐约的影子在顶部悬着"。
+                // 改为"尾巴还在画面里就全亮、尾巴开始出顶才淡"，观感才是尾巴一点点滑出去。
+                float tailBottomY = p.Pos.Y + tailLen / (float)Math.Max(1, dest.Height);   // 尾端（归一化）
+                float fade = MathHelper.Clamp(tailBottomY / 0.12f, 0f, 1f);
+                Color c = color * (brightness * MathHelper.Lerp(0.35f, 1f, fade));
 
                 // 拖尾：从头部往下（来路）的一条竖线，上下端夹进 dest
                 int tailTop = ClampToRange(headY, dest.Y, dest.Y + dest.Height);
