@@ -436,6 +436,16 @@ public class PortHackV2Exe : GameExecutable
     /// </summary>
     private void UpdateProtocol(ProtocolRuntime rt, float t)
     {
+        // 进入时的状态：仅在头几帧打印。用于定位"某协议从不产生任何日志"这类问题 ——
+        // 必须先确认它到底有没有进这个方法，再谈钩子为什么没跑。
+        if (_crackTime <= t * 3f)
+        {
+            KELog.Debug($"[PortHackV2] UpdateProtocol enter: name='{rt.Def?.Name}'"
+                + $" finished={rt.Finished} started={rt.Started}"
+                + $" delayElapsed={rt.DelayElapsed:0.###}"
+                + $" elapsed={rt.Elapsed:0.###} startDelay={rt.Def?.StartDelay ?? -1f:0.###}");
+        }
+
         if (rt.Finished) return;
 
         if (!rt.Started)
@@ -608,7 +618,21 @@ public class PortHackV2Exe : GameExecutable
         }
 
         _crackTime += t;
-        foreach (ProtocolRuntime rt in _runtimes) UpdateProtocol(rt, t);
+        foreach (ProtocolRuntime rt in _runtimes)
+        {
+            // 逐个包住：循环里任何一个协议抛异常都会**静默中断整个循环**，
+            // 后面的协议这一帧乃至后续帧都不再被推进 —— 这种"某协议毫无动静"的症状
+            // 极难从结果反推，所以这里把异常明确记下来。
+            try
+            {
+                UpdateProtocol(rt, t);
+            }
+            catch (Exception ex)
+            {
+                KELog.Error($"[PortHackV2] '{CurrentConfig.SourceName}' protocol "
+                    + $"'{rt.Def?.Name}': update threw (other protocols continue): {ex}");
+            }
+        }
 
         _sequence.Update(t, _crackTime, CurrentConfig.Time);
 
