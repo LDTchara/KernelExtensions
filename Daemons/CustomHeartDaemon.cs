@@ -14,7 +14,7 @@ using Pathfinder.Util;
 namespace KernelExtensions.Daemons
 {
     /// <summary>
-    /// 复刻原版 CustomHeartDaemon（可配置剧情版）。
+    /// 复刻原版 PorthackHeartDaemon（可配置剧情版）。
     ///
     /// ── 节点 XML 用法（全部参数可选）──────────────────────────────────────────
     /// &lt;Computer&gt;
