@@ -20,7 +20,7 @@ namespace KernelExtensions.Executables;
 ///   2. 把「过载倍数」实时作用到当前连接机器的代理上（当作自动过载驱动器），
 ///      让作者当场看到 1.0 倍 = 原版速度、2.0 倍 = 两倍速的效果。
 ///
-/// 入口：存档 flag <c>CustomProxyTuner_&lt;文件名&gt;</c> → 扩展根 <c>ProxyTuner/&lt;文件名&gt;.xml</c>。
+/// 入口：存档 flag <c>ProxyTuner_&lt;文件名&gt;</c> → 扩展根 <c>ProxyTuner/&lt;文件名&gt;.xml</c>。
 /// 无 flag / 多 flag / 配置加载失败 → 终端提示 + 窗口停留 3 秒后自动退出。
 ///
 /// 调参结果**不写盘**（对齐 RamDisplay 的「不存档即临时状态」决定）：退出后配置仍是原值，
@@ -169,7 +169,7 @@ public class ProxyTunerExe : GameExecutable
     }
 
     /// <summary>
-    /// 找出存档里所有属于本程序的 flag（<c>CustomProxyTuner_*</c>）。
+    /// 找出存档里所有属于本程序的 flag（<c>ProxyTuner_*</c>）。
     /// 正常情况下应恰好一个（flag = 入口牌）；0 个 → 锁定；多个 → 作者配置错误。
     /// </summary>
     private static List<string> FindProxyTunerFlags()

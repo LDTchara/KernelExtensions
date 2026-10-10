@@ -7,10 +7,10 @@
     定位：开发者调参工具。放 <扩展根>/ProxyTuner/ 下。
     Position: an authoring tool for tuning. Place under <extensionRoot>/ProxyTuner/.
 
-    启用方式：给玩家挂上存档 flag CustomProxyTuner_<文件名>（不含 .xml）。
+    启用方式：给玩家挂上存档 flag ProxyTuner_<文件名>（不含 .xml）。
     flag 就是"入口牌"：无 flag 程序锁定；出现多个 flag 视为作者配置错误（锁定 + 日志报错）。
     然后在终端执行 #PROXYTUNER#。
-    How to enable: set the save flag CustomProxyTuner_<fileName> (without .xml) on the player.
+    How to enable: set the save flag ProxyTuner_<fileName> (without .xml) on the player.
     The flag is the entry token: none means locked; more than one is an authoring error.
     Then run #PROXYTUNER# in the terminal.
 

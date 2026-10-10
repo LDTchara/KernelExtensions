@@ -7,7 +7,7 @@ namespace KernelExtensions.Configs;
 /// <summary>
 /// ProxyTuner（游戏内实时调节代理破解倍数，供扩展作者调参）的配置契约。
 ///
-/// 入口与 PortHackV2 同构：存档 flag <c>CustomProxyTuner_&lt;文件名&gt;</c> 就是入口牌，
+/// 入口与 PortHackV2 同构：存档 flag <c>ProxyTuner_&lt;文件名&gt;</c> 就是入口牌，
 /// 反查出扩展根目录下 <c>ProxyTuner/&lt;文件名&gt;.xml</c>。无 flag → 程序锁定；
 /// 出现多个 flag → 作者配置错误（两者都由主程序给出提示后自动退出）。
 ///
@@ -181,10 +181,10 @@ public class ProxyTunerConfig
 
     /// <summary>
     /// 存档 flag 前缀。**flag 是本程序的入口牌**：
-    /// 形如 <c>CustomProxyTuner_MyTuning</c> → 对应 <c>&lt;扩展根&gt;/ProxyTuner/MyTuning.xml</c>。
+    /// 形如 <c>ProxyTuner_MyTuning</c> → 对应 <c>&lt;扩展根&gt;/ProxyTuner/MyTuning.xml</c>。
     /// 无 flag → 程序锁定；多 flag → 作者配置错误。
     /// </summary>
-    public const string FlagPrefix = "CustomProxyTuner_";
+    public const string FlagPrefix = "ProxyTuner_";
 
     /// <summary>配置目录（扩展根下）。</summary>
     public const string ConfigDir = "ProxyTuner";
