@@ -315,9 +315,30 @@ namespace KernelExtensions.Executables
                 _paused = !_paused;
             if (Button.doButton(9003 + PID, bg.X + 114, btnY, 50, 22, "Next", os.highlightColor))
                 NextEffect();
+            // 缩放试验：切几个窗口高度，验证效果在"默认小窗口"与"自定义大窗口"下构图是否一致
+            if (Button.doButton(9005 + PID, bg.X + 172, btnY, 58, 22, "Size", os.highlightColor))
+                CycleSize();
             if (Button.doButton(9004 + PID, bounds.X + bounds.Width - 34, btnY, 28, 22, "X", os.brightLockedColor))
                 isExiting = true;
         }
+
+        /// <summary>
+        /// 循环切换窗口高度（100 / 200 / 400 / 600）。这是选型时最关键的一条验证：
+        /// 效果在默认小窗口与自定义大窗口下是否同一构图，光看代码判断不了。
+        /// </summary>
+        private void CycleSize()
+        {
+            int[] heights = { 100, 200, 400, 600 };
+            _sizeIndex = (_sizeIndex + 1) % heights.Length;
+            int h = heights[_sizeIndex];
+            int minH = PANEL_HEIGHT + 14 + 44;    // 面板高 + 标题栏 + 按钮条
+            bounds.Height = Math.Max(minH, h);
+            // ⚠️ 原版 ExeModule.Update 每帧执行 bounds.Height = ramCost，所以光改 bounds 会被覆盖回去
+            ramCost = bounds.Height;
+            KELog.Info($"[EffectsPlayer] window height -> {bounds.Height}px.");
+        }
+
+        private int _sizeIndex;
 
         /// <summary>
         /// 走离屏渲染再贴回来。
