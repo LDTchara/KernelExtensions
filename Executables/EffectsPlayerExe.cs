@@ -332,7 +332,8 @@ namespace KernelExtensions.Executables
             if (cur.Draw2D != null && cur.Name == "FlowField")
                 load += $"  speed x{_flowField.MinSpeedFactor:0.00}~x{_flowField.MaxSpeedFactor:0.00}"
                      + $" /{_flowField.SpeedTiers}tier  life x{_flowField.LifeGain:0.00}"
-                + $"  n={_flowField.EffectiveCount(bg.Height)}/{_flowField.Count}";
+                + $"  n={_flowField.EffectiveCount(bg.Height)}/{_flowField.Count}"
+                + $" p={_flowField.DensityExponent:0.00} ref={_flowField.ReferenceHeight:0}";
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
 
