@@ -240,12 +240,18 @@ namespace KernelExtensions.Executables
             _polySeq.Update(dt, _timer, total);
         }
 
-        /// <summary>预览用的"负荷"曲线：6 秒内 0 → 1 再回到 0，循环，方便看负荷上升/下降两种极端。</summary>
+        /// <summary>
+        /// 预览用的"负荷"曲线：0 →（4 秒内升到满）→ 满档保持 3 秒 → 回落，循环。
+        /// 保持 3 秒是为了看清"满负荷"是什么样 —— 纯三角波只有一瞬到达峰值。
+        /// </summary>
         private float LoadRamp()
         {
-            const float period = 12f;
-            float p = (_timer % period) / period;         // 0~1
-            return p < 0.5f ? p * 2f : (1f - p) * 2f;     // 0→1→0
+            const float up = 4f, hold = 3f, down = 4f;
+            const float period = up + hold + down;
+            float t = _timer % period;
+            if (t < up) return t / up;
+            if (t < up + hold) return 1f;
+            return 1f - (t - up - hold) / down;
         }
 
         private string StatusFor(int i)
