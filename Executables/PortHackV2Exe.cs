@@ -547,6 +547,12 @@ public class PortHackV2Exe : GameExecutable
     {
         base.Draw(t);
         drawOutline();
+        // 原版窗口顶部那行（"IP: xxx" + "app:" + IdentifierName）。
+        // ⚠️ drawTarget 读的是 **ExeModule.targetIP 字段**，而扩展 exe 的基类构造函数只把它
+        // 设一次、之后不跟随连接变化 —— 所以要在这里按当前目标机同步一次再画，
+        // 否则切节点后 IP 会停在启动那一刻（甚至空）。
+        this.targetIP = _targetIp ?? Target?.ip ?? string.Empty;
+        drawTarget();
 
         switch (CurrentState)
         {
@@ -565,8 +571,10 @@ public class PortHackV2Exe : GameExecutable
                 break;
         }
 
-        // 退出按钮：仅 Locked / Listing（Cracking 起不给退，演出中也没有可退的）
-        if (CanShowExitButton()
+        // 退出按钮只在 Locked / Listing 出现（Cracking 起不给退；演出中也没有可退的）。
+        // ⚠️ 必须带 isExiting 守卫：否则按下之后按钮还会继续画半秒（淡出期间），
+        // 而其余内容已经停画了 —— 与"退出瞬间整体停画"的约定不一致。
+        if (!isExiting && CanShowExitButton()
             && Button.doButton(PID + ID_EXIT, bounds.X + bounds.Width - 62, bounds.Y + bounds.Height - 30,
                 56, 24, KELoc.Loc("PORT_HACK_V2_EXIT", "Exit"), os.lockedColor))
         {

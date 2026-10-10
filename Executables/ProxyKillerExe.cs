@@ -11,36 +11,40 @@ using Pathfinder.Executable;
 namespace KernelExtensions.Executables;
 
 /// <summary>
-/// ProxyKiller —— 把目标"压到过载"的**展示**程序。
+/// ProxyKiller —— **加速代理瘫痪**的常驻程序。
 ///
 /// <para>
-/// 定位说清楚：**过载倍率是扩展作者在配置里定义的，本程序不调任何东西**。
-/// 它做的事只有一件 —— 按配置把 RAM 从起始值线性爬到目标值，同时用一个背景动画
-/// 把这个过程表达出来（粒子随爬升由混沌趋于整齐），并提供退出按钮。
-/// 所以界面上**不显示任何文字与数字**：爬升本身看得见，再叠读数就是噪声。
+/// 它做两件事，都不需要玩家操作：
+/// <list type="number">
+///   <item>RAM 从**固定的 50MB** 爬到配置的目标值（默认 100），之后一直占着不释放 ——
+///     这个过程同时驱动界面：<c>chaosPercent</c> 随爬升从 1 降到 0（粒子由混沌趋于整齐）</item>
+///   <item>把**所有正在过载的 Shell** 的过载速率乘上一个倍速，倍速同样由 RAM 爬升
+///     从 1 线性驱动到配置的目标值</item>
+/// </list>
 /// </para>
 ///
 /// <para>
-/// ⚠️ **它自己不瘫痪任何代理** —— 它只**加速正在过载的 Shell**。
-/// 原版把代理过载做成了 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
-/// 而 Shell 需要目标机 admin 才能开 —— 这是设计上"过载是收尾手段、不是进门手段"的护栏。
-/// 本程序**不去拆那道护栏**：没有 shell 在过载，它就什么都不做。
-/// 它做的是把"力量倍增器"这件事显式化 —— 速率 = 目标节点上的 shell 数 × 当前倍速。
-/// 顺带比原版 <c>ConShell -o</c> 更准：那个会把**所有** shell 的 <c>destComp</c> 都设成
-/// 当前所连节点；这里按每个 shell 自己的 <c>targetIP</c> 匹配，所以对着目标节点的那几个
-/// shell 会被加速，**且不要求玩家当前就连着目标节点**。
+/// ⚠️ **它自己不瘫痪任何代理**。原版把代理过载做成 Shell 的一个状态
+/// （<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），而 Shell 需要目标机 admin 才能开
+/// （终端 <c>shell</c> 命令里 <c>hasConnectionPermission(admin: true)</c> 那道判定）——
+/// 那是设计上的护栏，本程序不去拆：没有 shell 在过载，它就只是占着内存跑动画。
+/// 于是"提速"与"门槛"分离：谁去过载、能不能过载，仍由玩家与原版规则决定；
+/// 本程序只让**已经在做的事**更快。N 个 shell 的总速率 = N × 倍速。
 /// </para>
 ///
 /// <para>
-/// RAM 爬升逻辑照搬原版 <c>DLCTraceSlower</c>（<c>SignalScramble</c>）——
-/// 那是原版唯一一个"自己把 RAM 吃掉"的程序，也是同类表达的先例：
-/// 它从 50 爬到 600，速率 200/s（约 2.75 秒）。本程序用同样的机制，
-/// 但把目标值与速率都做成可配。
+/// 视觉与 RAM 爬升逻辑**照搬原版 `DLCTraceSlower`（`SignalScramble`）** ——
+/// 那是原版唯一一个"自己把 RAM 吃掉"的程序：
+/// RAM 50 → 600、速率 200/s、底部一个 Exit 按钮、中下部一条状态文字带假进度读数。
+/// 差别只有：目标 RAM 与倍速改成可配、背景参数可配、文字改成"加速"语义、
+/// 以及它原来是减速 trace 而这里是加速 shell 过载。
 /// </para>
 ///
 /// <para>
-/// <c>chaosPercent</c> 随爬升从 1 降到 0：这就是"burst"在视觉上的全部表达 ——
-/// 开始的粒子是乱的，被压住后趋于整齐。
+/// 加速实现：不用 Harmony 去 patch <c>ShellExe.Update</c> 里那一行 —— 那要动一个 internal
+/// 类型的方法体，会与将来任何改 <c>ShellExe</c> 的模组打架。这里只是在**已发生的过载**上
+/// 补差额 <c>t * (倍速 - 1)</c>，不改变 shell 自己的状态机（"ticks ≤ 0 时置
+/// proxyActive = false"的收尾仍由 shell 自己做）。
 /// </para>
 /// </summary>
 public class ProxyKillerExe : GameExecutable
@@ -60,22 +64,15 @@ public class ProxyKillerExe : GameExecutable
     private float _ram;
     private float _ramStart;
     private float _target;
-    private float _rampRate;
     private float _mulTarget;
 
-    /// <summary>启动时所连的节点（仅用于日志/离开判定，不决定加速对象）。</summary>
-    private Computer _startComp;
-    /// <summary>
-    /// 启动时所连节点的 ip —— 用它判断玩家有没有走开（<c>ExitOnDisconnect</c>，对齐原版跟着连接走的语义）。
-    /// </summary>
-    private string _homeIp;
-
-    // ---- 颜色与背景 ----
-    private Color _accent = Color.White;
-    private string _accentStr;
-    private Hacknet.Effects.DepthDotGridEffect _depthGrid;
-    private Hacknet.Effects.HexGridBackground _hexGrid;
+    // ---- 背景 ----
+    private Color _bgColor = Color.White;
+    private Hacknet.Effects.DepthDotGridEffect _grid;
     private bool _bgWarned;
+
+    /// <summary>加速状态文字用的计时（原版 SignalScramble 用它驱动假读数的抖动）。</summary>
+    private float _textTimer;
 
     private const int ID_EXIT = 910;
 
@@ -85,7 +82,7 @@ public class ProxyKillerExe : GameExecutable
         // ⚠️ 窗口顶部标题画的是 IdentifierName（原版 ExeModule.drawTarget："app:" + IdentifierName），
         // 不是 name —— 不设它就显示 app:UNKNOWN。
         this.IdentifierName = ProxyKillerConfig.DefaultProgramName;
-        this.ramCost = ProxyKillerConfig.DefaultRamCost;
+        this.ramCost = ProxyKillerConfig.RamCost;
     }
 
     public override void OnInitialize()
@@ -125,23 +122,30 @@ public class ProxyKillerExe : GameExecutable
             IdentifierName = _cfg.ProgramName;
         }
 
-        _accentStr = _cfg.AccentColorRaw;
-        RefreshAccent();
+        _bgColor = _cfg.BackgroundColor;
 
-        _ramStart = _cfg.RamCost;
-        _target = Math.Max(_ramStart, _cfg.BurstTarget);   // 目标小于起始时就不爬，避免反向下滑
-        _rampRate = _cfg.RampRate;
-        _mulTarget = _cfg.ProxyOverloadTarget;
+        // 起始值固定 50（不可配）；目标取配置值，且不小于起始值，避免"反向下滑"
+        _ramStart = ProxyKillerConfig.RamCost;
+        _target = Math.Max(_ramStart, _cfg.BurstTarget);
+        _mulTarget = _cfg.ShellOverloadTarget;
         _ram = _ramStart;
         ramCost = (int)_ram;
 
-        _homeIp = CurrentTargetIp();
-        _startComp = os?.connectedComp;
+        try
+        {
+            _grid = new Hacknet.Effects.DepthDotGridEffect(os.content);
+        }
+        catch (Exception ex)
+        {
+            KELog.Error($"{LogTag} could not create the DepthDotGrid effect: {ex.Message}");
+            Lock(KELoc.Loc("PROXY_KILLER_LOAD_FAILED",
+                "ProxyKiller: configuration could not be loaded."));
+            return;
+        }
 
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
-            + $"at {_rampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
-            + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}"
-            + (_startComp != null ? $" @ '{_startComp.idName}'." : "; nothing connected."));
+            + $"at {ProxyKillerConfig.RampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
+            + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}.");
     }
 
     /// <summary>
@@ -202,17 +206,6 @@ public class ProxyKillerExe : GameExecutable
         os.write(reason);
     }
 
-    /// <summary>当前所连节点的 ip（没连就是本机）——对齐原版 SignalScramble 的取法。</summary>
-    private string CurrentTargetIp()
-        => (os?.connectedComp ?? os?.thisComputer)?.ip;
-
-    /// <summary>
-    /// 刷新强调色。动态色（CC 预设 / Rainbow / Gradient）随时间变化，必须逐帧重算，
-    /// 所以在 Update 里刷新一次缓存进字段，Draw 直接用。
-    /// </summary>
-    private void RefreshAccent()
-        => _accent = CustomColorManager.GetDynamicColor(_accentStr, ProxyKillerConfig.DefaultAccentColor);
-
     // ======================= Update =======================
 
     public override void Update(float t)
@@ -228,69 +221,58 @@ public class ProxyKillerExe : GameExecutable
         }
         if (_cfg == null) { isExiting = true; return; }
 
-        RefreshAccent();
+        // 本程序**常驻**：不跟随连接变化关闭（无 ExitOnDisconnect），只由玩家按 Exit 结束。
+        // 这也意味着它可以一直加速**后来才开的** shell —— 每帧重新遍历，不看创建时机。
 
-        // 离开所在节点就关（可配，默认 true —— 对齐原版 SignalScramble 跟着连接走的语义）
-        if (_cfg.ExitOnDisconnect && CurrentTargetIp() != _homeIp)
+        // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率固定）
+        if (_ram < _target)
         {
-            KELog.Info($"{LogTag} left the node this program was started on; exiting.");
-            isExiting = true;
-            return;
-        }
-
-        // RAM 线性爬升到目标；已到就不再动（原版 DLCTraceSlower 同款，只是速率与目标可配）
-        if (_ram < _target && _rampRate > 0f)
-        {
-            _ram = Math.Min(_target, _ram + _rampRate * t);
+            _ram = Math.Min(_target, _ram + ProxyKillerConfig.RampRate * t);
             ramCost = (int)_ram;
         }
 
-        // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 RamCost → BurstTarget。
-        // 二者共用同一个进度，所以"占的内存越多、加速越强"是能互相印证的。
-        AccelerateTargetShells(t);
+        _textTimer += t;
+
+        // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 50MB → BurstTarget
+        AccelerateShells(t);
     }
 
-    // ======================= 核心：加速目标节点上的 shell 过载 =======================
+    /// <summary>RAM 爬升进度 0~1（= 倍速爬升进度）。起始值 == 目标值时视为已满。</summary>
+    private float RampProgress()
+        => _target > _ramStart ? MathHelper.Clamp((_ram - _ramStart) / (_target - _ramStart), 0f, 1f) : 1f;
+
+    // ======================= 核心：加速所有正在过载的 shell =======================
 
     /// <summary>
     /// 加速**所有正在过载的 Shell**（不区分它们各自对着哪个节点）。
     ///
     /// <para>
-    /// 为什么不按 IP 过滤：shell 分布运行在多个节点上（每个 shell 的 <c>targetIP</c> 是它创建时
+    /// 不按 IP 过滤的原因：shell 分布运行在多个节点上（每个 shell 的 <c>targetIP</c> 是它创建时
     /// 所连的那台，之后不变），而原版的多 shell 叠加本来就不挑目标 ——
-    /// 每个 shell 各自 <c>ticks -= t</c>，谁指着哪台无所谓。所以这里也**不按目标筛选**：
-    /// 你在几台上开了 shell 并让它们过载，本程序就同时加速那几个。
+    /// 每个 shell 各自 <c>ticks -= t</c>，谁指着哪台无所谓。所以这里也不按目标筛选。
     /// </para>
     ///
     /// <para>
-    /// 但仍要**排除空闲的 shell**：<c>proxyOverloadTicks</c> 是 shell 自身持久的字段，
+    /// 每帧重新遍历 <c>os.exes</c>，所以**先运行本程序、之后才开的 shell 一样会被加速**
+    /// （不缓存 shell 列表、不看创建时机）。
+    /// </para>
+    ///
+    /// <para>
+    /// 但必须**排除空闲的 shell**：<c>proxyOverloadTicks</c> 是 shell 自身持久的字段，
     /// 过载完之后停在 0；若不加判断，那些没在过载的 shell 的 ticks 会被减成负数，
-    /// 下次它真的去过载时会从负数开始 —— 等于把那台机器的过载直接归零，这不是加速。
-    /// 所以判据是"该 shell 正在过载"，用两个条件确认：
+    /// 下次它真的去过载时就从负数起跑 —— 等于把那台机器的代理直接归零，这不是加速。
+    /// 判据是"该 shell 正在过载"，用两个条件确认：
     /// <c>0 &lt; ticks ≤ 目标机 startingOverloadTicks</c>（过载中被逐帧减小的区间）
-    /// 且**目标机的代理仍存活**（代理已瘫痪 = 就算还有余量也是针对旧状态，不该再推）。
+    /// 且**目标机的代理仍存活**。
     /// </para>
     ///
     /// <para>
-    /// 语义：倍速 <c>mul</c> = <c>Lerp(1, ProxyOverloadTarget, 爬升进度)</c>。
-    /// 每个 shell 原本每帧减 <c>t</c>（原版速度 = 倍速 1），所以这里补差额 <c>t * (mul - 1)</c>；
-    /// N 个 shell 的总速率就是 <c>N * mul</c>。
-    /// </para>
-    ///
-    /// <para>
-    /// 为什么不用 Harmony 去 patch <c>ShellExe.Update</c> 里那一行：那要动一个 internal 类型的
-    /// 方法体，会与将来任何改 <c>ShellExe</c> 的模组打架；这里只是在**已发生的过载**上补差额，
-    /// 不改变 shell 自己的状态机（它照旧负责"ticks ≤ 0 时置 proxyActive = false"的收尾）。
-    /// </para>
-    ///
-    /// <para>
-    /// 倍速**峰值恰好等于目标值**（出现在 RAM 爬满那一刻），爬升期间平均为 <c>(1 + 目标值) / 2</c>。
-    /// <c>RampRate = 0</c> 时 RAM 不爬、倍速恒为 1（等于不加速）。
-    /// 没有任何 shell 在过载时，本程序**什么都不做**
-    /// （它不替玩家拆"过载需要 admin"那道门槛，见类注释）。
+    /// 语义：倍速 <c>mul</c> = <c>Lerp(1, ShellOverloadTarget, 爬升进度)</c>，
+    /// 每个 shell 原本每帧减 <c>t</c>（原版速度 = 倍速 1），所以补差额 <c>t * (mul - 1)</c>。
+    /// 倍速峰值恰好等于配置的目标值（RAM 爬满那刻），爬升期间平均为 <c>(1 + 目标值) / 2</c>。
     /// </para>
     /// </summary>
-    private void AccelerateTargetShells(float t)
+    private void AccelerateShells(float t)
     {
         float mul = MathHelper.Lerp(1f, _mulTarget, RampProgress());
         float extraPerShell = t * (mul - 1f);
@@ -346,8 +328,6 @@ public class ProxyKillerExe : GameExecutable
         }
     }
 
-    private bool _accelerating;
-
     /// <summary>原版 ShellExe 的类型全名（internal 类型，只能按名字找）。</summary>
     private const string ShellExeTypeName = "Hacknet.ShellExe";
 
@@ -361,13 +341,10 @@ public class ProxyKillerExe : GameExecutable
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public
             | System.Reflection.BindingFlags.NonPublic);
 
+    private bool _accelerating;
     private bool _effectWarned;
 
-    /// <summary>RAM 爬升进度 0~1（= 倍速爬升进度）。起始值 == 目标值时视为已满。</summary>
-    private float RampProgress()
-        => _target > _ramStart ? MathHelper.Clamp((_ram - _ramStart) / (_target - _ramStart), 0f, 1f) : 1f;
-
-    // ======================= Draw =======================
+    // ======================= Draw（照搬 DLCTraceSlower） =======================
 
     public override void Draw(float t)
     {
@@ -375,80 +352,102 @@ public class ProxyKillerExe : GameExecutable
         drawOutline();
         drawTarget();
 
-        // 退出瞬间按钮立即消失（与 PortHackV2 锁定屏同一约定：不参与淡出）
+        // 退出瞬间整体停画（背景与文字一起消失，不参与淡出）
         if (isExiting) return;
 
-        Rectangle box = Utils.InsetRectangle(
-            new Rectangle(bounds.X, bounds.Y + PANEL_HEIGHT, bounds.Width, bounds.Height - PANEL_HEIGHT), 2);
-        if (box.Width <= 8 || box.Height <= 8) return;
+        // 内容区：原版 SignalScramble 就是 Utils.InsetRectangle(bounds 去掉面板高, 2)
+        Rectangle content = Utils.InsetRectangle(
+            new Rectangle(bounds.X, bounds.Y + Module.PANEL_HEIGHT, bounds.Width, bounds.Height - Module.PANEL_HEIGHT), 2);
+        if (content.Width <= 8 || content.Height <= 8) return;
 
-        DrawBackground(box);
+        DrawGrid(content);
 
         if (_locked)
         {
-            // 锁定时只有一行原因 —— 3 秒后自己关，不给按钮（没什么可操作的）
+            // 锁定时只留一行原因（3 秒后自己关）
             if (!string.IsNullOrEmpty(_lockedReason))
                 TextItem.doFontLabelToSize(
-                    new Rectangle(box.X + 6, box.Y + box.Height / 2 - 10, box.Width - 12, 20),
+                    new Rectangle(content.X + 6, content.Y + content.Height / 2 - 10, content.Width - 12, 20),
                     _lockedReason, GuiData.smallfont, Color.White * 0.9f);
             return;
         }
+        if (_cfg == null) return;
 
-        // 底部退出按钮（原版 SignalScramble 也是这么放的）。点一下立即退出。
-        const int btnH = 25;
-        Rectangle btn = new(box.X, box.Y + box.Height - btnH, box.Width, btnH);
-        spriteBatch.Draw(Utils.white, btn, Color.Black * 0.9f);
+        // 状态文字带（原版 SignalScramble 在"图形区底部往上 2 行"的位置放它）
+        const int bandH = 25;
+        Rectangle band = new(content.X, content.Y + content.Height - bandH - 10 - bandH,
+            (int)(content.Width * 0.92f), bandH + 2);
+        band.Width += 8;
+        spriteBatch.Draw(Utils.white, band, Color.Black * 0.9f);
+        band.Width -= 8;
+        band.Y += 4;
+        band.Height -= 8;
+
+        // 文本：把原版"减速 trace"的说法换成"加速 shell 过载"，
+        // 并把原版的假进度换成**真实**的 RAM 爬升进度（同样的版式，但数字不骗人）。
+        float progress = RampProgress();
+        bool rampDone = _ram >= _target;
+        string label = rampDone
+            ? KELoc.Loc("PROXY_KILLER_ACTIVE", "Accelerating")
+            : KELoc.Loc("PROXY_KILLER_SPINUP", "Spinning up...");
+        string text = "[ " + label + " ]";
+        string readout = rampDone
+            ? null
+            : (progress * 100f).ToString("00.00", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+        Vector2 size = GuiData.font.MeasureString(text);
+        float readoutScale = readout != null ? 0.7f : 1f;
+        float scale = Math.Min(1f, Math.Min(band.Width * readoutScale / size.X, band.Height / size.Y));
+        Vector2 offset = new(band.Width - size.X * scale, band.Height / 2f - size.Y * scale / 2f);
+        Color textColor = Color.Lerp(Color.White, os.highlightColor, 0.4f + Utils.randm(0.1f));
+        spriteBatch.DrawString(GuiData.font, text, new Vector2(band.X, band.Y) + offset,
+            textColor, 0f, Vector2.Zero, new Vector2(scale), SpriteEffects.None, 0.5f);
+
+        // 读数逐字符铺在文字左侧（原版同款版式）
+        if (readout != null)
+        {
+            Vector2 pos = new(band.X + 2f, band.Y + offset.Y);
+            for (int i = 0; i < readout.Length; i++)
+            {
+                spriteBatch.DrawString(GuiData.font, readout[i].ToString(),
+                    pos + (readout[i] == '.' ? new Vector2(3f, 0f) : Vector2.Zero),
+                    textColor, 0f, Vector2.Zero, new Vector2(scale), SpriteEffects.None, 0.5f);
+                pos.X += size.X / text.Length * scale + 2f;
+            }
+        }
+
+        // 底部 Exit 按钮（原版 SignalScramble 就是这条满宽黑条 + 按钮）
+        Rectangle btn = new(content.X, content.Y + content.Height - bandH, content.Width, bandH);
+        spriteBatch.Draw(Utils.white, btn, Color.Black);
         if (Button.doButton(PID + ID_EXIT, btn.X + 1, btn.Y, btn.Width - 2, btn.Height,
                 KELoc.Loc("PROXY_KILLER_BTN_EXIT", "Exit"), os.lockedColor))
         {
+            KELog.Info($"{LogTag} exit requested by player.");
             isExiting = true;
         }
     }
 
     /// <summary>
-    /// 背景：原版现成的 Effects，不需要自带资源。
-    /// 粒子"混沌度"随 RAM 爬升从 1 降到 0 —— 这就是 burst 的全部视觉表达。
+    /// 背景：原版 <c>DepthDotGridEffect</c>（SignalScramble 用的那个），参数全部来自配置、
+    /// **运行时不变**；<c>chaosPercent</c> 随 RAM 爬升从 1 降到 0 —— 这是"burst"的视觉表达。
     /// </summary>
-    private void DrawBackground(Rectangle area)
+    private void DrawGrid(Rectangle area)
     {
-        if (_cfg == null || _cfg.BackgroundEffect == ProxyKillerBackgroundEffect.None) return;
-
-        float progress = RampProgress();
-        float chaos = 1f - progress;   // 爬升越满，粒子越整齐（这就是 burst 的全部视觉表达）
-        Color c = _accent;
+        if (_grid == null || _cfg == null) return;
 
         try
         {
-            switch (_cfg.BackgroundEffect)
-            {
-                case ProxyKillerBackgroundEffect.DepthDotGrid:
-                    // 参数对齐原版 SignalScramble 的那次调用（30f, 10 层, 60f 间距, 10f 点）
-                    _depthGrid ??= new Hacknet.Effects.DepthDotGridEffect(os.content);
-                    _depthGrid.DrawGrid(area, Vector2.Zero, spriteBatch, 30f, 10, c, 60f, 10f, 0f, os.timer, chaos);
-                    break;
-
-                case ProxyKillerBackgroundEffect.ZoomingDotGrid:
-                    Hacknet.Effects.ZoomingDotGridEffect.Render(area, spriteBatch, os.timer, c * 0.4f);
-                    break;
-
-                case ProxyKillerBackgroundEffect.HexGrid:
-                    _hexGrid ??= new Hacknet.Effects.HexGridBackground(os.content);
-                    _hexGrid.Update(1f / 60f);
-                    _hexGrid.Draw(area, spriteBatch, Color.Black, c * 0.2f,
-                        Hacknet.Effects.HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
-                    break;
-
-                case ProxyKillerBackgroundEffect.Grid:
-                    Hacknet.Effects.GridEffect.DrawGridBackground(area, spriteBatch, 12, c * 0.3f);
-                    break;
-            }
+            _grid.DrawGrid(area, Vector2.Zero, spriteBatch,
+                _cfg.PixelsInOnRecurse, _cfg.RecursionSteps, _bgColor,
+                _cfg.DotSeparation, _cfg.DotSize, _cfg.MaxDepthDistance,
+                os.timer, 1f - RampProgress());
         }
         catch (Exception ex)
         {
             if (!_bgWarned)
             {
                 _bgWarned = true;
-                KELog.Warn($"{LogTag} background '{_cfg.BackgroundEffect}' failed: {ex.Message}");
+                KELog.Warn($"{LogTag} background draw failed: {ex.Message}");
             }
         }
     }
@@ -457,12 +456,10 @@ public class ProxyKillerExe : GameExecutable
     /// 程序被移除时的收尾。
     /// 这里**不需要释放**背景效果：原版这些 Effects 都不实现 IDisposable，
     /// 它们用的纹理来自游戏本体的 ContentManager（由引擎统一管理）。
-    /// 只把引用置空，随本实例一起被回收。
     /// </summary>
     public override void OnComplete()
     {
-        _depthGrid = null;
-        _hexGrid = null;
+        _grid = null;
         base.OnComplete();
     }
 }

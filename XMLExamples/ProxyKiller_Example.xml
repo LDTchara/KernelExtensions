@@ -4,8 +4,9 @@
     KernelExtensions ProxyKiller 配置示例
     KernelExtensions ProxyKiller Configuration Example
     ============================================================
-    定位：一个"看着过载把目标压满"的**展示**程序。
-    Position: a *display* program that shows an overload build-up.
+    定位：一个**常驻的加速器** —— 加速所有正在过载的 Shell，让代理更快瘫痪。
+    What it is: a resident accelerator that speeds up every Shell already overloading a
+    proxy, so the proxy goes down sooner.
     放 <扩展根>/ProxyKiller/ 下。
     Place it under <extensionRoot>/ProxyKiller/.
 
@@ -16,17 +17,20 @@
     The flag is the entry token: none means locked; more than one is an authoring error.
     Then run #PROXYKILLER# in the terminal.
 
-    它做什么：按配置把 RAM 从起始值线性爬到目标值，同时用一个背景动画把这个过程表达出来
-    （粒子由混沌趋于整齐），右下角一个退出按钮。界面上**不显示任何文字与数字** ——
-    爬升本身看得见，再叠读数就是噪声。
-    What it does: ramps RAM linearly from a start value to a target while a background effect
-    expresses that build-up (the dots settle as it climbs), plus an Exit button. No text or
-    numbers are drawn: the build-up is visible on its own.
+    ⚠️ 它**自己不瘫痪任何代理**。
+    This program never overloads a proxy itself.
+    原版把代理过载做成 Shell 的一个状态（原版 shell 程序的 Overload 按钮），
+    而 Shell 需要目标机 admin 才能开 —— 那道门槛本程序不去拆。
+    所以：目标机上没有开着的 shell 在过载时，它只是占着内存跑动画，什么也不影响。
+    Vanilla makes proxy overload a state of the Shell, and a Shell needs admin on the target.
+    That gate is left intact: with no Shell overloading, this program just holds RAM and
+    animates; it changes nothing.
+    它只让"玩家已经在做的事"更快：N 个 shell 的总过载速率 = N × 倍速。
+    It only makes what the player is already doing faster: N shells give N x the multiplier.
 
-    ⚠️ 过载倍率是**扩展作者在配置里定义的**，本程序不调任何东西、也不碰目标机
-    （它不调用 hostileActionTaken，不算入侵行为）。
-    The overload multiplier is defined by the extension author in configuration; this program
-    changes nothing and touches no target (it never calls hostileActionTaken).
+    它会一直运行（不随连接变化关闭），由玩家的 Exit 按钮结束。
+    It keeps running (it does not close when the connection changes) until the player
+    presses Exit.
 -->
 <ProxyKillerConfig>
 
@@ -37,86 +41,63 @@
        The registration name #PROXYKILLER# is not affected by this. -->
   <ProgramName>ProxyKiller</ProgramName>
 
-  <!-- ── RAM 爬升 / RAM ramp ──
-       启动时按 <RamCost> 占用，然后以 <RampRate> 的速率爬到 <BurstTarget>。
-       Starts at <RamCost>, then climbs to <BurstTarget> at <RampRate>.
-       这三个值默认对齐原版 SignalScramble（原版 DLCTraceSlower）：
-       50 → 600MB，200MB/s（约 2.75 秒爬满）。
-       Defaults mirror vanilla SignalScramble (DLCTraceSlower): 50 -> 600MB at 200MB/s.
+  <!-- ── RAM 占用 / RAM usage ──
+       起始固定 50MB（不可配），以固定速率 200MB/s 爬升到 <BurstTarget>，之后一直占着。
+       Starts at a fixed 50MB (not configurable) and ramps at a fixed 200MB/s up to
+       <BurstTarget>, then holds it.
+       这个爬升不是装饰 —— 它同时驱动界面（粒子由混沌趋于整齐）**和加速倍速**。
+       That ramp is not decoration: it drives both the visuals (the dots settle as it climbs)
+       and the acceleration multiplier.
 
-       BurstTarget：爬升目标（MB）。留空 = 600。目标小于起始值时按"不爬升"处理。
-                    Ramp target in MB. Empty = 600. If below the start, no ramp happens.
-       RamCost    ：启动时的占用（MB）。留空 = 50。
-                    Starting RAM in MB. Empty = 50.
-       RampRate   ：爬升速率（MB/s）。留空 = 200；写 0 = 只占起始值不爬。
-                    Ramp speed in MB/s. Empty = 200; 0 means "stay at the start value". -->
-  <BurstTarget>600</BurstTarget>
-  <RamCost>50</RamCost>
-  <RampRate>200</RampRate>
+       BurstTarget：RAM 爬升目标（MB）。留空 = 100。
+                    Ramp target in MB. Empty = 100.
+                    想让它慢慢爬（看清画面变化）就把它调高，例如 600（约 2.75 秒）。
+                    Raise it to slow the ramp down, e.g. 600 for about 2.75 seconds. -->
+  <BurstTarget>100</BurstTarget>
 
-  <!-- ── shell 过载倍速 / Shell overload speed ──
-       ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速**正在过载的所有 Shell**，
-       不区分那些 shell 各自对着哪个节点。
-       This program never overloads a proxy itself. It only speeds up every Shell that is
-       currently overloading a proxy — regardless of which node each one targets.
-       shell 分布运行在多个节点上（每个 shell 的 targetIP 是它创建时所连的那台，之后不变），
-       所以你在几台上开了 shell 并让它们过载，本程序就同时加速那几个。
-       Shells live on different nodes, so if you opened several and set them overloading,
-       all of them get accelerated at once.
-       原版要先在目标机上拿到 admin 才能开 shell —— 那道门槛本程序不去拆
-       （没有 shell 在过载时，这一项不产生任何效果）。
-       Vanilla requires admin on each target to open a shell; that gate is left intact
-       (with nothing overloading, this setting does nothing).
-       N 个 shell 的总速率 = N × 倍速（原版多 shell 本来就是简单叠加）。
-
-       倍速不是一次性跳到目标，而是由 RAM 爬升**线性驱动**：
-       倍速 1 → ProxyOverloadTarget  对应  RamCost → BurstTarget（两者共用同一个进度）。
-       The multiplier is not applied in one jump: it is driven linearly by the RAM ramp —
-       speed 1 -> ProxyOverloadTarget corresponds to RamCost -> BurstTarget.
-       好处是"占的内存越多、加速越强"两个数字能互相印证（这也正是原版 SignalScramble
-       把 ramCost 映射到 trace 减速系数的做法，只是换成加速 shell 过载）。
-       The two numbers corroborate each other, mirroring how vanilla SignalScramble maps
-       ramCost onto its trace-slowdown factor.
+  <!-- ── shell 过载倍速 / Shell overload multiplier ──
+       倍速由 RAM 爬升**线性驱动**：倍速 1 → ShellOverloadTarget 对应 50MB → BurstTarget
+       （两者共用同一个进度，所以"占的内存越多、加速越强"能互相印证）。
+       The multiplier is driven linearly by the RAM ramp: speed 1 -> ShellOverloadTarget
+       corresponds to 50MB -> BurstTarget.
        1.0 = 原版过载速度（不加速）；2.0 = 两倍。留空 = 1.0。
        1.0 = vanilla overload speed; 2.0 = double. Empty = 1.0.
-       倍速峰值恰好等于这里填的值（RAM 爬满那一刻）；RampRate 越小，低倍速停留越久。
-       The peak multiplier equals this value (reached when RAM tops out); a smaller RampRate
-       means it lingers at low multipliers longer. -->
-  <ProxyOverloadTarget>1.0</ProxyOverloadTarget>
+       倍速峰值恰好等于这里填的值（RAM 爬满那一刻）；爬满之后一直保持。
+       The peak multiplier equals this value (reached when RAM tops out), and holds there.
+       只影响**正在过载的** shell；空闲的 shell 不会被碰（否则它下次真的去过载时会从
+       负数起跑，等于把代理直接归零 —— 那是秒杀，不是加速）。
+       Only shells that are actually overloading are touched. Idle shells are left alone:
+       otherwise the next overload they start would begin below zero, which would zero the
+       proxy outright instead of speeding it up. -->
+  <ShellOverloadTarget>2.0</ShellOverloadTarget>
 
-  <!-- ── 强调色 / Accent color ──
-       背景粒子与退出按钮的颜色。留空 / NONE = 白色。
-       Colour of the background dots and the exit button. Empty or NONE = white.
-       支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
-       以及 #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色。
-       Accepts CustomColor preset names and dynamic colours, hex, numeric RGB(A) and XNA names.
-       动态色逐帧刷新。
-       Dynamic colours refresh every frame. -->
-  <AccentColor>White</AccentColor>
+  <!-- ── 背景 / Background ──
+       固定为原版 DepthDotGrid（原版 SignalScramble 用的那个）；**背景类型不可配**，
+       下面的参数只在加载时读一次，运行时不变。
+       The background is always vanilla's DepthDotGrid (the one vanilla SignalScramble uses);
+       the type is not configurable. The parameters below are read once at load time and
+       never change while running.
 
-  <!-- ── 背景效果 / Background effect ──
-       面板背景用的游戏本体现成效果（都不需要自带资源）：
-       The background uses the game's built-in effects (no bundled assets needed):
-         NONE            不画背景 / no background
-         DepthDotGrid    多层递归点阵（原版 SignalScramble 用的）— 默认
-                         recursive dot grid with depth (vanilla SignalScramble's choice) — default
-         ZoomingDotGrid  中心向外扩散旋转的点阵（PhaseSwift 用的）
-                         expanding dot grid from the centre (the one PhaseSwift uses)
-         HexGrid         六边形蜂窝网格（原版 KaguyaTrial 用的）
-                         hexagonal honeycomb grid (vanilla KaguyaTrial's background)
-         Grid            带十字标记的交叉网格 / cross-hatched grid
-       留空 = DepthDotGrid；写别的值 → 记 Warn 并回退 DepthDotGrid。
-       Empty = DepthDotGrid; any other value logs a warning and falls back to it.
-       粒子的"混沌度"随 RAM 爬升从 1 降到 0 —— 这就是整套视觉表达。
-       The dot chaos factor falls from 1 to 0 as RAM climbs; that is the whole visual. -->
-  <BackgroundEffect>DepthDotGrid</BackgroundEffect>
-
-  <!-- ── 离开节点 / Leaving the node ──
-       玩家离开本程序所在节点时是否自动关闭。留空 = true
-       （对齐原版 SignalScramble：它跟着所连节点走，断连即退）。
-       Whether to close when the player leaves the node this program runs on. Empty = true
-       (matching vanilla SignalScramble, which follows the connected node). -->
-  <ExitOnDisconnect>true</ExitOnDisconnect>
+       BackgroundColor    粒子颜色。留空 / NONE = 白色。支持 CustomColor 预设名与动态色
+                          （LDTchara / Rainbow / Gradient:…）以及 hex / 数值 / XNA 命名色。
+                          Dot colour. Empty or NONE = white. Accepts CustomColor presets,
+                          dynamic colours, hex, numeric RGB(A) and XNA names.
+       PixelsInOnRecurse  每层递归内缩的像素数。留空 = 30。
+                          Pixels inset per recursion step. Empty = 30.
+       RecursionSteps     递归层数。留空 = 10。
+                          Number of recursion steps. Empty = 10.
+       DotSeparation      点间距。留空 = 60（下限 1）。
+                          Dot spacing. Empty = 60 (minimum 1).
+       DotSize            点大小。留空 = 10。
+                          Dot size. Empty = 10.
+       MaxDepthDistance   最大景深偏移距离。留空 = 0。
+                          Maximum depth-effect distance. Empty = 0. -->
+  <BackgroundColor>White</BackgroundColor>
+  <PixelsInOnRecurse>30</PixelsInOnRecurse>
+  <RecursionSteps>10</RecursionSteps>
+  <DotSeparation>60</DotSeparation>
+  <DotSize>10</DotSize>
+  <MaxDepthDistance>0</MaxDepthDistance>
 
 </ProxyKillerConfig>
 
@@ -126,38 +107,30 @@
     Variants (put the line into the root element above)
     ============================================================
 
-    [爬得慢一点，看清粒子变化 / A slower ramp so the dots can be watched]
-      <RampRate>50</RampRate>
+    [慢慢爬：看清粒子由乱到稳 / A slow ramp so the dots can be watched]
+      <BurstTarget>600</BurstTarget>
 
-    [真的去加速代理过载：峰值两倍速 / Actually speed the overload up: peak x2]
-      <ProxyOverloadTarget>2.0</ProxyOverloadTarget>
+    [三倍速，且很早就到位 / x3, reaching full speed early]
+      <BurstTarget>100</BurstTarget>
+      <ShellOverloadTarget>3.0</ShellOverloadTarget>
 
-    [慢速压满：长时间停在低倍速 / A slow squeeze: lingers at low multipliers]
-      <RampRate>40</RampRate>
-      <ProxyOverloadTarget>3.0</ProxyOverloadTarget>
+    [只加速一点点，保留原版节奏 / A gentle nudge, keeping the vanilla pace]
+      <ShellOverloadTarget>1.2</ShellOverloadTarget>
 
-    [只展示，不碰目标机 / Display only, leave the target alone]
-      省略 <ProxyOverloadTarget>（等价于 1.0 = 原版速度）
-      Omit it (same as 1.0 = vanilla speed)
-
-    [慢慢吞掉 2GB / Slowly swallow 2GB]
-      <RamCost>50</RamCost>
+    [不管加速，只想占内存 / Only here for the RAM footprint]
       <BurstTarget>2048</BurstTarget>
-      <RampRate>80</RampRate>
+      <ShellOverloadTarget>1.0</ShellOverloadTarget>
 
-    [只占起始值，完全不爬 / Stay at the start value, no ramp at all]
-      <RampRate>0</RampRate>
+    [稀疏大点 / Sparse, chunky dots]
+      <DotSeparation>120</DotSeparation>
+      <DotSize>20</DotSize>
+      <RecursionSteps>6</RecursionSteps>
 
-    [不留驻：走开节点就关 / Exit when leaving the node]
-      <ExitOnDisconnect>true</ExitOnDisconnect>
+    [密而小的点 / Dense, fine dots]
+      <DotSeparation>24</DotSeparation>
+      <DotSize>4</DotSize>
+      <RecursionSteps>16</RecursionSteps>
 
-    [改成留驻（走开也不关）/ Keep running when leaving the node]
-      <ExitOnDisconnect>false</ExitOnDisconnect>
-
-    [换个背景，改用主题色 / Another background, using the theme colour]
-      删掉 <AccentColor> / Remove <AccentColor>
-      <BackgroundEffect>HexGrid</BackgroundEffect>
-
-    [不用背景，只看按钮 / No background, just the button]
-      <BackgroundEffect>NONE</BackgroundEffect>
+    [换个颜色 / Another colour]
+      <BackgroundColor>Rainbow</BackgroundColor>
 -->

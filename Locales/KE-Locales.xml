@@ -60,6 +60,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: configuration could not be loaded." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: no configuration is armed." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: multiple configurations are armed (authoring error)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="Accelerating" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="Spinning up..." />
 </Language>
   <Language Name="zh-cn">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="开始试炼" />
@@ -112,6 +114,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller：配置加载失败。" />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller：没有已启用的配置。" />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller：启用了多个配置（作者配置错误）。" />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="加速中" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="加速启动中…" />
 </Language>
   <Language Name="ja-jp">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="試験を開始" />
@@ -162,6 +166,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: 設定を読み込めませんでした。" />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: 有効な設定がありません。" />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: 複数の設定が有効です（作者の設定ミス）。" />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="加速中" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="加速起動中…" />
 </Language>
   <Language Name="ko-kr">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="시험 시작" />
@@ -213,6 +219,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: 설정을 불러올 수 없습니다." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: 활성화된 설정이 없습니다." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: 여러 설정이 활성화되었습니다 (작성 오류)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="가속 중" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="가속 시작 중…" />
 </Language>
   <Language Name="ru-ru">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="НАЧАТЬ ИСПЫТАНИЕ" />
@@ -265,6 +273,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: не удалось загрузить конфигурацию." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: конфигурация не активирована." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: активировано несколько конфигураций (ошибка автора)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="Ускорение" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="Разгон..." />
 </Language>
   <Language Name="de-de">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGINNE DIE PRÜFUNG" />
@@ -316,6 +326,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: Konfiguration konnte nicht geladen werden." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: keine Konfiguration aktiviert." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: mehrere Konfigurationen aktiviert (Autorenfehler)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="Beschleunigt" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="Beschleunigung läuft an..." />
 </Language>
   <Language Name="fr-be">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMMENCER L'ÉPREUVE" />
@@ -368,6 +380,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: la configuration n'a pas pu être chargée." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller : aucune configuration active." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller : plusieurs configurations actives (erreur d'auteur)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="Accélération" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="Montée en puissance..." />
 </Language>
   <Language Name="es-ar">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMENZAR PRUEBA" />
@@ -420,6 +434,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: no se pudo cargar la configuración." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: no hay configuración activa." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: hay varias configuraciones activas (error del autor)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="Acelerando" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="Acelerando..." />
 </Language>
   <Language Name="tr-tr">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="DENEMEYE BAŞLA" />
@@ -472,6 +488,8 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: yapılandırma yüklenemedi." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: etkin yapılandırma yok." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: birden fazla yapılandırma etkin (yazar hatası)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="Hızlandırılıyor" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="Hızlanıyor..." />
 </Language>
   <Language Name="nl-nl">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGIN MET PROEF" />
@@ -507,5 +525,7 @@
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: configuratie kon niet worden geladen." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: geen configuratie actief." />
     <Term Key="PROXY_KILLER_MULTI_FLAG" Value="ProxyKiller: meerdere configuraties actief (auteursfout)." />
+    <Term Key="PROXY_KILLER_ACTIVE" Value="Versnellen" />
+    <Term Key="PROXY_KILLER_SPINUP" Value="Op toeren komen..." />
 </Language>
 </Locale>

@@ -6,20 +6,36 @@ using System.Xml.Serialization;
 namespace KernelExtensions.Configs;
 
 /// <summary>
-/// ProxyKiller 的配置：一个"加速目标代理瘫痪"的展示窗口。
+/// ProxyKiller 的配置：一个**加速代理瘫痪**的常驻程序。
 ///
-/// 定位（2026-10-10 二次定位）：**它自己不瘫痪任何代理**，只**加速所有正在过载的 Shell**。
-/// 原版把代理过载做成 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
-/// 而 Shell 需要目标机 admin 才能开 —— 那道门槛是设计护栏，本程序不去拆：
-/// 没有 shell 在过载，它就什么都不做。它做的是把"力量倍增器"这件事显式化：
-/// 速率 = 该节点上的 shell 数 × 当前倍速（原版多 shell 时本来就是简单叠加）。
+/// <para>
+/// 它做两件事，都不需要玩家操作：
+/// <list type="number">
+///   <item>把 RAM 从**固定的 50MB** 爬升到 <see cref="BurstTargetRaw"/>，之后一直占着 ——
+///     这个过程同时驱动它自己的界面（<c>chaosPercent</c> 随爬升从 1 降到 0）</item>
+///   <item>把**所有正在过载的 Shell** 的过载速率乘上一个倍速（<see cref="ShellOverloadTargetRaw"/>，
+///     同样由 RAM 爬升从 1 线性驱动到目标值）</item>
+/// </list>
+/// </para>
 ///
-/// 同时按配置把 RAM 从起始值爬到目标值，用背景动画表达这个过程（粒子由混沌趋于整齐），
-/// 并提供一个退出按钮。
+/// <para>
+/// ⚠️ **它自己不瘫痪任何代理** —— 原版把代理过载做成 Shell 的一个状态
+/// （<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），而 Shell 需要目标机 admin 才能开。
+/// 那道门槛是设计护栏，本程序不去拆：没有 shell 在过载，它就只是占着内存跑动画。
+/// N 个 shell 的总速率 = N × 倍速（原版多 shell 本来就是简单叠加）。
+/// </para>
 ///
+/// <para>
+/// 视觉与 RAM 爬升逻辑照搬原版 <c>DLCTraceSlower</c>（<c>SignalScramble</c>）——
+/// 那是原版唯一一个"自己把 RAM 吃掉"的程序。差别只有：目标 RAM 与倍速改成可配、
+/// 背景参数可配、以及它原来是"减速 trace"而这里是"加速 shell 过载"。
+/// </para>
+///
+/// <para>
 /// 数值项一律用 string 承接原值：<c>XmlSerializer</c> 遇到非数字会**直接抛异常**，
 /// 那会让整份配置加载失败、程序永远锁在 Locked。走 <see cref="ConfigValue.ParseInRange"/>
 /// 宽松解析后，畸形值只回退默认 + Warn，配置其余部分照常生效。
+/// </para>
 /// </summary>
 public class ProxyKillerConfig
 {
@@ -29,89 +45,78 @@ public class ProxyKillerConfig
     public const string DefaultProgramName = "ProxyKiller";
 
     /// <summary>
-    /// RAM 爬升的目标值（MB）。默认 <b>600</b>，与原版 SignalScramble
-    /// （<c>DLCTraceSlower</c>，原版里唯一一个"自己把 RAM 吃掉"的程序）的目标一致。
+    /// **固定的**起始 RAM 占用（MB）。刻意不可配 —— 起始值是"程序刚起来"的状态，
+    /// 让它可配只会制造"起始比目标还大"之类的无意义组合。取 50 与原版 SignalScramble 一致。
     /// </summary>
-    public const int DefaultBurstTarget = 600;
-
-    /// <summary>本程序启动时的初始 RAM 占用（MB）—— 与原版 SignalScramble 的 50 一致。</summary>
-    public const int DefaultRamCost = 50;
-
-    /// <summary>RAM 爬升速率（MB/s）。默认 200，与原版一致（50→600 约 2.75 秒）。</summary>
-    public const float DefaultRampRate = 200f;
+    public const int RamCost = 50;
 
     /// <summary>
-    /// 代理过载倍速的目标值。默认 <b>1.0</b> = 原版过载速度（即"只展示、不加速"）。
+    /// RAM 爬升速率（MB/s）。**固定不可配**，照搬原版 SignalScramble 的 200。
+    /// 50 → 100 用时 0.25 秒；要它慢下来就把 <c>BurstTarget</c> 调高。
     /// </summary>
-    public const float DefaultProxyOverloadTarget = 1f;
+    public const float RampRate = 200f;
 
-    /// <summary>倍速范围：0 = 冻结该机器的过载进度，上限给足余量。</summary>
-    public const float MinProxyOverloadTarget = 0f;
-    public const float MaxProxyOverloadTarget = 1000f;
+    /// <summary>RAM 爬升目标（MB）的默认值。</summary>
+    public const int DefaultBurstTarget = 100;
 
-    /// <summary>数值项下限/上限。</summary>
+    /// <summary>倍速目标默认值：1.0 = 原版过载速度（不加速）。</summary>
+    public const float DefaultShellOverloadTarget = 1f;
+
+    /// <summary>数值项范围。</summary>
     public const float MinRam = 0f;
     public const float MaxRam = 100000f;
-    public const float MinRampRate = 0f;
-    public const float MaxRampRate = 100000f;
+    public const float MinShellOverloadTarget = 0f;
+    public const float MaxShellOverloadTarget = 1000f;
+
+    // ---- 背景（DepthDotGrid）默认参数：取自原版 SignalScramble 的那次调用 ----
+
+    /// <summary>递归时每层内缩的像素数（<c>pixelsInOnRecurse</c>）。</summary>
+    public const float DefaultPixelsInOnRecurse = 30f;
+    /// <summary>递归层数（<c>recursionSteps</c>）。</summary>
+    public const int DefaultRecursionSteps = 10;
+    /// <summary>点间距（<c>dotSeperation</c>）。</summary>
+    public const float DefaultDotSeparation = 60f;
+    /// <summary>点大小（<c>dotSize</c>）。</summary>
+    public const float DefaultDotSize = 10f;
+    /// <summary>最大景深偏移距离（<c>MaxDepthEffectDistance</c>）。</summary>
+    public const float DefaultMaxDepthDistance = 0f;
 
     // ======================= XML 原始值（string 承接） =======================
 
     /// <summary>终端与窗口顶部显示的程序名。留空 = <see cref="DefaultProgramName"/>（注册名不受影响）。</summary>
     [XmlElement("ProgramName")] public string ProgramNameRaw { get; set; }
 
-    /// <summary>
-    /// RAM 爬升的目标值（MB）。留空 = <see cref="DefaultBurstTarget"/>（600）。
-    /// 程序启动时按 <see cref="RamCostRaw"/> 占用，然后以 <see cref="RampRateRaw"/> 的速率爬到这里。
-    /// </summary>
+    /// <summary>RAM 爬升目标（MB）。留空 = <see cref="DefaultBurstTarget"/>（100）。</summary>
     [XmlElement("BurstTarget")] public string BurstTargetRaw { get; set; }
 
-    /// <summary>启动时的 RAM 占用（MB）。留空 = <see cref="DefaultRamCost"/>（50）。</summary>
-    [XmlElement("RamCost")] public string RamCostRaw { get; set; }
-
-    /// <summary>RAM 爬升速率（MB/s）。留空 = <see cref="DefaultRampRate"/>（200）。</summary>
-    [XmlElement("RampRate")] public string RampRateRaw { get; set; }
-
     /// <summary>
-    /// **shell 过载**的倍速目标值。留空 = <see cref="DefaultProxyOverloadTarget"/>（1.0）。
+    /// **shell 过载**的倍速目标值。留空 = <see cref="DefaultShellOverloadTarget"/>（1.0 = 不加速）。
     ///
-    /// ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速**正在过载的所有 Shell**（不区分目标节点）。
-    /// 原版把代理过载做成 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
-    /// 而 Shell 需要目标机 admin 才能开 —— 那道门槛是设计上的护栏，本程序不去拆它：
-    /// 没有 shell 在过载，它就什么都不做。
-    ///
-    /// 倍速**不是一次性跳到目标**，而是由 RAM 爬升线性驱动：
-    /// <c>倍速 = 1 → 目标值</c> 对应 <c>RamCost → BurstTarget</c>（两者共用同一个进度）。
-    /// 于是"占的内存越多、加速越强"两个数字能互相印证 —— 这也正是原版
-    /// <c>DLCTraceSlower</c> 把 <c>ramCost</c> 映射到 trace 减速系数的做法。
-    ///
-    /// <c>1.0</c> = 原版过载速度（等于不加速）；<c>2.0</c> = 两倍。
-    /// N 个 shell 的总速率 = <c>N × 倍速</c>。
+    /// 倍速由 RAM 爬升线性驱动：<c>1 → 目标值</c> 对应 <c>50MB → BurstTarget</c>
+    /// （两者共用同一个进度，所以"占的内存越多、加速越强"能互相印证）。
+    /// <c>2.0</c> = 两倍。N 个 shell 的总速率 = <c>N × 倍速</c>。
     /// </summary>
-    [XmlElement("ProxyOverloadTarget")] public string ProxyOverloadTargetRaw { get; set; }
+    [XmlElement("ShellOverloadTarget")] public string ShellOverloadTargetRaw { get; set; }
 
-    /// <summary>
-    /// 强调色：背景粒子 + 退出按钮的颜色。留空 / <c>NONE</c> = <b>白色</b>。
-    /// 支持 CustomColor 预设名与动态色（<c>LDTchara</c> / <c>Rainbow</c> / <c>Gradient:…</c>），
-    /// 以及 <c>#RGB</c> / <c>#RRGGBB</c> / <c>#AARRGGBB</c> / <c>R,G,B[,A]</c> / XNA 命名色。
-    /// </summary>
-    [XmlElement("AccentColor")] public string AccentColorRaw { get; set; }
+    // ---- 背景参数（只在加载时解析一次，运行时不变）----
 
-    /// <summary>强调色默认值：白色。</summary>
-    [XmlIgnore] public static Color DefaultAccentColor => Color.White;
+    /// <summary>背景粒子颜色。留空 / <c>NONE</c> = <b>白色</b>。支持 CustomColor 预设名与动态色。</summary>
+    [XmlElement("BackgroundColor")] public string BackgroundColorRaw { get; set; }
 
-    /// <summary>
-    /// 背景效果。<c>NONE</c> = 不画背景。取值见
-    /// <see cref="ProxyKillerBackgroundEffect"/>；留空 = <c>DepthDotGrid</c>
-    /// （原版 SignalScramble 用的就是它）。
-    /// </summary>
-    [XmlElement("BackgroundEffect")] public string BackgroundEffectRaw { get; set; }
+    /// <summary>递归每层内缩像素（<c>pixelsInOnRecurse</c>）。留空 = 30。</summary>
+    [XmlElement("PixelsInOnRecurse")] public string PixelsInOnRecurseRaw { get; set; }
 
-    /// <summary>
-    /// 玩家离开本程序所在节点时是否自动关闭。留空 = <b>true</b>
-    /// （对齐原版 SignalScramble：它跟着所连节点走，断连即退）。
-    /// </summary>
-    public bool ExitOnDisconnect { get; set; } = true;
+    /// <summary>递归层数（<c>recursionSteps</c>）。留空 = 10。</summary>
+    [XmlElement("RecursionSteps")] public string RecursionStepsRaw { get; set; }
+
+    /// <summary>点间距（<c>dotSeperation</c>）。留空 = 60。</summary>
+    [XmlElement("DotSeparation")] public string DotSeparationRaw { get; set; }
+
+    /// <summary>点大小（<c>dotSize</c>）。留空 = 10。</summary>
+    [XmlElement("DotSize")] public string DotSizeRaw { get; set; }
+
+    /// <summary>最大景深偏移距离（<c>MaxDepthEffectDistance</c>）。留空 = 0。</summary>
+    [XmlElement("MaxDepthDistance")] public string MaxDepthDistanceRaw { get; set; }
 
     // ======================= 解析结果 =======================
 
@@ -121,21 +126,22 @@ public class ProxyKillerConfig
     /// <summary>RAM 爬升目标（MB）。</summary>
     [XmlIgnore] public int BurstTarget { get; private set; } = DefaultBurstTarget;
 
-    /// <summary>启动时的 RAM 占用（MB）。</summary>
-    [XmlIgnore] public int RamCost { get; private set; } = DefaultRamCost;
+    /// <summary>shell 过载倍速的目标值。</summary>
+    [XmlIgnore] public float ShellOverloadTarget { get; private set; } = DefaultShellOverloadTarget;
 
-    /// <summary>RAM 爬升速率（MB/s）。</summary>
-    [XmlIgnore] public float RampRate { get; private set; } = DefaultRampRate;
+    /// <summary>背景粒子颜色。</summary>
+    [XmlIgnore] public Color BackgroundColor { get; private set; } = Color.White;
 
-    /// <summary>代理过载倍速的目标值（倍速由此线性爬到它）。</summary>
-    [XmlIgnore] public float ProxyOverloadTarget { get; private set; } = DefaultProxyOverloadTarget;
-
-    /// <summary>解析后的强调色（静态部分；动态色由消费端每帧取）。</summary>
-    [XmlIgnore] public Color AccentColor { get; private set; } = Color.White;
-
-    /// <summary>背景效果的解析结果。</summary>
-    [XmlIgnore] public ProxyKillerBackgroundEffect BackgroundEffect { get; private set; }
-        = ProxyKillerBackgroundEffect.DepthDotGrid;
+    /// <summary>递归每层内缩像素。</summary>
+    [XmlIgnore] public float PixelsInOnRecurse { get; private set; } = DefaultPixelsInOnRecurse;
+    /// <summary>递归层数。</summary>
+    [XmlIgnore] public int RecursionSteps { get; private set; } = DefaultRecursionSteps;
+    /// <summary>点间距。</summary>
+    [XmlIgnore] public float DotSeparation { get; private set; } = DefaultDotSeparation;
+    /// <summary>点大小。</summary>
+    [XmlIgnore] public float DotSize { get; private set; } = DefaultDotSize;
+    /// <summary>最大景深偏移距离。</summary>
+    [XmlIgnore] public float MaxDepthDistance { get; private set; } = DefaultMaxDepthDistance;
 
     /// <summary>本配置对应的 flag 名（不含前缀）；由加载器填入，供反查与日志使用。</summary>
     [XmlIgnore] public string SourceName { get; set; }
@@ -203,8 +209,8 @@ public class ProxyKillerConfig
     }
 
     /// <summary>
-    /// 反序列化后解析并校验数值字段、着色字段与背景效果。
-    /// 与 <see cref="LoadByFlag"/> 分开，便于从其它入口加载时复用。
+    /// 反序列化后解析并校验各字段。背景参数在这里**一次性**解析完 ——
+    /// 运行时不再改（它们是形态而不是动画进度，中途变会让画面跳变）。
     /// </summary>
     private void ResolveValues()
     {
@@ -216,28 +222,29 @@ public class ProxyKillerConfig
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <BurstTarget> '{BurstTargetRaw}', "
                 + $"expected {MinRam}~{MaxRam}; using {DefaultBurstTarget}.");
 
-        RamCost = ToInt(ConfigValue.ParseInRange(RamCostRaw, DefaultRamCost,
-            MinRam, MaxRam, out bool rcOk));
-        if (!rcOk)
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <RamCost> '{RamCostRaw}', "
-                + $"expected {MinRam}~{MaxRam}; using {DefaultRamCost}.");
-
-        RampRate = ConfigValue.ParseInRange(RampRateRaw, DefaultRampRate,
-            MinRampRate, MaxRampRate, out bool rrOk);
-        if (!rrOk)
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <RampRate> '{RampRateRaw}', "
-                + $"expected {MinRampRate}~{MaxRampRate}; using {DefaultRampRate}.");
-
-        ProxyOverloadTarget = ConfigValue.ParseInRange(ProxyOverloadTargetRaw, DefaultProxyOverloadTarget,
-            MinProxyOverloadTarget, MaxProxyOverloadTarget, out bool potOk);
-        if (!potOk)
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ProxyOverloadTarget> '{ProxyOverloadTargetRaw}', "
-                + $"expected {MinProxyOverloadTarget}~{MaxProxyOverloadTarget}; using {DefaultProxyOverloadTarget}.");
+        ShellOverloadTarget = ConfigValue.ParseInRange(ShellOverloadTargetRaw, DefaultShellOverloadTarget,
+            MinShellOverloadTarget, MaxShellOverloadTarget, out bool soOk);
+        if (!soOk)
+            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ShellOverloadTarget> '{ShellOverloadTargetRaw}', "
+                + $"expected {MinShellOverloadTarget}~{MaxShellOverloadTarget}; using {DefaultShellOverloadTarget}.");
 
         // 颜色走统一入口：这样才吃得到 CustomColor 预设名与动态色
-        AccentColor = CustomColorManager.GetDynamicColor(AccentColorRaw, DefaultAccentColor);
+        BackgroundColor = CustomColorManager.GetDynamicColor(BackgroundColorRaw, Color.White);
 
-        BackgroundEffect = ParseBackgroundEffect(BackgroundEffectRaw);
+        PixelsInOnRecurse = ParseNum(PixelsInOnRecurseRaw, DefaultPixelsInOnRecurse, 0f, 1000f, "PixelsInOnRecurse");
+        RecursionSteps = ToInt(ParseNum(RecursionStepsRaw, DefaultRecursionSteps, 0f, 64f, "RecursionSteps"));
+        DotSeparation = ParseNum(DotSeparationRaw, DefaultDotSeparation, 1f, 1000f, "DotSeparation");
+        DotSize = ParseNum(DotSizeRaw, DefaultDotSize, 0f, 500f, "DotSize");
+        MaxDepthDistance = ParseNum(MaxDepthDistanceRaw, DefaultMaxDepthDistance, 0f, 10000f, "MaxDepthDistance");
+    }
+
+    /// <summary>解析一个数值背景参数：留空 = 默认（正常省略，不记日志）；畸形 / 超范围 = 回退 + Warn。</summary>
+    private float ParseNum(string raw, float fallback, float min, float max, string name)
+    {
+        float v = ConfigValue.ParseInRange(raw, fallback, min, max, out bool ok);
+        if (!ok)
+            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <{name}> '{raw}', expected {min}~{max}; using {fallback}.");
+        return v;
     }
 
     /// <summary>float → int 的安全取整（先夹到 int 范围内，避免大值溢出成负数）。</summary>
@@ -246,37 +253,4 @@ public class ProxyKillerConfig
         if (v <= 0f) return 0;
         return v >= int.MaxValue ? int.MaxValue : (int)v;
     }
-
-    /// <summary>
-    /// 解析背景效果名（大小写不敏感）；留空 = 默认 <c>DepthDotGrid</c>（不记日志，那是正常省略）；
-    /// 写了但无法识别 = 回退默认 + Warn（帮作者揪出拼写错误）。
-    /// </summary>
-    private ProxyKillerBackgroundEffect ParseBackgroundEffect(string raw)
-    {
-        if (ConfigValue.IsNone(raw)) return ProxyKillerBackgroundEffect.DepthDotGrid;
-
-        if (Enum.TryParse(raw.Trim(), ignoreCase: true, out ProxyKillerBackgroundEffect effect))
-            return effect;
-
-        KELog.Warn($"[ProxyKiller] '{SourceName}': unknown <BackgroundEffect> '{raw}'; "
-            + "expected NONE / DepthDotGrid / ZoomingDotGrid / HexGrid / Grid. Using DepthDotGrid.");
-        return ProxyKillerBackgroundEffect.DepthDotGrid;
-    }
-}
-
-/// <summary>
-/// ProxyKiller 可选的面板背景效果（都取自游戏本体现成的 Effects，无需自带资源）。
-/// </summary>
-public enum ProxyKillerBackgroundEffect
-{
-    /// <summary>不画背景。</summary>
-    None,
-    /// <summary>多层递归点阵，景深感 —— 原版 SignalScramble（DLCTraceSlower）用的就是它。</summary>
-    DepthDotGrid,
-    /// <summary>从中心向外扩散旋转的点阵（PhaseSwift 用的）。</summary>
-    ZoomingDotGrid,
-    /// <summary>六边形蜂窝网格（原版 KaguyaTrial 用的）。</summary>
-    HexGrid,
-    /// <summary>带十字标记的交叉网格。</summary>
-    Grid,
 }
