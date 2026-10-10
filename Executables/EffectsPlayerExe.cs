@@ -338,6 +338,7 @@ namespace KernelExtensions.Executables
                      + $" /{_flowField.SpeedTiers}tier  life x{_flowField.LifeGain:0.00}"
                      + $"  trail {_flowField.TrailPixels:0}px x{_flowField.LoadTrailGain:0.0}"
                      + $"  n={_flowField.EffectiveCount(bg.Height)}"
+                     + $" = {_flowField.DensityCoefficient:0.###}xh^{_flowField.DensityExponent:0.###}"
                      + $"  spd {_flowField.SpeedPxPerSecond(bg.Height):0}px/s";
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);

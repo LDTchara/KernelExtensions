@@ -62,29 +62,31 @@ namespace KernelExtensions.Utilities
         public int Count { get; set; } = 260;
 
         /// <summary>
-        /// 粒子数的两个锚点：**内容区高 <see cref="LowAnchorHeight"/> → <see cref="CountAtLowAnchor"/> 个，
-        /// <see cref="HighAnchorHeight"/> → <see cref="CountAtHighAnchor"/> 个**，
-        /// 其余高度按对数线性插值/外推。
+        /// 粒子数的幂律公式：<c>n = DensityCoefficient × 高度^DensityExponent</c>。
         ///
         /// <para>
-        /// 为什么用"两锚点插值"而不是"基准 + 幂指数"：幂指数只能保证**一个**尺寸正确，
-        /// 其余尺寸全靠猜公式形状。而实测反馈同时给了两个尺寸的目标数量
-        /// （140 与 210），两点连线让这两个尺寸**精确命中**，外推方向也由它们之间的
-        /// 斜率自然决定 —— 这里约为 0.46 次幂，比平方/线性都缓，
-        /// 所以大窗口不会爆量。
+        /// 高度是**目标矩形的高度（像素）**，直接取绘制区尺寸 —— 不再依赖"内容区 = 窗口高 − N"
+        /// 这类版面换算，所以改版面也不会让密度整体偏一档。
         /// </para>
         ///
         /// <para>
-        /// ⚠️ 锚点用的是**内容区高度**，不是窗口高度，两者差一截：
-        /// EffectPlayer 里内容区高 = 窗口高 − 30（标题栏 + 底部按钮条），
-        /// 所以它的 Size 100 / 200 对应这里的 70 / 170；
-        /// 9.67 里内容区高 = ramcost − 15（只减标题栏）。
+        /// 两个系数由两组实测目标解出（见下），解出来是
+        /// <c>n = 16.4341 × h^0.5052</c>：
+        /// <list type="bullet">
+        ///   <item>h = 155 → 210 个</item>
+        ///   <item>h = 555 → 400 个</item>
+        /// </list>
+        /// 指数 0.505 ≈ 1/2，是个很好记的形状：**数量随高度的平方根增长**。
+        /// 这比线性增长平缓得多（线性会让大窗口爆量），比恒定覆盖率（平方）平缓得不只一点。
+        /// </para>
+        ///
+        /// <para>
+        /// 想调密度就改这两个数：<c>DensityCoefficient</c> 整体乘一个倍数（全部尺寸一起变密/变稀），
+        /// <c>DensityExponent</c> 调"大窗口相对小窗口的密度差"（调大 → 大窗口更多）。
         /// </para>
         /// </summary>
-        public float LowAnchorHeight { get; set; } = 55f;
-        public int CountAtLowAnchor { get; set; } = 140;
-        public float HighAnchorHeight { get; set; } = 155f;
-        public int CountAtHighAnchor { get; set; } = 210;
+        public float DensityCoefficient { get; set; } = 16.4341f;
+        public float DensityExponent { get; set; } = 0.5052f;
 
         /// <summary>折算后的实际数量下限 / 上限（防止极端尺寸下几乎没有粒子或卡顿）。</summary>
         public int MinEffectiveCount { get; set; } = 24;
@@ -222,25 +224,17 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
-        /// 按目标高度折算实际粒子数：过 <see cref="LowAnchorHeight"/>/<see cref="CountAtLowAnchor"/>
-        /// 与 <see cref="HighAnchorHeight"/>/<see cref="CountAtHighAnchor"/> 两点做**对数线性**插值并外推。
+        /// 按目标高度算实际粒子数：<c>n = DensityCoefficient × 高度^DensityExponent</c>。
         ///
         /// <para>
-        /// 对数空间插值 = 数量随高度按幂律变化，且**两个锚点都精确命中**。
-        /// 用线性插值会在大范围外推出负值或低到无意义的数量，所以取对数空间。
+        /// 直接取绘制区高度，不做"内容区 = 窗口高 − N"那类版面换算 —— 那种换算会把
+        /// 版面改动连带成密度整体偏一档（前面几轮就吃过这个亏）。
         /// </para>
         /// </summary>
         public int EffectiveCount(int destHeight)
         {
-            float h = destHeight > 0 ? destHeight : HighAnchorHeight;
-            float loH = LowAnchorHeight <= 1f ? 100f : LowAnchorHeight;
-            float hiH = HighAnchorHeight <= 1f ? 200f : HighAnchorHeight;
-            float loN = Math.Max(1, CountAtLowAnchor);
-            float hiN = Math.Max(1, CountAtHighAnchor);
-
-            // 两点的幂指数（对数斜率）= ln(hiN/loN) / ln(hiH/loH)
-            float exponent = (float)(Math.Log((double)hiN / loN) / Math.Log((double)hiH / loH));
-            float n = loN * (float)Math.Pow(h / loH, exponent);
+            float h = destHeight > 0 ? destHeight : 1f;
+            float n = DensityCoefficient * (float)Math.Pow(h, DensityExponent);
 
             return (int)MathHelper.Clamp((float)Math.Round(n), MinEffectiveCount,
                 Math.Min(MaxEffectiveCount, _particles.Length));
