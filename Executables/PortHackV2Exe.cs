@@ -1,13 +1,11 @@
 using Hacknet;
 using Hacknet.Gui;
-using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
 using Pathfinder.Port;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,88 +14,175 @@ using System.Reflection;
 namespace KernelExtensions.Executables;
 
 /// <summary>
-/// CrackerToolKit —— 端口破解工具箱（简化 GUI 版）。
+/// PortHackV2 —— 原版 PortHack 的可配置重制版。
 ///
-/// 状态与行为：
-///   Intro    ：欢迎页，绘制 Welcome 标题（无参数启动时进入；常驻，直到手动退出或被新实例互斥关闭）
-///   Listing  ：列出可破解端口的 name + usable（终端 os.write 输出 + GUI 滚动列表展示），短暂后自动退出
-///   Confings ：查看指定 UPS 配置（终端 os.write 输出 + GUI 滚动列表展示），短暂后自动退出
-///   Cracking ：破解进行中 —— 左上 CurrentConfig.Title，底部按时间推进的进度条，完成后开端口并退出
+/// <para>
+/// 入口是**存档 flag**（`CustomPortHackV2_&lt;配置文件名&gt;`），不是命令行参数：
+/// 程序启动即校验，没有欢迎页。恰好一个 flag → 加载 `<c>PortHackV2/&lt;名&gt;.xml</c>`；
+/// 零个 → 锁定（没被剧本启用）；多个 → 作者配置错误（锁定 + 报错）。
+/// </para>
 ///
-/// 多实例互斥（os.exes 中已存在另一个本程序实例时）：
-///   · 旧实例处于非 Cracking 状态 → 关闭旧实例，新实例正常运行
-///   · 旧实例处于 Cracking 状态 → 仅当新实例也进入 Cracking 才允许并存；否则新实例自动退出
+/// <para>状态机：</para>
+/// <list type="table">
+///   <item><term>Locked</term><description>无 flag / 多 flag / 配置加载失败：提示 + 3s 自动退出</description></item>
+///   <item><term>Listing</term><description>列前置要求与协议行，全满足后自动进 Cracking（未满足则每帧重查）</description></item>
+///   <item><term>Cracking</term><description>多协议**并行**推进，各自按 StartDelay 启动、启动时掷一次 RNG</description></item>
+///   <item><term>Complete</term><description>乱序字 + 上下白线展开的演出，CompleteDelay 后退出</description></item>
+///   <item><term>Failed</term><description>全部协议都没破开时的收尾演出</description></item>
+/// </list>
 ///
-/// 命令入口：
-///   CrackerToolKit          → Intro（欢迎页）
-///   CrackerToolKit l        → Listing（输出 + 滚动列表，自动退出）
-///   CrackerToolKit c &lt;n&gt;    → Confings（输出 + 滚动列表，自动退出）
-///   CrackerToolKit &lt;port&gt;   → 直接对该端口开始破解（Cracking）
+/// <para>
+/// 时间语义：根级 `Time` 是 Cracking 的**总时长**（底部进度条走它）。
+/// 它是硬上限 —— 到期时仍未跑完的协议记为失败并记 Warn（说明作者没排好时间），
+/// 但根级**没有 RNG**，所以总时长跑满即视为整体成功、走 Complete 演出。
+/// 每个协议的成功/失败分支各自独立结算（自己的 OnComplete / OnFail 在自己的时长跑完时立即执行）。
+/// </para>
 /// </summary>
 public class PortHackV2Exe : GameExecutable
 {
-    /// <summary>Listing / Confings 在 GUI 上展示多久后自动退出（秒）</summary>
-    private const float EXIT_DELAY = 2.5f;
+    /// <summary>Locked 状态的停留时长（秒）——给玩家看清锁定的原因。</summary>
+    private const float LOCKED_EXIT_SECONDS = 3f;
 
-    public List<string> Protocols = new();
-    public Computer c;
-    public PortHackV2Config CurrentConfig;
-    public Status CurrentStatus { get; set; } = Status.Intro;
+    /// <summary>失败演出的停留时长（秒）。</summary>
+    private const float FAILED_EXIT_SECONDS = 3f;
 
-    public enum Status
+    public PortHackV2Config CurrentConfig { get; private set; }
+    public PortHackV2State CurrentState { get; private set; } = PortHackV2State.Locked;
+
+    /// <summary>程序状态。</summary>
+    public enum PortHackV2State
     {
-        Intro,
+        /// <summary>没被启用 / 配置错误：提示后自动退出。</summary>
+        Locked,
+        /// <summary>列前置要求与协议，等待满足。</summary>
         Listing,
-        Confings,
-        Cracking
+        /// <summary>破解进行中。</summary>
+        Cracking,
+        /// <summary>成功演出。</summary>
+        Complete,
+        /// <summary>失败演出。</summary>
+        Failed
     }
 
-    // ---------- 破解运行时状态 ----------
-    private float lifetime = 0f;             // 破解倒计时（初始 = Time + 1，减到 0 完成）
-    private List<string> POSH = new();       // debuff: ProxyOverloadSpeedHelper 参数（破解期间持续）
-    private List<string> AOP = new();        // buff:   AutoOverloadProxy 参数（破解期间持续）
-    private string crackProtocol = null;     // 正在破解的协议（完成 openPort / 结算用）
+    /// <summary>
+    /// 单个协议的运行时状态。
+    /// 「启动时掷一次 RNG」意味着分支在协议启动那一刻就定下，但**演出上不暴露** ——
+    /// 两条分支的进度条与动画完全一样，只是时长不同。
+    /// </summary>
+    private sealed class ProtocolRuntime
+    {
+        public PortHackV2ProtocolConfig Def;
+        /// <summary>StartDelay 计时（Cracking 开始后累加），到点才启动本协议。</summary>
+        public float DelayElapsed;
+        /// <summary>本协议启动后经过的时间。</summary>
+        public float Elapsed;
+        /// <summary>本协议是否已成功（决定根级结算时开不开端口、给不给 admin）。</summary>
+        public bool Succeeded;
 
-    // ---------- GUI 状态 ----------
-    private string configProtocol = null;   // Confings 屏正在查看的协议
-    private float selfExitTimer = 0f;        // Listing/Confings 自动退出倒计时
-    private int listingScroll = 0;           // Listing 滚动偏移（doFancyList 静态全局，需保存/恢复）
-    private int configScroll = 0;           // Confings 滚动偏移
+        public bool Started => Def != null && DelayElapsed >= Def.StartDelay;
+        public bool Finished { get; set; }
 
-    // 界面几何（对齐原版 ExeModule/PortHackExe：内容从 PANEL_HEIGHT 之下开始）
+        /// <summary>本协议当前分支的总时长（秒）。</summary>
+        public float Duration => Succeeded ? Def.TimeIfSuccess : Def.TimeIfFail;
+
+        /// <summary>本协议进度 0~1；时长为 0 或负 → 瞬满。</summary>
+        public float Progress
+        {
+            get
+            {
+                if (Def == null || Finished) return 1f;
+                float d = Duration;
+                if (d <= 0f) return 1f;
+                return MathHelper.Clamp(Elapsed / d, 0f, 1f);
+            }
+        }
+
+        public bool IsDone => Finished || (Started && Duration <= 0f) || (Started && Elapsed >= Duration);
+    }
+
+    // ---------- 运行时状态 ----------
+    private readonly List<ProtocolRuntime> _runtimes = new();
+    private float _stateTimer;          // Locked / Failed 的退出倒计时
+    private float _crackTime;           // Cracking 已进行时长（根级 Time 的对照量）
+    private string _lockReason;         // Locked 屏显示的原因
+    private float _completeElapsed;     // Complete 演出已进行时长（也驱动白线展开）
+    private int _successCount;          // 已成功协议数
+    private bool _rootHooksFired;       // 根级结算只做一次
+    private static readonly Random _rng = new();    // 各协议启动时的成功率掷点
+
+    // ---------- 动画 ----------
+    private readonly PortHackV2Sequence _sequence = new();
+    private RenderTarget2D _rt;         // 3D 动画的离屏画布
+    private SpriteBatch _rtBatch;       // 画进 _rt 用的专用批（主 spriteBatch 由 OS 持有，不能借用）
+
+    // ---------- 界面几何 ----------
     private int InnerX => bounds.X + 2;
     private int InnerW => bounds.Width - 4;
-    private int ContentTop => bounds.Y + PANEL_HEIGHT + 4;
-    private int BottomButtonY => bounds.Y + bounds.Height - 34;
+    private int ContentTop => bounds.Y + PANEL_HEIGHT + 2;
+    private int ContentBottom => bounds.Y + bounds.Height - 4;
 
-    // Button ID 偏移（同 exe 内唯一）
-    private const int ID_INTRO_EXIT = 301;
-    private const int ID_LIST = 400;
-    private const int ID_LIST_EXIT = 402;
-    private const int ID_CONFINGS = 500;
-    private const int ID_CRACK_CANCEL = 600;
+    // Button ID（同 exe 内唯一）
+    private const int ID_EXIT = 300;
+    private const int ID_CANCEL = 301;
 
     public PortHackV2Exe() : base()
     {
-        this.name = "CrackerToolKit";
-        this.ramCost = 200;
+        this.name = "PortHackV2";
+        this.ramCost = 30;
     }
 
-    // ======================= 初始化：解析入口 -> 互斥 -> 进入状态 =======================
+    public override void OnInitialize()
+    {
+        base.OnInitialize();
+
+        List<string> flags = FindConfigFlags();
+        if (flags.Count != 1)
+        {
+            // 0 个 = 没被剧本启用；多个 = 作者配置错误。两种都进锁定屏，但原因不同
+            if (flags.Count == 0)
+            {
+                _lockReason = "No configuration is armed.";
+                KELog.Info("[PortHackV2] no config flag present - locked.");
+            }
+            else
+            {
+                _lockReason = "Multiple configurations are armed (authoring error).";
+                KELog.Error($"[PortHackV2] {flags.Count} config flags present, expected exactly one: "
+                    + string.Join(", ", flags));
+                os.write("PortHackV2: multiple configurations are armed (authoring error).");
+            }
+            EnterLocked();
+            return;
+        }
+
+        CurrentConfig = PortHackV2Config.LoadByFlag(flags[0]);
+        if (CurrentConfig == null)
+        {
+            // 加载失败的原因上一句已经记进日志了；这里给玩家一个可读的锁定屏
+            _lockReason = $"Configuration '{flags[0].Substring(PortHackV2Config.FlagPrefix.Length)}' failed to load.";
+            os.write("PortHackV2: configuration could not be loaded.");
+            EnterLocked();
+            return;
+        }
+
+        ramCost = CurrentConfig.RamCost;
+        _sequence.Shape = CurrentConfig.PolyhedronShape;
+        CurrentState = PortHackV2State.Listing;
+    }
 
     /// <summary>
-    /// 找出存档里所有属于本程序的 flag（<c>CustomPortHackV2_*</c>）。
+    /// 找出存档里所有属于本程序的 flag（`CustomPortHackV2_*`）。
     /// 正常情况下应恰好一个（flag = 入口牌）；0 个 → 锁定；多个 → 作者配置错误。
     /// </summary>
-    private static List<string> FindPortHackV2Flags()
+    private static List<string> FindConfigFlags()
     {
         List<string> found = new();
         ProgressionFlags pf = OS.currentInstance?.Flags;
         if (pf == null) return found;
 
         // ProgressionFlags 只暴露 HasFlag / GetFlagStartingWith（后者仅返回第一个），
-        // 没有“枚举全部”的公开 API；要检出多个 flag 只能反射读内部 List。
-        // 反射失败时退化为“取第一个匹配”——仍能工作，只是检不出多 flag 的情形。
+        // 没有"枚举全部"的公开 API；要检出多个 flag 只能反射读内部 List。
+        // 反射失败时退化为"取第一个匹配"——仍能工作，只是检不出多 flag 的情形。
         try
         {
             if (_progressionFlagsField?.GetValue(pf) is List<string> all)
@@ -119,369 +204,235 @@ public class PortHackV2Exe : GameExecutable
     private static readonly FieldInfo _progressionFlagsField = typeof(ProgressionFlags)
         .GetField("Flags", BindingFlags.Instance | BindingFlags.NonPublic);
 
-    public override void OnInitialize()
+    private void EnterLocked()
     {
-        base.OnInitialize();
-        c = OS.currentInstance.connectedComp ?? OS.currentInstance.thisComputer;
+        CurrentState = PortHackV2State.Locked;
+        _stateTimer = LOCKED_EXIT_SECONDS;
+    }
 
-        // flag = 入口牌：找出属于本程序的 flag，反查出唯一配置
-        var crackerFlags = FindPortHackV2Flags();
-        if (crackerFlags.Count == 0)
-        {
-            KELog.Info("[PortHackV2] no config flag present - locked.");
-            os.write("PortHackV2: no configuration is armed.");
-            isExiting = true;
-            return;
-        }
-        if (crackerFlags.Count > 1)
-        {
-            KELog.Error($"[PortHackV2] {crackerFlags.Count} config flags present, expected exactly one: "
-                + string.Join(", ", crackerFlags));
-            os.write("PortHackV2: multiple configurations are armed (authoring error).");
-            isExiting = true;
-            return;
-        }
+    // ======================= 前置条件 =======================
 
-        CurrentConfig = PortHackV2Config.LoadByFlag(crackerFlags[0]);
-        if (CurrentConfig == null)
-        {
-            os.write("PortHackV2: configuration could not be loaded.");
-            isExiting = true;
-            return;
-        }
-        Protocols = CurrentConfig.ProtocolNames;
+    private Computer Target => os.connectedComp ?? os.thisComputer;
 
-        // 1) 解析本次目标动作
-        bool willCrack = false;            // 本次是否进入破解（互斥判定用）
-        string configProto = null;        // c <index> 解析出的协议
-        bool doListing = false;            // l 子命令
-        List<string> commandErrors = null; // 参数错误/破解失败提示（写终端后退出）
+    /// <summary>目标机当前的连接是否仍是本程序启动时那台（断连即停，对齐原版语义）。</summary>
+    private bool TargetStillReachable()
+    {
+        Computer cur = os.connectedComp ?? os.thisComputer;
+        return cur != null && cur.ip == _targetIp;
+    }
 
-        if (Args.Length >= 2)
-        {
-            switch (Args[1].ToLower())
-            {
-                case "l":
-                    doListing = true;
-                    break;
+    private string _targetIp;
 
-                case "c":
-                    if (Args.Length >= 3 && int.TryParse(Args[2], out int idx)
-                        && idx >= 1 && idx <= Protocols.Count)
-                    {
-                        configProto = Protocols[idx - 1];
-                    }
-                    else
-                    {
-                        commandErrors = new List<string> { "Args ERROR!!!", "Use c <index> to show the configs" };
-                    }
-                    break;
-
-                default:
-                    if (Args.Length == 2 && int.TryParse(Args[1], out int port)
-                        && c.GetAllPortStates().Any(s => s.PortNumber == port))
-                    {
-                        if (StartCrack(port, out string err))
-                        {
-                            willCrack = true;
-                        }
-                        else
-                        {
-                            commandErrors = new List<string> { err };
-                        }
-                    }
-                    else
-                    {
-                        commandErrors = new List<string>
-                        {
-                            "Args ERROR!!!",
-                            "Use l to list usableports",
-                            "Use c <index> to show the configs",
-                            "Use <portnum> to crack"
-                        };
-                    }
-                    break;
-            }
-        }
-
-        // 2) 多实例互斥
-        ApplyInstanceMutex(willCrack);
-        if (isExiting) return; // 互斥判定要求本次退出（此时尚未输出任何内容）
-
-        // 3) 执行进入动作
-        if (commandErrors != null)
-        {
-            foreach (string e in commandErrors) os.write(e);
-            isExiting = true;
-            return;
-        }
-        if (willCrack)
-        {
-            CurrentStatus = Status.Cracking;
-            return;
-        }
-        if (configProto != null)
-        {
-            OpenConfigs(configProto);
-            return;
-        }
-        if (doListing)
-        {
-            OpenListing();
-            return;
-        }
-
-        // 无参数：进入欢迎页
-        CurrentStatus = Status.Intro;
+    /// <summary>某个前置开放端口是否已满足。</summary>
+    private bool PortRequirementMet(string protocol)
+    {
+        try { return Target.isPortOpen(protocol); }
+        catch { return false; }
     }
 
     /// <summary>
-    /// 多实例互斥：遍历 os.exes 中已存在的本程序实例。
-    /// 旧实例非 Cracking → 关闭旧实例让新的继续；旧实例 Cracking → 仅当本次也进入 Cracking 才放行，否则退出本次。
+    /// 防火墙前置是否**需要显示**：配置要求开且目标机确实有防火墙。
+    /// 目标机没有防火墙时该行不显示 —— 避免列出玩家无法满足、也无意义的条件。
     /// </summary>
-    private void ApplyInstanceMutex(bool willEnterCracking)
+    private bool FirewallRowVisible()
+        => CurrentConfig != null && CurrentConfig.RequireSolveFirewall
+           && Target != null && Target.firewall != null;
+
+    /// <summary>代理前置是否需要显示：配置要求开且目标机确实有代理。</summary>
+    private bool ProxyRowVisible()
+        => CurrentConfig != null && CurrentConfig.RequireProxyOverload
+           && Target != null && Target.hasProxy;
+
+    private bool FirewallRequirementMet()
+        => !FirewallRowVisible() || Target.firewall.solved;
+
+    private bool ProxyRequirementMet()
+        => !ProxyRowVisible() || !Target.proxyActive;
+
+    /// <summary>所有前置与协议前置端口是否都满足（Listing → Cracking 的判据）。</summary>
+    private bool AllPrerequisitesMet()
     {
-        try
-        {
-            // os.exes 的元素类型（ExeModule）不可直接引用，反射遍历（同 CustomTrialExe 的做法）
-            var exes = AccessTools.Field(typeof(OS), "exes")?.GetValue(os) as IList;
-            if (exes == null) return;
-
-            foreach (object e in exes)
-            {
-                if (e is not PortHackV2Exe other || ReferenceEquals(other, this)) continue;
-
-                if (other.CurrentStatus == Status.Cracking)
-                {
-                    // 旧的正在破解：仅允许两个 Cracking 并存
-                    if (!willEnterCracking)
-                    {
-                        os.write("CrackerToolKit is already cracking a port.");
-                        isExiting = true;
-                    }
-                }
-                else
-                {
-                    // 旧实例处于非破解状态：关闭它，让新实例正常运行
-                    other.isExiting = true;
-                }
-                return; // 只处理遇到的第一个旧实例
-            }
-        }
-        catch { /* 反射失败时不做互斥，保证不崩 */ }
-    }
-
-    // ======================= 状态切换 =======================
-
-    /// <summary>Listing：终端输出 + GUI 滚动列表，短暂展示后自动退出</summary>
-    private void OpenListing()
-    {
-        BuildPortListData(out string[] items, out _);
-        CurrentConfig = null;
-        configProtocol = null;
-
-        // 终端输出（退出后可见），GUI 同步展示
-        os.write("================================");
-        if (items.Length == 0)
-            os.write("    -- No Crackable Ports --    ");
-        else
-            foreach (string s in items) os.write(s);
-        os.write("================================");
-
-        listingScroll = 0;
-        selfExitTimer = EXIT_DELAY;
-        CurrentStatus = Status.Listing;
-    }
-
-    /// <summary>Confings：终端输出 + GUI 滚动列表，短暂展示后自动退出</summary>
-    private void OpenConfigs(string protocol)
-    {
-        if (protocol == null || CurrentConfig == null || !CurrentConfig.ProtocolNames.Contains(protocol))
-        {
-            os.write($"No config found for protocol '{protocol}'.");
-            isExiting = true;
-            return;
-        }
-        PortHackV2Config cfg = CurrentConfig;
-        configProtocol = protocol;
-
-        // 终端输出（退出后可见），GUI 同步展示
-        os.write("================================");
-        foreach (string s in BuildConfingLines(protocol)) os.write(s);
-        os.write("================================");
-
-        configScroll = 0;
-        selfExitTimer = EXIT_DELAY;
-        CurrentStatus = Status.Confings;
-    }
-
-    /// <summary>该协议当前是否可用（仅看配置允许，以及前置条件；不再用 flag 作为“已破解”标记）</summary>
-    private bool IsProtocolUsable(string protocol)
-    {
-        if (protocol == null || CurrentConfig == null || !CurrentConfig.ProtocolNames.Contains(protocol)) return false;
-        return CurrentConfig.Usable;
-    }
-
-    /// <summary>把协议列表格式化为可读的端口名；未注册/无效协议保留原文并标注，便于排查配置拼写错误。</summary>
-    private static string FormatProtocolNames(List<string> protocols)
-    {
-        if (protocols == null || protocols.Count == 0) return string.Empty;
-        List<string> names = new();
-        foreach (string p in protocols)
-        {
-            try
-            {
-                if (PortManager.IsPortRegistered(p))
-                    names.Add(PortManager.GetPortRecordFromProtocol(p).DefaultDisplayName);
-                else
-                    names.Add($"{p} <unknown>");
-            }
-            catch { names.Add(p); }
-        }
-        return string.Join(", ", names);
-    }
-
-    // ======================= 破解入口（校验 + 收集持续效果） =======================
-
-    /// <summary>
-    /// 对指定显示端口开始破解：前置校验通过后初始化倒计时并收集“破解期间持续生效”的代理辅助参数。
-    /// 一次性 debuff/buff 效果不在此执行，统一在破解完成后结算（SettleEffects）。
-    /// </summary>
-    private bool StartCrack(int displayPort, out string error)
-    {
-        error = string.Empty;
-
-        // 端口必须存在于目标机：以 PortState 表为准（Pathfinder 下 Computer.ports 不再承载端口）
-        var state = c.GetAllPortStates().FirstOrDefault(s => s.PortNumber == displayPort);
-        if (state == null)
-        {
-            error = "This Port is Not on this computer.";
-            return false;
-        }
-
-        string protocol = state.Record.Protocol;
-        if (CurrentConfig == null || !CurrentConfig.ProtocolNames.Contains(protocol))
-        {
-            error = $"No config for port {displayPort}.";
-            return false;
-        }
-        PortHackV2Config cfg = CurrentConfig;
-
-        // 可用性校验（flag 不再是“已破解”标记）
-        if (!cfg.Usable)
-        {
-            error = "This Port is Not Usable now.";
-            return false;
-        }
-
-        // 前置开放端口校验
-        int count = 0;
-        for (int i = 0; i < cfg.RequireOpenPortsBefore.Count; i++)
-        {
-            if (c.isPortOpen(cfg.RequireOpenPortsBefore[i])) count++;
-        }
-        if (count != cfg.RequireOpenPortsBefore.Count)
-        {
-            error = $"Needs Open {FormatProtocolNames(cfg.RequireOpenPortsBefore)} before";
-            return false;
-        }
-
-        // 前置代理校验：仅当目标机装有代理且代理仍在运行（proxyActive=true，即未被过载）时才要求先过载
-        if (cfg.RequireProxyOverload && c.hasProxy && c.proxyActive)
-        {
-            error = "Needs Overload Proxy First";
-            return false;
-        }
-
-        // 前置防火墙校验：仅当目标机装有防火墙且尚未解时要求先解
-        if (cfg.RequireSolveFirewall && c.firewall != null && !c.firewall.solved)
-        {
-            error = "Needs Solve Firewall First";
-            return false;
-        }
-
-        // 进入破解：初始化计时
-        lifetime = CurrentConfig.Time + 1f;
-        ramCost = cfg.RamCost;
-        crackProtocol = protocol;
-        POSH = new List<string>();
-        AOP = new List<string>();
-
-        // 仅收集破解期间逐帧持续的代理辅助参数；一次性效果留待破解完成后结算
-        CollectProxyHelpers(cfg.Debuffs);
-        CollectProxyHelpers(cfg.Buffs);
-
+        if (CurrentConfig == null) return false;
+        if (!CurrentConfig.Usable) return false;
+        if (!FirewallRequirementMet()) return false;
+        if (!ProxyRequirementMet()) return false;
+        foreach (string p in CurrentConfig.RequireOpenPortsBefore)
+            if (!PortRequirementMet(p)) return false;
         return true;
     }
 
+    // ======================= Cracking =======================
+
+    private void EnterCracking()
+    {
+        CurrentState = PortHackV2State.Cracking;
+        _crackTime = 0f;
+        _runtimes.Clear();
+        _successCount = 0;
+
+        foreach (PortHackV2ProtocolConfig p in CurrentConfig.Protocols)
+        {
+            if (p == null || string.IsNullOrWhiteSpace(p.Name)) continue;
+            _runtimes.Add(new ProtocolRuntime { Def = p });
+        }
+
+        string source = CurrentConfig.SourceName;
+        PortHackV2Hooks.Run(os, CurrentConfig.OnStart, source, "OnStart");
+        KELog.Info($"[PortHackV2] '{source}': cracking started with {_runtimes.Count} protocol(s), "
+            + $"root time {CurrentConfig.Time}s.");
+    }
+
     /// <summary>
-    /// 破解成功后统一结算 UPS 的 debuff / buff 一次性效果（先 debuffs 后 buffs）。
-    /// ProxyOverloadSpeedHelper / AutoOverloadProxy 是破解期间逐帧持续的代理辅助，不在此结算。
+    /// 推进单个协议：StartDelay 到点 → **掷一次 RNG**（分支就此定下）→ 跑分支时长 →
+    /// 到点立刻结算本协议（自己的 OnComplete / OnFail），不等其它协议。
+    /// </summary>
+    private void UpdateProtocol(ProtocolRuntime rt, float t)
+    {
+        if (rt.Finished) return;
+
+        if (!rt.Started)
+        {
+            rt.DelayElapsed += t;
+            if (!rt.Started) return;    // 本帧还没到启动点
+
+            // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
+            rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
+            string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
+            PortHackV2Hooks.Run(os, rt.Def.OnStart, protoSource, "OnStart");
+            KELog.Info($"[PortHackV2] '{protoSource}': started "
+                + $"(success shape={rt.Succeeded}, duration={(rt.Succeeded ? rt.Def.TimeIfSuccess : rt.Def.TimeIfFail)}s).");
+        }
+
+        rt.Elapsed += t;
+        if (rt.IsDone) CompleteProtocol(rt, forced: false);
+    }
+
+    /// <summary>
+    /// 结算一个协议：开通它自己的端口、执行它自己的动作点。
+    /// <paramref name="forced"/> = true 表示是根级总时长到期被强制收尾（未跑完），记为失败并记 Warn。
+    /// </summary>
+    private void CompleteProtocol(ProtocolRuntime rt, bool forced)
+    {
+        if (rt.Finished) return;
+        rt.Finished = true;
+        if (forced) rt.Succeeded = false;
+
+        string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
+
+        if (rt.Succeeded)
+        {
+            _successCount++;
+            try
+            {
+                if (Target.GetPortState(rt.Def.Name) != null)
+                    Target.openPort(rt.Def.Name, os.thisComputer.ip);
+            }
+            catch (Exception ex)
+            {
+                KELog.Warn($"[PortHackV2] '{protoSource}': could not open port: {ex.Message}");
+            }
+            PortHackV2Hooks.Run(os, rt.Def.OnComplete, protoSource, "OnComplete");
+        }
+        else
+        {
+            PortHackV2Hooks.Run(os, rt.Def.OnFail, protoSource, "OnFail");
+            if (forced)
+                KELog.Warn($"[PortHackV2] '{protoSource}': did not finish within the root <Time>; "
+                    + "recorded as failed - check the timing in this configuration.");
+        }
+
+        KELog.Info($"[PortHackV2] '{protoSource}': finished (success={rt.Succeeded}).");
+    }
+
+    /// <summary>
+    /// 根级结算：整体成功 = 根级总时长跑满（根级没有 RNG）。
+    /// 到期时仍未跑完的协议强制收尾（记为失败 + Warn），然后统一结算效果并进成功演出。
+    /// </summary>
+    private void SettleRoot()
+    {
+        if (_rootHooksFired) return;
+        _rootHooksFired = true;
+
+        string source = CurrentConfig.SourceName;
+
+        // 硬上限：总时长到期了还没结束的协议，收尾记为失败
+        foreach (ProtocolRuntime rt in _runtimes)
+            if (!rt.Finished) CompleteProtocol(rt, forced: true);
+
+        // 至少一个协议成功才给药：全灭时不该白送端口与 admin
+        if (_successCount > 0)
+        {
+            SettleEffects(CurrentConfig);
+
+            if (CurrentConfig.TakeAdmin)
+            {
+                try { os.takeAdmin(_targetIp); }
+                catch (Exception ex) { KELog.Warn($"[PortHackV2] '{source}': takeAdmin failed: {ex.Message}"); }
+            }
+        }
+
+        CurrentState = PortHackV2State.Complete;
+        _completeElapsed = 0f;
+        _sequence.IdleSpin = true;      // 成功演出期间背景立体继续慢转
+        PortHackV2Hooks.Run(os, CurrentConfig.OnComplete, source, "OnComplete");
+        KELog.Info($"[PortHackV2] '{source}': crack finished, {_successCount}/{_runtimes.Count} protocol(s) succeeded.");
+    }
+
+    /// <summary>
+    /// 一次性结算配置里的 debuff / buff 效果（先 debuffs 后 buffs）。
+    /// 逐帧持续的代理辅助（ProxyOverloadSpeedHelper / AutoOverloadProxy）也在这里一并施加，
+    /// 它们的生命周期跟"破解期间"而不是本程序实例绑定。
     /// </summary>
     private void SettleEffects(PortHackV2Config cfg)
     {
         if (cfg == null) return;
 
-        // ---- debuffs：破解完成后对目标机施加的负面效果 ----
         foreach (var k in cfg.Debuffs)
         {
             string key = k.Key;
             List<string> kvp = k.Value;
             if (key == "closeports" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.ClosePortsFromProtocol(kvp, os, c.idName);
+                PortHackV2Effects.ClosePortsFromProtocol(kvp, os, _targetIp);
             if (key == "addfirewall" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.addFirewall(os, c.idName, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"));
+                PortHackV2Effects.addFirewall(os, _targetIp, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"));
             if (key == "addproxy" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.addProxy(os, c.idName, int.Parse(kvp[0]));
+                PortHackV2Effects.addProxy(os, _targetIp, int.Parse(kvp[0]));
             if (key == "ReRandomFirewall" && kvp.Count > 0 && kvp[0] != "")
             {
                 int lenth = PortHackV2Effects.GetValue<int>(kvp, "lenth");
                 float additiontime = PortHackV2Effects.GetValue<float>(kvp, "additiontime");
                 bool reset = string.IsNullOrEmpty(PortHackV2Effects.GetValue(kvp, "reset")) ? true : PortHackV2Effects.GetValue<bool>(kvp, "reset");
-                PortHackV2Effects.ReRandomFirewallSolution(os, c.idName, lenth, additiontime, reset);
+                PortHackV2Effects.ReRandomFirewallSolution(os, _targetIp, lenth, additiontime, reset);
             }
             if (key == "ResetFirewall" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.ResetFirewall(os, c.idName);
+                PortHackV2Effects.ResetFirewall(os, _targetIp);
             if (key == "ResetProxy" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.ResetProxy(os, c.idName);
+                PortHackV2Effects.ResetProxy(os, _targetIp);
             if (key == "SetFirewallConfig" && kvp.Count > 0 && kvp[0] != "")
             {
                 bool reset = string.IsNullOrEmpty(PortHackV2Effects.GetValue(kvp, "reset")) ? true : PortHackV2Effects.GetValue<bool>(kvp, "reset");
-                PortHackV2Effects.SetFirewallConfig(os, c.idName, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"), reset);
+                PortHackV2Effects.SetFirewallConfig(os, _targetIp, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"), reset);
             }
         }
 
-        // ---- buffs：破解完成后获得/结算的正面效果 ----
         foreach (var k in cfg.Buffs)
         {
             string key = k.Key;
             List<string> kvp = k.Value;
             if (key == "openports" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.OpenPortsFromProtocol(kvp, os, c.idName);
+                PortHackV2Effects.OpenPortsFromProtocol(kvp, os, _targetIp);
             if (key == "solvefirewall" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.solveFirewall(os, c.idName, float.Parse(kvp[0]));
+                PortHackV2Effects.solveFirewall(os, _targetIp, float.Parse(kvp[0]));
             if (key == "solveproxy" && kvp.Count > 0 && kvp[0] != "")
-                PortHackV2Effects.solveProxy(os, c.idName, float.Parse(kvp[0]));
+                PortHackV2Effects.solveProxy(os, _targetIp, float.Parse(kvp[0]));
+            // ⚠️ ProxyOverloadSpeedHelper / AutoOverloadProxy 是**逐帧**推进的效果（每次带一个 dt）；
+            // 破解结束时已没有后续帧可供推进，所以不在这里结算 —— 它们属于"破解期间持续生效"，
+            // 需要持续代理辅助的配置应在 OnComplete 动作点里挂对应 Action。
             if (key == "SetFirewallConfig" && kvp.Count > 0 && kvp[0] != "")
             {
                 bool reset = string.IsNullOrEmpty(PortHackV2Effects.GetValue(kvp, "reset")) ? true : PortHackV2Effects.GetValue<bool>(kvp, "reset");
-                PortHackV2Effects.SetFirewallConfig(os, c.idName, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"), reset);
+                PortHackV2Effects.SetFirewallConfig(os, _targetIp, PortHackV2Effects.GetValue<int>(kvp, "lenth"), PortHackV2Effects.GetValue<float>(kvp, "additiontime"), PortHackV2Effects.GetValue<string>(kvp, "solution"), reset);
             }
-        }
-    }
-
-    /// <summary>扫描 debuff/buff 字典，收集破解期间逐帧持续的代理辅助参数（ProxyOverloadSpeedHelper / AutoOverloadProxy）。</summary>
-    private void CollectProxyHelpers(Dictionary<string, List<string>> effects)
-    {
-        if (effects == null) return;
-        foreach (var k in effects)
-        {
-            string key = k.Key;
-            List<string> kvp = k.Value;
-            if (key == "ProxyOverloadSpeedHelper" && kvp != null && kvp.Count > 0 && kvp[0] != "")
-                POSH = kvp;
-            if (key == "AutoOverloadProxy" && kvp != null && kvp.Count > 0 && kvp[0] != "")
-                AOP = kvp;
         }
     }
 
@@ -492,50 +443,70 @@ public class PortHackV2Exe : GameExecutable
         base.Update(t);
         if (isExiting) return;
 
-        // Listing / Confings：GUI 展示片刻后自动退出（终端输出内容保留可回看）
-        if (CurrentStatus == Status.Listing || CurrentStatus == Status.Confings)
+        if (_targetIp == null) _targetIp = Target?.ip;
+
+        switch (CurrentState)
         {
-            selfExitTimer -= t;
-            if (selfExitTimer <= 0f) isExiting = true;
+            case PortHackV2State.Locked:
+                _stateTimer -= t;
+                if (_stateTimer <= 0f) isExiting = true;
+                return;
+
+            case PortHackV2State.Listing:
+                // 前置条件可能从别处被满足（解防火墙 / 过载代理 / 开端口都是方法直改，没有事件源），
+                // 所以每帧轮询；满足即自动进 Cracking。
+                if (!TargetStillReachable()) { isExiting = true; return; }
+                if (AllPrerequisitesMet()) EnterCracking();
+                return;
+
+            case PortHackV2State.Cracking:
+                UpdateCracking(t);
+                return;
+
+            case PortHackV2State.Complete:
+                _completeElapsed += t;
+                _sequence.Update(t, 1f);
+                if (_completeElapsed >= CurrentConfig.CompleteDelay) isExiting = true;
+                return;
+
+            case PortHackV2State.Failed:
+                _stateTimer -= t;
+                if (_stateTimer <= 0f) isExiting = true;
+                return;
+        }
+    }
+
+    private void UpdateCracking(float t)
+    {
+        // 断连即停（对齐原版）：这与 AutoExitOnLeave 是两回事
+        if (!TargetStillReachable()) { isExiting = true; return; }
+
+        // AutoExitOnLeave：玩家切走节点就关程序；关掉时走失败收尾（没跑完就中断）
+        if (CurrentConfig.AutoExitOnLeave && os.connectedComp != null && os.connectedComp.ip != _targetIp)
+        {
+            KELog.Info($"[PortHackV2] '{CurrentConfig.SourceName}': left the target node; exiting.");
+            EnterFailed();
             return;
         }
 
-        if (CurrentStatus == Status.Intro)
-        {
-            CurrentConfig = null;
-            return;
-        }
-        if (CurrentStatus != Status.Cracking) return;
+        _crackTime += t;
+        foreach (ProtocolRuntime rt in _runtimes) UpdateProtocol(rt, t);
 
-        // ---- Cracking：倒计时 + 持续辅助 ----
-        lifetime -= t;
-        if (POSH != null && POSH.Count != 0)
-            PortHackV2Effects.ProxyOverloadTicksHelper(os, c.idName, int.Parse(POSH[0].Replace("x", "")), t);
-        if (AOP != null && AOP.Count != 0)
-            PortHackV2Effects.AutoOverloadProxy(os, c.idName, float.Parse(AOP[0]), t);
+        float progress = CurrentConfig.Time <= 0f ? 1f : MathHelper.Clamp(_crackTime / CurrentConfig.Time, 0f, 1f);
+        _sequence.Update(t, progress);
 
-        if (lifetime <= 0f)
-        {
-            // 破解完成：打开目标端口并退出
-            // 注意：POSH/AOP 保存的是对 UPS 配置列表的引用，置 null 而非 Clear，避免清空配置
-            POSH = null;
-            AOP = null;
-            lifetime = 0f;
-            try
-            {
-                // 直接按协议打开目标端口（PortState 表语义；null 防御）
-                string proto = crackProtocol ?? CurrentConfig.ProtocolNames.FirstOrDefault();
-                if (c.GetPortState(proto) != null)
-                    c.openPort(proto, os.thisComputer.ip);
-            }
-            catch { /* 端口不在目标机等极端情况：静默 */ }
+        // 总时长跑满 → 整体结算（根级没有 RNG，故固定走成功演出）
+        if (_crackTime >= CurrentConfig.Time) SettleRoot();
+    }
 
-            // 端口已打开，统一结算该 UPS 的 debuff / buff 一次性效果（先 debuffs 后 buffs）
-            SettleEffects(CurrentConfig);
-
-            CurrentStatus = Status.Intro;
-            isExiting = true;
-        }
+    private void EnterFailed()
+    {
+        if (_rootHooksFired) return;
+        _rootHooksFired = true;
+        CurrentState = PortHackV2State.Failed;
+        _stateTimer = FAILED_EXIT_SECONDS;
+        PortHackV2Hooks.Run(os, CurrentConfig.OnFail, CurrentConfig.SourceName, "OnFail");
+        KELog.Info($"[PortHackV2] '{CurrentConfig.SourceName}': crack failed.");
     }
 
     // ======================= Draw =======================
@@ -544,267 +515,374 @@ public class PortHackV2Exe : GameExecutable
     {
         base.Draw(t);
         drawOutline();
-        drawTarget();
-        if (isExiting) return;
 
-        switch (CurrentStatus)
+        switch (CurrentState)
         {
-            case Status.Intro:
-                DrawIntro();
+            case PortHackV2State.Locked:
+                DrawLocked();
                 break;
-            case Status.Listing:
+            case PortHackV2State.Listing:
                 DrawListing();
                 break;
-            case Status.Confings:
-                DrawConfings();
-                break;
-            case Status.Cracking:
+            case PortHackV2State.Cracking:
                 DrawCracking();
                 break;
+            case PortHackV2State.Complete:
+            case PortHackV2State.Failed:
+                DrawOutro();
+                break;
+        }
+
+        // Exit 按钮在除演出外的所有状态都可用
+        if (CurrentState != PortHackV2State.Complete && CurrentState != PortHackV2State.Failed
+            && Button.doButton(PID + ID_EXIT, bounds.X + bounds.Width - 62, bounds.Y + bounds.Height - 30,
+                56, 24, KELoc.Loc("PORT_HACK_V2_EXIT", "Exit"), os.lockedColor))
+        {
+            isExiting = true;
         }
     }
 
-    // ---- Intro：Welcome 标题 ----
+    // ---- Locked ----
 
-    private void DrawIntro()
+    private void DrawLocked()
     {
         int cx = bounds.X + bounds.Width / 2;
-        int top = ContentTop;
-        Color accent = os.highlightColor;
+        string title = KELoc.Loc("PORT_HACK_V2_LOCKED_TITLE", "LOCKED");
+        Vector2 ts = GuiData.font.MeasureString(title);
+        spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(title, 0.05),
+            new Vector2(cx - ts.X / 2f, ContentTop + 24), os.lockedColor, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
-        // 大标题 Welcome
-        string title = "Welcome";
-        Vector2 titleSize = GuiData.font.MeasureString(title);
-        const float scale = 1.8f;
-        spriteBatch.DrawString(GuiData.font, title,
-            new Vector2(cx - titleSize.X * scale / 2f, top + 8),
-            accent, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-
-        // 副标题
-        string sub = "CrackerToolKit - Public Port Cracking Suite";
-        Vector2 subSize = GuiData.font.MeasureString(sub);
-        spriteBatch.DrawString(GuiData.font, sub,
-            new Vector2(cx - subSize.X / 2f, top + 62),
-            Color.White * 0.85f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-
-        // 操作提示
-        string[] hints =
+        if (!string.IsNullOrEmpty(_lockReason))
         {
-            "l          list crackable ports",
-            "c <n>      view port config",
-            "<port>     start cracking directly"
-        };
-        for (int i = 0; i < hints.Length; i++)
-        {
-            Vector2 hs = GuiData.smallfont.MeasureString(hints[i]);
-            spriteBatch.DrawString(GuiData.smallfont, hints[i],
-                new Vector2(cx - hs.X / 2f, top + 88 + i * 18),
-                Color.White * 0.6f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            Vector2 rs = GuiData.smallfont.MeasureString(_lockReason);
+            spriteBatch.DrawString(GuiData.smallfont, _lockReason,
+                new Vector2(cx - rs.X / 2f, ContentTop + 54), Color.White * 0.75f,
+                0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
         }
 
-        // Exit
-        if (Button.doButton(PID + ID_INTRO_EXIT, cx - 45, BottomButtonY, 90, 26, "Exit", os.lockedColor))
-            isExiting = true;
+        string closing = KELoc.Format("PORT_HACK_V2_CLOSING", "Closing in {0}s",
+            Math.Max(1, (int)Math.Ceiling(_stateTimer)));
+        TextItem.doFontLabel(new Vector2(bounds.X + 4, ContentBottom - 18), closing,
+            GuiData.detailfont, Color.White * 0.5f);
     }
 
-    // ---- Listing：端口列表（name + usable），滚动条 + 终端输出后自动退出 ----
+    // ---- Listing ----
 
-    private void BuildPortListData(out string[] items, out int[] portIndexMap)
+    /// <summary>一行前置/协议要求的显示数据。</summary>
+    private sealed class ListingRow
     {
-        List<string> ss = new();
-        List<int> map = new();
-        for (int i = 0; i < Protocols.Count; i++)
+        public string Label;
+        public bool Met;
+        public string Detail;
+    }
+
+    /// <summary>
+    /// 组装 Listing 行：先前置（防火墙 / 代理），再各协议前置端口。
+    /// 前置行仅在「配置开启 **且** 目标机存在对应物」时显示。
+    /// </summary>
+    private List<ListingRow> BuildListingRows()
+    {
+        List<ListingRow> rows = new();
+        if (CurrentConfig == null) return rows;
+
+        if (FirewallRowVisible())
+            rows.Add(new ListingRow
+            {
+                Label = KELoc.Loc("PORT_HACK_V2_ROW_FIREWALL", "FIREWALL"),
+                Met = Target.firewall.solved,
+                Detail = "solve the target firewall"
+            });
+
+        if (ProxyRowVisible())
+            rows.Add(new ListingRow
+            {
+                Label = KELoc.Loc("PORT_HACK_V2_ROW_PROXY", "PROXY OVERLOAD"),
+                Met = !Target.proxyActive,
+                Detail = "overload the target proxy"
+            });
+
+        foreach (string p in CurrentConfig.RequireOpenPortsBefore)
+            rows.Add(new ListingRow
+            {
+                Label = ProtocolDisplayName(p),
+                Met = PortRequirementMet(p),
+                Detail = "open this port first"
+            });
+
+        return rows;
+    }
+
+    /// <summary>协议名 → 显示名；未注册的协议保留原文并标注，便于排查拼写错误。</summary>
+    private static string ProtocolDisplayName(string protocol)
+    {
+        try
         {
-            string p = Protocols[i];
-            if (!PortManager.IsPortRegistered(p)) continue;
-            PortHackV2Config cfg = CurrentConfig;
-            if (cfg == null) continue;
-            string displayName = PortManager.GetPortRecordFromProtocol(p).DefaultDisplayName;
-            bool usable = cfg.Usable;
-            ss.Add($"{i + 1}:{p}:{displayName}:{(usable ? "Usable" : "Locked")}");
-            map.Add(i);
+            if (PortManager.IsPortRegistered(protocol))
+                return PortManager.GetPortRecordFromProtocol(protocol).DefaultDisplayName;
         }
-        items = ss.ToArray();
-        portIndexMap = map.ToArray();
+        catch { }
+        return $"{protocol} <unknown>";
+    }
+
+    /// <summary>
+    /// 预计破解时长：只显示**成功分支**的时长，避免从时长上剧透失败分支。
+    /// 多协议并行时取最长的那个（最后一个跑完的）。
+    /// </summary>
+    private float EstimatedDuration()
+    {
+        float max = 0f;
+        foreach (PortHackV2ProtocolConfig p in CurrentConfig.Protocols)
+        {
+            if (p == null) continue;
+            float total = p.StartDelay + p.TimeIfSuccess;
+            if (total > max) max = total;
+        }
+        return max;
     }
 
     private void DrawListing()
     {
-        Color theme = Color.Lerp(os.topBarColor, Utils.AddativeWhite, 0.2f);
         int x = InnerX;
         int w = InnerW;
 
-        // 标题
-        TextItem.doFontLabel(new Vector2(x, ContentTop), "Usable Cracker Ports", GuiData.smallfont, os.highlightColor);
-
-        BuildPortListData(out string[] items, out _);
-
-        // 列表区（标题下到窗口底）
-        int listY = ContentTop + 24;
-        int listH = bounds.Y + bounds.Height - 6 - listY;
-
-        if (items.Length == 0)
-        {
-            spriteBatch.Draw(Utils.white, new Rectangle(x, listY, w, listH), Utils.VeryDarkGray);
-            TextItem.doFontLabelToSize(new Rectangle(x, listY, w, listH), "    -- No Crackable Ports --    ",
-                GuiData.smallfont, Utils.AddativeWhite, true, true);
-        }
-        else
-        {
-            SelectableTextList.scrollOffset = listingScroll;
-            SelectableTextList.doFancyList(PID + ID_LIST,
-                x, listY, w, listH,
-                items, -1, theme, HasDraggableScrollbar: true);
-            listingScroll = SelectableTextList.scrollOffset;
-        }
-
-        // 自动退出提示 + 提前退出按钮
-        TextItem.doFontLabel(new Vector2(x, bounds.Y + bounds.Height - 24), $"Closing in {(int)Math.Ceiling(selfExitTimer)}s",
-            GuiData.detailfont, Color.White * 0.5f);
-        if (Button.doButton(PID + ID_LIST_EXIT, x + w - 60, bounds.Y + bounds.Height - 28, 50, 22, "X", os.lockedColor))
-            isExiting = true;
-    }
-
-    // ---- Confings：UPS 配置（滚动条 + 终端输出后自动退出） ----
-
-    private string[] BuildConfingLines(string protocol)
-    {
-        PortHackV2Config cfg = CurrentConfig;
-        string displayName = protocol;
-        try
-        {
-            if (PortManager.IsPortRegistered(protocol))
-                displayName = PortManager.GetPortRecordFromProtocol(protocol).DefaultDisplayName;
-        }
-        catch { }
-
-        string sss = FormatProtocolNames(cfg.RequireOpenPortsBefore);
-        bool usable = IsProtocolUsable(protocol);
-
-        List<string> lines = new()
-        {
-            $"Protocol               : {protocol}",
-            $"Display Name           : {displayName}",
-            $"TimeCost               : {CurrentConfig.Time}s",
-            $"RamCost                : {cfg.RamCost}MB",
-            $"Title                  : {cfg.Title}",
-        };
-
-        // Debuff(s) / Buff(s)：每个效果单独成行，避免全部挤在一行被缩小字号；无效果时显示 None
-        AppendEffectLines(lines, cfg.Debuffs, "Debuff(s)", false);
-        AppendEffectLines(lines, cfg.Buffs, "Buff(s)", true);
-
-        lines.Add($"NeedsPreOpenPort(s)    : {sss}");
-        lines.Add($"NeedsPreSolveFirewall  : {cfg.RequireSolveFirewall}");
-        lines.Add($"NeedsPreSolveProxy     : {cfg.RequireProxyOverload}");
-        lines.Add($"Usable                : {(usable ? "True" : "False")}");
-        return lines.ToArray();
-    }
-
-    /// <summary>把一类 debuff/buff 效果按“每效果一行”追加到 lines（含缩进），无效果则显示 None。</summary>
-    private static void AppendEffectLines(List<string> lines, Dictionary<string, List<string>> effects, string label, bool isBuff)
-    {
-        var effectLines = PortHackV2Config.OutputAnybuffConfingsLines(effects, isBuff);
-        if (effectLines == null || effectLines.Count == 0)
-        {
-            lines.Add($"{label,-22}: None");
-            return;
-        }
-        lines.Add($"{label,-22}:");
-        foreach (string el in effectLines)
-            lines.Add("   - " + el);
-    }
-
-    private void DrawConfings()
-    {
-        int x = InnerX;
-        int w = InnerW;
-        string protocol = configProtocol;
-        if (protocol == null || CurrentConfig == null || !CurrentConfig.ProtocolNames.Contains(protocol))
-        {
-            // 防御：异常情况下退回 Listing
-            OpenListing();
-            return;
-        }
-
-        PortHackV2Config cfg = CurrentConfig;
-        string displayName = protocol;
-        try
-        {
-            if (PortManager.IsPortRegistered(protocol))
-                displayName = PortManager.GetPortRecordFromProtocol(protocol).DefaultDisplayName;
-        }
-        catch { }
-
-        // 标题
-        TextItem.doFontLabel(new Vector2(x, ContentTop),
-            $"Configs - {displayName} [{protocol}]", GuiData.smallfont, os.highlightColor);
-
-        // 配置文本行（可滚动）
-        string[] lines = BuildConfingLines(protocol);
-        int listY = ContentTop + 24;
-        int listH = bounds.Y + bounds.Height - 6 - listY;
-
-        SelectableTextList.scrollOffset = configScroll;
-        SelectableTextList.doFancyList(PID + ID_CONFINGS,
-            x, listY, w, listH,
-            lines, -1, Color.Lerp(os.topBarColor, Utils.AddativeWhite, 0.2f), HasDraggableScrollbar: true);
-        configScroll = SelectableTextList.scrollOffset;
-
-        // 自动退出提示 + 提前退出按钮
-        TextItem.doFontLabel(new Vector2(x, bounds.Y + bounds.Height - 24), $"Closing in {(int)Math.Ceiling(selfExitTimer)}s",
-            GuiData.detailfont, Color.White * 0.5f);
-        if (Button.doButton(PID + ID_LIST_EXIT + 1, x + w - 60, bounds.Y + bounds.Height - 28, 50, 22, "X", os.lockedColor))
-            isExiting = true;
-    }
-
-    // ---- Cracking：左上 CurrentConfig.Title + 底部按时间推进的进度条 ----
-
-    private void DrawCracking()
-    {
-        if (CurrentConfig == null) return;
-        int x = InnerX;
-        int w = InnerW;
-
-        // 左上角标题（Title 为空时回退协议名）
         string title = string.IsNullOrEmpty(CurrentConfig.Title)
-            ? $"Cracking {crackProtocol ?? configProtocol ?? "port"}..."
+            ? KELoc.Loc("PORT_HACK_V2_LISTING_TITLE", "PortHackV2")
             : CurrentConfig.Title;
         TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, os.highlightColor);
 
-        // 中部状态说明
-        string status = "UPLOADING CRACK ...";
-        Vector2 ss = GuiData.font.MeasureString(status);
-        spriteBatch.DrawString(GuiData.font, status,
-            new Vector2(bounds.X + bounds.Width / 2f - ss.X / 2f, bounds.Y + bounds.Height / 2f - 30f),
-            Color.White * 0.7f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+        List<ListingRow> rows = BuildListingRows();
+        int y = ContentTop + 26;
+        const int rowH = 30;
 
-        // 底部进度条：黑色衬底 + 随进度增长的亮条（窗口外框由基类 drawOutline()/drawTarget() 负责）
-        float progress = CurrentConfig.Time <= 0f
-            ? 1f
-            : MathHelper.Clamp(1f - (lifetime - 1f) / CurrentConfig.Time, 0f, 1f);
+        if (rows.Count == 0)
+        {
+            TextItem.doFontLabel(new Vector2(x, y),
+                KELoc.Loc("PORT_HACK_V2_NO_PREREQ", "No prerequisites - starting..."),
+                GuiData.smallfont, Color.White * 0.7f);
+        }
 
-        Rectangle bar = new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16);
-        // 黑色衬底
-        RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, Color.Black * 0.75f);
-        // 进度亮条
+        foreach (ListingRow row in rows)
+        {
+            if (y + rowH > ContentBottom - 24) break;    // 行数超出可视区就不画了（不裁切半行）
+
+            Rectangle bar = new Rectangle(x, y, w, rowH - 4);
+            Color bg = row.Met ? os.unlockedColor : os.lockedColor;
+            RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, bg * 0.85f);
+
+            // 左侧状态点：满足 = 高亮，未满足 = 暗
+            RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, bar.Height - 8,
+                row.Met ? os.highlightColor : os.darkBackgroundColor);
+
+            spriteBatch.DrawString(GuiData.smallfont, row.Label,
+                new Vector2(bar.X + 16, bar.Y + 4), Color.White * 0.95f);
+            spriteBatch.DrawString(GuiData.detailfont, row.Detail,
+                new Vector2(bar.X + 16, bar.Y + bar.Height - 14), Color.White * 0.55f);
+
+            y += rowH;
+        }
+
+        // 左下角：预计破解时长（成功分支）
+        string est = KELoc.Format("PORT_HACK_V2_ESTIMATE", "Estimated time: {0}s", (int)Math.Ceiling(EstimatedDuration()));
+        TextItem.doFontLabel(new Vector2(x, ContentBottom - 18), est, GuiData.detailfont, Color.White * 0.6f);
+
+        // 程序被配置为不可用时，明确告知（否则玩家只看到一直停着）
+        if (!CurrentConfig.Usable)
+            TextItem.doFontLabel(new Vector2(x + w - 180, ContentTop + 2),
+                KELoc.Loc("PORT_HACK_V2_NOT_USABLE", "NOT USABLE"), GuiData.smallfont, os.lockedColor);
+    }
+
+    // ---- Cracking ----
+
+    private void DrawCracking()
+    {
+        int x = InnerX;
+        int w = InnerW;
+
+        string title = string.IsNullOrEmpty(CurrentConfig.Title)
+            ? KELoc.Loc("PORT_HACK_V2_CRACKING_TITLE", "Cracking...")
+            : CurrentConfig.Title;
+        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, os.highlightColor);
+
+        // 动画区：批 3 由 PortHackV2Sequence 接管（此处先出 3D 画布）
+        Rectangle anim = new Rectangle(x, ContentTop + 24, w, Math.Max(40, ContentBottom - ContentTop - 24 - 16 - 22 - 8));
+        DrawAnimationArea(anim, opacity: 0.6f);
+
+        // 每个协议一条独立进度条（各跑自己的成功/失败分支时长）
+        int y = anim.Bottom + 4;
+        foreach (ProtocolRuntime rt in _runtimes)
+        {
+            if (y + 12 > ContentBottom - 22) break;
+            DrawProtocolBar(new Rectangle(x, y, w, 10), rt);
+            y += 14;
+        }
+
+        // 底部：根级总进度条（走 <Time>）
+        float total = CurrentConfig.Time <= 0f ? 1f : MathHelper.Clamp(_crackTime / CurrentConfig.Time, 0f, 1f);
+        DrawProgressBar(new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16), total, showSeconds: true);
+    }
+
+    /// <summary>单个协议的进度条：左侧协议名，右侧百分比。</summary>
+    private void DrawProtocolBar(Rectangle bar, ProtocolRuntime rt)
+    {
+        string label = ProtocolDisplayName(rt.Def.Name);
+        bool running = rt.Started;
+
+        spriteBatch.DrawString(GuiData.detailfont, label, new Vector2(bar.X, bar.Y - 2),
+            running ? Color.White * 0.8f : Color.White * 0.35f);
+
+        int barX = bar.X + 110;
+        int barW = bar.Width - 110 - 40;
+        if (barW <= 10) return;
+
+        RenderedRectangle.doRectangle(barX, bar.Y, barW, bar.Height, Color.Black * 0.7f);
+        if (running)
+        {
+            float p = rt.Progress;
+            RenderedRectangle.doRectangle(barX, bar.Y, (int)(barW * p), bar.Height,
+                (rt.Succeeded ? os.highlightColor : os.lockedColor) * 0.9f);
+
+            string pct = $"{(int)(p * 100f)}%";
+            spriteBatch.DrawString(GuiData.detailfont, pct,
+                new Vector2(bar.X + bar.Width - 36, bar.Y - 2), Color.White * 0.7f);
+        }
+    }
+
+    /// <summary>主题色进度条（衬底 + 进度条 + 百分比 + 剩余秒数）。</summary>
+    private void DrawProgressBar(Rectangle bar, float progress, bool showSeconds)
+    {
+        RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, os.darkBackgroundColor * 0.9f);
         RenderedRectangle.doRectangle(bar.X, bar.Y, (int)(bar.Width * progress), bar.Height, os.highlightColor);
 
-        // 进度文字（右侧：剩余秒数；中间：百分比）
-        int remaining = Math.Max(0, (int)(lifetime - 1f));
         string pct = $"{(int)(progress * 100f)}%";
-        Vector2 pctSize = GuiData.smallfont.MeasureString(pct);
-        Vector2 pctPos = new Vector2(bounds.X + bounds.Width / 2f - pctSize.X / 2f, bar.Y + (bar.Height - pctSize.Y) / 2f);
-        spriteBatch.DrawString(GuiData.smallfont, pct, pctPos, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+        Vector2 ps = GuiData.smallfont.MeasureString(pct);
+        spriteBatch.DrawString(GuiData.smallfont, pct,
+            new Vector2(bar.X + bar.Width / 2f - ps.X / 2f, bar.Y + (bar.Height - ps.Y) / 2f),
+            Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
-        string timeText = remaining + "s";
-        Vector2 ttSize = GuiData.smallfont.MeasureString(timeText);
-        spriteBatch.DrawString(GuiData.smallfont, timeText,
-            new Vector2(bar.X + bar.Width - ttSize.X - 4, bar.Y + (bar.Height - ttSize.Y) / 2f),
-            Color.White * 0.85f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+        if (showSeconds)
+        {
+            int remaining = Math.Max(0, (int)(CurrentConfig.Time - _crackTime));
+            string timeText = KELoc.Format("PORT_HACK_V2_SECONDS_LEFT", "{0}s", remaining);
+            Vector2 tsz = GuiData.smallfont.MeasureString(timeText);
+            spriteBatch.DrawString(GuiData.smallfont, timeText,
+                new Vector2(bar.X + bar.Width - tsz.X - 4, bar.Y + (bar.Height - tsz.Y) / 2f),
+                Color.White * 0.85f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+        }
+    }
 
-        // 右上角取消按钮（进度条上方）
-        if (Button.doButton(PID + ID_CRACK_CANCEL, bounds.X + bounds.Width - 72, bounds.Y + bounds.Height - 46, 60, 24, "Cancel", os.lockedColor))
-            isExiting = true;
+    // ---- Complete / Failed 演出 ----
+
+    private void DrawOutro()
+    {
+        int x = InnerX;
+        int w = InnerW;
+
+        // 背景：立体继续慢转（成功）/ 停止（失败）
+        Rectangle anim = new Rectangle(x, ContentTop + 20, w, ContentBottom - ContentTop - 20);
+        DrawAnimationArea(anim, opacity: CurrentState == PortHackV2State.Complete ? 0.2f : 0.35f);
+
+        bool win = CurrentState == PortHackV2State.Complete;
+        string line1 = win
+            ? KELoc.Loc("PORT_HACK_V2_COMPLETE_1", "PASSWORD")
+            : KELoc.Loc("PORT_HACK_V2_FAILED_1", "ACCESS");
+        string line2 = win
+            ? KELoc.Loc("PORT_HACK_V2_COMPLETE_2", "FOUND")
+            : KELoc.Loc("PORT_HACK_V2_FAILED_2", "DENIED");
+
+        int cx = bounds.X + bounds.Width / 2;
+        int cy = bounds.Y + bounds.Height / 2;
+
+        // 上下白线展开：0.4s 内从中心向两侧推开（对齐原版的 QuadraticOut 展开）
+        float expand = Utils.QuadraticOutCurve(MathHelper.Clamp(_completeElapsed / 0.4f, 0f, 1f));
+        int lineW = (int)(expand * (bounds.Width - 30f));
+        if (lineW > 2)
+        {
+            int lineY1 = cy - 18;
+            int lineY2 = cy + 46;
+            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, lineY1, lineW, 2),
+                Utils.AddativeWhite * fade);
+            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, lineY2, lineW, 2),
+                Utils.AddativeWhite * fade);
+        }
+
+        // 中央文案：两层乱序字（清晰层 + 低概率抖动层）叠出原版的"电子抖动"观感
+        Color baseColor = win ? Color.White : os.lockedColor;
+        DrawFlipText(line1, new Vector2(cx, cy - 12), baseColor);
+        DrawFlipText(line2, new Vector2(cx, cy + 24), baseColor);
+
+        if (win)
+            DrawProgressBar(new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16), 1f, showSeconds: false);
+    }
+
+    /// <summary>居中绘制一行乱序字，并叠一层低概率抖动。</summary>
+    private void DrawFlipText(string text, Vector2 center, Color color)
+    {
+        Vector2 size = GuiData.font.MeasureString(text);
+        Vector2 pos = new(center.X - size.X / 2f, center.Y - size.Y / 2f);
+        spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(text, 0.012), pos, color * fade);
+        spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(text, 0.11), pos,
+            Utils.AddativeWhite * 0.2f * fade * fade);
+    }
+
+    // ---- 3D 动画画布 ----
+
+    /// <summary>
+    /// 把 3D 动画渲染到离屏 RenderTarget 再贴回面板。
+    ///
+    /// 为什么要离屏：<c>OS.Draw</c> 在所有 exe 的 Draw 之外已经 Begin 了主 spriteBatch
+    /// 且中途不 End，所以在面板里直接 Begin/End 会抛
+    /// "Begin cannot be called again until End has been successfully called"。
+    /// 离屏 + 专用 SpriteBatch 是本项目已验证的做法（见心碎 daemon 的渲染）。
+    /// </summary>
+    private void DrawAnimationArea(Rectangle area, float opacity)
+    {
+        if (area.Width <= 8 || area.Height <= 8) return;
+
+        try
+        {
+            if (_rt == null || _rt.Width != area.Width || _rt.Height != area.Height)
+            {
+                _rtBatch ??= new SpriteBatch(spriteBatch.GraphicsDevice);
+                _rt?.Dispose();
+                _rt = new RenderTarget2D(spriteBatch.GraphicsDevice, area.Width, area.Height);
+            }
+
+            RenderTarget2D previous = Utils.GetCurrentRenderTarget();
+            spriteBatch.GraphicsDevice.SetRenderTarget(_rt);
+            spriteBatch.GraphicsDevice.Clear(Color.Transparent);
+            _rtBatch.Begin();
+            _sequence.RenderFrame(spriteBatch.GraphicsDevice, _rtBatch,
+                new Rectangle(0, 0, area.Width, area.Height), Color.White);
+            _rtBatch.End();
+            spriteBatch.GraphicsDevice.SetRenderTarget(previous);
+
+            _sequence.DrawOverlay(spriteBatch, area, opacity);
+        }
+        catch (Exception ex)
+        {
+            // 渲染失败不该打断破解流程：退回一个纯色底，并只记一次 Warn 避免刷屏
+            if (!_animWarned)
+            {
+                _animWarned = true;
+                KELog.Warn($"[PortHackV2] animation draw failed: {ex.Message}");
+            }
+            RenderedRectangle.doRectangle(area.X, area.Y, area.Width, area.Height, Color.Black * 0.35f);
+        }
+    }
+
+    private bool _animWarned;
+
+    /// <summary>
+    /// 程序被移除时释放离屏资源（RenderTarget / 专用 SpriteBatch / 3D 缓冲）。
+    /// GameExecutable 没有 Dispose 钩子，OnComplete 是它给的"即将从 os.exes 移除"回调。
+    /// </summary>
+    public override void OnComplete()
+    {
+        try { _sequence?.Dispose(); } catch { }
+        try { _rt?.Dispose(); } catch { }
+        try { _rtBatch?.Dispose(); } catch { }
+        _rt = null;
+        _rtBatch = null;
+        base.OnComplete();
     }
 }

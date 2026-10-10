@@ -125,6 +125,15 @@ public class PortHackV2Config
     // 导致整份配置加载失败 → 程序锁定。改动后统一走 ConfigValue.ParseInRange 宽松解析，
     // 畸形值（非数字 / NaN / Infinity / 负数 / 超范围）只回退默认 + Warn，配置其余部分照常生效。
 
+    /// <summary>
+    /// Cracking 阶段动画用的柏拉图立体。可写 <c>Tetrahedron</c> / <c>Cube</c> / <c>Octahedron</c> /
+    /// <c>Dodecahedron</c> / <c>Icosahedron</c>（大小写不敏感）。留空或无法识别 = <c>Cube</c>。
+    /// </summary>
+    [XmlElement("Polyhedron")] public string PolyhedronRaw { get; set; }
+
+    /// <summary>动画立体的解析结果。</summary>
+    [XmlIgnore] public KPlatonicShape PolyhedronShape { get; private set; } = KPlatonicShape.Cube;
+
     /// <summary>成功演出结束后、退出前的停留秒数。留空 = 5（对齐原版 TIME_ALIVE_AFTER_SUCSESS）。</summary>
     [XmlElement("CompleteDelay")] public string CompleteDelayRaw { get; set; }
 
@@ -259,11 +268,29 @@ public class PortHackV2Config
         if (!tOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 
+        PolyhedronShape = ParsePolyhedron(PolyhedronRaw);
+
         foreach (var p in Protocols) p?.ResolveValues(SourceName);
 
         // 效果串展开成字典（空串 → 空字典，避免把无配置误认成"有键但值为空"）
         Debuffs = string.IsNullOrWhiteSpace(DebuffsRaw) ? new() : ResolveAnyBuffsList(DebuffsRaw, false);
         Buffs = string.IsNullOrWhiteSpace(BuffsRaw) ? new() : ResolveAnyBuffsList(BuffsRaw, true);
+    }
+
+    /// <summary>
+    /// 解析动画立体名（大小写不敏感）；留空 = 默认立方（不记日志，那是正常省略）；
+    /// 写了但无法识别 = 回退立方 + Warn（帮作者揪出拼写错误）。
+    /// </summary>
+    private KPlatonicShape ParsePolyhedron(string raw)
+    {
+        if (ConfigValue.IsNone(raw)) return KPlatonicShape.Cube;
+
+        if (Enum.TryParse(raw.Trim(), ignoreCase: true, out KPlatonicShape shape))
+            return shape;
+
+        KELog.Warn($"[PortHackV2] '{SourceName}': unknown <Polyhedron> '{raw}'; "
+            + "expected Tetrahedron / Cube / Octahedron / Dodecahedron / Icosahedron. Using Cube.");
+        return KPlatonicShape.Cube;
     }
     /*
     [
