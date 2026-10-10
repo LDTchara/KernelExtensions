@@ -54,13 +54,23 @@
   <RamCost>50</RamCost>
   <RampRate>200</RampRate>
 
-  <!-- ── 代理过载倍速 / Proxy overload speed ──
+  <!-- ── shell 过载倍速 / Shell overload speed ──
+       ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速正在过载
+       **当前所连节点**的那些 Shell（原版 shell 程序的 Overload 状态）。
+       This program never overloads a proxy itself. It only speeds up the Shells that are
+       already overloading the proxy of the currently connected computer.
+       因此：目标机上没有开着的 shell 在过载时，这一项不产生任何效果。
+       So with no live shell overloading that target, this setting does nothing at all.
+       原版要先在目标机上拿到 admin 才能开 shell —— 那道门槛本程序不去拆。
+       Vanilla requires admin on the target to open a shell; that gate is left intact.
+       N 个 shell 的总速率 = N × 倍速（原版多 shell 本来就是简单叠加）。
+
        倍速不是一次性跳到目标，而是由 RAM 爬升**线性驱动**：
        倍速 1 → ProxyOverloadTarget  对应  RamCost → BurstTarget（两者共用同一个进度）。
        The multiplier is not applied in one jump: it is driven linearly by the RAM ramp —
        speed 1 -> ProxyOverloadTarget corresponds to RamCost -> BurstTarget.
-       好处是占的内存越多、压制越强两个数字能互相印证（这也正是原版 SignalScramble
-       把 ramCost 映射到 trace 减速系数的做法，只是换成加速代理过载）。
+       好处是"占的内存越多、加速越强"两个数字能互相印证（这也正是原版 SignalScramble
+       把 ramCost 映射到 trace 减速系数的做法，只是换成加速 shell 过载）。
        The two numbers corroborate each other, mirroring how vanilla SignalScramble maps
        ramCost onto its trace-slowdown factor.
        1.0 = 原版过载速度（不加速）；2.0 = 两倍。留空 = 1.0。
@@ -68,8 +78,8 @@
        倍速峰值恰好等于这里填的值（RAM 爬满那一刻）；RampRate 越小，低倍速停留越久。
        The peak multiplier equals this value (reached when RAM tops out); a smaller RampRate
        means it lingers at low multipliers longer.
-       只作用于**当前连接机器的正在运行的代理**；没有代理 / 代理已过载时不产生效果。
-       Only affects a live proxy on the currently connected computer. -->
+       玩家切到别的节点时加速对象随之切换（每帧取当前所连节点）。
+       The accelerated target follows the current connection, re-read every frame. -->
   <ProxyOverloadTarget>1.0</ProxyOverloadTarget>
 
   <!-- ── 强调色 / Accent color ──

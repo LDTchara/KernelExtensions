@@ -6,11 +6,16 @@ using System.Xml.Serialization;
 namespace KernelExtensions.Configs;
 
 /// <summary>
-/// ProxyKiller 的配置：一个"看着过载把目标压满"的展示窗口。
+/// ProxyKiller 的配置：一个"加速目标代理瘫痪"的展示窗口。
 ///
-/// 定位：**过载倍率由扩展作者在配置里定义，本程序不"调"任何东西** ——
-/// 它做的事只有一件：按配置把 RAM 从起始值爬升到目标值，同时用一个背景动画
-/// 把这个过程表达出来（粒子由混沌趋于整齐），并提供一个退出按钮。
+/// 定位（2026-10-10 二次定位）：**它自己不瘫痪任何代理**，只**加速正在过载当前所连节点的 Shell**。
+/// 原版把代理过载做成 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
+/// 而 Shell 需要目标机 admin 才能开 —— 那道门槛是设计护栏，本程序不去拆：
+/// 没有 shell 在过载，它就什么都不做。它做的是把"力量倍增器"这件事显式化：
+/// 速率 = 该节点上的 shell 数 × 当前倍速（原版多 shell 时本来就是简单叠加）。
+///
+/// 同时按配置把 RAM 从起始值爬到目标值，用背景动画表达这个过程（粒子由混沌趋于整齐），
+/// 并提供一个退出按钮。
 ///
 /// 数值项一律用 string 承接原值：<c>XmlSerializer</c> 遇到非数字会**直接抛异常**，
 /// 那会让整份配置加载失败、程序永远锁在 Locked。走 <see cref="ConfigValue.ParseInRange"/>
@@ -68,15 +73,20 @@ public class ProxyKillerConfig
     [XmlElement("RampRate")] public string RampRateRaw { get; set; }
 
     /// <summary>
-    /// 代理过载倍速的**目标值**。留空 = <see cref="DefaultProxyOverloadTarget"/>（1.0）。
+    /// **shell 过载**的倍速目标值。留空 = <see cref="DefaultProxyOverloadTarget"/>（1.0）。
+    ///
+    /// ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速正在过载**当前所连节点**的那些 Shell。
+    /// 原版把代理过载做成 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
+    /// 而 Shell 需要目标机 admin 才能开 —— 那道门槛是设计上的护栏，本程序不去拆它：
+    /// 没有 shell 在过载，它就什么都不做。
     ///
     /// 倍速**不是一次性跳到目标**，而是由 RAM 爬升线性驱动：
     /// <c>倍速 = 1 → 目标值</c> 对应 <c>RamCost → BurstTarget</c>（两者共用同一个进度）。
-    /// 这样做有两个好处：占的内存越多、压制越强（两个数字**互相印证**，作者一眼看出
-    /// 倍率在什么量级），而且这正是原版 <c>DLCTraceSlower</c> 的做法
-    /// （它把 <c>ramCost</c> 映射到 trace 减速系数），只是把"减速 trace"换成"加速代理过载"。
+    /// 于是"占的内存越多、加速越强"两个数字能互相印证 —— 这也正是原版
+    /// <c>DLCTraceSlower</c> 把 <c>ramCost</c> 映射到 trace 减速系数的做法。
     ///
-    /// <c>1.0</c> = 原版过载速度；<c>2.0</c> = 两倍。写 <c>1.0</c>（或不写）= 不加速。
+    /// <c>1.0</c> = 原版过载速度（等于不加速）；<c>2.0</c> = 两倍。
+    /// N 个 shell 的总速率 = <c>N × 倍速</c>。
     /// </summary>
     [XmlElement("ProxyOverloadTarget")] public string ProxyOverloadTargetRaw { get; set; }
 

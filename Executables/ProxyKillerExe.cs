@@ -1,5 +1,6 @@
 using Hacknet;
 using Hacknet.Gui;
+using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Managers;
 using KernelExtensions.Utilities;
@@ -17,6 +18,17 @@ namespace KernelExtensions.Executables;
 /// 它做的事只有一件 —— 按配置把 RAM 从起始值线性爬到目标值，同时用一个背景动画
 /// 把这个过程表达出来（粒子随爬升由混沌趋于整齐），并提供退出按钮。
 /// 所以界面上**不显示任何文字与数字**：爬升本身看得见，再叠读数就是噪声。
+/// </para>
+///
+/// <para>
+/// ⚠️ **它自己不瘫痪任何代理** —— 它只**加速正在过载的 Shell**。
+/// 原版把代理过载做成了 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
+/// 而 Shell 需要目标机 admin 才能开 —— 这是设计上"过载是收尾手段、不是进门手段"的护栏。
+/// 本程序**不去拆那道护栏**：没有 shell 在过载，它就什么都不做。
+/// 它做的是把"力量倍增器"这件事显式化 —— 速率 = 目标节点上的 shell 数 × 当前倍速。
+/// 顺带比原版 <c>ConShell -o</c> 更准：那个会把**所有** shell 的 <c>destComp</c> 都设成
+/// 当前所连节点；这里按每个 shell 自己的 <c>targetIP</c> 匹配，所以对着目标节点的那几个
+/// shell 会被加速，**且不要求玩家当前就连着目标节点**。
 /// </para>
 ///
 /// <para>
@@ -51,11 +63,14 @@ public class ProxyKillerExe : GameExecutable
     private float _rampRate;
     private float _mulTarget;
 
-    /// <summary>启动时所在节点（过载压制的作用对象）；为空则不施加效果。</summary>
-    private Computer _victim;
-
-    /// <summary>启动时所在节点的 ip —— 用它判断玩家有没有走开（对齐原版跟着连接走的语义）。</summary>
+    /// <summary>启动时所连的节点（仅用于日志/离开判定，不决定加速对象）。</summary>
+    private Computer _startComp;
+    /// <summary>
+    /// 启动时所连节点的 ip —— 用它判断玩家有没有走开（<c>ExitOnDisconnect</c>，对齐原版跟着连接走的语义）。
+    /// </summary>
     private string _homeIp;
+    /// <summary>上一次加速过的目标 ip —— 仅用于"换目标"时记一条日志。</summary>
+    private string _lastAccelTargetIp;
 
     // ---- 颜色与背景 ----
     private Color _accent = Color.White;
@@ -123,12 +138,12 @@ public class ProxyKillerExe : GameExecutable
         ramCost = (int)_ram;
 
         _homeIp = CurrentTargetIp();
-        _victim = os?.connectedComp ?? os?.thisComputer;
+        _startComp = os?.connectedComp;
 
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
             + $"at {_rampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
-            + $"proxy overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}"
-            + (_victim != null ? $" on '{_victim.idName}'." : "; no victim (effect idle)."));
+            + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}"
+            + (_startComp != null ? $" @ '{_startComp.idName}'." : "; nothing connected."));
     }
 
     /// <summary>
@@ -233,53 +248,81 @@ public class ProxyKillerExe : GameExecutable
         }
 
         // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 RamCost → BurstTarget。
-        // 二者共用同一个进度，所以"占的内存越多、压制越强"是能互相印证的。
-        DriveProxyOverload(t);
+        // 二者共用同一个进度，所以"占的内存越多、加速越强"是能互相印证的。
+        AccelerateTargetShells(t);
     }
 
+    // ======================= 核心：加速目标节点上的 shell 过载 =======================
+
     /// <summary>
-    /// 把当前倍速施加到目标机的代理过载进度上。
+    /// 加速**正在过载当前所连节点的那些 Shell**。
     ///
     /// <para>
-    /// 语义对齐原版 `Overload`：<c>proxyOverloadTicks -= t</c> 就是原版速度（倍速 1.0），
-    /// 所以这里按 <c>proxyOverloadTicks -= t * 倍速</c> 推进。
+    /// 加速对象是**当前所连节点**（<c>os.connectedComp</c>），不是本程序所在节点 ——
+    /// 后者永远是玩家自己的机器（扩展 exe 都跑在玩家机上），没有可加速的东西。
+    /// 且**每帧重新取**：玩家切到哪台，就加速针对哪台的那些 shell
+    /// （对齐原版 <c>ShellExe.StartOverload()</c> 里 <c>destComp = 当前所连节点</c> 的取法）。
     /// </para>
     ///
     /// <para>
-    /// 倍速**峰值恰好等于目标值**（出现在 RAM 爬满那一刻），爬升期间的平均倍速是
-    /// <c>(1 + 目标值) / 2</c>。所以"压满"这件事的快慢由 <c>RampRate</c> 决定：
-    /// 爬得快就很快到目标值并停在它上面，爬得慢则长时间停在低倍速。
+    /// 语义：倍速 <c>mul</c> = <c>Lerp(1, ProxyOverloadTarget, 爬升进度)</c>。
+    /// 目标机上每个 shell 原本每帧减 <c>t</c>（那是原版速度 = 倍速 1），
+    /// 所以这里给每个 shell 补上差额 <c>t * (mul - 1)</c>；N 个 shell 的总速率就是
+    /// <c>N * mul</c>（原版本身在多 shell 时也是简单叠加，见接力报告的调研）。
+    /// </para>
+    ///
+    /// <para>
+    /// 为什么不用 Harmony 去 patch <c>ShellExe.Update</c> 里的那一行：那要动一个 internal 类型
+    /// 的方法体，会与将来任何改 `ShellExe` 的模组打架；而这里只是在**已发生的过载**上补差额，
+    /// 不改变 shell 自己的状态机（它照旧负责"ticks ≤ 0 时置 proxyActive = false"的收尾）。
+    /// </para>
+    ///
+    /// <para>
+    /// 倍速**峰值恰好等于目标值**（出现在 RAM 爬满那一刻），爬升期间平均为 <c>(1 + 目标值) / 2</c>。
     /// <c>RampRate = 0</c> 时 RAM 不爬、倍速恒为 1（等于不加速）。
-    /// </para>
-    ///
-    /// <para>
-    /// ⚠️ 刻意**不用** <c>PortHackV2Effects.ProxyOverloadTicksHelper</c>：那个是
-    /// <c>proxyOverloadTicks += s * orgT * dt</c>（指数增长，`s=1` 时每秒翻倍），
-    /// 不是"倍速"该有的线性语义。见接力报告里记的待查项。
+    /// 当前节点没有 shell 在过载它的代理时，本程序**什么都不做**
+    /// （这是有意保留的护栏：它不替玩家拆"过载需要 admin"那道门槛，见类注释）。
     /// </para>
     /// </summary>
-    private void DriveProxyOverload(float t)
+    private void AccelerateTargetShells(float t)
     {
-        if (_victim == null || !_victim.hasProxy || !_victim.proxyActive) return;
+        float mul = MathHelper.Lerp(1f, _mulTarget, RampProgress());
+        float extraPerShell = t * (mul - 1f);
+        if (extraPerShell <= 0f) return;   // 倍速 ≤ 1：不加速（也不该去"冻结"别人的 shell）
 
-        float progress = RampProgress();
-        float mul = MathHelper.Lerp(1f, _mulTarget, progress);
-        if (mul <= 0f) return;   // 倍速 0 = 冻结该机器的过载进度
+        // 目标 = 当前所连节点，**每帧重取**；没连接就等于没有目标（不回退到玩家自己的机器）
+        Computer target = os?.connectedComp;
+        if (target == null) return;
+        if (!target.hasProxy || !target.proxyActive) return;   // 没代理 / 已瘫痪：没有可加速的东西
 
         try
         {
-            _victim.proxyOverloadTicks -= t * mul;
-            if (_victim.proxyOverloadTicks <= 0f)
+            if (AccessTools.Field(typeof(OS), "exes")?.GetValue(os) is not System.Collections.IList exes)
+                return;
+
+            int hit = 0;
+            for (int i = 0; i < exes.Count; i++)
             {
-                // 压满：代理被过载掉（与原版 Overload 到点后的结果一致）
-                _victim.proxyOverloadTicks = 0f;
-                _victim.proxyActive = false;
-                if (!_victimOverloaded)
+                object shell = exes[i];
+                if (shell == null) continue;
+
+                // 只看 ShellExe（internal，用类型名判定）；其余程序一律不碰
+                if (shell.GetType().FullName != ShellExeTypeName) continue;
+                // 只加速对着当前所连节点的 shell —— 每个 shell 的 targetIP 是它创建时所连的节点，之后不变
+                if (shellTargetIpField?.GetValue(shell) as string != target.ip) continue;
+
+                if (ticksField?.GetValue(shell) is float ticks)
                 {
-                    _victimOverloaded = true;
-                    KELog.Info($"{LogTag} '{_victim.idName}' proxy overloaded (ram reached "
-                        + $"{_ram.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}MB).");
+                    float next = ticks - extraPerShell;
+                    ticksField.SetValue(shell, next > 0f ? next : 0f);
+                    hit++;
                 }
+            }
+
+            if (hit > 0 && _lastAccelTargetIp != target.ip)
+            {
+                _lastAccelTargetIp = target.ip;
+                KELog.Info($"{LogTag} accelerating {hit} shell(s) overload @ '{target.idName}'.");
             }
         }
         catch (Exception ex)
@@ -287,17 +330,29 @@ public class ProxyKillerExe : GameExecutable
             if (!_effectWarned)
             {
                 _effectWarned = true;
-                KELog.Warn($"{LogTag} could not drive proxy overload: {ex.Message}");
+                KELog.Warn($"{LogTag} could not accelerate shells: {ex.Message}");
             }
         }
     }
 
+    /// <summary>原版 ShellExe 的类型全名（internal 类型，只能按名字找）。</summary>
+    private const string ShellExeTypeName = "Hacknet.ShellExe";
+
+    /// <summary><c>ExeModule.targetIP</c> —— 每个 shell 绑定的目标节点，创建后不变。</summary>
+    private static readonly System.Reflection.FieldInfo shellTargetIpField =
+        AccessTools.Field(typeof(ExeModule), "targetIP");
+
+    /// <summary><c>ShellExe.proxyOverloadTicks</c> —— 这个 shell 正在推进的过载进度。</summary>
+    private static readonly System.Reflection.FieldInfo ticksField =
+        AccessTools.TypeByName(ShellExeTypeName)?.GetField("proxyOverloadTicks",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.NonPublic);
+
+    private bool _effectWarned;
+
     /// <summary>RAM 爬升进度 0~1（= 倍速爬升进度）。起始值 == 目标值时视为已满。</summary>
     private float RampProgress()
         => _target > _ramStart ? MathHelper.Clamp((_ram - _ramStart) / (_target - _ramStart), 0f, 1f) : 1f;
-
-    private bool _victimOverloaded;
-    private bool _effectWarned;
 
     // ======================= Draw =======================
 
