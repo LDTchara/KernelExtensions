@@ -171,20 +171,29 @@ public class ProxyTunerExe : GameExecutable
     /// <summary>
     /// 找出存档里所有属于本程序的 flag（<c>ProxyTuner_*</c>）。
     /// 正常情况下应恰好一个（flag = 入口牌）；0 个 → 锁定；多个 → 作者配置错误。
+    ///
+    /// ⚠️ 用**注入的 os 实例**取 flag（对齐 CustomTrialExe 的 <c>os.Flags</c>），
+    /// 不用静态的 <c>OS.currentInstance</c> —— 后者是全局，不匹配时会让这里静默变成"没配置"。
     /// </summary>
-    private static List<string> FindProxyTunerFlags()
+    private List<string> FindProxyTunerFlags()
     {
         List<string> found = new();
-        ProgressionFlags pf = OS.currentInstance?.Flags;
-        if (pf == null) return found;
+        ProgressionFlags pf = os?.Flags;
+        if (pf == null)
+        {
+            KELog.Warn($"{LogTag} os.Flags is unavailable on this instance; treating as no config.");
+            return found;
+        }
 
         // ProgressionFlags 只暴露 HasFlag / GetFlagStartingWith（后者仅返回第一个），
         // 没有「枚举全部」的公开 API；要检出多个 flag 只能反射读内部 List。
         // 反射失败时退化为「取第一个匹配」——仍能工作，只是检不出多 flag 的情形。
+        bool enumerated = false;
         try
         {
             if (_progressionFlagsField?.GetValue(pf) is List<string> all)
             {
+                enumerated = true;
                 foreach (string f in all)
                     if (f != null && f.StartsWith(ProxyTunerConfig.FlagPrefix, StringComparison.Ordinal))
                         found.Add(f);
@@ -193,9 +202,18 @@ public class ProxyTunerExe : GameExecutable
         catch (Exception ex)
         {
             KELog.Warn($"{LogTag} could not enumerate flags ({ex.Message}); falling back to first match.");
+        }
+
+        if (!enumerated)
+        {
             string one = pf.GetFlagStartingWith(ProxyTunerConfig.FlagPrefix);
             if (!string.IsNullOrEmpty(one)) found.Add(one);
         }
+
+        // 诊断：区分「flag 没进存档 / 前缀写错 / 反射失败」
+        KELog.Info($"{LogTag} flag scan: prefix='{ProxyTunerConfig.FlagPrefix}', "
+            + $"enumerated={enumerated}, matched={found.Count}"
+            + (found.Count > 0 ? $" [{string.Join(", ", found)}]" : string.Empty));
         return found;
     }
 

@@ -181,20 +181,30 @@ public class PortHackV2Exe : GameExecutable
     /// <summary>
     /// 找出存档里所有属于本程序的 flag（`PortHackV2_*`）。
     /// 正常情况下应恰好一个（flag = 入口牌）；0 个 → 锁定；多个 → 作者配置错误。
+    ///
+    /// ⚠️ 用**注入的 os 实例**取 flag（对齐 CustomTrialExe 的 <c>os.Flags</c>），
+    /// 不用静态的 <c>OS.currentInstance</c>：那是个全局，在它没被赋值 / 指向别的实例时，
+    /// 会让这里静默变成"没配置"，而真正原因（找错了对象）完全看不出来。
     /// </summary>
-    private static List<string> FindConfigFlags()
+    private List<string> FindConfigFlags()
     {
         List<string> found = new();
-        ProgressionFlags pf = OS.currentInstance?.Flags;
-        if (pf == null) return found;
+        ProgressionFlags pf = os?.Flags;
+        if (pf == null)
+        {
+            KELog.Warn("[PortHackV2] os.Flags is unavailable on this instance; treating as no config.");
+            return found;
+        }
 
         // ProgressionFlags 只暴露 HasFlag / GetFlagStartingWith（后者仅返回第一个），
         // 没有"枚举全部"的公开 API；要检出多个 flag 只能反射读内部 List。
         // 反射失败时退化为"取第一个匹配"——仍能工作，只是检不出多 flag 的情形。
+        bool enumerated = false;
         try
         {
             if (_progressionFlagsField?.GetValue(pf) is List<string> all)
             {
+                enumerated = true;
                 foreach (string f in all)
                     if (f != null && f.StartsWith(PortHackV2Config.FlagPrefix, StringComparison.Ordinal))
                         found.Add(f);
@@ -203,9 +213,20 @@ public class PortHackV2Exe : GameExecutable
         catch (Exception ex)
         {
             KELog.Warn($"[PortHackV2] could not enumerate flags ({ex.Message}); falling back to first match.");
+        }
+
+        if (!enumerated)
+        {
+            // 反射不可用（字段改名 / 取不到）：退化为"取第一个匹配"，至少单 flag 能跑
             string one = pf.GetFlagStartingWith(PortHackV2Config.FlagPrefix);
             if (!string.IsNullOrEmpty(one)) found.Add(one);
         }
+
+        // 诊断：作者排查「挂了 flag 却说没配置」时，这条日志能直接区分
+        // 「flag 没进存档 / 前缀写错 / 反射失败」三种情况
+        KELog.Info($"[PortHackV2] flag scan: prefix='{PortHackV2Config.FlagPrefix}', "
+            + $"enumerated={enumerated}, matched={found.Count}"
+            + (found.Count > 0 ? $" [{string.Join(", ", found)}]" : string.Empty));
         return found;
     }
 
