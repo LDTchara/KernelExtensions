@@ -203,12 +203,16 @@ namespace KernelExtensions.Executables
 
             // ============ 原版 PortHack 立方体序列（3D，走离屏）============
 
+            // ⚠️ 原版序列内部自己累加时间（DrawSequence 里的 elapsedTime += t），
+            // 而且它的旋转是 rotTime * 1.5 直接当弧度用 —— 每秒约 86°、20 层还各自错开，
+            // 实际观感是"糊成一片"。这里用一个缩放后的时间喂它，让它慢下来能看清层。
             _effects.Add(new EffectEntry
             {
                 Name = "PortHackCubeSequence",
-                Note = "vanilla PortHack 20-layer cube",
+                Note = "vanilla PortHack 20-layer cube (slowed down)",
                 Duration = 0f,
-                Draw3D = (gd, sb, b, t) => _cubeSeq.DrawSequence(b, t, 10f)
+                Update = dt => _cubeTime += dt * CubeTimeScale,
+                Draw3D = (gd, sb, b, t) => _cubeSeq.DrawSequence(b, _cubeTime, 10f)
             });
 
             if (_effects.Count > 0)
@@ -280,11 +284,21 @@ namespace KernelExtensions.Executables
             // 换条目时重置一次性状态，否则上一个效果的残留会让观感串味
             _polySeq.Reset();
             _cubeSeq.Reset();
+            _cubeTime = 0f;
             _flowField.Reset();
             _timer = 0f;
             _currentIndex = index;
             _statusText = StatusFor(index);
         }
+
+        /// <summary>
+        /// 原版 PortHack 立方体序列的时间缩放。
+        /// 它原生速度大约每秒 86°（二十层还各错开 0.1 弧度），直接看是糊的；
+        /// 缩到 1/6 之后能看清一层层嵌套在转。
+        /// </summary>
+        private const float CubeTimeScale = 0.16f;
+
+        private float _cubeTime;
 
         public override void Draw(float t)
         {
@@ -311,6 +325,10 @@ namespace KernelExtensions.Executables
 
             // 负荷指示：只有自绘流场在乎它，但统一显示便于对照
             string load = "load " + (LoadRamp() * 100f).ToString("000") + "%";
+            // 流场额外报一段速度层信息 —— 排查"分层"与"粒子消失"时看它最直接
+            if (cur.Draw2D != null && cur.Name == "FlowField")
+                load += $"  speed x{_flowField.MinSpeedFactor:0.00}~x{_flowField.MaxSpeedFactor:0.00}"
+                     + $" /{_flowField.SpeedTiers}tier  life x{_flowField.LifeGain:0.00}";
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
 
