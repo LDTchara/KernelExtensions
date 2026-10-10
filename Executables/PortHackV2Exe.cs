@@ -1,6 +1,7 @@
 using Hacknet;
 using Hacknet.Gui;
 using KernelExtensions.Configs;
+using KernelExtensions.Managers;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -172,6 +173,9 @@ public class PortHackV2Exe : GameExecutable
         _sequence.SpinUpSeconds = CurrentConfig.SpinUpSeconds;
         _sequence.SpinUpRatio = CurrentConfig.SpinUpRatio;
         _sequence.SpinDownSeconds = CurrentConfig.SpinDownSeconds;
+
+        _accent = CurrentConfig.AccentColor;
+        _accentStr = CurrentConfig.AccentColorRaw;
 
         CurrentState = PortHackV2State.Listing;
     }
@@ -389,6 +393,9 @@ public class PortHackV2Exe : GameExecutable
 
         if (_targetIp == null) _targetIp = Target?.ip;
 
+        // 强调色逐帧刷新（动态色会随时间变化）；放在状态分支之前，所有状态都吃得到
+        RefreshAccent();
+
         switch (CurrentState)
         {
             case PortHackV2State.Locked:
@@ -596,7 +603,7 @@ public class PortHackV2Exe : GameExecutable
         string title = string.IsNullOrEmpty(CurrentConfig.Title)
             ? KELoc.Loc("PORT_HACK_V2_LISTING_TITLE", "PortHackV2")
             : CurrentConfig.Title;
-        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, os.highlightColor);
+        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, _accent);
 
         List<ListingRow> rows = BuildListingRows();
         int y = ContentTop + 26;
@@ -619,7 +626,7 @@ public class PortHackV2Exe : GameExecutable
 
             // 左侧状态点：满足 = 高亮，未满足 = 暗
             RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, bar.Height - 8,
-                row.Met ? os.highlightColor : os.darkBackgroundColor);
+                row.Met ? _accent : os.darkBackgroundColor);
 
             spriteBatch.DrawString(GuiData.smallfont, row.Label,
                 new Vector2(bar.X + 16, bar.Y + 4), Color.White * 0.95f);
@@ -649,7 +656,7 @@ public class PortHackV2Exe : GameExecutable
         string title = string.IsNullOrEmpty(CurrentConfig.Title)
             ? KELoc.Loc("PORT_HACK_V2_CRACKING_TITLE", "Cracking...")
             : CurrentConfig.Title;
-        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, os.highlightColor);
+        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, _accent);
 
         // 动画区：批 3 由 PortHackV2Sequence 接管（此处先出 3D 画布）
         Rectangle anim = new Rectangle(x, ContentTop + 24, w, Math.Max(40, ContentBottom - ContentTop - 24 - 16 - 22 - 8));
@@ -687,7 +694,7 @@ public class PortHackV2Exe : GameExecutable
         {
             float p = rt.Progress;
             RenderedRectangle.doRectangle(barX, bar.Y, (int)(barW * p), bar.Height,
-                (rt.Succeeded ? os.highlightColor : os.lockedColor) * 0.9f);
+                (rt.Succeeded ? _accent : os.lockedColor) * 0.9f);
 
             string pct = $"{(int)(p * 100f)}%";
             spriteBatch.DrawString(GuiData.detailfont, pct,
@@ -699,7 +706,7 @@ public class PortHackV2Exe : GameExecutable
     private void DrawProgressBar(Rectangle bar, float progress, bool showSeconds)
     {
         RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, os.darkBackgroundColor * 0.9f);
-        RenderedRectangle.doRectangle(bar.X, bar.Y, (int)(bar.Width * progress), bar.Height, os.highlightColor);
+        RenderedRectangle.doRectangle(bar.X, bar.Y, (int)(bar.Width * progress), bar.Height, _accent);
 
         string pct = $"{(int)(progress * 100f)}%";
         Vector2 ps = GuiData.smallfont.MeasureString(pct);
@@ -802,7 +809,7 @@ public class PortHackV2Exe : GameExecutable
             spriteBatch.GraphicsDevice.Clear(Color.Transparent);
             _rtBatch.Begin();
             _sequence.RenderFrame(spriteBatch.GraphicsDevice, _rtBatch,
-                new Rectangle(0, 0, area.Width, area.Height), Color.White);
+                new Rectangle(0, 0, area.Width, area.Height), _accent);
             _rtBatch.End();
             spriteBatch.GraphicsDevice.SetRenderTarget(previous);
 
@@ -821,6 +828,18 @@ public class PortHackV2Exe : GameExecutable
     }
 
     private bool _animWarned;
+
+    /// <summary>
+    /// 强调色（标题 / 底部总进度条 / 动画立体线框）。
+    /// 动态色（CC 预设、Rainbow、Gradient）必须**逐帧重算**，所以在 Update 里刷新而不是 Draw 里现算 ——
+    /// Draw 一帧要画十几处，每处都走一遍解析既浪费又可能在同一帧里拿到不同相位。
+    /// </summary>
+    private Color _accent = Color.White;
+    private string _accentStr;
+
+    /// <summary>刷新强调色：留空 / NONE 时返回白色（GetDynamicColor 内部已处理）。</summary>
+    private void RefreshAccent()
+        => _accent = CustomColorManager.GetDynamicColor(_accentStr, PortHackV2Config.DefaultAccentColor);
 
     /// <summary>
     /// 程序被移除时释放离屏资源（RenderTarget / 专用 SpriteBatch / 3D 缓冲）。

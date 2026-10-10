@@ -1,4 +1,5 @@
 using KernelExtensions.Utilities;
+using Microsoft.Xna.Framework;
 using System.Xml.Serialization;
 
 namespace KernelExtensions.Configs;
@@ -29,7 +30,7 @@ public class ProxyTunerConfig
     public const float MaxSpeedMultiplier = 100f;
 
     /// <summary>本程序 RAM 占用的默认值（MB）。</summary>
-    public const int DefaultRamCost = 30;
+    public const int DefaultRamCost = 100;
 
     /// <summary>RAM 占用下限（MB）。</summary>
     public const float MinRamCost = 0f;
@@ -100,21 +101,25 @@ public class ProxyTunerConfig
 
     // ======================= XML 原始值（string 承接）与解析结果 =======================
 
-    /// <summary>终端与窗口标题里显示的程序名。留空 = <c>ProxyTuner</c>（注册名 #KE_PROXYTUNER# 不受影响）。</summary>
+    /// <summary>终端与窗口标题里显示的程序名。留空 = <c>ProxyTuner</c>（注册名 #PROXYTUNER# 不受影响）。</summary>
     [XmlElement("ProgramName")] public string ProgramName { get; set; } = "ProxyTuner";
 
     /// <summary>代理过载倍数原始值。留空 = 1.0；1.0 = 原版速度，0 = 冻结（不推进过载）。</summary>
     [XmlElement("SpeedMultiplier")] public string SpeedMultiplierRaw { get; set; }
 
-    /// <summary>本程序 RAM 占用原始值（MB）。留空 = 30。</summary>
+    /// <summary>本程序 RAM 占用原始值（MB）。留空 = <see cref="DefaultRamCost"/>（100）。</summary>
     [XmlElement("RamCost")] public string RamCostRaw { get; set; }
 
     /// <summary>
-    /// 主题高亮色原始值，走 <see cref="ColorHelper.ParseStaticColor"/> 的语法
-    /// （<c>#RGB</c> / <c>#RRGGBB</c> / <c>#AARRGGBB</c> / <c>R,G,B[,A]</c> / XNA 命名色）。
-    /// 留空 / <c>NONE</c> / 解析失败 = 用当前主题高亮色。颜色在运行时解析（主题色是运行期值）。
+    /// 强调色（界面文字 / 深度点阵粒子的颜色）。留空 / <c>NONE</c> = <see cref="DefaultAccentColor"/>（白色）。
+    /// 支持全部写法：CustomColor 预设名、动态色（<c>LDTchara</c> / <c>Rainbow</c> / <c>Gradient:…</c>）、
+    /// <c>#RGB</c> / <c>#RRGGBB</c> / <c>#AARRGGBB</c>、<c>R,G,B[,A]</c>、XNA 命名色；
+    /// 由 CustomColorManager 统一解析，动态色逐帧刷新。
     /// </summary>
     [XmlElement("AccentColor")] public string AccentColorRaw { get; set; }
+
+    /// <summary>强调色默认值：白色（程序自带配色，不跟随主题高亮色）。</summary>
+    [XmlIgnore] public static Color DefaultAccentColor => Color.White;
 
     /// <summary>动画形态原始值。留空 = <see cref="StyleDepthDotGrid"/>；未知值 → Warn + 回退默认。</summary>
     [XmlElement("AnimationStyle")] public string AnimationStyleRaw { get; set; }

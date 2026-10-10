@@ -105,8 +105,16 @@ namespace KernelExtensions
             KELog.Info("EffectsPlayer registered.");
             ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
             KELog.Info("WPTEST registered.");
-            ExecutableManager.RegisterExecutable<ProxyTunerExe>("#KE_PROXYTUNER#");
+            ExecutableManager.RegisterExecutable<ProxyTunerExe>("#PROXYTUNER#");
             KELog.Info("ProxyTuner registered.");
+            // PortHackV2：#PORTHACKV2#（"全称双成分"命名，与上面几个同风格 —— 立规要求的
+            // 新增名 #KE_ 前缀是为了防跨扩展冲突，而带扩展语义的全称名已足够独特，故不叠前缀；
+            // 此名须与 PortHackV2Config 的配置目录 / 各示例里的写法一致）
+            ExecutableManager.RegisterExecutable<PortHackV2Exe>("#PORTHACKV2#");
+            KELog.Info("PortHackV2 registered.");
+            //
+            // ⚠️ 本节各注册之间**无先后依赖**：RegisterExecutable 只把类型登记进表，
+            //    扩展加载器在玩家真正执行时才实例化；唯一有顺序要求的是上面那条无痕互斥 handler。
 
             // ============================================================
             //  2. Action 注册（按系统分组）
@@ -228,7 +236,7 @@ namespace KernelExtensions
             // ============================================================
             DaemonManager.RegisterDaemon<FlightDaemon>();
             KELog.Info("FlightDaemon registered.");
-            DaemonManager.RegisterDaemon<global::KernelExtensions.Daemons.CustomHeartDaemon>();
+            DaemonManager.RegisterDaemon<CustomHeartDaemon>();
             KELog.Info("CustomHeartDaemon registered.");
 
             // ============================================================
@@ -262,8 +270,6 @@ namespace KernelExtensions
             RegisterActionWithFallback<PortProxySolveAction>("PortProxySolve");
             RegisterActionWithFallback<PortProxyResetAction>("PortProxyReset");
 
-            // PortHackV2（#KE_PORTHACKV2#）：端口破解器（flag 驱动，配置在扩展根的 PortHackV2/）
-            ExecutableManager.RegisterExecutable<PortHackV2Exe>("#KE_PORTHACKV2#");
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
             PorthackAutoPatch.ApplyPatch(_harmony);
             // RAM 显示：RamModule internal，同样需运行时反射 patch

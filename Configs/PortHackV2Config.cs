@@ -1,5 +1,7 @@
 using HarmonyLib;
+using KernelExtensions.Managers;
 using KernelExtensions.Utilities;
+using Microsoft.Xna.Framework;
 using Pathfinder.Port;
 using System;
 using System.Collections.Generic;
@@ -89,7 +91,7 @@ public class PortHackV2Config
 {
     // 属性而非字段，便于后续添加验证或变更通知
 
-    /// <summary>终端里显示的程序名（对齐 PhaseSwift 的 ProgramName）。注册名 #KE_PORTHACKV2# 不受影响。</summary>
+    /// <summary>终端里显示的程序名（对齐 PhaseSwift 的 ProgramName）。注册名 #PORTHACKV2# 不受影响。</summary>
     [XmlElement("ProgramName")] public string ProgramName { get; set; } = "PortHackV2";
 
     public bool Usable { get; set; } = true;
@@ -133,6 +135,26 @@ public class PortHackV2Config
 
     /// <summary>动画立体的解析结果。</summary>
     [XmlIgnore] public KPlatonicShape PolyhedronShape { get; private set; } = KPlatonicShape.Cube;
+
+    /// <summary>
+    /// 强调色：界面标题、底部总进度条、动画立体线框都用它。
+    ///
+    /// 留空 / <c>NONE</c> = <see cref="DefaultAccentColor"/>（**白色**）。
+    /// 支持全部写法 —— CustomColor 预设名、动态色（<c>LDTchara</c> / <c>Rainbow</c> / <c>Gradient:…</c>）、
+    /// <c>#RGB</c> / <c>#RRGGBB</c> / <c>#AARRGGBB</c>、<c>R,G,B[,A]</c>、XNA 命名色；
+    /// 由 CustomColorManager 统一解析，动态色逐帧刷新。
+    /// 目标机状态的语义色（locked / unlocked）仍走主题色，不归此项管。
+    /// </summary>
+    [XmlElement("AccentColor")] public string AccentColorRaw { get; set; }
+
+    /// <summary>强调色默认值：白色（程序自带配色，不跟随主题高亮色）。</summary>
+    [XmlIgnore] public static Color DefaultAccentColor => Color.White;
+
+    /// <summary>
+    /// 解析后的强调色（静态部分；动态色由消费端每帧向 CustomColorManager 取）。
+    /// 供 <c>OnInitialize</c> 之后不逐帧刷新的调用点使用。
+    /// </summary>
+    [XmlIgnore] public Color AccentColor { get; private set; } = Color.White;
 
     /// <summary>
     /// 起转（加速）时长**占总时长的比例**。留空 = 0.1（总时长的 10%）。
@@ -280,6 +302,10 @@ public class PortHackV2Config
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 
         PolyhedronShape = ParsePolyhedron(PolyhedronRaw);
+
+        // 强调色：动态色（CC 预设/彩虹/渐变）也要能解析 —— 与其它颜色配置项走同一个入口。
+        // 留空 / NONE 时 GetDynamicColor 直接返回默认色（白色），故不需要额外判空。
+        AccentColor = CustomColorManager.GetDynamicColor(AccentColorRaw, DefaultAccentColor);
 
         SpinUpRatio = ConfigValue.ParseInRange(SpinUpRatioRaw, 0.1f, 0f, 1f, out bool surOk);
         if (!surOk)

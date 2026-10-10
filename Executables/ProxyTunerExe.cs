@@ -2,6 +2,7 @@ using Hacknet;
 using Hacknet.Effects;
 using Hacknet.Gui;
 using KernelExtensions.Configs;
+using KernelExtensions.Managers;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -12,7 +13,7 @@ using System.Reflection;
 namespace KernelExtensions.Executables;
 
 /// <summary>
-/// ProxyTuner（注册名 #KE_PROXYTUNER#）—— 游戏内实时调节**代理破解倍数**的调参程序。
+/// ProxyTuner（注册名 #PROXYTUNER#）—— 游戏内实时调节**代理破解倍数**的调参程序。
 ///
 /// 定位：给扩展作者调参用的工具，不是入侵程序。它做两件事：
 ///   1. 用原版现成的 <see cref="DepthDotGridEffect"/> 铺一块可实时改参数的动画区；
@@ -72,6 +73,15 @@ public class ProxyTunerExe : GameExecutable
 
     private ProxyTunerConfig _cfg;
     private Color _accent;
+    /// <summary>强调色的原始配置串（动态色要每帧拿它重算）。</summary>
+    private string _accentStr;
+
+    /// <summary>
+    /// 重算强调色。动态色（CC 预设 / Rainbow / Gradient）随时间变化，必须逐帧调用；
+    /// 留空 / NONE 时 CustomColorManager 直接返回默认色（白色）。
+    /// </summary>
+    private void RefreshAccent()
+        => _accent = CustomColorManager.GetDynamicColor(_accentStr, ProxyTunerConfig.DefaultAccentColor);
     private DepthDotGridEffect _grid;
     private readonly List<TuneRow> _rows = new();
 
@@ -132,8 +142,11 @@ public class ProxyTunerExe : GameExecutable
         }
         ramCost = _cfg.RamCost;
 
-        // 颜色在运行时解析：主题高亮色是运行期值，配置留空 / NONE / 解析失败都保留它
-        _accent = ColorHelper.ParseStaticColor(_cfg.AccentColorRaw, os.highlightColor);
+        // 强调色统一走 CustomColorManager：留空 / NONE = 配置默认（白色），
+        // 并支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…）。
+        // 动态色会随时间变化，故在 Update 里逐帧重算而不是在这里定格一次。
+        _accentStr = _cfg.AccentColorRaw;
+        RefreshAccent();
 
         try
         {
@@ -404,6 +417,9 @@ public class ProxyTunerExe : GameExecutable
         if (isExiting) return;
 
         if (_flashTimer > 0f) _flashTimer -= t;
+
+        // 强调色逐帧刷新（动态色随时间变化）
+        RefreshAccent();
 
         switch (_phase)
         {
