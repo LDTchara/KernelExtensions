@@ -251,6 +251,17 @@ namespace KernelExtensions
             // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
             RegisterActionWithFallback<PortControlAction>("PortControl");
 
+            // 目标机原子动作：一个动作干一件事（端口 / 防火墙 / 代理分别独立）
+            RegisterActionWithFallback<PortOpenAction>("PortOpen");
+            RegisterActionWithFallback<PortCloseAction>("PortClose");
+            RegisterActionWithFallback<PortFirewallAddAction>("PortFirewallAdd");
+            RegisterActionWithFallback<PortFirewallSolveAction>("PortFirewallSolve");
+            RegisterActionWithFallback<PortFirewallRerollAction>("PortFirewallReroll");
+            RegisterActionWithFallback<PortFirewallConfigureAction>("PortFirewallConfigure");
+            RegisterActionWithFallback<PortProxyAddAction>("PortProxyAdd");
+            RegisterActionWithFallback<PortProxySolveAction>("PortProxySolve");
+            RegisterActionWithFallback<PortProxyResetAction>("PortProxyReset");
+
             // PortHackV2（#KE_PORTHACKV2#）：端口破解器（flag 驱动，配置在扩展根的 PortHackV2/）
             ExecutableManager.RegisterExecutable<PortHackV2Exe>("#KE_PORTHACKV2#");
             // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
