@@ -67,7 +67,6 @@ namespace KernelExtensions.Executables
         // ---- 3D：离屏渲染资源（懒建）----
         private RenderTarget2D _rt;
         private SpriteBatch _rtBatch;
-        private PortHackCubeSequence _cubeSeq;
         private readonly PortHackV2Sequence _polySeq = new();
 
         // ---- 新建的自绘效果 ----
@@ -98,7 +97,6 @@ namespace KernelExtensions.Executables
             _raindrops.Init(os.content);
             _depthDot = new DepthDotGridEffect(os.content);
             _rainbowConfig = Managers.CustomColorManager.ParseColorString("LDTchara");
-            _cubeSeq = new PortHackCubeSequence();
             _flowField = new FlowFieldEffect();
             // 保持原先"高度 55 → 218px/s、555 → 450px/s"的曲线，改用系数式表达
             _flowField.SpeedCoefficient = 450f / (float)Math.Pow(555f, _flowField.SpeedExponent);
@@ -205,25 +203,19 @@ namespace KernelExtensions.Executables
                 });
             }
 
-            // ============ 原版 PortHack 立方体序列（3D，走离屏）============
+            // ============ 原版 PortHack 立方体序列（自绘，3D，走离屏）============
             //
-            // ⚠️ 缩放 t 是**控制不住**这个序列的：它内部把累计时间切成
-            // startup(0.6) → spinup(1.0) → runtime(到 totalTime-1.7) → spindown → idle 五段推进，
-            // 缩放 t 等于把**整条时间线**一起拉长 —— 前 1.6 内部秒会被拉成 64 真实秒，
-            // 期间它停在"浮现/起转"，而这几段里驱动画面变化的是各层缩放（num8 的幂次），
-            // 观感上就不是"慢慢转"而是别的运动。
-            //
-            // 所以这里**不让它自己管时间**：我们按真实时间喂一个"恰好走完前两段"的推进量，
-            // 之后让 elapsedTime 停在 runtime 起点（ShouldCentralSpinInfinitley 保证不进急刹），
-            // 再接一个**固定角速度**的时钟。于是转速完全由 DRIVE_RATE 决定，可控。
-            _cubeSeq.ShouldCentralSpinInfinitley = true;
+            // ⚠️ 不调用原版 PortHackCubeSequence.DrawSequence：它的时间线藏在内部五个分支里、
+            // 还会自累加 elapsedTime，实测无论把喂进去的 t 降到多小画面都在狂转（t/frame 已到
+            // 0.0006 仍如此），控不住。改为用 KECube3D 反射桥自己画那 20 层 ——
+            // 视觉参数照搬原版，时间线是我们自己的。
             _effects.Add(new EffectEntry
             {
                 Name = "PortHackCubeSequence",
-                Note = "vanilla PortHack 20-layer cube (own rotate rate)",
+                Note = "vanilla PortHack 20-layer cube (own timeline)",
                 Duration = 0f,
                 Update = dt => UpdateCubePreview(dt),
-                Draw3D = (gd, sb, b, t) => _cubeSeq.DrawSequence(b, _cubeTime, 10f)
+                Draw3D = (gd, sb, b, t) => DrawCubeLayers(gd, b)
             });
             if (_effects.Count > 0)
                 _statusText = StatusFor(0);
@@ -294,8 +286,8 @@ namespace KernelExtensions.Executables
         {
             // 换条目时重置一次性状态，否则上一个效果的残留会让观感串味
             _polySeq.Reset();
-            _cubeSeq.Reset();
-            _cubeTime = 0f;
+            _cubeAngle = 0f;
+            _cubeGrow = 0f;
             _cubeRealTime = 0f;
             _cubeFrames = 0;
             _flowField.Reset();
@@ -305,55 +297,77 @@ namespace KernelExtensions.Executables
         }
 
         /// <summary>
-        /// 立方体预览的驱动。
+        /// 立方体序列的驱动 —— **不再调用原版 <c>PortHackCubeSequence.DrawSequence</c>**。
         ///
         /// <para>
-        /// ⚠️ <c>DrawSequence(dest, t, totalTime)</c> 的 <c>t</c> 是**帧增量**（原版传的就是
-        /// <c>OS.Update</c> 的帧间隔），**不是累计时钟**。早先的实现把"累计到 1.6 秒的时钟"
-        /// 当成 t 每帧传进去，于是序列每帧都按 1.6 内部秒推进 ——
-        /// <c>rotTime += 1.6</c> 每帧 ≈ 137 度/帧，60fps 下约 22 圈/秒，正是实测到的那种狂转。
+        /// 为什么弃用它：那个序列把时间线藏在自己内部（startup/spinup/runtime/spindown/idle 五个
+        /// 分支 + <c>elapsedTime</c> 自累加），而且用 <c>rotTime * 1.5</c> 直接当弧度。
+        /// 实测无论怎么调喂进去的 t，画面都在狂转（t/frame 已经降到 0.0006 仍然如此），
+        /// 说明它的内部状态与外部驱动脱节、控不住。与其继续猜它的语义，
+        /// 不如**用项目已有的 KECube3D 反射桥自己画那 20 层** —— 参数全在手里。
         /// </para>
         ///
         /// <para>
-        /// 正确做法：<c>t</c> 恒为"本帧要推进的内部秒数"，只调节它的大小来控速：
-        /// <list type="bullet">
-        ///   <item>前 <see cref="STARTUP_S"/>+<see cref="SPINUP_S"/> 内部秒：按 <c>dt × 1</c>
-        ///     推进 —— 1.6 真实秒走完浮现与起转（与原版同速）。</item>
-        ///   <item>之后：按 <c>dt × 目标速率 / 原生速率</c> 推进，于是匀速段转速 =
-        ///     <see cref="CUBE_RATE_DEG_PER_SEC"/>。配合
-        ///     <c>ShouldCentralSpinInfinitley = true</c>（runtime 段永不结束）就不会进急刹。</item>
-        /// </list>
+        /// 视觉参数照搬原版 <c>DrawSequence</c>：20 层、基准缩放 2.6、每层 +0.25、
+        /// 基础旋转 (35.4°, 45°, 0)，层间 Y 偏移 -0.1 弧度、缩放按 0.85 的幂递减。
         /// </para>
         /// </summary>
         private void UpdateCubePreview(float dt)
         {
-            const float RampTarget = STARTUP_S + SPINUP_S;
+            // 角速度：目标度数/秒 → 弧度/秒
+            _cubeAngle += dt * MathHelper.ToRadians(CUBE_RATE_DEG_PER_SEC);
+            if (_cubeAngle > MathHelper.TwoPi) _cubeAngle -= MathHelper.TwoPi;
 
-            // 原生速率：内部秒 → 度数（rotTime 每 1 内部秒让旋转角走 1.5 弧度）
-            const float NativeDegPerInternalSec = 1.5f * 180f / MathHelper.Pi;   // ≈ 85.9
+            // 浮现：1.2 秒内从 0 长到 1（层间缩放按它的幂次收拢，形成"由内向外展开"）
+            if (_cubeGrow < 1f)
+                _cubeGrow = Math.Min(1f, _cubeGrow + dt / CUBE_GROW_SECONDS);
 
-            float advance;
-            if (_cubeTime < RampTarget)
-                advance = dt;                                                    // 前两段：原生速度
-            else
-                advance = dt * (CUBE_RATE_DEG_PER_SEC / NativeDegPerInternalSec); // 匀速段：按目标角速度
-
-            _cubeTime += advance;
-            _cubeFrameAdvance = advance;    // 面板显示用
+            _cubeFrameAdvance = dt * (CUBE_RATE_DEG_PER_SEC / 360f);   // 面板用：本帧转过的圈数
         }
 
         /// <summary>立方体匀速段的角速度（度/真实秒）—— 想调快慢只改这一个数（一圈秒数 = 360 / 它）。</summary>
         private const float CUBE_RATE_DEG_PER_SEC = 12f;
 
-        /// <summary>最近一帧实际喂给序列的内部秒数（面板显示用）。</summary>
+        /// <summary>
+        /// 画那 20 层线框立方体。视觉参数照搬原版 <c>PortHackCubeSequence</c>：
+        /// 基准缩放 2.6、每层 +0.25，基础旋转 (35.4°, 45°, 0)，
+        /// 层间 Y 偏移 0.1 弧度、缩放按 0.85 的幂向内收拢（浮现靠 <see cref="_cubeGrow"/> 展开）。
+        /// </summary>
+        private void DrawCubeLayers(GraphicsDevice gd, Rectangle dest)
+        {
+            float baseYaw = MathHelper.ToRadians(45f) + _cubeAngle;
+
+            for (int i = 0; i < CUBE_LAYERS; i++)
+            {
+                // 层内收拢系数：i 越大越小（num8 的 i 次幂）—— 这就是"由内向外展开"的层次感
+                float inward = 1f;
+                for (int j = 0; j < i; j++) inward *= 0.85f;
+                float grow = MathHelper.Lerp(0.3f, 1f, _cubeGrow);
+
+                float scale = 2.6f + (i / 4f) * inward * grow;
+                float yaw = baseYaw - i * 0.1f;      // 层间错开，转起来能看见嵌套
+
+                KECube3D.RenderWireframe(gd,
+                    new Vector3(dest.X / 2f, 0f, 0f),
+                    scale,
+                    new Vector3(MathHelper.ToRadians(35.4f), yaw, 0f),
+                    Color.White);
+            }
+        }
+
+        /// <summary>浮现时长（秒）：层间缩放从这个时间内从 0 展开到满。</summary>
+        private const float CUBE_GROW_SECONDS = 1.2f;
+
+        /// <summary>层数（与原版一致）。</summary>
+        private const int CUBE_LAYERS = 20;
+
+        /// <summary>累计旋转角（弧度，归一到 0~2π）。</summary>
+        private float _cubeAngle;
+        /// <summary>浮现进度 0~1。</summary>
+        private float _cubeGrow;
+
+        /// <summary>最近一帧转过的圈数（面板显示用）。</summary>
         private float _cubeFrameAdvance;
-
-        /// <summary>立方体预览的时间线常量（原版分段：浮现 0.6s、起转 1.0s）。</summary>
-        private const float STARTUP_S = 0.6f;
-        private const float SPINUP_S = 1f;
-        private const float RUNTIME_END_S = 10f - 1.7f;
-
-        private float _cubeTime;
 
         /// <summary>底部按钮条高度（内容区之外、窗口之内）。</summary>
         private const int BUTTON_ROW_H = 30;
@@ -424,15 +438,13 @@ namespace KernelExtensions.Executables
                 _cubeRealTime += _lastDt;
                 _cubeFrames++;
 
-                string phase = _cubeTime < STARTUP_S ? "浮现中" :
-                               _cubeTime < STARTUP_S + SPINUP_S ? "起转中" : "匀速中";
-                float spinDeg = MathHelper.ToDegrees(Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f) % 360f;
+                string phase = _cubeGrow < 1f ? "浮现中" : "匀速中";
                 float fps = _cubeRealTime > 0.01f ? _cubeFrames / _cubeRealTime : 0f;
 
                 load += $"  {phase}"
                      + $"   目标 {CUBE_RATE_DEG_PER_SEC:0.#} 度/秒（一圈 {360f / CUBE_RATE_DEG_PER_SEC:0} 秒）"
-                     + $"   已转 {spinDeg:0.0} 度"
-                     + $"   每帧推进 {_cubeFrameAdvance:0.00000} 秒  fps {fps:0}";
+                     + $"   已转 {MathHelper.ToDegrees(_cubeAngle):0.0} 度"
+                     + $"   层数 {CUBE_LAYERS}  展开 {_cubeGrow * 100f:0}%  fps {fps:0}";
             }
             TextItem.doFontLabel(new Vector2(info.X + 6, info.Y + 16), load,
                 GuiData.smallfont, Color.White * 0.7f);
