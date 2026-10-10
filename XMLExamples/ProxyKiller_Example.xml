@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ============================================================
+    KernelExtensions ProxyKiller 配置示例
+    KernelExtensions ProxyKiller Configuration Example
+    ============================================================
+    定位：一个"看着过载把目标压满"的**展示**程序。
+    Position: a *display* program that shows an overload build-up.
+    放 <扩展根>/ProxyKiller/ 下。
+    Place it under <extensionRoot>/ProxyKiller/.
+
+    启用方式：给玩家挂上存档 flag ProxyKiller_<文件名>（不含 .xml）。
+    flag 就是"入口牌"：无 flag 程序锁定；出现多个 flag 视为作者配置错误（锁定 + 日志报错）。
+    然后在终端执行 #PROXYKILLER#。
+    How to enable: set the save flag ProxyKiller_<fileName> (without .xml) on the player.
+    The flag is the entry token: none means locked; more than one is an authoring error.
+    Then run #PROXYKILLER# in the terminal.
+
+    它做什么：按配置把 RAM 从起始值线性爬到目标值，同时用一个背景动画把这个过程表达出来
+    （粒子由混沌趋于整齐），右下角一个退出按钮。界面上**不显示任何文字与数字** ——
+    爬升本身看得见，再叠读数就是噪声。
+    What it does: ramps RAM linearly from a start value to a target while a background effect
+    expresses that build-up (the dots settle as it climbs), plus an Exit button. No text or
+    numbers are drawn: the build-up is visible on its own.
+
+    ⚠️ 过载倍率是**扩展作者在配置里定义的**，本程序不调任何东西、也不碰目标机
+    （它不调用 hostileActionTaken，不算入侵行为）。
+    The overload multiplier is defined by the extension author in configuration; this program
+    changes nothing and touches no target (it never calls hostileActionTaken).
+-->
+<ProxyKillerConfig>
+
+  <!-- ── 程序名 / Program name ──
+       终端与窗口顶部显示的名字。留空 = ProxyKiller。
+       Name shown in the terminal and the window title. Empty = ProxyKiller.
+       程序在终端里的注册名 #PROXYKILLER# 不受此处影响。
+       The registration name #PROXYKILLER# is not affected by this. -->
+  <ProgramName>ProxyKiller</ProgramName>
+
+  <!-- ── RAM 爬升 / RAM ramp ──
+       启动时按 <RamCost> 占用，然后以 <RampRate> 的速率爬到 <BurstTarget>。
+       Starts at <RamCost>, then climbs to <BurstTarget> at <RampRate>.
+       这三个值默认对齐原版 SignalScramble（原版 DLCTraceSlower）：
+       50 → 600MB，200MB/s（约 2.75 秒爬满）。
+       Defaults mirror vanilla SignalScramble (DLCTraceSlower): 50 -> 600MB at 200MB/s.
+
+       BurstTarget：爬升目标（MB）。留空 = 600。目标小于起始值时按"不爬升"处理。
+                    Ramp target in MB. Empty = 600. If below the start, no ramp happens.
+       RamCost    ：启动时的占用（MB）。留空 = 50。
+                    Starting RAM in MB. Empty = 50.
+       RampRate   ：爬升速率（MB/s）。留空 = 200；写 0 = 只占起始值不爬。
+                    Ramp speed in MB/s. Empty = 200; 0 means "stay at the start value". -->
+  <BurstTarget>600</BurstTarget>
+  <RamCost>50</RamCost>
+  <RampRate>200</RampRate>
+
+  <!-- ── 强调色 / Accent color ──
+       背景粒子与退出按钮的颜色。留空 / NONE = 白色。
+       Colour of the background dots and the exit button. Empty or NONE = white.
+       支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
+       以及 #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色。
+       Accepts CustomColor preset names and dynamic colours, hex, numeric RGB(A) and XNA names.
+       动态色逐帧刷新。
+       Dynamic colours refresh every frame. -->
+  <AccentColor>White</AccentColor>
+
+  <!-- ── 背景效果 / Background effect ──
+       面板背景用的游戏本体现成效果（都不需要自带资源）：
+       The background uses the game's built-in effects (no bundled assets needed):
+         NONE            不画背景 / no background
+         DepthDotGrid    多层递归点阵（原版 SignalScramble 用的）— 默认
+                         recursive dot grid with depth (vanilla SignalScramble's choice) — default
+         ZoomingDotGrid  中心向外扩散旋转的点阵（PhaseSwift 用的）
+                         expanding dot grid from the centre (the one PhaseSwift uses)
+         HexGrid         六边形蜂窝网格（原版 KaguyaTrial 用的）
+                         hexagonal honeycomb grid (vanilla KaguyaTrial's background)
+         Grid            带十字标记的交叉网格 / cross-hatched grid
+       留空 = DepthDotGrid；写别的值 → 记 Warn 并回退 DepthDotGrid。
+       Empty = DepthDotGrid; any other value logs a warning and falls back to it.
+       粒子的"混沌度"随 RAM 爬升从 1 降到 0 —— 这就是整套视觉表达。
+       The dot chaos factor falls from 1 to 0 as RAM climbs; that is the whole visual. -->
+  <BackgroundEffect>DepthDotGrid</BackgroundEffect>
+
+  <!-- ── 离开节点 / Leaving the node ──
+       玩家离开本程序所在节点时是否自动关闭。留空 = true
+       （对齐原版 SignalScramble：它跟着所连节点走，断连即退）。
+       Whether to close when the player leaves the node this program runs on. Empty = true
+       (matching vanilla SignalScramble, which follows the connected node). -->
+  <ExitOnDisconnect>true</ExitOnDisconnect>
+
+</ProxyKillerConfig>
+
+<!--
+    ============================================================
+    变体 / Variants（把对应行放进上面的根元素）
+    Variants (put the line into the root element above)
+    ============================================================
+
+    [爬得慢一点，看清粒子变化 / A slower ramp so the dots can be watched]
+      <RampRate>50</RampRate>
+
+    [慢慢吞掉 2GB / Slowly swallow 2GB]
+      <RamCost>50</RamCost>
+      <BurstTarget>2048</BurstTarget>
+      <RampRate>80</RampRate>
+
+    [只占起始值，完全不爬 / Stay at the start value, no ramp at all]
+      <RampRate>0</RampRate>
+
+    [不留驻：走开节点就关 / Exit when leaving the node]
+      <ExitOnDisconnect>true</ExitOnDisconnect>
+
+    [改成留驻（走开也不关）/ Keep running when leaving the node]
+      <ExitOnDisconnect>false</ExitOnDisconnect>
+
+    [换个背景，改用主题色 / Another background, using the theme colour]
+      删掉 <AccentColor> / Remove <AccentColor>
+      <BackgroundEffect>HexGrid</BackgroundEffect>
+
+    [不用背景，只看按钮 / No background, just the button]
+      <BackgroundEffect>NONE</BackgroundEffect>
+-->

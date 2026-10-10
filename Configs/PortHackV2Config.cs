@@ -111,8 +111,6 @@ public class PortHackV2Config
     /// <summary>终端里显示的程序名（对齐 PhaseSwift 的 ProgramName）。注册名 #PORTHACKV2# 不受影响。</summary>
     [XmlElement("ProgramName")] public string ProgramName { get; set; } = "PortHackV2";
 
-    public string Title { get; set; } = string.Empty;
-
     /// <summary>
     /// 运行本程序占用的内存（MB）。
     /// 默认 <see cref="DefaultRamCost"/> = <b>246</b>，与原版 PortHack 一致
@@ -275,6 +273,31 @@ public class PortHackV2Config
     /// <summary>前置要求：这些端口必须先打开。List&lt;string&gt; 可被 XmlSerializer 直接处理。</summary>
     public List<string> RequireOpenPortsBefore { get; set; } = new();
 
+    /// <summary>
+    /// 可选前置：目标机上**已破解的端口数量**要求。
+    ///
+    /// <list type="bullet">
+    ///   <item>不写 / 留空 / <c>0</c>（或任意负值）= **不检查**</item>
+    ///   <item><c>auto</c> = 对齐**目标节点自己的要求**（照搬原版：需要
+    ///     <c>max(portsNeededForCrack + 1, 0)</c> 个已破解端口，即原版 PortHack 的判定）</item>
+    ///   <item>正整数 N = 固定要求 **至少 N 个**已破解端口</item>
+    /// </list>
+    ///
+    /// ⚠️ 注意两条语义的差别：<c>auto</c> 沿用的是节点自身的 <c>portsNeededForCrack</c>
+    /// （原版引擎按 security 算出来的值，界面上显示的也是它 +1），
+    /// 手写数字则是"作者说至少几个就至少几个"，不做 +1。
+    /// </summary>
+    [XmlElement("RequireCrackedPorts")] public string RequireCrackedPortsRaw { get; set; }
+
+    /// <summary><c>auto</c> 的写法（大小写不敏感）。</summary>
+    public const string RequireCrackedPortsAuto = "auto";
+
+    /// <summary>解析后的固定要求数量；&lt;= 0 = 不检查。</summary>
+    [XmlIgnore] public int RequireCrackedPorts { get; private set; }
+
+    /// <summary>是否用"对齐目标节点自身要求"的 auto 语义。</summary>
+    [XmlIgnore] public bool RequireCrackedPortsAutoMode { get; private set; }
+
     public bool RequireSolveFirewall { get; set; }
     public bool RequireProxyOverload { get; set; }
 
@@ -377,6 +400,24 @@ public class PortHackV2Config
             : CustomColorManager.GetDynamicColor(BackgroundColorRaw, AccentColor);
 
         BackgroundEffect = ParseBackgroundEffect(BackgroundEffectRaw);
+
+        // 已破解端口数前置：空 / 非正数 = 不检查；auto（大小写不敏感）= 对齐目标节点自身要求
+        string reqPorts = RequireCrackedPortsRaw?.Trim();
+        if (string.IsNullOrEmpty(reqPorts)
+            || reqPorts.Equals(RequireCrackedPortsAuto, StringComparison.OrdinalIgnoreCase))
+        {
+            RequireCrackedPortsAutoMode = reqPorts?.Equals(RequireCrackedPortsAuto, StringComparison.OrdinalIgnoreCase) == true;
+            RequireCrackedPorts = 0;
+        }
+        else
+        {
+            float n = ConfigValue.ParseInRange(reqPorts, 0f, -1f, 100000f, out bool rpOk);
+            if (!rpOk)
+                KELog.Warn($"[PortHackV2] '{SourceName}': invalid <RequireCrackedPorts> '{RequireCrackedPortsRaw}'; "
+                    + "expected 'auto' or a non-negative number. Not checked.");
+            RequireCrackedPortsAutoMode = false;
+            RequireCrackedPorts = n > 0f ? (int)n : 0;
+        }
 
         if (string.IsNullOrWhiteSpace(CompletionText)) CompletionText = DefaultCompletionText;
 

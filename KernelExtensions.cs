@@ -105,8 +105,8 @@ namespace KernelExtensions
             KELog.Info("EffectsPlayer registered.");
             ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
             KELog.Info("WPTEST registered.");
-            ExecutableManager.RegisterExecutable<ProxyTunerExe>("#PROXYTUNER#");
-            KELog.Info("ProxyTuner registered.");
+            ExecutableManager.RegisterExecutable<ProxyKillerExe>("#PROXYKILLER#");
+            KELog.Info("ProxyKiller registered.");
             // PortHackV2：#PORTHACKV2#（"全称双成分"命名，与上面几个同风格 —— 立规要求的
             // 新增名 #KE_ 前缀是为了防跨扩展冲突，而带扩展语义的全称名已足够独特，故不叠前缀；
             // 此名须与 PortHackV2Config 的配置目录 / 各示例里的写法一致）

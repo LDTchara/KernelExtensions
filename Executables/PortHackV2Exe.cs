@@ -126,6 +126,9 @@ public class PortHackV2Exe : GameExecutable
     public PortHackV2Exe() : base()
     {
         this.name = "PortHackV2";
+        // ⚠️ 窗口顶部那行标题画的是 IdentifierName（见原版 ExeModule.drawTarget：
+        // "app:" + IdentifierName），不是 name —— 不设它就显示 app:UNKNOWN。
+        this.IdentifierName = "PortHackV2";
         // 配置加载前先用默认值（与原版 PortHack 同为 246MB）；OnInitialize 里再按 <RamCost> 覆盖
         this.ramCost = PortHackV2Config.DefaultRamCost;
     }
@@ -281,6 +284,41 @@ public class PortHackV2Exe : GameExecutable
         => !ProxyRowVisible() || !Target.proxyActive;
 
     /// <summary>
+    /// 目标机上已破解的端口数（Pathfinder 下端口以 PortState 表的 Cracked 为准）。
+    /// </summary>
+    private int CrackedPortCount()
+    {
+        try { return Target.GetAllPortStates().Count(s => s.Cracked); }
+        catch { return 0; }
+    }
+
+    /// <summary>
+    /// "已破解端口数"前置的**要求值**：auto = 目标节点自身的要求
+    /// （照搬原版 <c>max(portsNeededForCrack + 1, 0)</c>，即原版 PortHack 的判定）；
+    /// 手写数字 = 直接用作者给的 N。
+    /// 返回 &lt;= 0 表示这项不检查。
+    /// </summary>
+    private int RequiredCrackedPorts()
+    {
+        if (CurrentConfig.RequireCrackedPortsAutoMode)
+        {
+            try { return Math.Max(Target.portsNeededForCrack + 1, 0); }
+            catch { return 0; }
+        }
+        return CurrentConfig.RequireCrackedPorts;
+    }
+
+    /// <summary>已破解端口数前置是否需要显示：要求 &gt; 0 且目标机确实有端口可破。</summary>
+    private bool CrackedPortsRowVisible()
+    {
+        if (RequiredCrackedPorts() <= 0) return false;
+        return CrackedPortCount() > 0 || Target.GetAllPortStates().Count > 0;
+    }
+
+    private bool CrackedPortsRequirementMet()
+        => CrackedPortCount() >= RequiredCrackedPorts();
+
+    /// <summary>
     /// 所有前置与协议前置端口是否都满足（Listing → Cracking 的判据）。
     /// 「能不能破解」**完全由这些运行时前置决定**，不由配置里的开关决定 ——
     /// 作者要表达"现在还破解不了"，就用 <c>Require*</c> 前置（它会每帧重查、满足即自动开跑），
@@ -292,6 +330,7 @@ public class PortHackV2Exe : GameExecutable
         if (CurrentConfig == null) return false;
         if (!FirewallRequirementMet()) return false;
         if (!ProxyRequirementMet()) return false;
+        if (!CrackedPortsRequirementMet()) return false;
         foreach (string p in CurrentConfig.RequireOpenPortsBefore)
             if (!PortRequirementMet(p)) return false;
         return true;
@@ -666,7 +705,16 @@ public class PortHackV2Exe : GameExecutable
             {
                 Label = KELoc.Loc("PORT_HACK_V2_ROW_PROXY", "PROXY OVERLOAD"),
                 Met = !Target.proxyActive,
-                Detail = "overload the target proxy"
+                Detail = ""            // 说明文本已统一上移到标题下方，行内不再重复
+            });
+
+        if (CrackedPortsRowVisible())
+            rows.Add(new ListingRow
+            {
+                Label = KELoc.Format("PORT_HACK_V2_ROW_CRACKED_PORTS", "CRACKED PORTS {0}/{1}",
+                    CrackedPortCount(), RequiredCrackedPorts()),
+                Met = CrackedPortsRequirementMet(),
+                Detail = ""
             });
 
         foreach (string p in CurrentConfig.RequireOpenPortsBefore)
@@ -674,7 +722,7 @@ public class PortHackV2Exe : GameExecutable
             {
                 Label = ProtocolDisplayName(p),
                 Met = PortRequirementMet(p),
-                Detail = "open this port first"
+                Detail = ""            // 同上：不再逐行写 "open this port first"
             });
 
         return rows;
@@ -716,24 +764,21 @@ public class PortHackV2Exe : GameExecutable
         int x = InnerX;
         int w = InnerW;
 
-        string title = string.IsNullOrEmpty(CurrentConfig.Title)
-            ? KELoc.Loc("PORT_HACK_V2_LISTING_TITLE", "PortHackV2")
-            : CurrentConfig.Title;
-        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, _accent * fade);
+        // 顶部固定文案：**不用 <Title>**（那个字段已删）。这里说明"为什么还停在这一屏"，
+        // 字号比原来的标题小一号（GuiData.smallfont），不再抢前置行的视觉重心。
+        bool blocked = !AllPrerequisitesMet();
+        string headline = blocked
+            ? KELoc.Loc("PORT_HACK_V2_PREREQ_UNMET", "Prerequisites not met")
+            : KELoc.Loc("PORT_HACK_V2_NO_PREREQ", "No prerequisites - starting...");
+        TextItem.doFontLabel(new Vector2(x, ContentTop), headline, GuiData.smallfont, _accent * fade);
 
         List<ListingRow> rows = BuildListingRows();
 
         // 行高按可用高度自适应（行多时压缩，行少时保持原高）——避免小面板下越界
-        int avail = Math.Max(0, ContentBottom - 22 - (ContentTop + 26));
+        int top = ContentTop + 20;
+        int avail = Math.Max(0, ContentBottom - 22 - top);
         int rowH = rows.Count > 0 ? Math.Min(30, Math.Max(16, avail / rows.Count)) : 30;
-        int y = ContentTop + 26;
-
-        if (rows.Count == 0)
-        {
-            TextItem.doFontLabel(new Vector2(x, y),
-                KELoc.Loc("PORT_HACK_V2_NO_PREREQ", "No prerequisites - starting..."),
-                GuiData.smallfont, Color.White * (0.7f * fade));
-        }
+        int y = top;
 
         foreach (ListingRow row in rows)
         {
@@ -747,14 +792,11 @@ public class PortHackV2Exe : GameExecutable
             RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, Math.Max(2, bar.Height - 8),
                 row.Met ? _accent * fade : os.darkBackgroundColor * fade);
 
-            // 标签与说明各占一条带内的一半：说明放**上面**那条（原先把说明压在行底，
-            // 行一压缩就贴到下一行去了；放上面与标题连读更顺，也不会被下一行盖住）
-            int labelH = Math.Max(9, bar.Height / 2);
-            TextItem.doFontLabelToSize(new Rectangle(bar.X + 16, bar.Y + 1, bar.Width - 22, labelH),
-                row.Label, GuiData.smallfont, Color.White * (0.95f * fade));
+            // 一行只写名字（"open this port first" 这类说明已移除 —— 每行都重复同一句话没有信息量，
+            // 顶部那行固定文案已经把"为什么停着"讲清楚了）
             TextItem.doFontLabelToSize(
-                new Rectangle(bar.X + 16, bar.Y + labelH, bar.Width - 22, Math.Max(8, bar.Height - labelH)),
-                row.Detail, GuiData.detailfont, Color.White * (0.6f * fade));
+                new Rectangle(bar.X + 16, bar.Y + 1, bar.Width - 22, Math.Max(9, bar.Height - 2)),
+                row.Label, GuiData.smallfont, Color.White * (0.95f * fade));
 
             y += rowH;
         }
@@ -778,7 +820,9 @@ public class PortHackV2Exe : GameExecutable
     private void DrawCracking()
     {
         Rectangle area = ContentArea;
-        DrawBackground(area);
+
+        // 本状态**不铺背景**：立体动画自己会填满内容区，再垫一层背景只是浪费；
+        // 背景只服务 Locked / Listing 这两个"没有自己的画面"的状态。
 
         // 动画区铺满内容区（下面只留底部进度条的位置）
         Rectangle anim = new(area.X, area.Y, area.Width, Math.Max(24, area.Height - PROGRESS_BAR_H - 4));
@@ -847,8 +891,8 @@ public class PortHackV2Exe : GameExecutable
     private void DrawOutro()
     {
         Rectangle area = ContentArea;
-        DrawBackground(area);
 
+        // 本状态**不铺背景**：立体（慢转/已停）就是画面主体
         // 背景：立体继续慢转（成功）/ 已停住（中断）
         DrawAnimationArea(area, opacity: CurrentState == PortHackV2State.Complete ? 0.2f : 0.35f);
 
