@@ -288,6 +288,7 @@ namespace KernelExtensions.Executables
             _polySeq.Reset();
             _cubeAngle = 0f;
             _cubeGrow = 0f;
+            _cubeElapsed = 0f;
             _cubeRealTime = 0f;
             _cubeFrames = 0;
             _flowField.Reset();
@@ -311,22 +312,69 @@ namespace KernelExtensions.Executables
         /// 视觉参数照搬原版 <c>DrawSequence</c>：20 层、基准缩放 2.6、每层 +0.25、
         /// 基础旋转 (35.4°, 45°, 0)，层间 Y 偏移 -0.1 弧度、缩放按 0.85 的幂递减。
         /// </para>
+        ///
+        /// <para>
+        /// ⚠️ 时间线必须走**完整一轮**，否则会停在原版的末态：原版依次是
+        /// <c>up</c>（浮现，num8 由 QuadraticOutCurve 长到 1）
+        /// → <c>runtime</c>（匀速满尺寸）
+        /// → <c>down</c>（收缩，num8 由 1 降到 0.3）
+        /// → <c>idle</c>（停在 0.3）→ 重来。
+        /// 只做 up 就会一直停在"满尺寸" —— 那正是原版 down 之后的末态观感。
+        /// </para>
         /// </summary>
         private void UpdateCubePreview(float dt)
         {
-            // 角速度：目标度数/秒 → 弧度/秒
+            _cubeElapsed += dt;
+
+            // 角速度：目标度数/秒 → 弧度/秒（每帧只此一处推进旋转，不存在第二条路径）
             _cubeAngle += dt * MathHelper.ToRadians(CUBE_RATE_DEG_PER_SEC);
             if (_cubeAngle > MathHelper.TwoPi) _cubeAngle -= MathHelper.TwoPi;
 
-            // 浮现：1.2 秒内从 0 长到 1（层间缩放按它的幂次收拢，形成"由内向外展开"）
-            if (_cubeGrow < 1f)
-                _cubeGrow = Math.Min(1f, _cubeGrow + dt / CUBE_GROW_SECONDS);
+            // 分段时间线（时长照搬原版：up 1.2 / runtime 5 / down 1.7 / idle 1.2，之后重来）
+            if (_cubeElapsed >= CUBE_UP_S + CUBE_RUN_S + CUBE_DOWN_S + CUBE_IDLE_S)
+                _cubeElapsed = 0f;
+
+            if (_cubeElapsed < CUBE_UP_S)
+            {
+                // up：浮现。原版用的是 QuadraticOutCurve 的两次嵌套（先快后缓）
+                float u = _cubeElapsed / CUBE_UP_S;
+                _cubeGrow = Utils.QuadraticOutCurve(Utils.QuadraticOutCurve(u));
+                _cubePhase = "浮现中";
+            }
+            else if (_cubeElapsed < CUBE_UP_S + CUBE_RUN_S)
+            {
+                _cubeGrow = 1f;
+                _cubePhase = "匀速中";
+            }
+            else if (_cubeElapsed < CUBE_UP_S + CUBE_RUN_S + CUBE_DOWN_S)
+            {
+                // down：收缩回 0.3 —— 原版 num8 = 0.3 + 0.7 * QuadraticOutCurve(1 - 进度)
+                float p = (_cubeElapsed - CUBE_UP_S - CUBE_RUN_S) / CUBE_DOWN_S;
+                _cubeGrow = 0.3f + 0.7f * Utils.QuadraticOutCurve(1f - p);
+                _cubePhase = "收缩中";
+            }
+            else
+            {
+                _cubeGrow = 0.3f;      // idle：停在小尺寸
+                _cubePhase = "休止中";
+            }
 
             _cubeFrameAdvance = dt * (CUBE_RATE_DEG_PER_SEC / 360f);   // 面板用：本帧转过的圈数
         }
 
         /// <summary>立方体匀速段的角速度（度/真实秒）—— 想调快慢只改这一个数（一圈秒数 = 360 / 它）。</summary>
         private const float CUBE_RATE_DEG_PER_SEC = 12f;
+
+        // 一轮的四个阶段时长（秒），照搬原版 0.6/1.0/5/1.7/1.2 的比例观感
+        private const float CUBE_UP_S = 1.2f;      // 浮现
+        private const float CUBE_RUN_S = 5f;       // 匀速满尺寸
+        private const float CUBE_DOWN_S = 1.7f;    // 收缩（与原版 Spindown 时长一致）
+        private const float CUBE_IDLE_S = 1.2f;    // 休止在小尺寸
+
+        /// <summary>一轮累计时间（秒），到点回到浮现。</summary>
+        private float _cubeElapsed;
+        /// <summary>当前阶段名（面板显示用）。</summary>
+        private string _cubePhase = "浮现中";
 
         /// <summary>
         /// 画那 20 层线框立方体。视觉参数照搬原版 <c>PortHackCubeSequence</c>：
@@ -354,9 +402,6 @@ namespace KernelExtensions.Executables
                     Color.White);
             }
         }
-
-        /// <summary>浮现时长（秒）：层间缩放从这个时间内从 0 展开到满。</summary>
-        private const float CUBE_GROW_SECONDS = 1.2f;
 
         /// <summary>层数（与原版一致）。</summary>
         private const int CUBE_LAYERS = 20;
@@ -438,7 +483,7 @@ namespace KernelExtensions.Executables
                 _cubeRealTime += _lastDt;
                 _cubeFrames++;
 
-                string phase = _cubeGrow < 1f ? "浮现中" : "匀速中";
+                string phase = _cubePhase;
                 float fps = _cubeRealTime > 0.01f ? _cubeFrames / _cubeRealTime : 0f;
 
                 load += $"  {phase}"
