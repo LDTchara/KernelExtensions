@@ -143,6 +143,8 @@ namespace KernelExtensions
             RegisterActionWithFallback<TerminalTypeAction>("TerminalType");
             RegisterActionWithFallback<RenameNodeAction>("RenameNode");
             RegisterActionWithFallback<SetNodeIconAction>("SetNodeIcon");
+            // ListPorts：列出所有已注册端口协议（模组注册的 + 原版内置），供作者查协议名与端口号
+            RegisterActionWithFallback<ListPortsAction>("ListPorts");
             RegisterActionWithFallback<SwitchThemeAction>("SwitchToThemeKeepLayout");
 
             // 2.5 通用特效与 UI
