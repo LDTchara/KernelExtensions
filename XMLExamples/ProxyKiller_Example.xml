@@ -42,18 +42,25 @@
   <ProgramName>ProxyKiller</ProgramName>
 
   <!-- ── RAM 占用 / RAM usage ──
-       起始固定 50MB（不可配），以固定速率 200MB/s 爬升到 <BurstTarget>，之后一直占着。
-       Starts at a fixed 50MB (not configurable) and ramps at a fixed 200MB/s up to
-       <BurstTarget>, then holds it.
+       起始固定 50MB（不可配），以 <RampRate> 的速率爬升到 <BurstTarget>，之后一直占着。
+       Starts at a fixed 50MB (not configurable) and ramps at <RampRate> up to <BurstTarget>,
+       then holds it.
        这个爬升不是装饰 —— 它同时驱动界面（粒子由混沌趋于整齐）**和加速倍速**。
        That ramp is not decoration: it drives both the visuals (the dots settle as it climbs)
        and the acceleration multiplier.
 
        BurstTarget：RAM 爬升目标（MB）。留空 = 100。
                     Ramp target in MB. Empty = 100.
-                    想让它慢慢爬（看清画面变化）就把它调高，例如 600（约 2.75 秒）。
-                    Raise it to slow the ramp down, e.g. 600 for about 2.75 seconds. -->
+       RampRate   ：RAM 爬升速率（MB/s）。留空 = 200（与原版一致）。
+                    Ramp speed in MB/s. Empty = 200 (same as vanilla).
+                    它同时决定"粒子由乱到稳"和"倍速从 1 爬到目标值"的时长（两者共用同一进度）。
+                    默认 200 时 50 → 100 只要 0.25 秒，形同瞬间 —— 想看清爬升过程就调小它
+                    （例如 8 ≈ 6.25 秒），不必去动 BurstTarget。写 0 = 停在起始值不爬。
+                    It sets the duration of both the visual settle and the multiplier ramp.
+                    At 200, 50 -> 100 takes 0.25s, i.e. instant; lower it to watch the ramp
+                    (8 gives about 6.25s) instead of raising BurstTarget. 0 means no ramp. -->
   <BurstTarget>100</BurstTarget>
+  <RampRate>200</RampRate>
 
   <!-- ── shell 过载倍速 / Shell overload multiplier ──
        倍速由 RAM 爬升**线性驱动**：倍速 1 → ShellOverloadTarget 对应 50MB → BurstTarget
@@ -108,6 +115,9 @@
     ============================================================
 
     [慢慢爬：看清粒子由乱到稳 / A slow ramp so the dots can be watched]
+      <RampRate>8</RampRate>
+
+    [目标拉大、速率不变 / A bigger target, same speed]
       <BurstTarget>600</BurstTarget>
 
     [三倍速，且很早就到位 / x3, reaching full speed early]

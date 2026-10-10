@@ -50,11 +50,8 @@ public class ProxyKillerConfig
     /// </summary>
     public const int RamCost = 50;
 
-    /// <summary>
-    /// RAM 爬升速率（MB/s）。**固定不可配**，照搬原版 SignalScramble 的 200。
-    /// 50 → 100 用时 0.25 秒；要它慢下来就把 <c>BurstTarget</c> 调高。
-    /// </summary>
-    public const float RampRate = 200f;
+    /// <summary>RAM 爬升速率（MB/s）的默认值，照搬原版 SignalScramble 的 200。</summary>
+    public const float DefaultRampRate = 200f;
 
     /// <summary>RAM 爬升目标（MB）的默认值。</summary>
     public const int DefaultBurstTarget = 100;
@@ -88,6 +85,17 @@ public class ProxyKillerConfig
 
     /// <summary>RAM 爬升目标（MB）。留空 = <see cref="DefaultBurstTarget"/>（100）。</summary>
     [XmlElement("BurstTarget")] public string BurstTargetRaw { get; set; }
+
+    /// <summary>
+    /// RAM 爬升速率（MB/s）。留空 = <see cref="DefaultRampRate"/>（200，与原版一致）。
+    ///
+    /// 它同时决定两件事的快慢：**界面**上粒子由混沌趋于整齐的时长，
+    /// 以及**倍速**从 1 爬到目标值的时长（两者共用同一个进度）。
+    /// 默认 200 时 50 → 100 只要 0.25 秒，形同瞬间；想看清爬升过程就调小它
+    /// （例如 8 ≈ 6.25 秒），不必去动 <c>BurstTarget</c>。
+    /// 写 0 = 停在起始值不爬（倍速恒为 1）。
+    /// </summary>
+    [XmlElement("RampRate")] public string RampRateRaw { get; set; }
 
     /// <summary>
     /// **shell 过载**的倍速目标值。留空 = <see cref="DefaultShellOverloadTarget"/>（1.0 = 不加速）。
@@ -125,6 +133,9 @@ public class ProxyKillerConfig
 
     /// <summary>RAM 爬升目标（MB）。</summary>
     [XmlIgnore] public int BurstTarget { get; private set; } = DefaultBurstTarget;
+
+    /// <summary>RAM 爬升速率（MB/s）。</summary>
+    [XmlIgnore] public float RampRate { get; private set; } = DefaultRampRate;
 
     /// <summary>shell 过载倍速的目标值。</summary>
     [XmlIgnore] public float ShellOverloadTarget { get; private set; } = DefaultShellOverloadTarget;
@@ -221,6 +232,8 @@ public class ProxyKillerConfig
         if (!btOk)
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <BurstTarget> '{BurstTargetRaw}', "
                 + $"expected {MinRam}~{MaxRam}; using {DefaultBurstTarget}.");
+
+        RampRate = ParseNum(RampRateRaw, DefaultRampRate, 0f, 100000f, "RampRate");
 
         ShellOverloadTarget = ConfigValue.ParseInRange(ShellOverloadTargetRaw, DefaultShellOverloadTarget,
             MinShellOverloadTarget, MaxShellOverloadTarget, out bool soOk);

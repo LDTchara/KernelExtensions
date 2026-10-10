@@ -548,9 +548,10 @@ public class PortHackV2Exe : GameExecutable
         base.Draw(t);
         drawOutline();
         // 原版窗口顶部那行（"IP: xxx" + "app:" + IdentifierName）。
-        // ⚠️ drawTarget 读的是 **ExeModule.targetIP 字段**，而扩展 exe 的基类构造函数只把它
-        // 设一次、之后不跟随连接变化 —— 所以要在这里按当前目标机同步一次再画，
-        // 否则切节点后 IP 会停在启动那一刻（甚至空）。
+        // drawTarget 读的是 ExeModule.targetIP **字段** —— 基类构造函数只把它设一次，
+        // 那是原版的**特性**（shell 之类的程序要绑死在创建时所连的节点上，之后不跟随）。
+        // 本程序语义不同：它针对的是**当前**目标机，所以要按当前目标机同步一次再画，
+        // 否则切节点后 IP 行会停在启动那一刻。
         this.targetIP = _targetIp ?? Target?.ip ?? string.Empty;
         drawTarget();
 

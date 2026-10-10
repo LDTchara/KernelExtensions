@@ -144,7 +144,7 @@ public class ProxyKillerExe : GameExecutable
         }
 
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
-            + $"at {ProxyKillerConfig.RampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
+            + $"at {_cfg.RampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
             + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}.");
     }
 
@@ -224,10 +224,10 @@ public class ProxyKillerExe : GameExecutable
         // 本程序**常驻**：不跟随连接变化关闭（无 ExitOnDisconnect），只由玩家按 Exit 结束。
         // 这也意味着它可以一直加速**后来才开的** shell —— 每帧重新遍历，不看创建时机。
 
-        // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率固定）
-        if (_ram < _target)
+        // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率可配）
+        if (_ram < _target && _cfg.RampRate > 0f)
         {
-            _ram = Math.Min(_target, _ram + ProxyKillerConfig.RampRate * t);
+            _ram = Math.Min(_target, _ram + _cfg.RampRate * t);
             ramCost = (int)_ram;
         }
 
