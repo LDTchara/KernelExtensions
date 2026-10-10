@@ -35,6 +35,15 @@ public class ProxyKillerConfig
     /// <summary>RAM 爬升速率（MB/s）。默认 200，与原版一致（50→600 约 2.75 秒）。</summary>
     public const float DefaultRampRate = 200f;
 
+    /// <summary>
+    /// 代理过载倍速的目标值。默认 <b>1.0</b> = 原版过载速度（即"只展示、不加速"）。
+    /// </summary>
+    public const float DefaultProxyOverloadTarget = 1f;
+
+    /// <summary>倍速范围：0 = 冻结该机器的过载进度，上限给足余量。</summary>
+    public const float MinProxyOverloadTarget = 0f;
+    public const float MaxProxyOverloadTarget = 1000f;
+
     /// <summary>数值项下限/上限。</summary>
     public const float MinRam = 0f;
     public const float MaxRam = 100000f;
@@ -57,6 +66,19 @@ public class ProxyKillerConfig
 
     /// <summary>RAM 爬升速率（MB/s）。留空 = <see cref="DefaultRampRate"/>（200）。</summary>
     [XmlElement("RampRate")] public string RampRateRaw { get; set; }
+
+    /// <summary>
+    /// 代理过载倍速的**目标值**。留空 = <see cref="DefaultProxyOverloadTarget"/>（1.0）。
+    ///
+    /// 倍速**不是一次性跳到目标**，而是由 RAM 爬升线性驱动：
+    /// <c>倍速 = 1 → 目标值</c> 对应 <c>RamCost → BurstTarget</c>（两者共用同一个进度）。
+    /// 这样做有两个好处：占的内存越多、压制越强（两个数字**互相印证**，作者一眼看出
+    /// 倍率在什么量级），而且这正是原版 <c>DLCTraceSlower</c> 的做法
+    /// （它把 <c>ramCost</c> 映射到 trace 减速系数），只是把"减速 trace"换成"加速代理过载"。
+    ///
+    /// <c>1.0</c> = 原版过载速度；<c>2.0</c> = 两倍。写 <c>1.0</c>（或不写）= 不加速。
+    /// </summary>
+    [XmlElement("ProxyOverloadTarget")] public string ProxyOverloadTargetRaw { get; set; }
 
     /// <summary>
     /// 强调色：背景粒子 + 退出按钮的颜色。留空 / <c>NONE</c> = <b>白色</b>。
@@ -94,6 +116,9 @@ public class ProxyKillerConfig
 
     /// <summary>RAM 爬升速率（MB/s）。</summary>
     [XmlIgnore] public float RampRate { get; private set; } = DefaultRampRate;
+
+    /// <summary>代理过载倍速的目标值（倍速由此线性爬到它）。</summary>
+    [XmlIgnore] public float ProxyOverloadTarget { get; private set; } = DefaultProxyOverloadTarget;
 
     /// <summary>解析后的强调色（静态部分；动态色由消费端每帧取）。</summary>
     [XmlIgnore] public Color AccentColor { get; private set; } = Color.White;
@@ -192,6 +217,12 @@ public class ProxyKillerConfig
         if (!rrOk)
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <RampRate> '{RampRateRaw}', "
                 + $"expected {MinRampRate}~{MaxRampRate}; using {DefaultRampRate}.");
+
+        ProxyOverloadTarget = ConfigValue.ParseInRange(ProxyOverloadTargetRaw, DefaultProxyOverloadTarget,
+            MinProxyOverloadTarget, MaxProxyOverloadTarget, out bool potOk);
+        if (!potOk)
+            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ProxyOverloadTarget> '{ProxyOverloadTargetRaw}', "
+                + $"expected {MinProxyOverloadTarget}~{MaxProxyOverloadTarget}; using {DefaultProxyOverloadTarget}.");
 
         // 颜色走统一入口：这样才吃得到 CustomColor 预设名与动态色
         AccentColor = CustomColorManager.GetDynamicColor(AccentColorRaw, DefaultAccentColor);

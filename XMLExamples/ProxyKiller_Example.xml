@@ -54,6 +54,24 @@
   <RamCost>50</RamCost>
   <RampRate>200</RampRate>
 
+  <!-- ── 代理过载倍速 / Proxy overload speed ──
+       倍速不是一次性跳到目标，而是由 RAM 爬升**线性驱动**：
+       倍速 1 → ProxyOverloadTarget  对应  RamCost → BurstTarget（两者共用同一个进度）。
+       The multiplier is not applied in one jump: it is driven linearly by the RAM ramp —
+       speed 1 -> ProxyOverloadTarget corresponds to RamCost -> BurstTarget.
+       好处是占的内存越多、压制越强两个数字能互相印证（这也正是原版 SignalScramble
+       把 ramCost 映射到 trace 减速系数的做法，只是换成加速代理过载）。
+       The two numbers corroborate each other, mirroring how vanilla SignalScramble maps
+       ramCost onto its trace-slowdown factor.
+       1.0 = 原版过载速度（不加速）；2.0 = 两倍。留空 = 1.0。
+       1.0 = vanilla overload speed; 2.0 = double. Empty = 1.0.
+       倍速峰值恰好等于这里填的值（RAM 爬满那一刻）；RampRate 越小，低倍速停留越久。
+       The peak multiplier equals this value (reached when RAM tops out); a smaller RampRate
+       means it lingers at low multipliers longer.
+       只作用于**当前连接机器的正在运行的代理**；没有代理 / 代理已过载时不产生效果。
+       Only affects a live proxy on the currently connected computer. -->
+  <ProxyOverloadTarget>1.0</ProxyOverloadTarget>
+
   <!-- ── 强调色 / Accent color ──
        背景粒子与退出按钮的颜色。留空 / NONE = 白色。
        Colour of the background dots and the exit button. Empty or NONE = white.
@@ -98,6 +116,17 @@
 
     [爬得慢一点，看清粒子变化 / A slower ramp so the dots can be watched]
       <RampRate>50</RampRate>
+
+    [真的去加速代理过载：峰值两倍速 / Actually speed the overload up: peak x2]
+      <ProxyOverloadTarget>2.0</ProxyOverloadTarget>
+
+    [慢速压满：长时间停在低倍速 / A slow squeeze: lingers at low multipliers]
+      <RampRate>40</RampRate>
+      <ProxyOverloadTarget>3.0</ProxyOverloadTarget>
+
+    [只展示，不碰目标机 / Display only, leave the target alone]
+      省略 <ProxyOverloadTarget>（等价于 1.0 = 原版速度）
+      Omit it (same as 1.0 = vanilla speed)
 
     [慢慢吞掉 2GB / Slowly swallow 2GB]
       <RamCost>50</RamCost>

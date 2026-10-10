@@ -49,6 +49,10 @@ public class ProxyKillerExe : GameExecutable
     private float _ramStart;
     private float _target;
     private float _rampRate;
+    private float _mulTarget;
+
+    /// <summary>启动时所在节点（过载压制的作用对象）；为空则不施加效果。</summary>
+    private Computer _victim;
 
     /// <summary>启动时所在节点的 ip —— 用它判断玩家有没有走开（对齐原版跟着连接走的语义）。</summary>
     private string _homeIp;
@@ -114,13 +118,17 @@ public class ProxyKillerExe : GameExecutable
         _ramStart = _cfg.RamCost;
         _target = Math.Max(_ramStart, _cfg.BurstTarget);   // 目标小于起始时就不爬，避免反向下滑
         _rampRate = _cfg.RampRate;
+        _mulTarget = _cfg.ProxyOverloadTarget;
         _ram = _ramStart;
         ramCost = (int)_ram;
 
         _homeIp = CurrentTargetIp();
+        _victim = os?.connectedComp ?? os?.thisComputer;
 
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
-            + $"at {_rampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s.");
+            + $"at {_rampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
+            + $"proxy overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}"
+            + (_victim != null ? $" on '{_victim.idName}'." : "; no victim (effect idle)."));
     }
 
     /// <summary>
@@ -223,7 +231,73 @@ public class ProxyKillerExe : GameExecutable
             _ram = Math.Min(_target, _ram + _rampRate * t);
             ramCost = (int)_ram;
         }
+
+        // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 RamCost → BurstTarget。
+        // 二者共用同一个进度，所以"占的内存越多、压制越强"是能互相印证的。
+        DriveProxyOverload(t);
     }
+
+    /// <summary>
+    /// 把当前倍速施加到目标机的代理过载进度上。
+    ///
+    /// <para>
+    /// 语义对齐原版 `Overload`：<c>proxyOverloadTicks -= t</c> 就是原版速度（倍速 1.0），
+    /// 所以这里按 <c>proxyOverloadTicks -= t * 倍速</c> 推进。
+    /// </para>
+    ///
+    /// <para>
+    /// 倍速**峰值恰好等于目标值**（出现在 RAM 爬满那一刻），爬升期间的平均倍速是
+    /// <c>(1 + 目标值) / 2</c>。所以"压满"这件事的快慢由 <c>RampRate</c> 决定：
+    /// 爬得快就很快到目标值并停在它上面，爬得慢则长时间停在低倍速。
+    /// <c>RampRate = 0</c> 时 RAM 不爬、倍速恒为 1（等于不加速）。
+    /// </para>
+    ///
+    /// <para>
+    /// ⚠️ 刻意**不用** <c>PortHackV2Effects.ProxyOverloadTicksHelper</c>：那个是
+    /// <c>proxyOverloadTicks += s * orgT * dt</c>（指数增长，`s=1` 时每秒翻倍），
+    /// 不是"倍速"该有的线性语义。见接力报告里记的待查项。
+    /// </para>
+    /// </summary>
+    private void DriveProxyOverload(float t)
+    {
+        if (_victim == null || !_victim.hasProxy || !_victim.proxyActive) return;
+
+        float progress = RampProgress();
+        float mul = MathHelper.Lerp(1f, _mulTarget, progress);
+        if (mul <= 0f) return;   // 倍速 0 = 冻结该机器的过载进度
+
+        try
+        {
+            _victim.proxyOverloadTicks -= t * mul;
+            if (_victim.proxyOverloadTicks <= 0f)
+            {
+                // 压满：代理被过载掉（与原版 Overload 到点后的结果一致）
+                _victim.proxyOverloadTicks = 0f;
+                _victim.proxyActive = false;
+                if (!_victimOverloaded)
+                {
+                    _victimOverloaded = true;
+                    KELog.Info($"{LogTag} '{_victim.idName}' proxy overloaded (ram reached "
+                        + $"{_ram.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}MB).");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (!_effectWarned)
+            {
+                _effectWarned = true;
+                KELog.Warn($"{LogTag} could not drive proxy overload: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>RAM 爬升进度 0~1（= 倍速爬升进度）。起始值 == 目标值时视为已满。</summary>
+    private float RampProgress()
+        => _target > _ramStart ? MathHelper.Clamp((_ram - _ramStart) / (_target - _ramStart), 0f, 1f) : 1f;
+
+    private bool _victimOverloaded;
+    private bool _effectWarned;
 
     // ======================= Draw =======================
 
@@ -271,8 +345,8 @@ public class ProxyKillerExe : GameExecutable
     {
         if (_cfg == null || _cfg.BackgroundEffect == ProxyKillerBackgroundEffect.None) return;
 
-        float progress = _target > _ramStart ? MathHelper.Clamp((_ram - _ramStart) / (_target - _ramStart), 0f, 1f) : 1f;
-        float chaos = 1f - progress;
+        float progress = RampProgress();
+        float chaos = 1f - progress;   // 爬升越满，粒子越整齐（这就是 burst 的全部视觉表达）
         Color c = _accent;
 
         try
