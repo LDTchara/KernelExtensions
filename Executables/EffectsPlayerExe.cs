@@ -206,16 +206,23 @@ namespace KernelExtensions.Executables
             }
 
             // ============ 原版 PortHack 立方体序列（3D，走离屏）============
-
-            // ⚠️ 原版序列内部自己累加时间（DrawSequence 里的 elapsedTime += t），
-            // 而且它的旋转是 rotTime * 1.5 直接当弧度用 —— 每秒约 86°、20 层还各自错开，
-            // 实际观感是"糊成一片"。这里用一个缩放后的时间喂它，让它慢下来能看清层。
+            //
+            // ⚠️ 缩放 t 是**控制不住**这个序列的：它内部把累计时间切成
+            // startup(0.6) → spinup(1.0) → runtime(到 totalTime-1.7) → spindown → idle 五段推进，
+            // 缩放 t 等于把**整条时间线**一起拉长 —— 前 1.6 内部秒会被拉成 64 真实秒，
+            // 期间它停在"浮现/起转"，而这几段里驱动画面变化的是各层缩放（num8 的幂次），
+            // 观感上就不是"慢慢转"而是别的运动。
+            //
+            // 所以这里**不让它自己管时间**：我们按真实时间喂一个"恰好走完前两段"的推进量，
+            // 之后让 elapsedTime 停在 runtime 起点（ShouldCentralSpinInfinitley 保证不进急刹），
+            // 再接一个**固定角速度**的时钟。于是转速完全由 DRIVE_RATE 决定，可控。
+            _cubeSeq.ShouldCentralSpinInfinitley = true;
             _effects.Add(new EffectEntry
             {
                 Name = "PortHackCubeSequence",
-                Note = "vanilla PortHack 20-layer cube (slowed down)",
+                Note = "vanilla PortHack 20-layer cube (own rotate rate)",
                 Duration = 0f,
-                Update = dt => _cubeTime += dt * CubeTimeScale,
+                Update = dt => UpdateCubePreview(dt),
                 Draw3D = (gd, sb, b, t) => _cubeSeq.DrawSequence(b, _cubeTime, 10f)
             });
             if (_effects.Count > 0)
@@ -298,34 +305,47 @@ namespace KernelExtensions.Executables
         }
 
         /// <summary>
-        /// 原版 PortHack 立方体序列的时间缩放。
+        /// 立方体预览的驱动。
         ///
         /// <para>
-        /// 原版 <c>PortHackExe</c> 的参数是 <c>CRACK_TIME = 6f</c>，
-        /// 调用 <c>DrawSequence(dest, t, CRACK_TIME)</c> 且 <c>t</c> 是**真实帧间隔**。
-        /// </para>
-        ///
-        /// <para>
-        /// ⚠️ 关键：这个 t **不只是转速** —— 序列内部把累计时间切成四段推进
-        /// （0.6s startup 浮现 → 1s spinup 加速 → 到 totalTime-1.7s 为止 runtime 匀速
-        /// → 之后 spindown → idle），所以缩放 t 等于**把整条时间线一起拉长**：
-        /// startup 那 0.6 秒会被拉成 0.6/scale 真实秒。缩得越小，前两段（浮现与起转）
-        /// 占掉的时间越长，看上去越像"卡住不动"，而真正需要观察的 runtime 匀速段要等很久才来。
-        /// 若观感不对，先看面板上的 <c>cubeT=</c> 与相位名判断它落在哪一段。
-        /// </para>
-        ///
-        /// <para>
-        /// 历次：0.16 反馈偏快 -> 0.08 -> 0.04 反馈仍偏快 -> 本次 **0.025**。
-        /// 对应速度约 8 / 4 / 2 / 1.25 度每秒（一圈 45 / 90 / 180 / 288 秒）。
-        /// 想更慢就继续降这个数；一圈秒数 = 18 / 该值。
+        /// 分两段：
+        /// <list type="number">
+        ///   <item><b>前 <see cref="STARTUP_S"/>+<see cref="SPINUP_S"/> 内部秒</b>：
+        ///     按**真实时间**喂给序列，让它把"浮现 + 起转"走完 —— 这两段共 1.6 内部秒，
+        ///     按真实时间走完就是 1.6 秒，不会像缩放那样被拉成 64 秒。</item>
+        ///   <item><b>之后</b>：序列的 elapsedTime 停在 runtime 起点不再推进（配合
+        ///     <c>ShouldCentralSpinInfinitley = true</c> 就不会进急刹），
+        ///     改用一个**恒定角速度**的时钟继续喂 —— 于是转速完全由
+        ///     <see cref="CUBE_RATE_DEG_PER_SEC"/> 决定，与序列内部分段解耦。</item>
+        /// </list>
         /// </para>
         /// </summary>
-        private const float CubeTimeScale = 0.025f;
+        private void UpdateCubePreview(float dt)
+        {
+            // 序列内部 rotTime 累计的是"内部秒"，转速 = rotTime * 1.5 弧度 对 45° 的偏移，
+            // 所以内部秒速率 = 目标角速度 / 1.5。
+            const float RampTarget = STARTUP_S + SPINUP_S;
 
-        // 原版 PortHackCubeSequence 的四段时间线（用于面板显示当前相位）
-        private const float STARTUP_S = 0.6f;      // 浮现
-        private const float SPINUP_S = 1f;         // 起转加速
-        private const float RUNTIME_END_S = 10f - 1.7f;   // totalTime - 1.7f
+            if (_cubeTime < RampTarget)
+            {
+                // 第一段：真实时间推进，1.6 秒走完浮现与起转
+                _cubeTime = Math.Min(RampTarget, _cubeTime + dt);
+            }
+            else
+            {
+                // 第二段：恒定角速度（换算成"内部秒/真实秒"）
+                float degPerInternalSec = 1.5f * 180f / MathHelper.Pi;   // ≈ 85.9 度/内部秒
+                _cubeTime += dt * (CUBE_RATE_DEG_PER_SEC / degPerInternalSec);
+            }
+        }
+
+        /// <summary>立方体预览的目标角速度（度/真实秒）。</summary>
+        private const float CUBE_RATE_DEG_PER_SEC = 8f;
+
+        /// <summary>立方体预览的时间线常量（原版分段：浮现 0.6s、起转 1.0s）。</summary>
+        private const float STARTUP_S = 0.6f;
+        private const float SPINUP_S = 1f;
+        private const float RUNTIME_END_S = 10f - 1.7f;
 
         private float _cubeTime;
 
@@ -383,24 +403,21 @@ namespace KernelExtensions.Executables
             // 只有 runtime 段才匀速转；看不出快慢时先看它落在哪一段。
             //
             // 这里同时报 **cubeT / 真实秒** 的比值：正常情况下应等于 CubeTimeScale（0.025），
-            // 若明显大于它，说明 Update 被调用的次数远多于真实帧数（本诊断就是为查这个加的）。
+            // 立方体序列报驱动状态：我们自己接管了时间线，所以显示的是
+            // 目标角速度、当前内部时间与实测帧率（用于确认驱动按真实时间推进）。
             if (cur.Name == "PortHackCubeSequence")
             {
                 _cubeRealTime += _lastDt;
                 _cubeFrames++;
 
                 string phase = _cubeTime < STARTUP_S ? "startup" :
-                               _cubeTime < STARTUP_S + SPINUP_S ? "spinup" :
-                               _cubeTime < RUNTIME_END_S ? "runtime" : "spindown";
-                // 外层的 Y 旋转量：rotTime * 1.5 弧度（rotTime ≈ 进入匀速后累计的时间）
-                float rot = Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f;
-                float rate = _cubeRealTime > 0.01f ? _cubeTime / _cubeRealTime : 0f;
+                               _cubeTime < STARTUP_S + SPINUP_S ? "spinup" : "runtime";
+                // 外层的 Y 旋转量：45deg + rotTime * 1.5 弧度
+                float spinDeg = MathHelper.ToDegrees(Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f) % 360f;
                 float fps = _cubeRealTime > 0.01f ? _cubeFrames / _cubeRealTime : 0f;
 
-                load += $"  cubeT={_cubeTime:0.000}s scale x{CubeTimeScale:0.###} {phase}"
-                     + $"  rot={MathHelper.ToDegrees(rot) % 360f:0.0}deg"
-                     + $"  cubeT/real={rate:0.0000} (expect {CubeTimeScale:0.###})"
-                     + $"  fps={fps:0}";
+                load += $"  {phase}  target {CUBE_RATE_DEG_PER_SEC:0.#}deg/s  spin={spinDeg:0.0}deg"
+                     + $"  inner={_cubeTime:0.00}/{STARTUP_S + SPINUP_S:0.0}s  fps={fps:0}";
             }
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
