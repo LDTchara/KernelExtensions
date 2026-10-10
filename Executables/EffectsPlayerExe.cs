@@ -296,9 +296,9 @@ namespace KernelExtensions.Executables
         /// <summary>
         /// 原版 PortHack 立方体序列的时间缩放。
         /// 它原生速度大约每秒 86°（二十层还各错开 0.1 弧度），直接看是糊的；
-        /// 缩到 1/6 之后能看清一层层嵌套在转。
+        /// 缩到 1/12 之后能看清一层层嵌套在转（0.16 仍偏快，用户反馈后再降）。
         /// </summary>
-        private const float CubeTimeScale = 0.16f;
+        private const float CubeTimeScale = 0.08f;
 
         private float _cubeTime;
 
@@ -333,7 +333,8 @@ namespace KernelExtensions.Executables
                 load += $"  speed x{_flowField.MinSpeedFactor:0.00}~x{_flowField.MaxSpeedFactor:0.00}"
                      + $" /{_flowField.SpeedTiers}tier  life x{_flowField.LifeGain:0.00}"
                 + $"  n={_flowField.EffectiveCount(bg.Height)}/{_flowField.Count}"
-                + $" p={_flowField.DensityExponent:0.00} ref={_flowField.ReferenceHeight:0}";
+                + $" p={_flowField.DensityExponent:0.00} ref={_flowField.ReferenceHeight:0}"
+                + $" speedScale x{_flowField.SpeedScale(bg.Height):0.00}";
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
 

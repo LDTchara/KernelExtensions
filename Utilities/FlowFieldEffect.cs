@@ -91,8 +91,33 @@ namespace KernelExtensions.Utilities
         public int MinEffectiveCount { get; set; } = 24;
         public int MaxEffectiveCount { get; set; } = 1400;
 
-        /// <summary>基础上升速度（满屏高 / 秒）。</summary>
+        /// <summary>基础上升速度（满屏高 / 秒）。实际速度还会按 <see cref="SpeedReferenceHeight"/> 反比缩放。</summary>
         public float BaseSpeed { get; set; } = 0.42f;
+
+        /// <summary>
+        /// 速度基准高度（像素）。**速度按这个高度反比缩放**。
+        ///
+        /// <para>
+        /// 为什么需要它：<see cref="BaseSpeed"/> 的单位是"满屏高/秒"，属于归一化速度 ——
+        /// 于是窗口越高，每秒移动的**像素**越多。实测 200 及以上观感都够快，
+        /// 但 100 的窗口慢得明显（负荷满也只有 109 px/s，是 200 的一半、600 的六分之一）。
+        /// </para>
+        ///
+        /// <para>
+        /// 所以按高度反比折算：<c>实际速度 = BaseSpeed × (基准高 / 目标高)</c>，结果是
+        /// **每秒像素数恒定** —— 100 和 600 的窗口看到的移动速度一样快。
+        /// 代价是穿越一屏的**时间**变短（小窗口穿得更快），这正是这里要的效果。
+        /// </para>
+        /// </summary>
+        public float SpeedReferenceHeight { get; set; } = 200f;
+
+        /// <summary>
+        /// 反比缩放的夹取范围。**范围要够宽**：夹太紧会在中间尺寸就顶到边界，
+/// 反而让每秒像素恒定失效（例如上限 0.7 时 300 以上又逐级变快）。
+/// 只在极端窗口尺寸下才该生效。
+        /// </summary>
+        public float MinSpeedScale { get; set; } = 0.25f;
+        public float MaxSpeedScale { get; set; } = 3.0f;
 
         /// <summary>
         /// 速度档位数。粒子速度在 <see cref="MinSpeedFactor"/> ~ <see cref="MaxSpeedFactor"/> 之间
@@ -227,13 +252,25 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
+        /// 速度的反比缩放系数：<c>SpeedReferenceHeight / 目标高</c>，夹在
+        /// <see cref="MinSpeedScale"/> ~ <see cref="MaxSpeedScale"/> 之间。
+        /// 乘上 <see cref="BaseSpeed"/> 之后，每秒像素数就不再随窗口高度变化。
+        /// </summary>
+        public float SpeedScale(int destHeight)
+        {
+            float refH = SpeedReferenceHeight <= 1f ? 200f : SpeedReferenceHeight;
+            float h = destHeight > 0 ? destHeight : refH;
+            return MathHelper.Clamp(refH / h, MinSpeedScale, MaxSpeedScale);
+        }
+
+        /// <summary>
         /// 推进粒子。传 <c>dt = 0</c> 即完全静止（供暂停使用）。
         /// </summary>
         /// <param name="dt">帧间隔（秒）。</param>
         /// <param name="load">负荷 0~1，驱动上升速度与拖尾长度。</param>
         /// <param name="destHeight">
-        /// 目标矩形高度 —— 只用来折算粒子数（见 <see cref="EffectiveCount"/>）。
-        /// 传 0 表示不知道尺寸，按基准高度处理。
+        /// 目标矩形高度 —— 用来折算粒子数（见 <see cref="EffectiveCount"/>）
+        /// 与速度缩放（见 <see cref="SpeedScale"/>）。传 0 表示按基准高度处理。
         /// </param>
         public void Update(float dt, float load, int destHeight = 0)
         {
@@ -242,7 +279,9 @@ namespace KernelExtensions.Utilities
             load = MathHelper.Clamp(load, 0f, 1f);
             _time += dt;
 
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
+            // 速度、拖尾都按目标高度折算，Draw 里要用同一套，所以先算出来
+            float speedScale = SpeedScale(destHeight);
+            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * speedScale;
             int count = EffectiveCount(destHeight);
 
             // 拖尾长度（归一化）：头出顶后尾巴还要滑出去，淡出要按尾巴位置算，所以这里要它。
@@ -283,9 +322,10 @@ namespace KernelExtensions.Utilities
         /// Update 用它算重生判定与归一化拖尾长度，Draw 用它画线 ——
         /// 两边必须取同一个值，否则会出现"还没飞完就重生"或"画到一半被清掉"。
         /// </summary>
-        private int CurrentTrailPixels(float load)
+        private int CurrentTrailPixels(float load, int destHeight = 0)
         {
             float px = TrailPixels * MathHelper.Lerp(1f, LoadTrailGain, MathHelper.Clamp(load, 0f, 1f));
+            // 拖尾长度不随高度缩放：它是粒子跑了多远的表达，固定像素才与速度感一致
             return Math.Max(2, (int)Math.Round(px));
         }
 
@@ -299,7 +339,7 @@ namespace KernelExtensions.Utilities
             if (dest.Width <= 4 || dest.Height <= 4) return;
 
             load = MathHelper.Clamp(load, 0f, 1f);
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
+            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * SpeedScale(dest.Height);
             float brightness = BaseBrightness * MathHelper.Lerp(0.8f, 1.35f, load);
 
             // 固定像素：轨迹宽 = 头部宽，两者比例在任何窗口下都一致
