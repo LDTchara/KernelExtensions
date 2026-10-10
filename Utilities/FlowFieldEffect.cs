@@ -58,11 +58,73 @@ namespace KernelExtensions.Utilities
 
         // ---- 可调观感参数 ----
 
-        /// <summary>粒子数上限（实际用 <see cref="Count"/>）。</summary>
+        /// <summary>粒子数上限（实际用 <see cref="EffectiveCount"/> 的折算结果）。</summary>
         public int Count { get; set; } = 260;
 
-        /// <summary>基础上升速度（满屏高 / 秒）。</summary>
+        /// <summary>
+        /// 粒子数的两个锚点：**内容区高 <see cref="LowAnchorHeight"/> → <see cref="CountAtLowAnchor"/> 个，
+        /// <see cref="HighAnchorHeight"/> → <see cref="CountAtHighAnchor"/> 个**，
+        /// 其余高度按对数线性插值/外推。
+        ///
+        /// <para>
+        /// 为什么用"两锚点插值"而不是"基准 + 幂指数"：幂指数只能保证**一个**尺寸正确，
+        /// 其余尺寸全靠猜公式形状。而实测反馈同时给了两个尺寸的目标数量
+        /// （140 与 210），两点连线让这两个尺寸**精确命中**，外推方向也由它们之间的
+        /// 斜率自然决定 —— 这里约为 0.46 次幂，比平方/线性都缓，
+        /// 所以大窗口不会爆量。
+        /// </para>
+        ///
+        /// <para>
+        /// ⚠️ 锚点用的是**内容区高度**，不是窗口高度，两者差一截：
+        /// EffectPlayer 里内容区高 = 窗口高 − 30（标题栏 + 底部按钮条），
+        /// 所以它的 Size 100 / 200 对应这里的 70 / 170；
+        /// 9.67 里内容区高 = ramcost − 15（只减标题栏）。
+        /// </para>
+        /// </summary>
+        public float LowAnchorHeight { get; set; } = 70f;
+        public int CountAtLowAnchor { get; set; } = 140;
+        public float HighAnchorHeight { get; set; } = 170f;
+        public int CountAtHighAnchor { get; set; } = 210;
+
+        /// <summary>折算后的实际数量下限 / 上限（防止极端尺寸下几乎没有粒子或卡顿）。</summary>
+        public int MinEffectiveCount { get; set; } = 24;
+        public int MaxEffectiveCount { get; set; } = 1400;
+
+        /// <summary>基础上升速度（满屏高 / 秒）；实际还会乘速度缩放，见 <see cref="SpeedScale"/>。</summary>
         public float BaseSpeed { get; set; } = 0.42f;
+
+        /// <summary>
+        /// 速度缩放的基准高度：**这个高度下速度就是 <see cref="BaseSpeed"/>（缩放 1.0）**。
+        ///
+        /// <para>
+        /// 为什么基准取 100 而不是 200：实测反馈是"100 的速度正好，但 200 及以上的不够"
+        /// —— 所以 100 才是"标准速度"的所在地，200 及以上需要提速。基准定在被打勾的那个尺寸上，
+        /// 参数才好读（缩放 &gt; 1 就是"比基准快"）。
+        /// </para>
+        ///
+        /// <para>
+        /// 注意"满屏高/秒"是归一化单位，所以窗口越高每秒像素越多 —— 200 的窗口即便缩放比
+        /// 100 小，每秒像素仍然更多，这与"100 正好、200 不够"的观察并不矛盾。
+        /// </para>
+        /// </summary>
+        public float SpeedReferenceHeight { get; set; } = 100f;
+
+        /// <summary>
+        /// 速度缩放随高度衰减的指数：<c>缩放 = (基准高 / 高度)^SpeedFalloff</c>。
+        ///
+        /// <para>
+        /// <b>1.0</b> = 每秒像素完全恒定（严格反比，之前那版）；
+        /// <b>0.0</b> = 完全不缩放（回退后那版，100 不够快）。
+        /// 实测"100 正好、大窗口不够"，说明需要**折一部分但别折满**，所以默认取 <b>0.86</b>
+        /// —— 100 处缩放约 2.0（正是被确认为"正好"的那档），200 处 1.8，400 处 1.3，
+        /// 越大越接近不缩放，每秒像素的增幅随尺寸递减。
+        /// </para>
+        /// </summary>
+        public float SpeedFalloff { get; set; } = 0.86f;
+
+        /// <summary>速度缩放的夹取范围（防止极端窗口尺寸下失控）。</summary>
+        public float MinSpeedScale { get; set; } = 0.25f;
+        public float MaxSpeedScale { get; set; } = 4f;
 
         /// <summary>
         /// 速度档位数。粒子速度在 <see cref="MinSpeedFactor"/> ~ <see cref="MaxSpeedFactor"/> 之间
@@ -176,18 +238,62 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
+        /// 按目标高度折算实际粒子数：过 <see cref="LowAnchorHeight"/>/<see cref="CountAtLowAnchor"/>
+        /// 与 <see cref="HighAnchorHeight"/>/<see cref="CountAtHighAnchor"/> 两点做**对数线性**插值并外推。
+        ///
+        /// <para>
+        /// 对数空间插值 = 数量随高度按幂律变化，且**两个锚点都精确命中**。
+        /// 用线性插值会在大范围外推出负值或低到无意义的数量，所以取对数空间。
+        /// </para>
+        /// </summary>
+        public int EffectiveCount(int destHeight)
+        {
+            float h = destHeight > 0 ? destHeight : HighAnchorHeight;
+            float loH = LowAnchorHeight <= 1f ? 100f : LowAnchorHeight;
+            float hiH = HighAnchorHeight <= 1f ? 200f : HighAnchorHeight;
+            float loN = Math.Max(1, CountAtLowAnchor);
+            float hiN = Math.Max(1, CountAtHighAnchor);
+
+            // 两点的幂指数（对数斜率）= ln(hiN/loN) / ln(hiH/loH)
+            float exponent = (float)(Math.Log((double)hiN / loN) / Math.Log((double)hiH / loH));
+            float n = loN * (float)Math.Pow(h / loH, exponent);
+
+            return (int)MathHelper.Clamp((float)Math.Round(n), MinEffectiveCount,
+                Math.Min(MaxEffectiveCount, _particles.Length));
+        }
+
+        /// <summary>
+        /// 速度的缩放：<c>(基准高 / 高度)^SpeedFalloff</c>，夹在 Min/Max 之间。
+        /// 乘上 <see cref="BaseSpeed"/> 后，小窗口的每秒像素被抬起来、大窗口抬得少一些 ——
+        /// 见 <see cref="SpeedFalloff"/> 的说明。
+        /// </summary>
+        public float SpeedScale(int destHeight)
+        {
+            float refH = SpeedReferenceHeight <= 1f ? 100f : SpeedReferenceHeight;
+            float h = destHeight > 0 ? destHeight : refH;
+            float scale = (float)Math.Pow(refH / h, MathHelper.Clamp(SpeedFalloff, 0f, 3f));
+            return MathHelper.Clamp(scale, MinSpeedScale, MaxSpeedScale);
+        }
+
+        /// <summary>
         /// 推进粒子。<paramref name="load"/> = 0~1 负荷，驱动上升速度。
         /// 传 <c>dt = 0</c> 即完全静止（供暂停使用）。
         /// </summary>
-        public void Update(float dt, float load)
+        /// <param name="dt">帧间隔（秒）。</param>
+        /// <param name="load">负荷 0~1。</param>
+        /// <param name="destHeight">
+        /// 目标矩形高度 —— 用来折算粒子数（<see cref="EffectiveCount"/>）
+        /// 与速度缩放（<see cref="SpeedScale"/>）。传 0 表示按锚点/基准高度处理。
+        /// </param>
+        public void Update(float dt, float load, int destHeight = 0)
         {
             if (dt <= 0f) return;
 
             load = MathHelper.Clamp(load, 0f, 1f);
             _time += dt;
 
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
-            int count = (int)MathHelper.Clamp(Count, 1, _particles.Length);
+            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * SpeedScale(destHeight);
+            int count = EffectiveCount(destHeight);
 
             for (int i = 0; i < count; i++)
             {
@@ -222,7 +328,7 @@ namespace KernelExtensions.Utilities
             if (dest.Width <= 4 || dest.Height <= 4) return;
 
             load = MathHelper.Clamp(load, 0f, 1f);
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
+            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * SpeedScale(dest.Height);
             float brightness = BaseBrightness * MathHelper.Lerp(0.8f, 1.35f, load);
 
             // 固定像素：轨迹宽 = 头部宽，两者比例在任何窗口下都一致
@@ -231,7 +337,7 @@ namespace KernelExtensions.Utilities
 
             if (ShowGrid) DrawGrid(sb, dest, color, load);
 
-            int count = (int)MathHelper.Clamp(Count, 1, _particles.Length);
+            int count = EffectiveCount(dest.Height);
             for (int i = 0; i < count; i++)
             {
                 Particle p = _particles[i];
