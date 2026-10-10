@@ -74,23 +74,23 @@ namespace KernelExtensions.Utilities
         public static (int A, int B)[] Edges(KPlatonicShape s) => ((int A, int B)[])Get(s).Edges.Clone();
 
         /// <summary>
-        /// 过顶点的 n 重旋转对称轴（已归一化）—— 绕它纯转时轮廓周期最短、视觉最稳。
-        /// 四面体 / 立方体 / 十二面体取过顶点的 3 重轴（体对角线方向 1,1,1）；
-        /// 八面体取过顶点的 4 重轴 (1,0,0)；二十面体取过顶点的 5 重轴 (0,1,φ)。
+        /// 自转轴。**五种立体统一取竖直 Y 轴**。
+        ///
+        /// <para>
+        /// 原先按"过顶点的 n 重对称轴"给：四面体/立方体/十二面体取体对角线 (1,1,1)、
+        /// 八面体取 (1,0,0)、二十面体取 (0,1,φ)。那在几何上确实是最"对称"的选择，
+        /// 但五种立体的动作**各不相同** —— 有的在翻滚、有的横滚、有的斜晃，
+        /// 观感是"转的方向不对"而不是自转。
+        /// </para>
+        ///
+        /// <para>
+        /// 取 Y 轴之后所有立体都是同一个动作：**绕竖直轴的水平自转**，
+        /// 从屏幕上看就是轮廓从左向右转。代价是大立方体/大十二面体绕 Y 轴转时会短暂
+        /// 出现"正对一条棱"的瞬时轮廓，但这是可预期的规则运动，优于五种不同的晃动。
+        /// </para>
         /// </summary>
-        /// <param name="s">立体种类；越界值退回立方体的对称轴。</param>
-        public static Vector3 SpinAxis(KPlatonicShape s)
-        {
-            switch (Index(s))
-            {
-                case (int)KPlatonicShape.Octahedron:
-                    return Vector3.UnitX;
-                case (int)KPlatonicShape.Icosahedron:
-                    return Vector3.Normalize(new Vector3(0f, 1f, (float)Phi));
-                default:
-                    return Vector3.Normalize(new Vector3(1f, 1f, 1f));
-            }
-        }
+        /// <param name="s">立体种类（本方法对五种返回同一根轴，保留参数是为了签名稳定）。</param>
+        public static Vector3 SpinAxis(KPlatonicShape s) => Vector3.UnitY;
 
         /// <summary>
         /// 非实机自检：核对五种形状的 v / e / f 计数、棱表（无重复、无自环、下标不越界、

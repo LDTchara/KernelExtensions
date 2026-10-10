@@ -306,11 +306,12 @@ namespace KernelExtensions.Executables
         /// </para>
         ///
         /// <para>
-        /// 0.04 = 1/25 速度，一圈约 22 秒；0.16（上一版）实测仍偏快。
-        /// 想更慢就继续降这个数。
+        /// 历次：0.16 反馈偏快 -> 0.08 -> 0.04 反馈仍偏快 -> 本次 **0.025**。
+        /// 对应速度约 8 / 4 / 2 / 1.25 度每秒（一圈 45 / 90 / 180 / 288 秒）。
+        /// 想更慢就继续降这个数；一圈秒数 = 18 / 该值。
         /// </para>
         /// </summary>
-        private const float CubeTimeScale = 0.04f;
+        private const float CubeTimeScale = 0.025f;
 
         private float _cubeTime;
 

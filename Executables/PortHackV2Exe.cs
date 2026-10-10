@@ -909,21 +909,33 @@ public class PortHackV2Exe : GameExecutable
         string text = win ? CurrentConfig.CompletionText : KELoc.Loc("PORT_HACK_V2_INTERRUPT_1", "CONNECTION");
 
         int cx = bounds.X + bounds.Width / 2;
-        int cy = bounds.Y + bounds.Height / 2;
+
+        // 中央文案：**尽量占满内容区**，只留出上下分隔线与底部进度条的位置。
+        // 原先 textRect 高度写死 28 —— doFontLabelToSize 缩放到 28 就封顶了，字号上不去。
+        // 现在把可用高度算出来交给它，长文案仍会被宽度约束自动缩到合适。
+        const int LINE_GAP = 18;       // 文字与外框白线之间留的空
+        const int BAR_ROOM = 34;       // 底部给进度条留的高度（成功演出时会画）
+        int textTop = area.Y + 4;
+        int textBottom = area.Bottom - (win ? BAR_ROOM : 6);
+        int textH = Math.Max(20, textBottom - textTop - LINE_GAP * 2);
+        Rectangle textRect = new(area.X + 10, textTop + LINE_GAP, area.Width - 20, textH);
+
+        // 上下白线贴在文字上下外侧，随文字高度一起外扩（不再写死 cy±20/26）
+        int lineTop = textRect.Y - LINE_GAP / 2;
+        int lineBottom = textRect.Bottom + LINE_GAP / 2;
 
         // 上下白线展开：0.4s 内从中心向两侧推开
         float expand = Utils.QuadraticOutCurve(MathHelper.Clamp(_completeElapsed / 0.4f, 0f, 1f));
         int lineW = (int)(expand * (bounds.Width - 30f));
         if (lineW > 2)
         {
-            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, cy - 20, lineW, 2),
+            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, lineTop, lineW, 2),
                 Utils.AddativeWhite * fade);
-            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, cy + 26, lineW, 2),
+            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, lineBottom, lineW, 2),
                 Utils.AddativeWhite * fade);
         }
 
-        // 单行中央文案：宽度自适应，过长自动缩字号（作者可能配很长的 CompletionText）
-        Rectangle textRect = new(area.X + 10, cy - 14, area.Width - 20, 28);
+        // 单行中央文案：宽高各自自适应，过长自动缩字号（作者可能配很长的 CompletionText）
         Color baseColor = win ? Color.White : os.lockedColor;
         DrawFlipTextFit(textRect, text, baseColor);
 

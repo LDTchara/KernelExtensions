@@ -45,8 +45,14 @@ public class PortHackV2Sequence : IDisposable
 
     // ---- 相机与投影 ----
     private const float CAMERA_DISTANCE = 3f;       // 模型半径 1，这个距离下立体约占画面短边 85%
-    private const float CAMERA_PITCH_DEG = 15f;     // 轻俯角：平视会正对赤道面，轮廓偏平
-    private const float CAMERA_YAW_DEG = 25f;       // 方位角：避免正好沿某个对称轴看过去，转动才看得出来
+    private const float CAMERA_PITCH_DEG = 15f;         // 轻俯角：相机略高于物体往下看（这个观感已确认合适）
+    private const float CAMERA_YAW_DEG = 0f;            // 正对 Z 轴；水平自转的"从左向右"要正对着看才正
+
+    /// <summary>
+    /// 自转方向。角度增大时前面的面向 +X（屏幕**右**）移动，看起来是逆时针；
+    /// 取负号才是"前面的面往右边走"的**顺时针**观感，与预期一致。
+    /// </summary>
+    private const float SPIN_DIRECTION_SIGN = -1f;
     private const float FOV_Y_DEG = 45f;            // 纵向视场角；窄窗口按宽高比放大，保证横向也装得下
 
     /// <summary>相机方向（单位向量，从原点指向相机位置）。</summary>
@@ -385,7 +391,8 @@ public class PortHackV2Sequence : IDisposable
             if (aspect < 1f) halfFov = (float)Math.Atan(Math.Tan(halfFov) / aspect);
             _effect.Projection = Matrix.CreatePerspectiveFieldOfView(halfFov * 2f, aspect, 0.1f, CAMERA_DISTANCE * 2f);
             _effect.View = Matrix.CreateLookAt(CameraDirection * CAMERA_DISTANCE, Vector3.Zero, Vector3.Up);
-            _effect.World = Matrix.CreateScale(_scale) * Matrix.CreateFromAxisAngle(_axis, _angle);
+            _effect.World = Matrix.CreateScale(_scale)
+                * Matrix.CreateFromAxisAngle(_axis, _angle * SPIN_DIRECTION_SIGN);
 
             gd.RasterizerState = _rasterizer;
             gd.DepthStencilState = DepthStencilState.None; // 不挂深度缓冲：线框本来就该看见背面那几条棱
