@@ -14,6 +14,23 @@ using System.Xml.Serialization;
 namespace KernelExtensions.Configs;
 
 /// <summary>
+/// PortHackV2 可选的面板背景效果（都取自游戏本体现成的 Effects，无需自带资源）。
+/// </summary>
+public enum PortHackV2BackgroundEffect
+{
+    /// <summary>不画背景。</summary>
+    None,
+    /// <summary>从中心向外扩散旋转的点阵（PhaseSwift 用的就是它）。</summary>
+    ZoomingDotGrid,
+    /// <summary>六边形蜂窝网格（原版 KaguyaTrial 用的）。</summary>
+    HexGrid,
+    /// <summary>带十字标记的交叉网格。</summary>
+    Grid,
+    /// <summary>多层递归点阵（景深感）。</summary>
+    DepthDotGrid,
+}
+
+/// <summary>
 /// 单个待破解协议：协议名 + 成功率 + 两条分支各自时长。
 ///
 /// 数值项与根配置同样用 string 承接原值（XmlSerializer 遇非数字会直接抛，详见根类注释）。
@@ -146,15 +163,21 @@ public class PortHackV2Config
     [XmlIgnore] public KPlatonicShape PolyhedronShape { get; private set; } = KPlatonicShape.Cube;
 
     /// <summary>
-    /// 强调色：界面标题、底部总进度条、动画立体线框都用它。
+    /// 强调色：**动画立体（多边体线框）**专用。
     ///
     /// 留空 / <c>NONE</c> = <see cref="DefaultAccentColor"/>（**白色**）。
     /// 支持全部写法 —— CustomColor 预设名、动态色（<c>LDTchara</c> / <c>Rainbow</c> / <c>Gradient:…</c>）、
     /// <c>#RGB</c> / <c>#RRGGBB</c> / <c>#AARRGGBB</c>、<c>R,G,B[,A]</c>、XNA 命名色；
     /// 由 CustomColorManager 统一解析，动态色逐帧刷新。
-    /// 目标机状态的语义色（locked / unlocked）仍走主题色，不归此项管。
+    /// 进度条另用 <see cref="ProgressColorRaw"/>；目标机状态的语义色（locked / unlocked）仍走主题色。
     /// </summary>
     [XmlElement("AccentColor")] public string AccentColorRaw { get; set; }
+
+    /// <summary>
+    /// 底部总进度条的颜色。留空 / <c>NONE</c> = **跟随强调色**（<see cref="AccentColor"/>）。
+    /// 写法同 <see cref="AccentColorRaw"/>。
+    /// </summary>
+    [XmlElement("ProgressColor")] public string ProgressColorRaw { get; set; }
 
     /// <summary>强调色默认值：白色（程序自带配色，不跟随主题高亮色）。</summary>
     [XmlIgnore] public static Color DefaultAccentColor => Color.White;
@@ -164,6 +187,33 @@ public class PortHackV2Config
     /// 供 <c>OnInitialize</c> 之后不逐帧刷新的调用点使用。
     /// </summary>
     [XmlIgnore] public Color AccentColor { get; private set; } = Color.White;
+
+    /// <summary>解析后的进度条颜色（静态部分）。</summary>
+    [XmlIgnore] public Color ProgressColor { get; private set; } = Color.White;
+
+    /// <summary>解析后的背景色（静态部分）。</summary>
+    [XmlIgnore] public Color BackgroundColor { get; private set; } = Color.White;
+
+    /// <summary>
+    /// 背景效果名（<c>NONE</c> = 不画背景）。见 <see cref="ParseBackgroundEffect"/> 支持的取值。
+    /// </summary>
+    [XmlElement("BackgroundEffect")] public string BackgroundEffectRaw { get; set; }
+
+    /// <summary>背景效果的解析结果。</summary>
+    [XmlIgnore] public PortHackV2BackgroundEffect BackgroundEffect { get; private set; } = PortHackV2BackgroundEffect.ZoomingDotGrid;
+
+    /// <summary>背景色。留空 / <c>NONE</c> = 跟随强调色。写法同 <see cref="AccentColorRaw"/>。</summary>
+    [XmlElement("BackgroundColor")] public string BackgroundColorRaw { get; set; }
+
+    /// <summary>
+    /// 成功演出的中央文案。**留空 = <c>COMPLETE</c>**（所有语言都用它，不做本地化 ——
+    /// 这个位置是"程序告诉你破解完了"的电子感文字，和原版的 PASSWORD/FOUND 同类）。
+    /// 单行显示；过长会按面板宽度自动缩字号。
+    /// </summary>
+    [XmlElement("CompletionText")] public string CompletionText { get; set; } = DefaultCompletionText;
+
+    /// <summary>成功演出文案的默认值。</summary>
+    public const string DefaultCompletionText = "COMPLETE";
 
     /// <summary>
     /// 起转（加速）时长**占总时长的比例**。留空 = 0.1（总时长的 10%）。
@@ -316,6 +366,20 @@ public class PortHackV2Config
         // 留空 / NONE 时 GetDynamicColor 直接返回默认色（白色），故不需要额外判空。
         AccentColor = CustomColorManager.GetDynamicColor(AccentColorRaw, DefaultAccentColor);
 
+        // 进度条颜色：留空 = 跟随强调色（作者只想要一个颜色时不用写两遍）
+        ProgressColor = string.IsNullOrWhiteSpace(ProgressColorRaw) || ConfigValue.IsNone(ProgressColorRaw)
+            ? AccentColor
+            : CustomColorManager.GetDynamicColor(ProgressColorRaw, AccentColor);
+
+        // 背景色：留空 = 跟随强调色
+        BackgroundColor = string.IsNullOrWhiteSpace(BackgroundColorRaw) || ConfigValue.IsNone(BackgroundColorRaw)
+            ? AccentColor
+            : CustomColorManager.GetDynamicColor(BackgroundColorRaw, AccentColor);
+
+        BackgroundEffect = ParseBackgroundEffect(BackgroundEffectRaw);
+
+        if (string.IsNullOrWhiteSpace(CompletionText)) CompletionText = DefaultCompletionText;
+
         SpinUpRatio = ConfigValue.ParseInRange(SpinUpRatioRaw, 0.1f, 0f, 1f, out bool surOk);
         if (!surOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinUpRatio> '{SpinUpRatioRaw}', expected 0~1; using 0.1.");
@@ -330,6 +394,22 @@ public class PortHackV2Config
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinDownTime> '{SpinDownSecondsRaw}', expected 0~600; using 1.7.");
 
         foreach (var p in Protocols) p?.ResolveValues(SourceName);
+    }
+
+    /// <summary>
+    /// 解析背景效果名（大小写不敏感）；留空 = 默认 <see cref="PortHackV2BackgroundEffect.ZoomingDotGrid"/>
+    /// （不记日志，那是正常省略）；写了但无法识别 = 回退默认 + Warn。
+    /// </summary>
+    private PortHackV2BackgroundEffect ParseBackgroundEffect(string raw)
+    {
+        if (ConfigValue.IsNone(raw)) return PortHackV2BackgroundEffect.ZoomingDotGrid;
+
+        if (Enum.TryParse(raw.Trim(), ignoreCase: true, out PortHackV2BackgroundEffect effect))
+            return effect;
+
+        KELog.Warn($"[PortHackV2] '{SourceName}': unknown <BackgroundEffect> '{raw}'; "
+            + "expected NONE / ZoomingDotGrid / HexGrid / Grid / DepthDotGrid. Using ZoomingDotGrid.");
+        return PortHackV2BackgroundEffect.ZoomingDotGrid;
     }
 
     /// <summary>

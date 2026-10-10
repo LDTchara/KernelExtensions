@@ -174,6 +174,8 @@ public class PortHackV2Exe : GameExecutable
 
         _accent = CurrentConfig.AccentColor;
         _accentStr = CurrentConfig.AccentColorRaw;
+        _progressStr = CurrentConfig.ProgressColorRaw;
+        _bgStr = CurrentConfig.BackgroundColorRaw;
 
         CurrentState = PortHackV2State.Listing;
     }
@@ -403,6 +405,8 @@ public class PortHackV2Exe : GameExecutable
 
         CurrentState = PortHackV2State.Complete;
         _completeElapsed = 0f;
+        // 急刹从这一刻（根级 <Time> 跑满）才开始，而不是"匀速区间用完"时
+        _sequence.CrackingFinished = true;
         _sequence.IdleSpin = true;      // 成功演出期间背景立体继续慢转
         PortHackV2Hooks.Run(os, CurrentConfig.OnComplete, source, "OnComplete");
         KELog.Info($"[PortHackV2] '{source}': crack finished, {_successCount}/{_runtimes.Count} protocol(s) succeeded.");
@@ -490,6 +494,16 @@ public class PortHackV2Exe : GameExecutable
 
     // ======================= Draw =======================
 
+    /// <summary>
+    /// 绘制分两段（对齐 CustomTrialExe 的结构）：
+    /// <list type="number">
+    ///   <item>背景层：铺满内容区（<c>BackgroundEffect</c>，可配 NONE）</item>
+    ///   <item>状态层：各状态自己的内容</item>
+    /// </list>
+    /// 退出按钮单独画在最上层，且**只在 Locked / Listing 出现** ——
+    /// Cracking 一旦开跑就不该让玩家按"退出"溜走（要中断就断开连接），
+    /// Complete / 中断收尾是演出，本来也没有可退的东西。
+    /// </summary>
     public override void Draw(float t)
     {
         base.Draw(t);
@@ -512,8 +526,8 @@ public class PortHackV2Exe : GameExecutable
                 break;
         }
 
-        // Exit 按钮在除演出外的所有状态都可用
-        if (CurrentState != PortHackV2State.Complete && CurrentState != PortHackV2State.Failed
+        // 退出按钮：仅 Locked / Listing（Cracking 起不给退，演出中也没有可退的）
+        if (CanShowExitButton()
             && Button.doButton(PID + ID_EXIT, bounds.X + bounds.Width - 62, bounds.Y + bounds.Height - 30,
                 56, 24, KELoc.Loc("PORT_HACK_V2_EXIT", "Exit"), os.lockedColor))
         {
@@ -521,22 +535,93 @@ public class PortHackV2Exe : GameExecutable
         }
     }
 
+    /// <summary>当前状态是否显示退出按钮（见 <see cref="Draw"/> 的说明）。</summary>
+    private bool CanShowExitButton()
+        => CurrentState == PortHackV2State.Locked || CurrentState == PortHackV2State.Listing;
+
+    // ---- 背景层 ----
+
+    /// <summary>
+    /// 铺背景。用游戏本体现成的 Effects（都不需要自带资源）。
+    /// <paramref name="applyFade"/> = true 时随面板淡出（Listing / Cracking / 演出）；
+    /// false 时按原量绘制（锁定屏 —— 它整屏瞬时消失，见 <see cref="DrawLocked"/>）。
+    /// </summary>
+    private void DrawBackground(Rectangle area, bool applyFade = true)
+    {
+        if (CurrentConfig == null || area.Width <= 8 || area.Height <= 8) return;
+        if (CurrentConfig.BackgroundEffect == PortHackV2BackgroundEffect.None) return;
+
+        float a = applyFade ? fade : 1f;
+        Color c = _bgColor;
+        try
+        {
+            switch (CurrentConfig.BackgroundEffect)
+            {
+                case PortHackV2BackgroundEffect.ZoomingDotGrid:
+                    Hacknet.Effects.ZoomingDotGridEffect.Render(area, spriteBatch, os.timer, c * (0.4f * a));
+                    break;
+
+                case PortHackV2BackgroundEffect.HexGrid:
+                    _hexGrid ??= new Hacknet.Effects.HexGridBackground(os.content);
+                    _hexGrid.Update(1f / 60f);
+                    _hexGrid.Draw(area, spriteBatch, Color.Black * a, c * (0.2f * a),
+                        Hacknet.Effects.HexGridBackground.ColoringAlgorithm.CorrectedSinWash, 0f);
+                    break;
+
+                case PortHackV2BackgroundEffect.Grid:
+                    Hacknet.Effects.GridEffect.DrawGridBackground(area, spriteBatch, 12, c * (0.3f * a));
+                    break;
+
+                case PortHackV2BackgroundEffect.DepthDotGrid:
+                    _depthGrid ??= new Hacknet.Effects.DepthDotGridEffect(os.content);
+                    _depthGrid.DrawGrid(area, Vector2.Zero, spriteBatch, 1f, 3, c * (0.2f * a),
+                        15f, 3f, 30f, os.timer * 0.2f, 0.3f);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            // 背景画不出来不该影响破解流程；只报一次免得刷屏
+            if (!_bgWarned)
+            {
+                _bgWarned = true;
+                KELog.Warn($"[PortHackV2] background '{CurrentConfig.BackgroundEffect}' failed: {ex.Message}");
+            }
+        }
+    }
+
+    private Hacknet.Effects.HexGridBackground _hexGrid;
+    private Hacknet.Effects.DepthDotGridEffect _depthGrid;
+    private bool _bgWarned;
+
     // ---- Locked ----
 
+    /// <summary>
+    /// 锁定屏。
+    ///
+    /// ⚠️ **整屏内容都不参与淡出**：<c>isExiting</c> 一开始就整个停画
+    /// —— 背景网格与文字在退出瞬间一起"啪"地消失（对齐 PhaseSwiftExe 的做法，
+    /// 它整屏内容都不乘 <c>fade</c>），只留基类那层 shell 在淡出。
+    /// 其余状态（Listing / Cracking / 演出）才走 <c>fade</c>。
+    /// </summary>
     private void DrawLocked()
     {
+        if (isExiting) return;   // 退出瞬间：背景与文字一起停止绘制，不做淡出
+
+        Rectangle area = ContentArea;
+        DrawBackground(area, applyFade: false);
+
         int cx = bounds.X + bounds.Width / 2;
         string title = KELoc.Loc("PORT_HACK_V2_LOCKED_TITLE", "LOCKED");
         Vector2 ts = GuiData.font.MeasureString(title);
         spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(title, 0.05),
             new Vector2(cx - ts.X / 2f, ContentTop + 24), os.lockedColor, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
+        // 原因文本宽度自适应（文件名由作者给，可能很长）
         if (!string.IsNullOrEmpty(_lockReason))
         {
-            Vector2 rs = GuiData.smallfont.MeasureString(_lockReason);
-            spriteBatch.DrawString(GuiData.smallfont, _lockReason,
-                new Vector2(cx - rs.X / 2f, ContentTop + 54), Color.White * 0.75f,
-                0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            Rectangle reasonRect = new(area.X + 8, ContentTop + 52, area.Width - 16, 20);
+            TextItem.doFontLabelToSize(reasonRect, _lockReason, GuiData.smallfont, Color.White * 0.85f);
         }
 
         string closing = KELoc.Format("PORT_HACK_V2_CLOSING", "Closing in {0}s",
@@ -544,6 +629,10 @@ public class PortHackV2Exe : GameExecutable
         TextItem.doFontLabel(new Vector2(bounds.X + 4, ContentBottom - 18), closing,
             GuiData.detailfont, Color.White * 0.5f);
     }
+
+    /// <summary>内容区（背景层铺满它；对齐 CustomTrialExe 的 contentRect 算法）。</summary>
+    private Rectangle ContentArea
+        => new(bounds.X + 2, bounds.Y + PANEL_HEIGHT + 2, bounds.Width - 4, bounds.Height - PANEL_HEIGHT - 4);
 
     // ---- Listing ----
 
@@ -621,117 +710,119 @@ public class PortHackV2Exe : GameExecutable
 
     private void DrawListing()
     {
+        Rectangle area = ContentArea;
+        DrawBackground(area);
+
         int x = InnerX;
         int w = InnerW;
 
         string title = string.IsNullOrEmpty(CurrentConfig.Title)
             ? KELoc.Loc("PORT_HACK_V2_LISTING_TITLE", "PortHackV2")
             : CurrentConfig.Title;
-        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, _accent);
+        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, _accent * fade);
 
         List<ListingRow> rows = BuildListingRows();
+
+        // 行高按可用高度自适应（行多时压缩，行少时保持原高）——避免小面板下越界
+        int avail = Math.Max(0, ContentBottom - 22 - (ContentTop + 26));
+        int rowH = rows.Count > 0 ? Math.Min(30, Math.Max(16, avail / rows.Count)) : 30;
         int y = ContentTop + 26;
-        const int rowH = 30;
 
         if (rows.Count == 0)
         {
             TextItem.doFontLabel(new Vector2(x, y),
                 KELoc.Loc("PORT_HACK_V2_NO_PREREQ", "No prerequisites - starting..."),
-                GuiData.smallfont, Color.White * 0.7f);
+                GuiData.smallfont, Color.White * (0.7f * fade));
         }
 
         foreach (ListingRow row in rows)
         {
-            if (y + rowH > ContentBottom - 24) break;    // 行数超出可视区就不画了（不裁切半行）
+            if (y + rowH > ContentBottom - 22) break;    // 行数超出可视区就不画了（不裁切半行）
 
             Rectangle bar = new Rectangle(x, y, w, rowH - 4);
             Color bg = row.Met ? os.unlockedColor : os.lockedColor;
-            RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, bg * 0.85f);
+            RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, bg * (0.85f * fade));
 
             // 左侧状态点：满足 = 高亮，未满足 = 暗
-            RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, bar.Height - 8,
-                row.Met ? _accent : os.darkBackgroundColor);
+            RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, Math.Max(2, bar.Height - 8),
+                row.Met ? _accent * fade : os.darkBackgroundColor * fade);
 
-            spriteBatch.DrawString(GuiData.smallfont, row.Label,
-                new Vector2(bar.X + 16, bar.Y + 4), Color.White * 0.95f);
-            spriteBatch.DrawString(GuiData.detailfont, row.Detail,
-                new Vector2(bar.X + 16, bar.Y + bar.Height - 14), Color.White * 0.55f);
+            // 标签与说明各占一条带内的一半：说明放**上面**那条（原先把说明压在行底，
+            // 行一压缩就贴到下一行去了；放上面与标题连读更顺，也不会被下一行盖住）
+            int labelH = Math.Max(9, bar.Height / 2);
+            TextItem.doFontLabelToSize(new Rectangle(bar.X + 16, bar.Y + 1, bar.Width - 22, labelH),
+                row.Label, GuiData.smallfont, Color.White * (0.95f * fade));
+            TextItem.doFontLabelToSize(
+                new Rectangle(bar.X + 16, bar.Y + labelH, bar.Width - 22, Math.Max(8, bar.Height - labelH)),
+                row.Detail, GuiData.detailfont, Color.White * (0.6f * fade));
 
             y += rowH;
         }
 
         // 左下角：预计破解时长（成功分支）
         string est = KELoc.Format("PORT_HACK_V2_ESTIMATE", "Estimated time: {0}s", (int)Math.Ceiling(EstimatedDuration()));
-        TextItem.doFontLabel(new Vector2(x, ContentBottom - 18), est, GuiData.detailfont, Color.White * 0.6f);
+        TextItem.doFontLabel(new Vector2(x, ContentBottom - 18), est, GuiData.detailfont, Color.White * (0.6f * fade));
     }
 
     // ---- Cracking ----
 
+    /// <summary>
+    /// 破解中：**只有立体动画 + 底部总进度条**。
+    ///
+    /// 刻意不画的东西（都是与"正在破解"这件事无关的噪声）：
+    ///   · 标题 —— 玩家已经知道自己在跑什么程序
+    ///   · 每个协议各自的进度条 —— 多协议并行时它们会一起动，看不过来看不出信息；
+    ///     底部的总进度条已经表达了"还要多久"
+    ///   · 百分比与剩余秒数 —— 进度条本身就是时间表达，再叠数字是重复（且窄面板时会撞在一起）
+    /// </summary>
     private void DrawCracking()
     {
-        int x = InnerX;
-        int w = InnerW;
+        Rectangle area = ContentArea;
+        DrawBackground(area);
 
-        string title = string.IsNullOrEmpty(CurrentConfig.Title)
-            ? KELoc.Loc("PORT_HACK_V2_CRACKING_TITLE", "Cracking...")
-            : CurrentConfig.Title;
-        TextItem.doFontLabel(new Vector2(x, ContentTop), title, GuiData.font, _accent);
-
-        // 动画区：批 3 由 PortHackV2Sequence 接管（此处先出 3D 画布）
-        Rectangle anim = new Rectangle(x, ContentTop + 24, w, Math.Max(40, ContentBottom - ContentTop - 24 - 16 - 22 - 8));
+        // 动画区铺满内容区（下面只留底部进度条的位置）
+        Rectangle anim = new(area.X, area.Y, area.Width, Math.Max(24, area.Height - PROGRESS_BAR_H - 4));
         DrawAnimationArea(anim, opacity: 0.6f);
 
-        // 每个协议一条独立进度条（各跑自己的成功/失败分支时长）
-        int y = anim.Bottom + 4;
-        foreach (ProtocolRuntime rt in _runtimes)
-        {
-            if (y + 12 > ContentBottom - 22) break;
-            DrawProtocolBar(new Rectangle(x, y, w, 10), rt);
-            y += 14;
-        }
-
-        // 底部：根级总进度条（走 <Time>）
         float total = CurrentConfig.Time <= 0f ? 1f : MathHelper.Clamp(_crackTime / CurrentConfig.Time, 0f, 1f);
-        DrawProgressBar(new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16), total, showSeconds: true);
+        DrawProgressBar(total, showSeconds: false, showPercent: false);
     }
 
-    /// <summary>单个协议的进度条：左侧协议名，右侧百分比。</summary>
-    private void DrawProtocolBar(Rectangle bar, ProtocolRuntime rt)
+    // ---- 底部总进度条 ----
+
+    /// <summary>底部总进度条的几何（贴着内容区底边）。</summary>
+    private Rectangle ProgressBarRect
+        => new(bounds.X + 2, bounds.Y + bounds.Height - PROGRESS_BAR_H - 2, bounds.Width - 4, PROGRESS_BAR_H);
+
+    /// <summary>进度条高度（像素）。</summary>
+    private const int PROGRESS_BAR_H = 16;
+
+    /// <summary>
+    /// 底部总进度条：衬底 + 进度 + **边框**（边框对齐 CustomTrialExe 的 DrawTimerBar，
+    /// 否则深色背景上条体边界不清）。
+    ///
+    /// 颜色走 <c>ProgressColor</c>（留空 = 跟随强调色），与原版一致整条随 <c>fade</c> 淡出。
+    /// 文字默认都不画 —— Cracking 只看条、Complete 已经满了，两者都没必要读数。
+    /// </summary>
+    private void DrawProgressBar(float progress, bool showSeconds, bool showPercent)
     {
-        string label = ProtocolDisplayName(rt.Def.Name);
-        bool running = rt.Started;
+        Rectangle bar = ProgressBarRect;
+        if (bar.Width <= 4 || bar.Height <= 4) return;
 
-        spriteBatch.DrawString(GuiData.detailfont, label, new Vector2(bar.X, bar.Y - 2),
-            running ? Color.White * 0.8f : Color.White * 0.35f);
+        RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, os.darkBackgroundColor * (0.9f * fade));
+        RenderedRectangle.doRectangle(bar.X, bar.Y, (int)(bar.Width * progress), bar.Height, _progressColor * fade);
+        RenderedRectangle.doRectangleOutline(bar.X, bar.Y, bar.Width, bar.Height, 1, Color.White * fade);
 
-        int barX = bar.X + 110;
-        int barW = bar.Width - 110 - 40;
-        if (barW <= 10) return;
+        if (bar.Width < 120) return;   // 太窄就别塞文字（否则百分比和秒数会撞在一起）
 
-        RenderedRectangle.doRectangle(barX, bar.Y, barW, bar.Height, Color.Black * 0.7f);
-        if (running)
+        if (showPercent)
         {
-            float p = rt.Progress;
-            RenderedRectangle.doRectangle(barX, bar.Y, (int)(barW * p), bar.Height,
-                (rt.Succeeded ? _accent : os.lockedColor) * 0.9f);
-
-            string pct = $"{(int)(p * 100f)}%";
-            spriteBatch.DrawString(GuiData.detailfont, pct,
-                new Vector2(bar.X + bar.Width - 36, bar.Y - 2), Color.White * 0.7f);
+            string pct = $"{(int)(progress * 100f)}%";
+            Vector2 ps = GuiData.smallfont.MeasureString(pct);
+            spriteBatch.DrawString(GuiData.smallfont, pct,
+                new Vector2(bar.X + bar.Width / 2f - ps.X / 2f, bar.Y + (bar.Height - ps.Y) / 2f),
+                Color.White * fade, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
         }
-    }
-
-    /// <summary>主题色进度条（衬底 + 进度条 + 百分比 + 剩余秒数）。</summary>
-    private void DrawProgressBar(Rectangle bar, float progress, bool showSeconds)
-    {
-        RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, os.darkBackgroundColor * 0.9f);
-        RenderedRectangle.doRectangle(bar.X, bar.Y, (int)(bar.Width * progress), bar.Height, _accent);
-
-        string pct = $"{(int)(progress * 100f)}%";
-        Vector2 ps = GuiData.smallfont.MeasureString(pct);
-        spriteBatch.DrawString(GuiData.smallfont, pct,
-            new Vector2(bar.X + bar.Width / 2f - ps.X / 2f, bar.Y + (bar.Height - ps.Y) / 2f),
-            Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
         if (showSeconds)
         {
@@ -740,65 +831,66 @@ public class PortHackV2Exe : GameExecutable
             Vector2 tsz = GuiData.smallfont.MeasureString(timeText);
             spriteBatch.DrawString(GuiData.smallfont, timeText,
                 new Vector2(bar.X + bar.Width - tsz.X - 4, bar.Y + (bar.Height - tsz.Y) / 2f),
-                Color.White * 0.85f, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                Color.White * (0.85f * fade), 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
         }
     }
 
     // ---- Complete / Failed 演出 ----
 
+    /// <summary>
+    /// 收尾演出：背景（立体慢转）+ 上下白线展开 + **单行**中央文案。
+    ///
+    /// 文案：成功 = <c>CompletionText</c>（默认 <c>COMPLETE</c>，不做本地化）；
+    /// 中断 = CONNECTION / LOST（说明"连接断了/人走了"，不是破解失败）。
+    /// 对齐原版：上下白线用 <c>QuadraticOutCurve</c> 展开，文字叠两层乱序字。
+    /// </summary>
     private void DrawOutro()
     {
-        int x = InnerX;
-        int w = InnerW;
+        Rectangle area = ContentArea;
+        DrawBackground(area);
 
-        // 背景：立体继续慢转（成功）/ 停止（失败）
-        Rectangle anim = new Rectangle(x, ContentTop + 20, w, ContentBottom - ContentTop - 20);
-        DrawAnimationArea(anim, opacity: CurrentState == PortHackV2State.Complete ? 0.2f : 0.35f);
+        // 背景：立体继续慢转（成功）/ 已停住（中断）
+        DrawAnimationArea(area, opacity: CurrentState == PortHackV2State.Complete ? 0.2f : 0.35f);
 
         bool win = CurrentState == PortHackV2State.Complete;
-        // 中断收尾不是"破解失败"：根级没有 RNG，单个协议没破开由该协议自己的 OnFail 表达。
-        // 这里的文案只说明"连接断了/人走了"。
-        string line1 = win
-            ? KELoc.Loc("PORT_HACK_V2_COMPLETE_1", "PASSWORD")
-            : KELoc.Loc("PORT_HACK_V2_INTERRUPT_1", "CONNECTION");
-        string line2 = win
-            ? KELoc.Loc("PORT_HACK_V2_COMPLETE_2", "FOUND")
-            : KELoc.Loc("PORT_HACK_V2_INTERRUPT_2", "LOST");
+        string text = win ? CurrentConfig.CompletionText : KELoc.Loc("PORT_HACK_V2_INTERRUPT_1", "CONNECTION");
 
         int cx = bounds.X + bounds.Width / 2;
         int cy = bounds.Y + bounds.Height / 2;
 
-        // 上下白线展开：0.4s 内从中心向两侧推开（对齐原版的 QuadraticOut 展开）
+        // 上下白线展开：0.4s 内从中心向两侧推开
         float expand = Utils.QuadraticOutCurve(MathHelper.Clamp(_completeElapsed / 0.4f, 0f, 1f));
         int lineW = (int)(expand * (bounds.Width - 30f));
         if (lineW > 2)
         {
-            int lineY1 = cy - 18;
-            int lineY2 = cy + 46;
-            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, lineY1, lineW, 2),
+            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, cy - 20, lineW, 2),
                 Utils.AddativeWhite * fade);
-            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, lineY2, lineW, 2),
+            spriteBatch.Draw(Utils.white, new Rectangle(cx - lineW / 2, cy + 26, lineW, 2),
                 Utils.AddativeWhite * fade);
         }
 
-        // 中央文案：两层乱序字（清晰层 + 低概率抖动层）叠出原版的"电子抖动"观感
+        // 单行中央文案：宽度自适应，过长自动缩字号（作者可能配很长的 CompletionText）
+        Rectangle textRect = new(area.X + 10, cy - 14, area.Width - 20, 28);
         Color baseColor = win ? Color.White : os.lockedColor;
-        DrawFlipText(line1, new Vector2(cx, cy - 12), baseColor);
-        DrawFlipText(line2, new Vector2(cx, cy + 24), baseColor);
+        DrawFlipTextFit(textRect, text, baseColor);
 
         if (win)
-            DrawProgressBar(new Rectangle(bounds.X + 2, bounds.Y + bounds.Height - 18, w, 16), 1f, showSeconds: false);
+            DrawProgressBar(1f, showSeconds: false, showPercent: false);
     }
 
-    /// <summary>居中绘制一行乱序字，并叠一层低概率抖动。</summary>
-    private void DrawFlipText(string text, Vector2 center, Color color)
+    /// <summary>
+    /// 在给定矩形里居中画一行乱序字（叠一层低概率抖动），**按矩形宽度自动缩字号**。
+    /// 用 <see cref="TextItem.doFontLabelToSize"/> 做贴合，避免作者配长文案时溢出面板。
+    /// </summary>
+    private void DrawFlipTextFit(Rectangle rect, string text, Color color)
     {
-        Vector2 size = GuiData.font.MeasureString(text);
-        Vector2 pos = new(center.X - size.X / 2f, center.Y - size.Y / 2f);
-        spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(text, 0.012), pos, color * fade);
-        spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(text, 0.11), pos,
-            Utils.AddativeWhite * 0.2f * fade * fade);
+        // 抖动层先画（暗、低概率），清晰层后画压在上面
+        TextItem.doFontLabelToSize(rect, Utils.FlipRandomChars(text, 0.11),
+            GuiData.font, Utils.AddativeWhite * (0.2f * fade * fade));
+        TextItem.doFontLabelToSize(rect, Utils.FlipRandomChars(text, 0.012),
+            GuiData.font, color * fade);
     }
+
 
     // ---- 3D 动画画布 ----
 
@@ -832,7 +924,7 @@ public class PortHackV2Exe : GameExecutable
             _rtBatch.End();
             spriteBatch.GraphicsDevice.SetRenderTarget(previous);
 
-            _sequence.DrawOverlay(spriteBatch, area, opacity);
+            _sequence.DrawOverlay(spriteBatch, area, opacity * fade);
         }
         catch (Exception ex)
         {
@@ -856,9 +948,28 @@ public class PortHackV2Exe : GameExecutable
     private Color _accent = Color.White;
     private string _accentStr;
 
-    /// <summary>刷新强调色：留空 / NONE 时返回白色（GetDynamicColor 内部已处理）。</summary>
+    /// <summary>进度条颜色（`ProgressColor`，留空 = 跟随强调色）。</summary>
+    private Color _progressColor = Color.White;
+    private string _progressStr;
+
+    /// <summary>背景色（`BackgroundColor`，留空 = 跟随强调色）。</summary>
+    private Color _bgColor = Color.White;
+    private string _bgStr;
+
+    /// <summary>
+    /// 刷新三处颜色（强调色 / 进度条 / 背景）。
+    /// 动态色（CC 预设、Rainbow、Gradient）必须**逐帧重算**，所以在 Update 里刷新而不是 Draw 里现算 ——
+    /// Draw 一帧要画十几处，每处都走一遍解析既浪费又可能在同一帧里拿到不同相位。
+    /// </summary>
     private void RefreshAccent()
-        => _accent = CustomColorManager.GetDynamicColor(_accentStr, PortHackV2Config.DefaultAccentColor);
+    {
+        _accent = CustomColorManager.GetDynamicColor(_accentStr, PortHackV2Config.DefaultAccentColor);
+        // 留空 = 跟随强调色（配置类里也是这么解析的，这里保持一致）
+        _progressColor = ConfigValue.IsNone(_progressStr)
+            ? _accent : CustomColorManager.GetDynamicColor(_progressStr, _accent);
+        _bgColor = ConfigValue.IsNone(_bgStr)
+            ? _accent : CustomColorManager.GetDynamicColor(_bgStr, _accent);
+    }
 
     /// <summary>
     /// 程序被移除时释放离屏资源（RenderTarget / 专用 SpriteBatch / 3D 缓冲）。

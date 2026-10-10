@@ -57,13 +57,12 @@ public class PortHackV2Sequence : IDisposable
     private float _omega;
     private float _scale;
     private float _idleTime;        // 慢转区内的停留时长（IdleSpin=false 时用来慢慢停住）
-    private bool _woundDown;        // 已经收过尾（进过急刹 / 慢转），不再回到高速
+    private float _postCrackTime;   // Cracking 结束后又过了多久（驱动急刹窗口）
 
     // ---- 时间轴（由 ApplyTimeline 按总时长结算） ----
     private float _totalSeconds = 10f;
     private float _spinUpTime;      // 起转（浮现 + 加速）实际时长
     private float _spinDownTime;    // 急刹实际时长（已按剩余截断）
-    private float _steadyEnd;       // 匀速结束时刻 = 总时长 - 急刹时长
 
     // ---- 渲染资源（惰性创建；设备或尺寸变化时重建） ----
     private GraphicsDevice _device;
@@ -87,6 +86,16 @@ public class PortHackV2Sequence : IDisposable
         get => _shape;
         set => _shape = value;
     }
+
+    /// <summary>
+    /// true = **Cracking 已结束（根级 <c>&lt;Time&gt;</c> 跑满）**，急刹从这个时刻才开始。
+    ///
+    /// 为什么需要这个标志：急刹在语义上是"破解完毕、收工"的表达，
+    /// 而根级 <c>&lt;Time&gt;</c> 跑满才是那个时刻 —— 若按"匀速区间用完"就刹，急刹会提前到
+    /// Cracking 还没结束时就发生，观众会看到立体先慢下来、进度条却还在走。
+    /// 调用方在进 Complete 状态时置 true。
+    /// </summary>
+    public bool CrackingFinished { get; set; }
 
     /// <summary>
     /// true = 急刹结束后保持 ω_idle（约 0.5 rad/s）匀速慢转，供成功演出当背景；
@@ -128,19 +137,18 @@ public class PortHackV2Sequence : IDisposable
 
         float spinDown = SpinDownSeconds;
         if (float.IsNaN(spinDown) || spinDown < 0f) spinDown = DEFAULT_SPINDOWN_SECONDS;
-        _spinDownTime = Math.Min(spinDown, Math.Max(0f, _totalSeconds - _spinUpTime));
-
-        _steadyEnd = _totalSeconds - _spinDownTime;
+        _spinDownTime = spinDown;
     }
 
-    /// <summary>回到初始状态（角度归零、缩放归零、<see cref="IdleSpin"/> 复位）。新一次破解演出开始时调用。</summary>
+    /// <summary>回到初始状态（角度归零、缩放归零、<see cref="IdleSpin"/> / <see cref="CrackingFinished"/> 复位）。新一次破解演出开始时调用。</summary>
     public void Reset()
     {
         _angle = 0f;
         _omega = 0f;
         _scale = 0f;
         _idleTime = 0f;
-        _woundDown = false;
+        _postCrackTime = 0f;
+        CrackingFinished = false;
         IdleSpin = false;
     }
 
@@ -151,6 +159,10 @@ public class PortHackV2Sequence : IDisposable
     /// 角速度按 <paramref name="elapsed"/> 直接求值（纯函数，不看历史），角度再按帧间隔积分。
     /// 这样做有两个好处：把总时长改小时不会出现「刹住又加速」（elapsed 一过新的总时长就是慢转）；
     /// 调用方在成功演出期间让 elapsed 停住时，慢转仍能靠 dt 继续走。
+    ///
+    /// ⚠️ 急刹**只在 <see cref="CrackingFinished"/> 之后**发生：Cracking 期间 elapsed 被夹在
+    /// <paramref name="totalSeconds"/> 以内，所以那段时间永远处于"最忙"的匀速全速状态；
+    /// 总时长到了、调用方置位后，内部时钟才继续往前走并进入急刹窗口。
     /// </summary>
     /// <param name="t">帧间隔（秒）。非正数 / NaN 视作 0；超过上限会被夹住。</param>
     /// <param name="elapsed">Cracking 已进行时长（秒），由调用方累计。</param>
@@ -164,36 +176,33 @@ public class PortHackV2Sequence : IDisposable
 
         ApplyTimeline(totalSeconds);
 
+        // Cracking 结束后的真实时钟：从总时长那一刻起继续计，急刹窗口由这段时间驱动
+        if (CrackingFinished) _postCrackTime += t;
+        float crackClock = Math.Min(elapsed, _totalSeconds);   // Cracking 期间夹在总时长以内
+        float clock = crackClock + (CrackingFinished ? _postCrackTime : 0f);
+
         // 慢转区停留时长：IdleSpin=false 时用它把 ω 从 ω_idle 平滑衰减到 0
-        _idleTime = elapsed >= _totalSeconds ? _idleTime + t : 0f;
+        _idleTime = clock >= _totalSeconds + _spinDownTime ? _idleTime + t : 0f;
 
-        bool woundDown = elapsed >= _steadyEnd; // 已进急刹区间（或更晚）
-        float omega = EvaluateOmega(elapsed);
-
-        // 已经收过尾就不再回到高速：总时长被改大时 elapsed 会重新落回匀速区，
-        // 但演出已经收过尾，退回去会看到「刹住又加速」。一次性闩锁，Reset 时清掉。
-        if (woundDown) _woundDown = true;
-        else if (_woundDown) omega = Math.Min(omega, OMEGA_IDLE);
-
-        _omega = omega;
+        _omega = EvaluateOmega(clock);
         _angle += _omega * t;
-        _scale = EvaluateScale(elapsed);
+        _scale = EvaluateScale(clock);
     }
 
-    /// <summary>按 elapsed 求角速度：起转线性加速 → 匀速 ωmax → 急刹指数落到 ω_idle → 匀速慢转。</summary>
-    private float EvaluateOmega(float elapsed)
+    /// <summary>按内部时钟求角速度：起转线性加速 → 匀速 ωmax → 急刹指数落到 ω_idle → 匀速慢转。</summary>
+    private float EvaluateOmega(float clock)
     {
-        if (_totalSeconds <= 0f) return IdleOmega(); // 总时长 0：直接进慢转
-
-        if (elapsed < _spinUpTime)
+        if (_totalSeconds <= 0f && !CrackingFinished) return OMEGA0; // 总时长 0 且还没收尾：直接从起转开始
+        if (clock < _spinUpTime)
         {
-            float u = _spinUpTime <= 0f ? 1f : Clamp01(elapsed / _spinUpTime);
+            float u = _spinUpTime <= 0f ? 1f : Clamp01(clock / _spinUpTime);
             return MathHelper.Lerp(OMEGA0, OMEGA_MAX, u);
         }
-        if (elapsed < _steadyEnd) return OMEGA_MAX;
+        // 匀速一直持续到 Cracking 结束（总时长跑满）
+        if (!CrackingFinished || clock < _totalSeconds) return OMEGA_MAX;
 
-        if (elapsed >= _totalSeconds || _spinDownTime <= 0f) return IdleOmega();
-        float brake = Clamp01((elapsed - _steadyEnd) / _spinDownTime);
+        if (_spinDownTime <= 0f) return IdleOmega();
+        float brake = Clamp01((clock - _totalSeconds) / _spinDownTime);
         return OMEGA_IDLE + (OMEGA_MAX - OMEGA_IDLE) * (float)Math.Exp(-SPINDOWN_DECAY * brake);
     }
 

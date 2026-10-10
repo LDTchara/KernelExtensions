@@ -46,13 +46,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="Unusable User Name" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="Closing in {0}s" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="PASSWORD" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="FOUND" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Cracking..." />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="Estimated time: {0}s" />
     <Term Key="PORT_HACK_V2_EXIT" Value="Exit" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="CONNECTION" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="LOST" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="LOCKED" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="No prerequisites - starting..." />
@@ -110,13 +106,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="不可用的用户名" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="{0} 秒后关闭" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="密码" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="已找到" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="正在破解…" />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="预计用时：{0} 秒" />
     <Term Key="PORT_HACK_V2_EXIT" Value="退出" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="连接" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="已丢失" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="已锁定" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="无前置要求 — 开始破解…" />
@@ -172,13 +164,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="使用できないユーザー名" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="{0} 秒後に終了" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="パスワード" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="発見" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="解析中…" />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="推定時間: {0} 秒" />
     <Term Key="PORT_HACK_V2_EXIT" Value="終了" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="接続" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="喪失" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="ロック中" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="前提条件なし — 開始します…" />
@@ -235,13 +223,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="사용할 수 없는 사용자 이름" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="{0}초 후 종료" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="암호" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="발견" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="해독 중…" />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="예상 시간: {0}초" />
     <Term Key="PORT_HACK_V2_EXIT" Value="종료" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="연결" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="끊김" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="잠김" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="선행 조건 없음 — 시작합니다…" />
@@ -299,13 +283,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="НЕДОПУСТИМОЕ ИМЯ ПОЛЬЗОВАТЕЛЯ" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="Закрытие через {0} с" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="ПАРОЛЬ" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="НАЙДЕН" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Взлом..." />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="Ожидаемое время: {0} с" />
     <Term Key="PORT_HACK_V2_EXIT" Value="Выход" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="СОЕДИНЕНИЕ" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="ПОТЕРЯНО" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="ЗАБЛОКИРОВАНО" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Предусловий нет - запуск..." />
@@ -362,13 +342,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="UNZULÄSSIGER BENUTZERNAME" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="Schließt in {0}s" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="PASSWORT" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="GEFUNDEN" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Knacke..." />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="Geschätzte Zeit: {0}s" />
     <Term Key="PORT_HACK_V2_EXIT" Value="Beenden" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="VERBINDUNG" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="VERLOREN" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="GESPERRT" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Keine Voraussetzungen - startet..." />
@@ -426,13 +402,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="NOM D'UTILISATEUR INUTILISABLE" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="Fermeture dans {0}s" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="MOT DE PASSE" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="TROUVÉ" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Cassage..." />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="Durée estimée : {0}s" />
     <Term Key="PORT_HACK_V2_EXIT" Value="Quitter" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="CONNEXION" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="PERDUE" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="VERROUILLÉ" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Aucun prérequis - démarrage..." />
@@ -490,13 +462,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="NOMBRE DE USUARIO NO VÁLIDO" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="Cerrando en {0}s" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="CONTRASEÑA" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="ENCONTRADA" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Descifrando..." />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="Tiempo estimado: {0}s" />
     <Term Key="PORT_HACK_V2_EXIT" Value="Salir" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="CONEXIÓN" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="PERDIDA" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="BLOQUEADO" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Sin requisitos - iniciando..." />
@@ -554,13 +522,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="KULLANILAMAZ KULLANICI ADI" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="{0}s içinde kapanıyor" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="PAROLA" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="BULUNDU" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Kırılıyor..." />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="Tahmini süre: {0}s" />
     <Term Key="PORT_HACK_V2_EXIT" Value="Çıkış" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="BAĞLANTI" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="KAYIP" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="KİLİTLİ" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Ön koşul yok - başlıyor..." />
@@ -601,13 +565,9 @@
     <Term Key="USERNAME_DEFAULT_REASON" Value="ONBRUIKBARE GEBRUIKERSNAAM" />
   
     <Term Key="PORT_HACK_V2_CLOSING" Value="Sluit over {0}s" />
-    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="WACHTWOORD" />
-    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="GEVONDEN" />
-    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Kraken..." />
     <Term Key="PORT_HACK_V2_ESTIMATE" Value="Geschatte tijd: {0}s" />
     <Term Key="PORT_HACK_V2_EXIT" Value="Afsluiten" />
     <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="VERBINDING" />
-    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="VERLOREN" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="VERGRENDELD" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Geen voorwaarden - starten..." />

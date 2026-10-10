@@ -41,17 +41,50 @@
        Protocols run in parallel, staggered by each one's own <StartDelay>. -->
   <Time>30</Time>
 
-  <!-- ── 强调色 / Accent color ──
-       界面标题、底部总进度条、动画立体线框都用它。
-       Used by the screen title, the bottom progress bar and the wireframe solid.
-       留空 / NONE = 白色。
-       Empty or NONE = white.
-       支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
+  <!-- ── 颜色 / Colours ──
+       AccentColor：**立体（多边体）线框**的颜色。留空 / NONE = 白色。
+                    The colour of the wireframe solid. Empty or NONE = white.
+       ProgressColor：底部总进度条的颜色。留空 / NONE = 跟随 AccentColor。
+                      The colour of the bottom progress bar. Empty or NONE = follow AccentColor.
+       BackgroundColor：面板背景色。留空 / NONE = 跟随 AccentColor。
+                        The panel background colour. Empty or NONE = follow AccentColor.
+       三者都支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
        以及 #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色。
-       Accepts CustomColor preset names and dynamic colors, hex, numeric RGB(A) and XNA names.
-       目标机状态的语义色（满足 / 未满足）仍走主题色，不归此项管。
+       All three accept CustomColor preset names and dynamic colours, hex, numeric RGB(A) and
+       XNA names.
+       目标机状态的语义色（满足 / 未满足）仍走主题色，不归这几项管。
        The state colours (met / unmet) still come from the theme and are not affected. -->
   <AccentColor>White</AccentColor>
+  <ProgressColor>White</ProgressColor>
+  <BackgroundColor>White</BackgroundColor>
+
+  <!-- ── 背景效果 / Background effect ──
+       面板背景用的游戏本体现成效果（都不需要自带资源）：
+       The background uses the game's built-in effects (no bundled assets needed):
+         NONE            不画背景 / no background
+         ZoomingDotGrid  中心向外扩散旋转的点阵（PhaseSwift 用的就是它）— 默认
+                         expanding dot grid from the centre (the one PhaseSwift uses) — default
+         HexGrid         六边形蜂窝网格（原版 KaguyaTrial 用的）
+                         hexagonal honeycomb grid (vanilla KaguyaTrial's background)
+         Grid            带十字标记的交叉网格 / cross-hatched grid
+         DepthDotGrid    多层递归点阵（景深感）/ recursive dot grid with depth
+       留空 = ZoomingDotGrid；写别的值 → 记 Warn 并回退 ZoomingDotGrid。
+       Empty = ZoomingDotGrid; any other value logs a warning and falls back to it.
+       背景随面板一起淡出；锁定屏的文字则是**退出瞬间与背景一起直接消失**（不淡出）。
+       The background fades out with the panel; the locked screen's text vanishes instantly
+       together with the background instead of fading. -->
+  <BackgroundEffect>ZoomingDotGrid</BackgroundEffect>
+
+  <!-- ── 完成文案 / Completion text ──
+       成功演出时中央显示的文字，**单行**。留空 = COMPLETE。
+       The single line shown in the centre on success. Empty = COMPLETE.
+       刻意不做本地化：这个位置是"程序告诉你破解完了"的电子感文字，
+       与原版的 PASSWORD / FOUND 同类，任何语言下都用同一串。
+       Deliberately not localised: this is the program telling you it is done, in the same
+       spirit as vanilla's PASSWORD / FOUND, so every language shows the same string.
+       过长会按面板宽度自动缩字号。
+       Overlong text is scaled down to fit the panel width. -->
+  <CompletionText>COMPLETE</CompletionText>
 
   <!-- ── 待破解协议 / Protocols ──
        每个 <Protocol> 自带协议名、成功率、启动延迟与两条分支时长。可以放一个或多个，
