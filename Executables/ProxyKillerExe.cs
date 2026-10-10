@@ -215,32 +215,60 @@ public class ProxyKillerExe : GameExecutable
     public override void Update(float t)
     {
         base.Update(t);
-        if (isExiting) return;
 
         if (_locked)
         {
-            _lockedTimer -= t;
-            if (_lockedTimer <= 0f) isExiting = true;
+            // 锁定屏要么整屏在、要么整屏不在（见 Draw），这里的计时只负责到点关闭
+            if (!isExiting)
+            {
+                _lockedTimer -= t;
+                if (_lockedTimer <= 0f) isExiting = true;
+            }
             return;
         }
         if (_cfg == null) { isExiting = true; return; }
 
+        // ⚠️ 退出时**不能**整体 return —— 背景必须继续跑。
+        // 原版的退场是"窗口高度收缩到 0"，如果这里一停，收缩期间画面就是**凝固**的，
+        // 而状态文字已经写着 "Spinning down..."，两者完全脱节（用户实测就是这个现象）。
+        // 所以：退出时只跳过 RAM 爬升与 shell 加速（那两个没必要再算），背景照旧推进。
+
         // 本程序**常驻**：不跟随连接变化关闭（无 ExitOnDisconnect），只由玩家按 Exit 结束。
         // 这也意味着它可以一直加速**后来才开的** shell —— 每帧重新遍历，不看创建时机。
-
-        // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率可配）
-        if (_ram < _target && _cfg.RampRate > 0f)
+        if (!isExiting)
         {
-            _ram = Math.Min(_target, _ram + _cfg.RampRate * t);
-            ramCost = (int)_ram;
+            // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率可配）
+            if (_ram < _target && _cfg.RampRate > 0f)
+            {
+                _ram = Math.Min(_target, _ram + _cfg.RampRate * t);
+                ramCost = (int)_ram;
+            }
+
+            // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 50MB → BurstTarget
+            AccelerateShells(t);
         }
 
-        // 背景按 RAM 爬升推进（速度与拖尾都在 Draw 里按进度给）
-        _flow.Update(t, RampProgress(), _lastAreaHeight);
-
-        // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 50MB → BurstTarget
-        AccelerateShells(t);
+        // 背景始终推进（速度与拖尾在 Draw 里按进度给）—— 退出期间它就是"降速"的视觉
+        _flow.Update(t, BackgroundLoad(), _lastAreaHeight);
     }
+
+    /// <summary>
+    /// 背景的"负荷"值：既驱动速度也驱动拖尾长度。
+    ///
+    /// <para>
+    /// 正常运行时就是 RAM 爬升进度；**退出时按窗口剩余高度等比回落**，
+    /// 这样状态文字写 "Spinning down..." 的时候粒子是**真的在降速**，
+    /// 而不是维持满速、只靠窗口缩小收场。
+    /// </para>
+    ///
+    /// <para>
+    /// 为什么用 <c>fade</c> 而不是自己计时：原版退场就是
+    /// <c>bounds.Height = baseRamCost × fade</c>、<c>fade</c> 按 <see cref="ExeModule.FADEOUT_RATE"/>
+    /// 递减 —— 所以 <c>fade</c> 本身就是"窗口还剩几成"，跟着它走两者天然同步。
+    /// </para>
+    /// </summary>
+    private float BackgroundLoad()
+        => isExiting ? RampProgress() * MathHelper.Clamp(fade, 0f, 1f) : RampProgress();
 
     /// <summary>RAM 爬升进度 0~1（= 倍速爬升进度）。起始值 == 目标值时视为已满。</summary>
     private float RampProgress()
@@ -468,8 +496,9 @@ public class ProxyKillerExe : GameExecutable
     /// </para>
     ///
     /// <para>
-    /// 不透明度这样给：启动时 <c>0.35 → 1</c> 淡入，退出时 <c>× fade</c>。
-    /// 前者让程序出现得不那么突兀，后者与"原版靠窗口收缩退场"的机制配合。
+    /// 不透明度这样给：启动时 <c>0.35 → 1</c> 淡入（让程序出现得不那么突兀）。
+    /// **退出时不再乘 <c>fade</c>** —— 原版的退场靠窗口高度收缩到 0，内容本来就该在
+    /// 收缩期间保持原样跟着一起被裁掉；再乘一层 fade 会让它过早变暗、看着像"没在动"。
     /// </para>
     /// </summary>
     private void DrawFlowBackground(Rectangle area)
@@ -481,9 +510,10 @@ public class ProxyKillerExe : GameExecutable
             // auto 时每帧取主题高亮色（主题中途变化也能跟上）
             Color tint = _bgColorFixed ? _bgColor : os.highlightColor;
 
-            float progress = RampProgress();
-            _flow.Opacity = MathHelper.Lerp(0.35f, 1f, progress) * (isExiting ? fade : 1f);
-            _flow.Draw(spriteBatch, area, tint, progress);
+            // 用同一个负荷值决定速度/拖尾/淡入，三者天然同步
+            float load = BackgroundLoad();
+            _flow.Opacity = MathHelper.Lerp(0.35f, 1f, load);
+            _flow.Draw(spriteBatch, area, tint, load);
         }
         catch (Exception ex)
         {
