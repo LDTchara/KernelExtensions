@@ -257,11 +257,16 @@ public class PortHackV2Exe : GameExecutable
     private bool ProxyRequirementMet()
         => !ProxyRowVisible() || !Target.proxyActive;
 
-    /// <summary>所有前置与协议前置端口是否都满足（Listing → Cracking 的判据）。</summary>
+    /// <summary>
+    /// 所有前置与协议前置端口是否都满足（Listing → Cracking 的判据）。
+    /// 「能不能破解」**完全由这些运行时前置决定**，不由配置里的开关决定 ——
+    /// 作者要表达"现在还破解不了"，就用 <c>Require*</c> 前置（它会每帧重查、满足即自动开跑），
+    /// 而不是一个写死的禁用位（那种位会让程序永远停在 Listing 且玩家无从解除）。
+    /// 需要"某段剧情期间才允许"时，应由扩展**挂/摘入口 flag** 来控制。
+    /// </summary>
     private bool AllPrerequisitesMet()
     {
         if (CurrentConfig == null) return false;
-        if (!CurrentConfig.Usable) return false;
         if (!FirewallRequirementMet()) return false;
         if (!ProxyRequirementMet()) return false;
         foreach (string p in CurrentConfig.RequireOpenPortsBefore)
@@ -637,11 +642,6 @@ public class PortHackV2Exe : GameExecutable
         // 左下角：预计破解时长（成功分支）
         string est = KELoc.Format("PORT_HACK_V2_ESTIMATE", "Estimated time: {0}s", (int)Math.Ceiling(EstimatedDuration()));
         TextItem.doFontLabel(new Vector2(x, ContentBottom - 18), est, GuiData.detailfont, Color.White * 0.6f);
-
-        // 程序被配置为不可用时，明确告知（否则玩家只看到一直停着）
-        if (!CurrentConfig.Usable)
-            TextItem.doFontLabel(new Vector2(x + w - 180, ContentTop + 2),
-                KELoc.Loc("PORT_HACK_V2_NOT_USABLE", "NOT USABLE"), GuiData.smallfont, os.lockedColor);
     }
 
     // ---- Cracking ----

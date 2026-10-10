@@ -55,7 +55,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="LOST" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="LOCKED" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NOT USABLE" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="No prerequisites - starting..." />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="FIREWALL" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY OVERLOAD" />
@@ -120,7 +119,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="已丢失" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="已锁定" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="不可用" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="无前置要求 — 开始破解…" />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="防火墙" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="代理过载" />
@@ -183,7 +181,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="喪失" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="ロック中" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="使用不可" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="前提条件なし — 開始します…" />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="ファイアウォール" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="プロキシ過負荷" />
@@ -247,7 +244,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="끊김" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="잠김" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="사용 불가" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="선행 조건 없음 — 시작합니다…" />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="방화벽" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="프록시 과부하" />
@@ -312,7 +308,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="ПОТЕРЯНО" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="ЗАБЛОКИРОВАНО" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="НЕДОСТУПНО" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Предусловий нет - запуск..." />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="БРАНДМАУЭР" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="ПЕРЕГРУЗКА ПРОКСИ" />
@@ -376,7 +371,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="VERLOREN" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="GESPERRT" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NICHT VERFÜGBAR" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Keine Voraussetzungen - startet..." />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="FIREWALL" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY-ÜBERLAST" />
@@ -441,7 +435,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="PERDUE" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="VERROUILLÉ" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="INDISPONIBLE" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Aucun prérequis - démarrage..." />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="PAREFEU" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="SURCHARGE PROXY" />
@@ -506,7 +499,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="PERDIDA" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="BLOQUEADO" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NO DISPONIBLE" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Sin requisitos - iniciando..." />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="CORTAFUEGOS" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="SOBRECARGA DE PROXY" />
@@ -571,7 +563,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="KAYIP" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="KİLİTLİ" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="KULLANILAMAZ" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Ön koşul yok - başlıyor..." />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="GÜVENLİK DUVARI" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY AŞIRI YÜK" />
@@ -619,7 +610,6 @@
     <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="VERLOREN" />
     <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
     <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="VERGRENDELD" />
-    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NIET BESCHIKBAAR" />
     <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Geen voorwaarden - starten..." />
     <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="FIREWALL" />
     <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY-OVERBELASTING" />

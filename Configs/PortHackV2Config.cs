@@ -94,7 +94,6 @@ public class PortHackV2Config
     /// <summary>终端里显示的程序名（对齐 PhaseSwift 的 ProgramName）。注册名 #PORTHACKV2# 不受影响。</summary>
     [XmlElement("ProgramName")] public string ProgramName { get; set; } = "PortHackV2";
 
-    public bool Usable { get; set; } = true;
     public string Title { get; set; } = string.Empty;
 
     /// <summary>

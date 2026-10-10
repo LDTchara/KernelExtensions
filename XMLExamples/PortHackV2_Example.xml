@@ -137,11 +137,6 @@
        Vanilla PortHackExe never sets ramCost, so it uses the engine default of 246. -->
   <RamCost>246</RamCost>
 
-  <!-- ── 可用性 / Usable ──
-       false 时本程序整体报告为不可用（Listing 里对应行显示未满足）。留空 = true。
-       When false the program reports itself as unusable. Empty = true. -->
-  <Usable>true</Usable>
-
   <!-- ── 前置要求 / Prerequisites ──
        未满足时 Listing 屏对应行显示为 lockedColor，全部满足后自动进入破解。
        Unmet rows are drawn in the locked colour; the crack starts automatically once all are met.
