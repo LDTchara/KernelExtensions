@@ -69,6 +69,10 @@ public class PortHackV2Exe : GameExecutable
     /// </summary>
     private sealed class ProtocolRuntime
     {
+        /// <summary>实例唯一标识（排错用：区分"_runtimes 被重建过"这类情况）。</summary>
+        private static int _nextId;
+        public readonly int Id = ++_nextId;
+
         public PortHackV2ProtocolConfig Def;
         /// <summary>StartDelay 计时（Cracking 开始后累加），到点才启动本协议。</summary>
         public float DelayElapsed;
@@ -355,7 +359,7 @@ public class PortHackV2Exe : GameExecutable
         // "某协议从不启动"只能靠这几个数区分（名字、StartDelay 解析值、Def 是否为 null）。
         foreach (ProtocolRuntime rt in _runtimes)
         {
-            KELog.Debug($"[PortHackV2] runtime built: name='{rt.Def?.Name}'"
+            KELog.Debug($"[PortHackV2] runtime built #{rt.Id}: name='{rt.Def?.Name}'"
                 + $" startDelay={rt.Def?.StartDelay ?? -1f:0.###}"
                 + $" timeIfSuccess={rt.Def?.TimeIfSuccess ?? -1f:0.###}");
         }
@@ -440,7 +444,7 @@ public class PortHackV2Exe : GameExecutable
         // 必须先确认它到底有没有进这个方法，再谈钩子为什么没跑。
         if (_crackTime <= t * 3f)
         {
-            KELog.Debug($"[PortHackV2] UpdateProtocol enter: name='{rt.Def?.Name}'"
+            KELog.Debug($"[PortHackV2] UpdateProtocol enter #{rt.Id}: name='{rt.Def?.Name}'"
                 + $" finished={rt.Finished} started={rt.Started}"
                 + $" delayElapsed={rt.DelayElapsed:0.###}"
                 + $" elapsed={rt.Elapsed:0.###} startDelay={rt.Def?.StartDelay ?? -1f:0.###}");
@@ -460,14 +464,14 @@ public class PortHackV2Exe : GameExecutable
                 {
                     float defDelay = rt.Def == null ? -1f : rt.Def.StartDelay;
                     string defName = rt.Def == null ? "<null def>" : rt.Def.Name;
-                    KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}' protocol '{defName}'"
+                    KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}' protocol #{rt.Id} '{defName}'"
                         + $" not started yet: delayElapsed={rt.DelayElapsed:0.###}"
                         + $" startDelay={defDelay:0.###} t={t:0.####}");
                 }
                 return;    // 本帧还没到启动点
             }
 
-            KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}': protocol "
+            KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}': protocol #{rt.Id} "
                 + $"'{rt.Def?.Name}' entering start branch (delayElapsed={rt.DelayElapsed:0.###}).");
 
             // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
@@ -502,6 +506,12 @@ public class PortHackV2Exe : GameExecutable
         if (forced) rt.Succeeded = false;
 
         string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
+
+        // 结算来源与状态：排错时"某协议莫名完成"只能靠这条定位（是否被强制收尾、
+        // 它此前有没有真正启动过、实例 id 是否与建成的那个一致）。
+        KELog.Debug($"[PortHackV2] CompleteProtocol #{rt.Id} '{protoSource}'"
+            + $" forced={forced} started={rt.Started}"
+            + $" elapsed={rt.Elapsed:0.###} duration={rt.Duration:0.###}");
 
         if (rt.Succeeded)
         {
