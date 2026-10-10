@@ -1,4 +1,3 @@
-using System.Globalization;
 using Hacknet;
 using KernelExtensions.Managers;
 using KernelExtensions.Patches;
@@ -26,8 +25,10 @@ namespace KernelExtensions.Actions.Misc
     /// Line 3 text
     /// </StartScreenBleedEffectWCC>
     /// 颜色值支持 CustomColor 预设、Hex 与 XNA 命名色 (Monochrome)。
-    /// 注意：本 Action 对 8 位 Hex 额外做 Alpha 乘性调制（new Color(r,g,b) * (a/255)），
-    /// 与统一解析链的 new Color(r,g,b,a) 视觉结果不同，故此处保留自有分支。
+    /// 8 位 Hex 走统一语义 #AARRGGBB（Alpha 在首位，只控制不透明度、不缩放 RGB）。
+    /// 早期开发版本曾在此处额外做 Alpha 乘性调制（new Color(r,g,b) * (a/255)），使 RGB 随 Alpha 变暗；
+    /// 已并入统一解析链 —— 该写法从未随任何发行版发布，且与"各模块共用同一套颜色解析"相矛盾。
+    /// 影响面仅 8 位 Hex（如 #80FF0000 由暗红变亮红）；3/6 位 Hex、命名色、数值式逐字节不变。
     /// 支持动态颜色 (Rainbow, Rainbow:0.5:0.3) 等。
     /// </summary>
     public class StartScreenBleedEffectWCCAction : KEAction
@@ -49,8 +50,8 @@ namespace KernelExtensions.Actions.Misc
         {
             try
             {
-                Color bgColor = ResolveColor(os, BackgroundColor, new Color(120, 0, 0));
-                Color textBgColor = ResolveColor(os, TextBackgroundColor, new Color(105, 0, 0, 200));
+                Color bgColor = ResolveColor(BackgroundColor, new Color(120, 0, 0));
+                Color textBgColor = ResolveColor(TextBackgroundColor, new Color(105, 0, 0, 200));
 
                 var lines = string.IsNullOrEmpty(ContentLines)
                     ? new[] { "", "", "" }
@@ -77,7 +78,7 @@ namespace KernelExtensions.Actions.Misc
 
         private string ContentLines;
 
-        private static Color ResolveColor(OS os, string raw, Color fallback)
+        private static Color ResolveColor(string raw, Color fallback)
         {
             if (string.IsNullOrWhiteSpace(raw))
                 return fallback;
@@ -86,27 +87,7 @@ namespace KernelExtensions.Actions.Misc
             if (dynConfig != null)
                 return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);
 
-            if (raw.StartsWith("#"))
-            {
-                try
-                {
-                    string hex = raw.Substring(1);
-                    if (hex.Length == 6)
-                    {
-                        int rgb = int.Parse(hex, NumberStyles.HexNumber);
-                        return new Color((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255);
-                    }
-                    if (hex.Length == 8)
-                    {
-                        int a = int.Parse(hex.Substring(0, 2), NumberStyles.HexNumber);
-                        int rgb = int.Parse(hex.Substring(2), NumberStyles.HexNumber);
-                        return new Color((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255) * (a / 255f);
-                    }
-                }
-                catch { }
-            }
-
-            // 兜底：数值 RGB (255,0,0) / RGBA (255,0,0,128) 和 XNA 命名色
+            // 静态色统一走 ColorHelper：#RGB / #RRGGBB / #AARRGGBB、数值 RGB/RGBA、XNA 命名色
             return ColorHelper.ParseStaticColor(raw, fallback);
         }
     }

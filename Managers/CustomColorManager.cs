@@ -29,6 +29,9 @@ namespace KernelExtensions.Managers
     ///      Riptide                     引用 CustomColor/Riptide.xml
     ///      Riptide:0.5                 速度 x0.5
     ///      Riptide:0.5:0.8            速度 x0.5 + 透明度 80%
+    ///      **预设优先于内置关键字**：扩展若自建了名为 Rainbow / LDTchara 的预设，
+    ///      同名关键字就用扩展自己的预设（未建才回退内置彩虹）；
+    ///      完整 Gradient:#起始:#结束:秒数 语法不受影响（它是语法，不是预设名）。
     ///
     /// ── 预设文件格式 ──
     ///   CustomColor/预设名.xml：
@@ -192,22 +195,8 @@ namespace KernelExtensions.Managers
                 string fieldName = match.Groups[1].Value;
                 string matched = match.Groups[2].Value;
 
-                // 彩虹色
-                if (matched.StartsWith("LDTchara", StringComparison.OrdinalIgnoreCase) ||
-                    matched.StartsWith("Rainbow", StringComparison.OrdinalIgnoreCase))
-                {
-                    var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Rainbow };
-                    string[] parts = matched.Split(':');
-                    if (parts.Length > 1) float.TryParse(parts[1], out cfg.Speed);
-                    if (parts.Length > 2) float.TryParse(parts[2], out cfg.Alpha);
-                    if (parts.Length > 3) float.TryParse(parts[3], out cfg.Saturation);
-                    if (parts.Length > 4) float.TryParse(parts[4], out cfg.Value);
-                    _dynamicFields[fieldName] = cfg;
-                    continue;
-                }
-
-                // 渐变（兼容旧两色语法）
-                if (matched.StartsWith("Gradient:", StringComparison.OrdinalIgnoreCase))
+                // 1) 完整 Gradient 语法：组 3 非空即该候选分支整体命中（regex 已锚定三段）
+                if (!string.IsNullOrEmpty(match.Groups[3].Value))
                 {
                     var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
                     cfg.Segments.Add(new GradientSegment
@@ -224,18 +213,17 @@ namespace KernelExtensions.Managers
                     continue;
                 }
 
-                // 预设名
-                string presetName = match.Groups[6].Value;
-                List<GradientSegment> presetSegments = null;
-                bool found = !string.IsNullOrEmpty(presetName) && _presetCache.TryGetValue(presetName, out presetSegments);
-;
-                if (found)
+                // 2) 预设优先：预设是扩展作者自己的资产，未中才回退内置关键字，
+                //    否则名为 Rainbow / LDTchara 的预设永远轮不到内置分支。
+                //    参数从值本身 Split（group7/8 只在内置关键字候选分支下才有值）。
+                string[] parts2 = matched.Split(':');
+                if (_presetCache.TryGetValue(parts2[0], out var presetSegments))
                 {
                     var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
                     float speedMul = 1f;
                     float alphaOverride = 1f;
-                    if (match.Groups[7].Success) float.TryParse(match.Groups[7].Value, out speedMul);
-                    if (match.Groups[8].Success) float.TryParse(match.Groups[8].Value, out alphaOverride);
+                    if (parts2.Length > 1) float.TryParse(parts2[1], out speedMul);
+                    if (parts2.Length > 2) float.TryParse(parts2[2], out alphaOverride);
 
                     foreach (var seg in presetSegments)
                     {
@@ -248,6 +236,21 @@ namespace KernelExtensions.Managers
                         if (cfg.Segments.Count == 1) cfg.Alpha = alphaOverride;
                     }
                     _dynamicFields[fieldName] = cfg;
+                    continue;
+                }
+
+                // 3) 内置彩虹关键字
+                if (matched.StartsWith("LDTchara", StringComparison.OrdinalIgnoreCase) ||
+                    matched.StartsWith("Rainbow", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Rainbow };
+                    string[] parts = matched.Split(':');
+                    if (parts.Length > 1) float.TryParse(parts[1], out cfg.Speed);
+                    if (parts.Length > 2) float.TryParse(parts[2], out cfg.Alpha);
+                    if (parts.Length > 3) float.TryParse(parts[3], out cfg.Saturation);
+                    if (parts.Length > 4) float.TryParse(parts[4], out cfg.Value);
+                    _dynamicFields[fieldName] = cfg;
+                    continue;
                 }
             }
         }
@@ -332,18 +335,52 @@ namespace KernelExtensions.Managers
             return segs.Last().Color;
         }
 
+        /// <summary>
         /// 解析颜色字符串为 DynColorConfig，供外部（CustomTrialExe）判断是否为动态色。
         /// 返回 null 表示纯静态色。
         ///
         /// 入口先 Trim：动态关键字是**前缀/整串匹配**，不 Trim 的话 " Rainbow " 会一路落到静态链
         /// 解析失败（<see cref="ColorHelper.ParseStaticColor"/> 与命名色表都会 Trim，只有这里不会）。
+        ///
+        /// 分支顺序（预设优先）：完整 Gradient 语法 → 自定义预设 → 内置彩虹关键字。
+        /// 预设是扩展作者自己的资产，未中才回退内置关键字（否则名为 Rainbow / LDTchara 的预设永远轮不到）；
+        /// 完整 Gradient 语法排在最前是因为它是**语法**而非预设名（预设名不可能含 '#'），
+        /// 先判它可保证扩展即使建了名为 Gradient 的预设也不会打断该语法。
+        /// </summary>
         public static DynColorConfig ParseColorString(string input)
         {
             if (string.IsNullOrEmpty(input)) return null;
             input = input.Trim();
             if (input.Length == 0) return null;
 
-            // 彩虹色
+            // 1. 完整 Gradient 语法（regex 自身已锚定 ^Gradient: 与结尾 $）
+            var gm = Regex.Match(input,
+                @"^Gradient:(#[0-9A-Fa-f]+):(#[0-9A-Fa-f]+):([\d.]+)$",
+                RegexOptions.IgnoreCase);
+            if (gm.Success)
+            {
+                var gcfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
+                gcfg.Segments.Add(new GradientSegment { Color = ColorHelper.ParseHexColor(gm.Groups[1].Value), Duration = 0f });
+                gcfg.Segments.Add(new GradientSegment { Color = ColorHelper.ParseHexColor(gm.Groups[2].Value), Duration = float.Parse(gm.Groups[3].Value) });
+                return gcfg;
+            }
+
+            // 2. 预设优先（未命中继续往下，不提前 return）
+            EnsurePresetsLoaded();
+            var parts2 = input.Split(':');
+            if (_presetCache.TryGetValue(parts2[0], out var segs))
+            {
+                var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
+                float speedMul = 1f, alphaOverride = 1f;
+                if (parts2.Length > 1) float.TryParse(parts2[1], out speedMul);
+                if (parts2.Length > 2) float.TryParse(parts2[2], out alphaOverride);
+                foreach (var seg in segs)
+                    cfg.Segments.Add(new GradientSegment { Color = seg.Color, Duration = seg.Duration * speedMul, Transition = seg.Transition * speedMul });
+                cfg.Alpha = alphaOverride;
+                return cfg;
+            }
+
+            // 3. 内置彩虹关键字
             if (input.StartsWith("LDTchara", StringComparison.OrdinalIgnoreCase) ||
                 input.StartsWith("Rainbow", StringComparison.OrdinalIgnoreCase))
             {
@@ -353,38 +390,6 @@ namespace KernelExtensions.Managers
                 if (parts.Length > 2) float.TryParse(parts[2], out cfg.Alpha);
                 if (parts.Length > 3) float.TryParse(parts[3], out cfg.Saturation);
                 if (parts.Length > 4) float.TryParse(parts[4], out cfg.Value);
-                return cfg;
-            }
-
-            // 渐变
-            if (input.StartsWith("Gradient:", StringComparison.OrdinalIgnoreCase))
-            {
-                var m = Regex.Match(input,
-                    @"^Gradient:(#[0-9A-Fa-f]+):(#[0-9A-Fa-f]+):([\d.]+)$",
-                    RegexOptions.IgnoreCase);
-                if (m.Success)
-                {
-                    var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
-                    cfg.Segments.Add(new GradientSegment { Color = ColorHelper.ParseHexColor(m.Groups[1].Value), Duration = 0f });
-                    cfg.Segments.Add(new GradientSegment { Color = ColorHelper.ParseHexColor(m.Groups[2].Value), Duration = float.Parse(m.Groups[3].Value) });
-                    return cfg;
-                }
-                return null;
-            }
-
-            // 预设名
-            EnsurePresetsLoaded();
-            var parts2 = input.Split(':');
-            string presetName = parts2[0];
-            if (_presetCache.TryGetValue(presetName, out var segs))
-            {
-                var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Gradient };
-                float speedMul = 1f, alphaOverride = 1f;
-                if (parts2.Length > 1) float.TryParse(parts2[1], out speedMul);
-                if (parts2.Length > 2) float.TryParse(parts2[2], out alphaOverride);
-                foreach (var seg in segs)
-                    cfg.Segments.Add(new GradientSegment { Color = seg.Color, Duration = seg.Duration * speedMul, Transition = seg.Transition * speedMul });
-                cfg.Alpha = alphaOverride;
                 return cfg;
             }
 
