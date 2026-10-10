@@ -44,7 +44,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="COMPLETE" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="LOCKED" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="Unusable User Name" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="Closing in {0}s" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="PASSWORD" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="FOUND" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Cracking..." />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="Estimated time: {0}s" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="Exit" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="CONNECTION" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="LOST" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="LOCKED" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NOT USABLE" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="No prerequisites - starting..." />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="FIREWALL" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY OVERLOAD" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="Exit" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="Reset" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="Skip" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="Closing in {0}s" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="Auto-overload: proxyOverloadTicks -= dt * x{0} (1.0 = vanilla rate)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: configuration could not be loaded." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: no configuration is armed." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: multiple configurations are armed (authoring error)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="No connection - proxy tuning inactive" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="ACTIVE" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="BYPASSED" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="none" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="Target {0} - proxy {1} ({2}/{3} ticks)" />
+</Language>
   <Language Name="zh-cn">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="开始试炼" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="完成" />
@@ -80,7 +109,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="完成" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="锁定" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="不可用的用户名" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="{0} 秒后关闭" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="密码" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="已找到" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="正在破解…" />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="预计用时：{0} 秒" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="退出" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="连接" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="已丢失" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="已锁定" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="不可用" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="无前置要求 — 开始破解…" />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="防火墙" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="代理过载" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0} 秒" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="退出" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="重置" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="跳过" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="{0} 秒后关闭" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="自动过载：proxyOverloadTicks -= dt * x{0}（1.0 = 原版速度）" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner：配置加载失败。" />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner：没有已启用的配置。" />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner：启用了多个配置（作者配置错误）。" />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="未连接 — 代理调参未生效" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="生效中" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="已绕过" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="无" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="目标 {0} — 代理 {1}（{2}/{3} 刻）" />
+</Language>
   <Language Name="ja-jp">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="試験を開始" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="完了" />
@@ -114,7 +172,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="完了" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="ロック" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="使用できないユーザー名" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="{0} 秒後に終了" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="パスワード" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="発見" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="解析中…" />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="推定時間: {0} 秒" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="終了" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="接続" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="喪失" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="ロック中" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="使用不可" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="前提条件なし — 開始します…" />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="ファイアウォール" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="プロキシ過負荷" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0} 秒" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="終了" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="リセット" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="スキップ" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="{0} 秒後に終了" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="自動過負荷: proxyOverloadTicks -= dt * x{0}（1.0 = 原版速度）" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: 設定を読み込めませんでした。" />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: 有効な設定がありません。" />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: 複数の設定が有効です（作者の設定ミス）。" />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="未接続 — プロキシ調整は無効" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="有効" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="回避済み" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="なし" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="対象 {0} — プロキシ {1}（{2}/{3} ティック）" />
+</Language>
   <Language Name="ko-kr">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="시험 시작" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="완료" />
@@ -149,7 +236,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="완료" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="잠김" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="사용할 수 없는 사용자 이름" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="{0}초 후 종료" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="암호" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="발견" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="해독 중…" />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="예상 시간: {0}초" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="종료" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="연결" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="끊김" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="잠김" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="사용 불가" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="선행 조건 없음 — 시작합니다…" />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="방화벽" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="프록시 과부하" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}초" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="종료" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="초기화" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="건너뛰기" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="{0}초 후 종료" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="자동 과부하: proxyOverloadTicks -= dt * x{0} (1.0 = 원본 속도)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: 설정을 불러올 수 없습니다." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: 활성화된 설정이 없습니다." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: 여러 설정이 활성화되었습니다 (작성 오류)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="연결 없음 — 프록시 조정 비활성" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="활성" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="우회됨" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="없음" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="대상 {0} — 프록시 {1} ({2}/{3} 틱)" />
+</Language>
   <Language Name="ru-ru">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="НАЧАТЬ ИСПЫТАНИЕ" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Выполнено" />
@@ -185,7 +301,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Выполнено" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="ЗАБЛОКИРОВАНО" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="НЕДОПУСТИМОЕ ИМЯ ПОЛЬЗОВАТЕЛЯ" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="Закрытие через {0} с" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="ПАРОЛЬ" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="НАЙДЕН" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Взлом..." />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="Ожидаемое время: {0} с" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="Выход" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="СОЕДИНЕНИЕ" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="ПОТЕРЯНО" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="ЗАБЛОКИРОВАНО" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="НЕДОСТУПНО" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Предусловий нет - запуск..." />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="БРАНДМАУЭР" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="ПЕРЕГРУЗКА ПРОКСИ" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0} с" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="Выход" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="Сброс" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="Пропустить" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="Закрытие через {0} с" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="Автоперегрузка: proxyOverloadTicks -= dt * x{0} (1.0 = обычная скорость)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: не удалось загрузить конфигурацию." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: конфигурация не активирована." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: активировано несколько конфигураций (ошибка автора)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="Нет соединения - настройка прокси неактивна" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="АКТИВЕН" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="ОБОЙДЁН" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="нет" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="Цель {0} - прокси {1} ({2}/{3} тиков)" />
+</Language>
   <Language Name="de-de">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGINNE DIE PRÜFUNG" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Weiter" />
@@ -220,7 +365,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Weiter" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="GESPERRT" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="UNZULÄSSIGER BENUTZERNAME" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="Schließt in {0}s" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="PASSWORT" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="GEFUNDEN" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Knacke..." />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="Geschätzte Zeit: {0}s" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="Beenden" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="VERBINDUNG" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="VERLOREN" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="GESPERRT" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NICHT VERFÜGBAR" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Keine Voraussetzungen - startet..." />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="FIREWALL" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY-ÜBERLAST" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="Beenden" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="Zurücksetzen" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="Überspringen" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="Schließt in {0}s" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="Auto-Überlast: proxyOverloadTicks -= dt * x{0} (1.0 = Normalwert)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: Konfiguration konnte nicht geladen werden." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: keine Konfiguration aktiviert." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: mehrere Konfigurationen aktiviert (Autorenfehler)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="Keine Verbindung - Proxy-Abstimmung inaktiv" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="AKTIV" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="UMGANGEN" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="keiner" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="Ziel {0} - Proxy {1} ({2}/{3} Ticks)" />
+</Language>
   <Language Name="fr-be">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMMENCER L'ÉPREUVE" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Terminer" />
@@ -256,7 +430,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Terminer" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="VERROUILLÉ" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="NOM D'UTILISATEUR INUTILISABLE" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="Fermeture dans {0}s" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="MOT DE PASSE" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="TROUVÉ" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Cassage..." />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="Durée estimée : {0}s" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="Quitter" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="CONNEXION" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="PERDUE" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="VERROUILLÉ" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="INDISPONIBLE" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Aucun prérequis - démarrage..." />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="PAREFEU" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="SURCHARGE PROXY" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="Quitter" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="Réinitialiser" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="Passer" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="Fermeture dans {0}s" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="Surcharge auto : proxyOverloadTicks -= dt * x{0} (1.0 = vitesse d'origine)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner : la configuration n'a pas pu être chargée." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner : aucune configuration active." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner : plusieurs configurations actives (erreur d'auteur)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="Aucune connexion - réglage du proxy inactif" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="ACTIF" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="CONTOURNÉ" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="aucun" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="Cible {0} - proxy {1} ({2}/{3} ticks)" />
+</Language>
   <Language Name="es-ar">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="COMENZAR PRUEBA" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Completado" />
@@ -292,7 +495,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Completado" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="BLOQUEADO" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="NOMBRE DE USUARIO NO VÁLIDO" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="Cerrando en {0}s" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="CONTRASEÑA" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="ENCONTRADA" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Descifrando..." />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="Tiempo estimado: {0}s" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="Salir" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="CONEXIÓN" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="PERDIDA" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="BLOQUEADO" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NO DISPONIBLE" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Sin requisitos - iniciando..." />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="CORTAFUEGOS" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="SOBRECARGA DE PROXY" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="Salir" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="Restablecer" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="Omitir" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="Cerrando en {0}s" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="Sobrecarga auto: proxyOverloadTicks -= dt * x{0} (1.0 = velocidad original)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: no se pudo cargar la configuración." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: no hay configuración activa." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: hay varias configuraciones activas (error del autor)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="Sin conexión - ajuste de proxy inactivo" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="ACTIVO" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="ELUDIDO" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="ninguno" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="Objetivo {0} - proxy {1} ({2}/{3} ticks)" />
+</Language>
   <Language Name="tr-tr">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="DENEMEYE BAŞLA" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Tamam" />
@@ -328,7 +560,36 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Tamam" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="KİLİTLİ" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="KULLANILAMAZ KULLANICI ADI" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="{0}s içinde kapanıyor" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="PAROLA" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="BULUNDU" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Kırılıyor..." />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="Tahmini süre: {0}s" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="Çıkış" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="BAĞLANTI" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="KAYIP" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="KİLİTLİ" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="KULLANILAMAZ" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Ön koşul yok - başlıyor..." />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="GÜVENLİK DUVARI" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY AŞIRI YÜK" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="Çıkış" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="Sıfırla" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="Atla" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="{0}s içinde kapanıyor" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="Otomatik aşırı yük: proxyOverloadTicks -= dt * x{0} (1.0 = orijinal hız)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: yapılandırma yüklenemedi." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: etkin yapılandırma yok." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: birden fazla yapılandırma etkin (yazar hatası)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="Bağlantı yok - proxy ayarı etkin değil" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="ETKİN" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="ATLANDI" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="yok" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="Hedef {0} - proxy {1} ({2}/{3} tick)" />
+</Language>
   <Language Name="nl-nl">
     <Term Key="CUSTOM_TRIAL_BEGIN" Value="BEGIN MET PROEF" />
     <Term Key="CUSTOM_TRIAL_COMPLETE" Value="Voltooid" />
@@ -347,5 +608,34 @@
     <Term Key="PHASE_SWIFT_COMPLETE" Value="Voltooid" />
     <Term Key="PHASE_SWIFT_LOCKED" Value="GEBLOKKEERD" />
     <Term Key="USERNAME_DEFAULT_REASON" Value="ONBRUIKBARE GEBRUIKERSNAAM" />
-  </Language>
+  
+    <Term Key="PORT_HACK_V2_CLOSING" Value="Sluit over {0}s" />
+    <Term Key="PORT_HACK_V2_COMPLETE_1" Value="WACHTWOORD" />
+    <Term Key="PORT_HACK_V2_COMPLETE_2" Value="GEVONDEN" />
+    <Term Key="PORT_HACK_V2_CRACKING_TITLE" Value="Kraken..." />
+    <Term Key="PORT_HACK_V2_ESTIMATE" Value="Geschatte tijd: {0}s" />
+    <Term Key="PORT_HACK_V2_EXIT" Value="Afsluiten" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_1" Value="VERBINDING" />
+    <Term Key="PORT_HACK_V2_INTERRUPT_2" Value="VERLOREN" />
+    <Term Key="PORT_HACK_V2_LISTING_TITLE" Value="PortHackV2" />
+    <Term Key="PORT_HACK_V2_LOCKED_TITLE" Value="VERGRENDELD" />
+    <Term Key="PORT_HACK_V2_NOT_USABLE" Value="NIET BESCHIKBAAR" />
+    <Term Key="PORT_HACK_V2_NO_PREREQ" Value="Geen voorwaarden - starten..." />
+    <Term Key="PORT_HACK_V2_ROW_FIREWALL" Value="FIREWALL" />
+    <Term Key="PORT_HACK_V2_ROW_PROXY" Value="PROXY-OVERBELASTING" />
+    <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
+    <Term Key="PROXY_TUNER_BTN_EXIT" Value="Afsluiten" />
+    <Term Key="PROXY_TUNER_BTN_RESET" Value="Herstellen" />
+    <Term Key="PROXY_TUNER_BTN_SKIP" Value="Overslaan" />
+    <Term Key="PROXY_TUNER_CLOSING" Value="Sluit over {0}s" />
+    <Term Key="PROXY_TUNER_DRIVE_HINT" Value="Automatische overbelasting: proxyOverloadTicks -= dt * x{0} (1.0 = normale snelheid)" />
+    <Term Key="PROXY_TUNER_LOAD_FAILED" Value="ProxyTuner: configuratie kon niet worden geladen." />
+    <Term Key="PROXY_TUNER_LOCKED" Value="ProxyTuner: geen configuratie actief." />
+    <Term Key="PROXY_TUNER_MULTI_FLAG" Value="ProxyTuner: meerdere configuraties actief (auteursfout)." />
+    <Term Key="PROXY_TUNER_NO_TARGET" Value="Geen verbinding - proxy-afstemming inactief" />
+    <Term Key="PROXY_TUNER_PROXY_ACTIVE" Value="ACTIEF" />
+    <Term Key="PROXY_TUNER_PROXY_BYPASSED" Value="OMZEILD" />
+    <Term Key="PROXY_TUNER_PROXY_NONE" Value="geen" />
+    <Term Key="PROXY_TUNER_TARGET_LINE" Value="Doel {0} - proxy {1} ({2}/{3} ticks)" />
+</Language>
 </Locale>
