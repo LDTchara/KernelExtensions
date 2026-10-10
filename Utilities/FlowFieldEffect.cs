@@ -61,6 +61,23 @@ namespace KernelExtensions.Utilities
         /// <summary>粒子数上限（实际用 <see cref="Count"/>）。</summary>
         public int Count { get; set; } = 260;
 
+        /// <summary>
+        /// 密度基准高度（像素）。粒子与拖尾是**固定像素尺寸**，所以画面覆盖率只由
+        /// "粒子数 ÷ 画面面积"决定 —— 窗口一变，同一个数量就会显得太密或太稀。
+        ///
+        /// <para>
+        /// 这个值定义"哪个高度下 <see cref="Count"/> 就是正确的数量"，其余高度按
+        /// <c>(高/基准高)²</c> 折算（面积是二维的，所以是平方而不是线性）。
+        /// 默认 200：试出来的结论是 200 的窗口下 260 个粒子观感正好，
+        /// 而 100 的窗口用同一个数量覆盖率会翻 4 倍、显得挤。
+        /// </para>
+        /// </summary>
+        public float ReferenceHeight { get; set; } = 200f;
+
+        /// <summary>折算后的实际数量下限 / 上限（防止极端尺寸下几乎没有粒子或卡顿）。</summary>
+        public int MinEffectiveCount { get; set; } = 24;
+        public int MaxEffectiveCount { get; set; } = 1600;
+
         /// <summary>基础上升速度（满屏高 / 秒）。</summary>
         public float BaseSpeed { get; set; } = 0.42f;
 
@@ -116,7 +133,7 @@ namespace KernelExtensions.Utilities
 
         public FlowFieldEffect()
         {
-            _particles = new Particle[1024];
+            _particles = new Particle[2048];
             Reset();
         }
 
@@ -176,10 +193,36 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
-        /// 推进粒子。<paramref name="load"/> = 0~1 负荷，驱动上升速度。
-        /// 传 <c>dt = 0</c> 即完全静止（供暂停使用）。
+        /// 按目标高度折算实际粒子数：<c>Count × (高 / ReferenceHeight)²</c>，夹在上下限内。
+        ///
+        /// <para>
+        /// 平方是因为覆盖率是二维的：画面面积按高度平方变化，粒子数要同步（线性折算会在
+        /// 小窗口下仍偏密 —— 100 时会变成 130 个而不是 65 个，覆盖率翻倍）。
+        /// </para>
+        ///
+        /// <para>
+        /// 依据目标矩形实时计算，所以窗口被拉伸/缩放时密度自动跟上 --
+        /// 任何尺寸下都是 <see cref="ReferenceHeight"/> 那个观感。
+        /// </para>
         /// </summary>
-        public void Update(float dt, float load)
+        public int EffectiveCount(int destHeight)
+        {
+            float refH = ReferenceHeight <= 1f ? 200f : ReferenceHeight;
+            float ratio = destHeight > 0 ? destHeight / refH : 1f;
+            int n = (int)Math.Round(Count * ratio * ratio);
+            return (int)MathHelper.Clamp(n, MinEffectiveCount, Math.Min(MaxEffectiveCount, _particles.Length));
+        }
+
+        /// <summary>
+        /// 推进粒子。传 <c>dt = 0</c> 即完全静止（供暂停使用）。
+        /// </summary>
+        /// <param name="dt">帧间隔（秒）。</param>
+        /// <param name="load">负荷 0~1，驱动上升速度与拖尾长度。</param>
+        /// <param name="destHeight">
+        /// 目标矩形高度 —— 只用来折算粒子数（见 <see cref="EffectiveCount"/>）。
+        /// 传 0 表示不知道尺寸，按基准高度处理。
+        /// </param>
+        public void Update(float dt, float load, int destHeight = 0)
         {
             if (dt <= 0f) return;
 
@@ -187,7 +230,7 @@ namespace KernelExtensions.Utilities
             _time += dt;
 
             float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
-            int count = (int)MathHelper.Clamp(Count, 1, _particles.Length);
+            int count = EffectiveCount(destHeight);
 
             for (int i = 0; i < count; i++)
             {
@@ -231,7 +274,7 @@ namespace KernelExtensions.Utilities
 
             if (ShowGrid) DrawGrid(sb, dest, color, load);
 
-            int count = (int)MathHelper.Clamp(Count, 1, _particles.Length);
+            int count = EffectiveCount(dest.Height);
             for (int i = 0; i < count; i++)
             {
                 Particle p = _particles[i];
