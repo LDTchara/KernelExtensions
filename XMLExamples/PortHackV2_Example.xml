@@ -131,9 +131,11 @@
   <CompleteDelay>5</CompleteDelay>
 
   <!-- ── 资源占用 / Resource cost ──
-       运行本程序占用的内存（MB）。留空 = 0。
-       Memory the program occupies, in MB. Empty = 0. -->
-  <RamCost>30</RamCost>
+       运行本程序占用的内存（MB）。留空 = 246，与原版 PortHack 一致。
+       Memory the program occupies, in MB. Empty = 246, matching vanilla PortHack.
+       原版 PortHackExe 从不设置 ramCost，取的是引擎默认值 246，这里对齐它。
+       Vanilla PortHackExe never sets ramCost, so it uses the engine default of 246. -->
+  <RamCost>246</RamCost>
 
   <!-- ── 可用性 / Usable ──
        false 时本程序整体报告为不可用（Listing 里对应行显示未满足）。留空 = true。
@@ -224,4 +226,10 @@
 
     [强调色留空 = 白色 / Empty accent = white]
       省略 <AccentColor> / Omit <AccentColor>
+
+    [调低内存占用 / Lower the RAM cost]
+      <RamCost>30</RamCost>
+      留空时是 246（与原版 PortHack 一致）。目标机可用内存不足时程序无法启动。
+      Empty means 246 (same as vanilla PortHack). The program will not start if the target
+      does not have enough free RAM.
 -->

@@ -7,9 +7,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Executable;
 using Pathfinder.Port;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace KernelExtensions.Executables;
@@ -129,7 +126,8 @@ public class PortHackV2Exe : GameExecutable
     public PortHackV2Exe() : base()
     {
         this.name = "PortHackV2";
-        this.ramCost = 30;
+        // 配置加载前先用默认值（与原版 PortHack 同为 246MB）；OnInitialize 里再按 <RamCost> 覆盖
+        this.ramCost = PortHackV2Config.DefaultRamCost;
     }
 
     public override void OnInitialize()

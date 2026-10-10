@@ -96,7 +96,17 @@ public class PortHackV2Config
 
     public bool Usable { get; set; } = true;
     public string Title { get; set; } = string.Empty;
-    public int RamCost { get; set; }     // 单位：MB
+
+    /// <summary>
+    /// 运行本程序占用的内存（MB）。
+    /// 默认 <see cref="DefaultRamCost"/> = <b>246</b>，与原版 PortHack 一致
+    /// （原版 <c>PortHackExe</c> 从不设置 ramCost，取的是 Hacknet <c>ExeModule.DEFAULT_RAM_COST</c>）。
+    /// ⚠️ 这个默认值不能靠"属性初始值 0"来兜 —— 0 会让程序不占内存，等于白嫖。
+    /// </summary>
+    public int RamCost { get; set; } = DefaultRamCost;
+
+    /// <summary>RAM 默认占用（MB）—— 对齐原版 PortHack 的 <c>ExeModule.DEFAULT_RAM_COST</c>。</summary>
+    public const int DefaultRamCost = 246;
 
     /// <summary>
     /// 要破解的协议列表。每个 &lt;Protocol&gt; 自带协议名、成功率与两条分支时长。
