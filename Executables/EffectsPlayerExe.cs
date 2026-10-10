@@ -308,39 +308,45 @@ namespace KernelExtensions.Executables
         /// 立方体预览的驱动。
         ///
         /// <para>
-        /// 分两段：
-        /// <list type="number">
-        ///   <item><b>前 <see cref="STARTUP_S"/>+<see cref="SPINUP_S"/> 内部秒</b>：
-        ///     按**真实时间**喂给序列，让它把"浮现 + 起转"走完 —— 这两段共 1.6 内部秒，
-        ///     按真实时间走完就是 1.6 秒，不会像缩放那样被拉成 64 秒。</item>
-        ///   <item><b>之后</b>：序列的 elapsedTime 停在 runtime 起点不再推进（配合
-        ///     <c>ShouldCentralSpinInfinitley = true</c> 就不会进急刹），
-        ///     改用一个**恒定角速度**的时钟继续喂 —— 于是转速完全由
-        ///     <see cref="CUBE_RATE_DEG_PER_SEC"/> 决定，与序列内部分段解耦。</item>
+        /// ⚠️ <c>DrawSequence(dest, t, totalTime)</c> 的 <c>t</c> 是**帧增量**（原版传的就是
+        /// <c>OS.Update</c> 的帧间隔），**不是累计时钟**。早先的实现把"累计到 1.6 秒的时钟"
+        /// 当成 t 每帧传进去，于是序列每帧都按 1.6 内部秒推进 ——
+        /// <c>rotTime += 1.6</c> 每帧 ≈ 137 度/帧，60fps 下约 22 圈/秒，正是实测到的那种狂转。
+        /// </para>
+        ///
+        /// <para>
+        /// 正确做法：<c>t</c> 恒为"本帧要推进的内部秒数"，只调节它的大小来控速：
+        /// <list type="bullet">
+        ///   <item>前 <see cref="STARTUP_S"/>+<see cref="SPINUP_S"/> 内部秒：按 <c>dt × 1</c>
+        ///     推进 —— 1.6 真实秒走完浮现与起转（与原版同速）。</item>
+        ///   <item>之后：按 <c>dt × 目标速率 / 原生速率</c> 推进，于是匀速段转速 =
+        ///     <see cref="CUBE_RATE_DEG_PER_SEC"/>。配合
+        ///     <c>ShouldCentralSpinInfinitley = true</c>（runtime 段永不结束）就不会进急刹。</item>
         /// </list>
         /// </para>
         /// </summary>
         private void UpdateCubePreview(float dt)
         {
-            // 序列内部 rotTime 累计的是"内部秒"，转速 = rotTime * 1.5 弧度 对 45° 的偏移，
-            // 所以内部秒速率 = 目标角速度 / 1.5。
             const float RampTarget = STARTUP_S + SPINUP_S;
 
+            // 原生速率：内部秒 → 度数（rotTime 每 1 内部秒让旋转角走 1.5 弧度）
+            const float NativeDegPerInternalSec = 1.5f * 180f / MathHelper.Pi;   // ≈ 85.9
+
+            float advance;
             if (_cubeTime < RampTarget)
-            {
-                // 第一段：真实时间推进，1.6 秒走完浮现与起转
-                _cubeTime = Math.Min(RampTarget, _cubeTime + dt);
-            }
+                advance = dt;                                                    // 前两段：原生速度
             else
-            {
-                // 第二段：恒定角速度（换算成"内部秒/真实秒"）
-                float degPerInternalSec = 1.5f * 180f / MathHelper.Pi;   // ≈ 85.9 度/内部秒
-                _cubeTime += dt * (CUBE_RATE_DEG_PER_SEC / degPerInternalSec);
-            }
+                advance = dt * (CUBE_RATE_DEG_PER_SEC / NativeDegPerInternalSec); // 匀速段：按目标角速度
+
+            _cubeTime += advance;
+            _cubeFrameAdvance = advance;    // 面板显示用
         }
 
-        /// <summary>立方体预览的目标角速度（度/真实秒）。</summary>
-        private const float CUBE_RATE_DEG_PER_SEC = 8f;
+        /// <summary>立方体匀速段的角速度（度/真实秒）—— 想调快慢只改这一个数（一圈秒数 = 360 / 它）。</summary>
+        private const float CUBE_RATE_DEG_PER_SEC = 12f;
+
+        /// <summary>最近一帧实际喂给序列的内部秒数（面板显示用）。</summary>
+        private float _cubeFrameAdvance;
 
         /// <summary>立方体预览的时间线常量（原版分段：浮现 0.6s、起转 1.0s）。</summary>
         private const float STARTUP_S = 0.6f;
@@ -416,8 +422,10 @@ namespace KernelExtensions.Executables
                 float spinDeg = MathHelper.ToDegrees(Math.Max(0f, _cubeTime - STARTUP_S - SPINUP_S) * 1.5f) % 360f;
                 float fps = _cubeRealTime > 0.01f ? _cubeFrames / _cubeRealTime : 0f;
 
+                // 关键诊断：每帧喂给序列的内部秒数。原生速度应为 ~0.016（=一帧），
+                // 若显示成 1.6 左右就说明又把累计时钟当帧增量传了（那就是狂转的原因）。
                 load += $"  {phase}  target {CUBE_RATE_DEG_PER_SEC:0.#}deg/s  spin={spinDeg:0.0}deg"
-                     + $"  inner={_cubeTime:0.00}/{STARTUP_S + SPINUP_S:0.0}s  fps={fps:0}";
+                     + $"  t/frame={_cubeFrameAdvance:0.0000}s  inner={_cubeTime:0.0}s  fps={fps:0}";
             }
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
