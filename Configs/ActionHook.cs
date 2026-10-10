@@ -97,7 +97,12 @@ namespace KernelExtensions.Configs
         }
 
         /// <summary>
-        /// 执行本钩子：先内联（若有）再文件（若有），两者都执行。
+        /// 执行本钩子：先文件（若有）再内联（若有），两者都执行。
+        ///
+        /// <para>
+        /// ⚠️ <b>顺序是"先路径、后内联"</b>：两条路各自已有兜底，但把内联放后面更稳妥 ——
+        /// 内联内容由作者直接写、出错概率更高，放在后面就不会挡住已经写好并验证过的动作文件。
+        /// </para>
         /// </summary>
         /// <param name="os">当前 OS。</param>
         /// <param name="source">日志定位用，形如 <c>MyConfig/ssh</c>。</param>
@@ -106,11 +111,11 @@ namespace KernelExtensions.Configs
         {
             if (os == null || !HasContent) return;   // 作者没配这个钩子：正常情况，不记日志
 
-            string inline = InlineXml;
-            if (inline != null) ActionHelper.ExecuteInline(os, inline, $"{source}:<{point}>");
-
             string path = FilePath?.Trim();
             if (!string.IsNullOrEmpty(path)) ActionHelper.ExecuteFile(os, path, $"{source}:<{point}>");
+
+            string inline = InlineXml;
+            if (inline != null) ActionHelper.ExecuteInline(os, inline, $"{source}:<{point}>");
         }
     }
 }
