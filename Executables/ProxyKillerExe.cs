@@ -150,6 +150,18 @@ public class ProxyKillerExe : GameExecutable
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
             + $"at {_cfg.RampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
             + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}.");
+
+        // 反射可用性一次报清 —— 失败时加速会静默失效，必须让它可见
+        if (ReflectionReady)
+        {
+            KELog.Info($"{LogTag} shell hooks resolved (OS.exes, ShellExe.destComp).");
+        }
+        else
+        {
+            KELog.Error($"{LogTag} shell hooks could NOT be resolved - shell acceleration will do nothing. "
+                + $"(OS.exes found: {AccessTools.Field(typeof(OS), "exes") != null}, "
+                + $"ShellExe.destComp found: {destCompField != null})");
+        }
     }
 
     /// <summary>
@@ -325,19 +337,26 @@ public class ProxyKillerExe : GameExecutable
                 // 只看 ShellExe（internal，用类型名判定）；其余程序一律不碰
                 if (shell.GetType().FullName != ShellExeTypeName) continue;
 
-                if (ticksField?.GetValue(shell) is not float ticks || ticks <= 0f) continue;
+                // ⚠️ 过载进度在**目标机**上，不在 shell 上。
+                // 原版 ShellExe 的字段只有 destComp（目标机对象），它执行的是
+                // destComp.proxyOverloadTicks -= t —— 所以这里也必须读 shell 的 destComp。
+                // （ShellExe 上并没有 proxyOverloadTicks 字段，早期版本误读了它，
+                //  反射返回 null 后每帧静默跳过所有 shell，表现为"加速完全没用"。）
+                if (destCompField?.GetValue(shell) is not Computer dest) continue;
 
-                // 该 shell 正在过载的那台机器（用它判断代理是否还活着）
-                if (shellTargetIpField?.GetValue(shell) as string is not string targetIp) continue;
-                Computer dest = Programs.getComputer(os, targetIp);
-                if (dest == null || !dest.hasProxy || !dest.proxyActive) continue;
+                float ticks = dest.proxyOverloadTicks;
+                if (ticks <= 0f) continue;
+
+                // 代理已不在 / 已瘫痪：没有可加速的东西
+                if (!dest.hasProxy || !dest.proxyActive) continue;
 
                 // "正在过载"的区间：ticks 在 (0, startingOverloadTicks] 内。
-                // 超出上限说明不是过载状态（例如作者用 addProxy 给了一台新代理），此时不碰。
+                // 超出上限说明该 shell 当前不是在过载它（destComp 是持久的、会指向上一次的目标），
+                // 此时不碰 —— 否则会把一台只是"被这个 shell 指着"的机器的代理直接归零。
                 if (dest.startingOverloadTicks > 0f && ticks > dest.startingOverloadTicks) continue;
 
                 float next = ticks - extraPerShell;
-                ticksField.SetValue(shell, next > 0f ? next : 0f);
+                dest.proxyOverloadTicks = next > 0f ? next : 0f;
                 hit++;
             }
 
@@ -364,15 +383,22 @@ public class ProxyKillerExe : GameExecutable
     /// <summary>原版 ShellExe 的类型全名（internal 类型，只能按名字找）。</summary>
     private const string ShellExeTypeName = "Hacknet.ShellExe";
 
-    /// <summary><c>ExeModule.targetIP</c> —— 每个 shell 绑定的目标节点，创建后不变。</summary>
-    private static readonly System.Reflection.FieldInfo shellTargetIpField =
-        AccessTools.Field(typeof(ExeModule), "targetIP");
-
-    /// <summary><c>ShellExe.proxyOverloadTicks</c> —— 这个 shell 正在推进的过载进度。</summary>
-    private static readonly System.Reflection.FieldInfo ticksField =
-        AccessTools.TypeByName(ShellExeTypeName)?.GetField("proxyOverloadTicks",
+    /// <summary>
+    /// <c>ShellExe.destComp</c> —— 这个 shell 正在过载的那台机器。
+    /// 过载进度（<c>proxyOverloadTicks</c>）在**它**身上，不在 shell 身上。
+    /// </summary>
+    private static readonly System.Reflection.FieldInfo destCompField =
+        AccessTools.TypeByName(ShellExeTypeName)?.GetField("destComp",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public
             | System.Reflection.BindingFlags.NonPublic);
+
+    /// <summary>
+    /// 反射资源是否可用。**启动时查一次并记日志** —— 这类反射失败的默认行为是"静默跳过"，
+    /// 不主动报出来就只能靠猜（曾经就因为误读 ShellExe.proxyOverloadTicks 这个不存在的字段，
+    /// 表现成"加速完全没用"而日志里一点提示都没有）。
+    /// </summary>
+    private static bool ReflectionReady
+        => AccessTools.Field(typeof(OS), "exes") != null && destCompField != null;
 
     private bool _accelerating;
     private bool _effectWarned;
