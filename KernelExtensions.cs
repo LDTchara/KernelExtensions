@@ -192,6 +192,22 @@ namespace KernelExtensions
             // 临时主题色：只改当前 OS 的颜色字段，不切换主题（切主题后自然撤销）
             RegisterActionWithFallback<ChangeThemeColorAction>("ChangeThemeColor");
 
+            // 2.10 端口 / PortHackV2
+            // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
+            RegisterActionWithFallback<PortControlAction>("PortControl");
+
+            // 目标机原子动作：一个动作干一件事（端口 / 防火墙 / 代理分别独立），
+            // 供 PortHackV2 的动作点或任何其它系统复用。
+            RegisterActionWithFallback<PortOpenAction>("PortOpen");
+            RegisterActionWithFallback<PortCloseAction>("PortClose");
+            RegisterActionWithFallback<PortFirewallAddAction>("PortFirewallAdd");
+            RegisterActionWithFallback<PortFirewallSolveAction>("PortFirewallSolve");
+            RegisterActionWithFallback<PortFirewallRerollAction>("PortFirewallReroll");
+            RegisterActionWithFallback<PortFirewallConfigureAction>("PortFirewallConfigure");
+            RegisterActionWithFallback<PortProxyAddAction>("PortProxyAdd");
+            RegisterActionWithFallback<PortProxySolveAction>("PortProxySolve");
+            RegisterActionWithFallback<PortProxyResetAction>("PortProxyReset");
+
             // ============================================================
             //  3. 事件处理器
             // ============================================================
@@ -213,7 +229,11 @@ namespace KernelExtensions
             KELog.Info("RamDisplay restore handler registered.");
             EventManager<SaveEvent>.AddHandler(OnSaveGame);
             KELog.Info("Save event handler registered.");
-            // 节点自替换符：挂在 Pathfinder 的 TextReplaceEvent 上
+            // 节点自替换符：名字里虽带 Patch，实现上装的是 TextReplaceEvent / OSLoadedEvent 两个
+            // **事件**处理器（不是 Harmony 补丁），所以归本节。
+            // ⚠️ 必须排在最后：它的 OSLoaded 处理器是**补替换** —— 节点是在加载过程中逐个进来的，
+            //    那一刻 netMap 还不完整，引用了"更晚加载的节点"的文本当轮只能保留原文；
+            //    这里再扫一遍补上（见 SelfReplacementPatch.OnOSLoaded 的说明）。
             SelfReplacementPatch.Initialize();
 
             // ============================================================
@@ -253,27 +273,13 @@ namespace KernelExtensions
             // ============================================================
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
+            // 编译期可见类型 → 特性驱动，PatchAll 一次装完
             _harmony.PatchAll();
-            PatchStuxnetDrawFGamemodeMenu.Initialize(); // Stuxnet 插件存在才安装（软依赖）
-
-            // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
-            RegisterActionWithFallback<PortControlAction>("PortControl");
-
-            // 目标机原子动作：一个动作干一件事（端口 / 防火墙 / 代理分别独立）
-            RegisterActionWithFallback<PortOpenAction>("PortOpen");
-            RegisterActionWithFallback<PortCloseAction>("PortClose");
-            RegisterActionWithFallback<PortFirewallAddAction>("PortFirewallAdd");
-            RegisterActionWithFallback<PortFirewallSolveAction>("PortFirewallSolve");
-            RegisterActionWithFallback<PortFirewallRerollAction>("PortFirewallReroll");
-            RegisterActionWithFallback<PortFirewallConfigureAction>("PortFirewallConfigure");
-            RegisterActionWithFallback<PortProxyAddAction>("PortProxyAdd");
-            RegisterActionWithFallback<PortProxySolveAction>("PortProxySolve");
-            RegisterActionWithFallback<PortProxyResetAction>("PortProxyReset");
-
-            // AutoOnPorthack：PortHackExe internal，需运行时反射 patch（PatchAll 扫不到）
-            PorthackAutoPatch.ApplyPatch(_harmony);
-            // RAM 显示：RamModule internal，同样需运行时反射 patch
-            RamDisplayPatch.ApplyPatch(_harmony);
+            // 条件安装：Stuxnet 插件存在才装（软依赖）
+            PatchStuxnetDrawFGamemodeMenu.Initialize();
+            // 运行时反射 patch：目标类型是 internal，PatchAll 扫不到
+            PorthackAutoPatch.ApplyPatch(_harmony);   // PortHackExe
+            RamDisplayPatch.ApplyPatch(_harmony);     // RamModule
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("[KernelExtensions] All is well ** SUCCESS!!");
@@ -295,11 +301,18 @@ namespace KernelExtensions
                 return true;
             }
         }
-        // 添加公共静态方法用于注册端口
+
+        // ============================================================
+        //  成员方法（Load 之外：注册辅助 / 事件处理器 / 指令 / 卸载）
+        //  上面的 0~7 节是 Load() 内的初始化顺序，从这里往下都是定义，不参与顺序。
+        // ============================================================
+
+        /// <summary>添加公共静态方法用于注册端口</summary>
         public static void LoadActionPorts(string protocol, string displayName, int portNum)
         {
             Pathfinder.Port.PortManager.RegisterPort(protocol, displayName, portNum);
         }
+
         public override bool Unload()
         {
             // 结局模块可能把全局音乐音量停在渐弱值（0）上——卸载前先恢复，
