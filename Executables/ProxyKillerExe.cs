@@ -452,11 +452,9 @@ public class ProxyKillerExe : GameExecutable
         const int bandH = 25;
         Rectangle bar = new(content.X, content.Y + content.Height - bandH, content.Width, bandH);
 
-        // 退出时整条随 fade 淡出（原版退场靠窗口收缩，但内容是按帧画的，加一层淡出更顺）
-        float barFade = isExiting ? MathHelper.Clamp(fade, 0f, 1f) : 1f;
-
-        // 通栏底色
-        spriteBatch.Draw(Utils.white, bar, Color.Black * (0.95f * barFade));
+        // 通栏底色。**不加 fade** —— 原版退场靠窗口高度收缩到 0 把内容裁掉，
+        // 位置重排之后贴着按钮的那条本来就跟着窗口一起缩短，再加淡出是多余的。
+        spriteBatch.Draw(Utils.white, bar, Color.Black * 0.95f);
 
         // Exit 按钮占左边一小块；其余留给状态文字（黑框"起始位置在右边" = 只压住右半边）
         int btnW = Math.Min(bar.Width, 60);
@@ -500,7 +498,7 @@ public class ProxyKillerExe : GameExecutable
             textArea.Height / size.Y));
         Vector2 offset = new(textArea.Width - size.X * scale,
             textArea.Height / 2f - size.Y * scale / 2f);
-        Color textColor = Color.Lerp(Color.White, os.highlightColor, 0.4f + Utils.randm(0.1f)) * barFade;
+        Color textColor = Color.Lerp(Color.White, os.highlightColor, 0.4f + Utils.randm(0.1f));
         spriteBatch.DrawString(GuiData.font, text, new Vector2(textArea.X, textArea.Y) + offset,
             textColor, 0f, Vector2.Zero, new Vector2(scale), SpriteEffects.None, 0.5f);
 
