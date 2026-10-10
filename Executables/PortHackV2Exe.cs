@@ -432,7 +432,21 @@ public class PortHackV2Exe : GameExecutable
         if (!rt.Started)
         {
             rt.DelayElapsed += t;
-            if (!rt.Started) return;    // 本帧还没到启动点
+            if (!rt.Started)
+            {
+                // 本帧还没到启动点。打印状态：排错时"某协议从不启动"只能靠这几个数定位
+                // （Def 是否为 null、StartDelay 解析成了多少、计时到了哪里）。
+                // 只在头几帧打印，避免每帧刷屏。
+                if (rt.DelayElapsed <= t * 3f)
+                {
+                    float defDelay = rt.Def == null ? -1f : rt.Def.StartDelay;
+                    string defName = rt.Def == null ? "<null def>" : rt.Def.Name;
+                    KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}' protocol '{defName}'"
+                        + $" not started yet: delayElapsed={rt.DelayElapsed:0.###}"
+                        + $" startDelay={defDelay:0.###} t={t:0.####}");
+                }
+                return;    // 本帧还没到启动点
+            }
 
             // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
             rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
