@@ -90,41 +90,25 @@ namespace KernelExtensions.Utilities
         public int MinEffectiveCount { get; set; } = 24;
         public int MaxEffectiveCount { get; set; } = 1400;
 
-        /// <summary>基础上升速度（满屏高 / 秒）；实际还会乘速度缩放，见 <see cref="SpeedScale"/>。</summary>
+        /// <summary>
+        /// 基础上升速度，单位是"满屏高 / 秒"。**实际速度由 <see cref="SpeedPxPerSecond"/> 决定**，
+        /// 这个值只作为速度档位的相对比例，不参与绝对快慢。
+        /// </summary>
         public float BaseSpeed { get; set; } = 0.42f;
 
         /// <summary>
-        /// 速度缩放的基准高度：**这个高度下速度就是 <see cref="BaseSpeed"/>（缩放 1.0）**。
+        /// 粒子速度的两个锚点，单位是**每秒像素**。
         ///
         /// <para>
-        /// 为什么基准取 100 而不是 200：实测反馈是"100 的速度正好，但 200 及以上的不够"
-        /// —— 所以 100 才是"标准速度"的所在地，200 及以上需要提速。基准定在被打勾的那个尺寸上，
-        /// 参数才好读（缩放 &gt; 1 就是"比基准快"）。
-        /// </para>
-        ///
-        /// <para>
-        /// 注意"满屏高/秒"是归一化单位，所以窗口越高每秒像素越多 —— 200 的窗口即便缩放比
-        /// 100 小，每秒像素仍然更多，这与"100 正好、200 不够"的观察并不矛盾。
+        /// 低锚点 = 已被确认"正好"的那档（严格反比方案在 Size 100 内容区 70 下的速度）；
+        /// 高锚点 = "明显要更快"的那档（Size 400 内容区 370）。
+        /// 两者之间按对数线性插值，之外外推。
         /// </para>
         /// </summary>
-        public float SpeedReferenceHeight { get; set; } = 100f;
-
-        /// <summary>
-        /// 速度缩放随高度衰减的指数：<c>缩放 = (基准高 / 高度)^SpeedFalloff</c>。
-        ///
-        /// <para>
-        /// <b>1.0</b> = 每秒像素完全恒定（严格反比，之前那版）；
-        /// <b>0.0</b> = 完全不缩放（回退后那版，100 不够快）。
-        /// 实测"100 正好、大窗口不够"，说明需要**折一部分但别折满**，所以默认取 <b>0.86</b>
-        /// —— 100 处缩放约 2.0（正是被确认为"正好"的那档），200 处 1.8，400 处 1.3，
-        /// 越大越接近不缩放，每秒像素的增幅随尺寸递减。
-        /// </para>
-        /// </summary>
-        public float SpeedFalloff { get; set; } = 0.86f;
-
-        /// <summary>速度缩放的夹取范围（防止极端窗口尺寸下失控）。</summary>
-        public float MinSpeedScale { get; set; } = 0.25f;
-        public float MaxSpeedScale { get; set; } = 4f;
+        public float SpeedLowAnchorHeight { get; set; } = 70f;
+        public float SpeedLowAnchorPxPerSec { get; set; } = 218f;
+        public float SpeedHighAnchorHeight { get; set; } = 370f;
+        public float SpeedHighAnchorPxPerSec { get; set; } = 300f;
 
         /// <summary>
         /// 速度档位数。粒子速度在 <see cref="MinSpeedFactor"/> ~ <see cref="MaxSpeedFactor"/> 之间
@@ -263,16 +247,27 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
-        /// 速度的缩放：<c>(基准高 / 高度)^SpeedFalloff</c>，夹在 Min/Max 之间。
-        /// 乘上 <see cref="BaseSpeed"/> 后，小窗口的每秒像素被抬起来、大窗口抬得少一些 ——
-        /// 见 <see cref="SpeedFalloff"/> 的说明。
+        /// 该高度下的实际速度（**每秒像素**）：过
+        /// (<see cref="SpeedLowAnchorHeight"/>, <see cref="SpeedLowAnchorPxPerSec"/>)
+        /// 与 (<see cref="SpeedHighAnchorHeight"/>, <see cref="SpeedHighAnchorPxPerSec"/>)
+        /// 两点按**对数线性**插值/外推。
+        ///
+        /// <para>
+        /// 为什么用"每秒像素"而不是"满屏高/秒"：后者是归一化单位，同一组参数在 70 与 600 的
+        /// 内容区下每秒像素能差 8 倍，光看参数根本判断不出实际快慢 —— 前几轮调整就是被这个
+        /// 单位误导的。像素/秒是能直接对着屏幕感受的量。
+        /// </para>
         /// </summary>
-        public float SpeedScale(int destHeight)
+        public float SpeedPxPerSecond(int destHeight)
         {
-            float refH = SpeedReferenceHeight <= 1f ? 100f : SpeedReferenceHeight;
-            float h = destHeight > 0 ? destHeight : refH;
-            float scale = (float)Math.Pow(refH / h, MathHelper.Clamp(SpeedFalloff, 0f, 3f));
-            return MathHelper.Clamp(scale, MinSpeedScale, MaxSpeedScale);
+            float h = destHeight > 0 ? destHeight : SpeedLowAnchorHeight;
+            float loH = SpeedLowAnchorHeight <= 1f ? 70f : SpeedLowAnchorHeight;
+            float hiH = SpeedHighAnchorHeight <= 1f ? 370f : SpeedHighAnchorHeight;
+            float loV = Math.Max(1f, SpeedLowAnchorPxPerSec);
+            float hiV = Math.Max(1f, SpeedHighAnchorPxPerSec);
+
+            float exponent = (float)(Math.Log((double)hiV / loV) / Math.Log((double)hiH / loH));
+            return loV * (float)Math.Pow(h / loH, exponent);
         }
 
         /// <summary>
@@ -283,7 +278,7 @@ namespace KernelExtensions.Utilities
         /// <param name="load">负荷 0~1。</param>
         /// <param name="destHeight">
         /// 目标矩形高度 —— 用来折算粒子数（<see cref="EffectiveCount"/>）
-        /// 与速度缩放（<see cref="SpeedScale"/>）。传 0 表示按锚点/基准高度处理。
+        /// 与速度（<see cref="SpeedPxPerSecond"/>）。传 0 表示按锚点高度处理。
         /// </param>
         public void Update(float dt, float load, int destHeight = 0)
         {
@@ -292,7 +287,10 @@ namespace KernelExtensions.Utilities
             load = MathHelper.Clamp(load, 0f, 1f);
             _time += dt;
 
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * SpeedScale(destHeight);
+            // 实际速度由「每秒像素」定（见 SpeedPxPerSecond），粒子自身存的是归一化速度，
+            // 所以这里换算：每秒像素 / 高度 = 每归一化单位要乘多少
+            float speedGain = SpeedPxPerSecond(destHeight) * MathHelper.Lerp(1f, LoadSpeedGain, load)
+                / Math.Max(1, destHeight);
             int count = EffectiveCount(destHeight);
 
             for (int i = 0; i < count; i++)
@@ -328,7 +326,8 @@ namespace KernelExtensions.Utilities
             if (dest.Width <= 4 || dest.Height <= 4) return;
 
             load = MathHelper.Clamp(load, 0f, 1f);
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * SpeedScale(dest.Height);
+            float speedGain = SpeedPxPerSecond(dest.Height) * MathHelper.Lerp(1f, LoadSpeedGain, load)
+                / Math.Max(1, dest.Height);
             float brightness = BaseBrightness * MathHelper.Lerp(0.8f, 1.35f, load);
 
             // 固定像素：轨迹宽 = 头部宽，两者比例在任何窗口下都一致
