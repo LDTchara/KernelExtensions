@@ -68,6 +68,8 @@ public class ProxyKillerExe : GameExecutable
 
     // ---- 背景：上升数据流（自下而上的粒子洪流，随 RAM 爬升加速）----
     private Color _bgColor = Color.White;
+    /// <summary>true = 背景色是配置里写死的静态色（不再每帧取主题高亮色）。</summary>
+    private bool _bgColorFixed;
     private readonly FlowFieldEffect _flow = new();
     private bool _bgWarned;
 
@@ -123,6 +125,9 @@ public class ProxyKillerExe : GameExecutable
         }
 
         _bgColor = _cfg.BackgroundColor;
+        // auto（或留空 / NONE）时颜色取主题高亮色，但**每帧取** —— 配置解析时拿不到 os，
+        // 而且这样主题中途变化也能跟上。所以这里只把非 auto 的静态值定下来。
+        if (!_cfg.BackgroundColorAuto) _bgColorFixed = true;
 
         // 起始值固定 50（不可配）；目标取配置值，且不小于起始值，避免"反向下滑"
         _ramStart = ProxyKillerConfig.RamCost;
@@ -140,9 +145,6 @@ public class ProxyKillerExe : GameExecutable
         _flow.TrailPixels = _cfg.TrailPixels;
         _flow.LoadTrailGain = _cfg.LoadTrailGain;
         _flow.LoadSpeedGain = _cfg.LoadSpeedGain;
-        _flow.GridCells = _cfg.GridCells;
-        _flow.GridPixelSize = _cfg.GridPixelSize;
-        _flow.ShowGrid = _cfg.GridCells > 0;
         _flow.Reset();
 
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
@@ -397,19 +399,23 @@ public class ProxyKillerExe : GameExecutable
         band.Y += 4;
         band.Height -= 8;
 
-        // 文本：把原版"减速 trace"的说法换成"加速 shell 过载"，
-        // 并把原版的假进度换成**真实**的 RAM 爬升进度（同样的版式，但数字不骗人）。
+        // 状态文字：语义对齐原版 DLCTraceSlower，但把"抑制追踪"换成"加速 shell 过载"。
         //
-        // 三种状态与原版 DLCTraceSlower 一一对应：
-        //   退出中且没爬满 → "Spinning down..."（原版同款状态，退出时窗口正在收缩，读它有意义）
-        //   没爬满        → "Spinning up..." + 进度读数
-        //   爬满          → "Accelerating"（原版此处是 "Suppression Active" / 无 admin 时的提示）
+        // 原版是三个状态词（"[ Spinning up... ]" / "[ Suppression Active ]" /
+        // "[ Spinning down... ]"），长句、括号包起来、读起来像机器在报自己的状态。
+        // 这里照这个语气来：
+        //   爬升中   → "Spinning up..." + 进度读数（机械起转，原版同款词）
+        //   已爬满   → "Overdrive"（**超负荷运转** —— 对应原版的 "Suppression Active"）
+        //   退出中   → "Spinning down..."（卸荷，原版同款）
+        //
+        // 三级连起来是一条完整的负载曲线：升速 → 被逼到超负荷 → 降速。
+        // 刻意不用 "Accelerating" 这类词：那是描述**动作**，而这里要的是报**负载状态**。
         float progress = RampProgress();
         bool rampDone = _ram >= _target;
         string label = isExiting
             ? KELoc.Loc("PROXY_KILLER_SPINDOWN", "Spinning down...")
             : rampDone
-                ? KELoc.Loc("PROXY_KILLER_ACTIVE", "Accelerating")
+                ? KELoc.Loc("PROXY_KILLER_ACTIVE", "Overdrive")
                 : KELoc.Loc("PROXY_KILLER_SPINUP", "Spinning up...");
         string text = "[ " + label + " ]";
         string readout = (!isExiting && !rampDone)
@@ -472,9 +478,12 @@ public class ProxyKillerExe : GameExecutable
 
         try
         {
+            // auto 时每帧取主题高亮色（主题中途变化也能跟上）
+            Color tint = _bgColorFixed ? _bgColor : os.highlightColor;
+
             float progress = RampProgress();
             _flow.Opacity = MathHelper.Lerp(0.35f, 1f, progress) * (isExiting ? fade : 1f);
-            _flow.Draw(spriteBatch, area, _bgColor, progress);
+            _flow.Draw(spriteBatch, area, tint, progress);
         }
         catch (Exception ex)
         {

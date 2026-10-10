@@ -9,12 +9,8 @@ namespace KernelExtensions.Utilities
     ///
     /// <para>
     /// 结构参照原版 <c>RaindropsEffect</c>（矩阵雨），但方向相反、语义不同：
-    /// <list type="bullet">
-    ///   <item><b>上升粒子</b>：每个粒子从底边生成、带着自己的相位向上加速飞，
-    ///     身后拖一条与速度成正比的竖线（快的尾巴长 —— "高速"最直接的线索）。
-    ///     粒子各自独立上冲，不是整片一起漂。</item>
-    ///   <item><b>底纹点阵</b>：整体向上缓慢漂移的点阵，给洪流一个"空间尺度"的参照。</item>
-    /// </list>
+    /// 每个粒子从底边生成、带着自己的相位向上加速飞，身后拖一条与速度成正比的竖线
+    /// （快的尾巴长 —— "高速"最直接的线索）。粒子各自独立上冲，不是整片一起漂。
     /// </para>
     ///
     /// <para>
@@ -150,15 +146,6 @@ namespace KernelExtensions.Utilities
 
         /// <summary>横向摆动幅度（归一化）。让上升路径不是死直线。</summary>
         public float SwayAmount { get; set; } = 0.012f;
-
-        /// <summary>底纹网格的格数（按 min(宽,高) 分档）。</summary>
-        public int GridCells { get; set; } = 10;
-
-        /// <summary>底纹网格是否绘制。</summary>
-        public bool ShowGrid { get; set; } = true;
-
-        /// <summary>**网格**的线宽 / 点径（像素）。与粒子尺寸分开 —— 网格是背景参照，不该跟粒子一样粗。</summary>
-        public float GridPixelSize { get; set; } = 1f;
 
         /// <summary>整体不透明度倍数。给调用方做淡出用（1 = 原亮度）。</summary>
         public float Opacity { get; set; } = 1f;
@@ -334,8 +321,6 @@ namespace KernelExtensions.Utilities
             int w = Math.Max(1, (int)Math.Round(ParticlePixels));
             int trailLen = Math.Max(2, (int)Math.Round(TrailPixels * MathHelper.Lerp(1f, LoadTrailGain, load)));
 
-            if (ShowGrid) DrawGrid(sb, dest, color, load);
-
             int count = EffectiveCount(dest.Height);
             for (int i = 0; i < count; i++)
             {
@@ -370,33 +355,7 @@ namespace KernelExtensions.Utilities
             }
         }
 
-        /// <summary>底纹点阵：整体缓慢上移，与粒子同向（强化"从下往上"的方向感）。</summary>
-        private void DrawGrid(SpriteBatch sb, Rectangle dest, Color color, float load)
-        {
-            int cells = (int)MathHelper.Clamp(GridCells, 2, 64);
-            float stepY = (float)dest.Height / cells;
-            // X 按**宽度**分格（原先误用 min(宽,高)，宽而矮的绘制区会横向铺出一片噪点）
-            float stepX = (float)dest.Width / cells;
-            int gw = Math.Max(1, (int)Math.Round(GridPixelSize));
-
-            // 漂移方向与粒子一致（向上），速度只有粒子的一小部分
-            float drift = (_time * BaseSpeed * 0.12f * MathHelper.Lerp(1f, LoadSpeedGain, load)) % stepY;
-            Color gridColor = color * (BaseBrightness * 0.11f * MathHelper.Clamp(Opacity, 0f, 1f));
-
-            for (int row = 0; row < cells; row++)
-            {
-                // 取模回绕（夹取会让所有越界点堆在边缘排成一条实线）
-                float y = (row * stepY - drift + stepY * 2f) % stepY;
-                int py = ClampToRange(dest.Y + (int)y, dest.Y, dest.Y + dest.Height - gw);
-                for (int col = 0; col < cells; col++)
-                {
-                    int px = ClampToRange(dest.X + (int)(col * stepX), dest.X, dest.X + dest.Width - gw);
-                    sb.Draw(Utils.white, new Rectangle(px, py, gw, gw), gridColor);
-                }
-            }
-        }
-
-        private static int ClampToRange(int v, int min, int max)
+private static int ClampToRange(int v, int min, int max)
             => v < min ? min : (v > max ? max : v);
     }
 }

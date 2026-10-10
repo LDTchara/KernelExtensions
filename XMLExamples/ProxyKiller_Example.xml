@@ -79,10 +79,8 @@
   <ShellOverloadTarget>2.0</ShellOverloadTarget>
 
   <!-- ── 背景：上升数据流 / Background: rising data stream ──
-       一串串粒子从底部向上飞出去，每颗后面拖一条与速度成正比的尾巴，
-       底下还有一层随流漂移的点阵给画面一个空间参照。
-       Particles fly upward out of the top, each trailing a line proportional to its speed,
-       over a slowly drifting dot grid that gives the motion a spatial reference.
+       一串串粒子从底部向上飞出去，每颗后面拖一条与速度成正比的尾巴。
+       Particles fly upward out of the top, each trailing a line proportional to its speed.
 
        它**随 RAM 爬升而加速** —— 这就是"过载"在背景上的表达：
        占的内存越多，数据冲得越快、尾巴越长。
@@ -90,41 +88,38 @@
        streams and the longer the trails — that is how "overload" is shown.
 
        密度与速度都是幂律（数量/速度 ≈ 系数 × 高度^0.5），但这里**不用填系数** ——
-       填"某个基准尺寸下你要多少、多快"即可，程序自己反解系数：
+       填"某个基准尺寸下你要多少、多快"，程序自己反解系数。
        Density and speed are both power laws, but you do not fill in coefficients: just say
        what you want at some reference size and the program solves for them.
 
-       BackgroundColor          粒子与网格的颜色。留空 / NONE = 白色。支持 CustomColor 预设名
-                                与动态色（LDTchara / Rainbow / Gradient:…）以及 hex / 数值 / 命名色。
-                                Colour of the particles and grid. Empty or NONE = white.
+       BackgroundColor          粒子与拖尾的颜色。**auto / 留空 / NONE = 主题高亮色**
+                                （跟着主题走，不写死白色）；也可写 CustomColor 预设名与动态色
+                                （LDTchara / Rainbow / Gradient:…）以及 hex / 数值 / XNA 命名色。
+                                Colour of the particles and trails. **auto / empty / NONE = the
+                                theme highlight colour**; also accepts CustomColor presets and
+                                dynamic colours, hex, numeric RGB(A) and XNA names.
        BackgroundCount          基准尺寸下想要的粒子数。留空 = 230。
                                 Particle count wanted at the reference size. Empty = 230.
        BackgroundReferenceHeight 基准尺寸（绘制区高度，像素）。留空 = 200。
                                 Reference size in pixels (drawing-area height). Empty = 200.
        BackgroundSpeed          基准尺寸下想要的速度（每秒像素）。留空 = 300。
                                 Speed wanted at the reference size, in pixels per second. Empty = 300.
-       ParticlePixels           粒子与拖尾的线宽（像素）。留空 = 5。
-                                Line width of particles and trails. Empty = 5.
-       TrailPixels              拖尾基础长度（像素）。留空 = 27。
-                                Base trail length. Empty = 27.
+       ParticlePixels           粒子与拖尾的线宽（像素）。留空 = 2。
+                                Line width of particles and trails. Empty = 2.
+       TrailPixels              拖尾基础长度（像素）。留空 = 5。
+                                Base trail length. Empty = 5.
        LoadTrailGain            满负荷时拖尾的倍数。留空 = 2.0。
                                 Trail multiplier at full load. Empty = 2.0.
        LoadSpeedGain            满负荷时速度的倍数。留空 = 2.6。
-                                Speed multiplier at full load. Empty = 2.6.
-       GridCells                底纹点阵的格数。留空 = 12；写 0 = 不画点阵。
-                                Dot-grid cell count. Empty = 12; 0 hides the grid.
-       GridPixelSize            网格线宽（像素）。留空 = 2。
-                                Grid line width. Empty = 2. -->
-  <BackgroundColor>White</BackgroundColor>
+                                Speed multiplier at full load. Empty = 2.6. -->
+  <BackgroundColor>auto</BackgroundColor>
   <BackgroundCount>230</BackgroundCount>
   <BackgroundReferenceHeight>200</BackgroundReferenceHeight>
   <BackgroundSpeed>300</BackgroundSpeed>
-  <ParticlePixels>5</ParticlePixels>
-  <TrailPixels>27</TrailPixels>
+  <ParticlePixels>2</ParticlePixels>
+  <TrailPixels>5</TrailPixels>
   <LoadTrailGain>2.0</LoadTrailGain>
   <LoadSpeedGain>2.6</LoadSpeedGain>
-  <GridCells>12</GridCells>
-  <GridPixelSize>2</GridPixelSize>
 
 </ProxyKillerConfig>
 
@@ -170,8 +165,8 @@
     [加速更猛：满负荷 4 倍速 / A harder kick: x4 at full load]
       <LoadSpeedGain>4.0</LoadSpeedGain>
 
-    [不要底纹点阵 / No background grid]
-      <GridCells>0</GridCells>
+    [跟着主题走 / Follow the theme colour]
+      <BackgroundColor>auto</BackgroundColor>
 
     [换个颜色 / Another colour]
       <BackgroundColor>Rainbow</BackgroundColor>

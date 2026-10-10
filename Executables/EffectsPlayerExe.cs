@@ -334,6 +334,15 @@ namespace KernelExtensions.Executables
             if (_effects.Count == 0) return;
             EffectEntry cur = _effects[_currentIndex];
 
+            // ⚠️ 退出时把内容乘 fade：原版退场机制是"窗口高度收缩到 0"（bounds 先被改小），
+            // 但内容是按帧画的、不会自己缩，于是窗口框在缩而画面不动，看着像"框在动内容不动"。
+            // 乘 fade 之后两者同步淡出。
+            bool exiting = isExiting;
+            if (exiting && cur.Draw2D != null && cur.Name == "FlowField")
+                _flowField.Opacity = fade;
+            else if (!exiting)
+                _flowField.Opacity = 1f;
+
             if (cur.Draw3D != null) DrawOffscreen(cur.Draw3D, bg);
             else cur.Draw2D?.Invoke(spriteBatch, bg, _timer);
 

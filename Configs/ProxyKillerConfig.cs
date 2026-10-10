@@ -67,6 +67,13 @@ public class ProxyKillerConfig
 
     // ---- 背景（上升数据流）默认参数 ----
 
+    /// <summary>
+    /// <c>&lt;BackgroundColor&gt;</c> 的 <c>auto</c> 写法（大小写不敏感）——
+    /// 取**主题高亮色**（<c>os.highlightColor</c>），即随主题变化而不是固定白。
+    /// 留空 / <c>NONE</c> 同样按 auto 处理。
+    /// </summary>
+    public const string BackgroundColorAutoValue = "auto";
+
     /// <summary>基准窗口下想要的粒子数；与 <see cref="DefaultDensityExponent"/> 一起换算成幂律系数。</summary>
     public const int DefaultCountAtReference = 230;
     /// <summary>密度的基准窗口尺寸（像素，取绘制区高度）。</summary>
@@ -78,17 +85,13 @@ public class ProxyKillerConfig
     /// <summary>速度幂律指数。</summary>
     public const float DefaultSpeedExponent = 0.3135f;
     /// <summary>粒子（含拖尾）的线宽像素数。</summary>
-    public const float DefaultParticlePixels = 5f;
+    public const float DefaultParticlePixels = 2f;
     /// <summary>拖尾基础长度（像素）。</summary>
-    public const float DefaultTrailPixels = 27f;
+    public const float DefaultTrailPixels = 5f;
     /// <summary>满负荷时拖尾的倍数。</summary>
     public const float DefaultLoadTrailGain = 2f;
     /// <summary>满负荷时速度的倍数。</summary>
     public const float DefaultLoadSpeedGain = 2.6f;
-    /// <summary>底纹网格的格数。</summary>
-    public const int DefaultGridCells = 12;
-    /// <summary>网格线宽（像素）。</summary>
-    public const float DefaultGridPixelSize = 2f;
 
     // ======================= XML 原始值（string 承接） =======================
 
@@ -149,12 +152,6 @@ public class ProxyKillerConfig
     /// <summary>满负荷时速度的倍数。留空 = 2.6 —— 这就是"加速"在背景上的体现。</summary>
     [XmlElement("LoadSpeedGain")] public string LoadSpeedGainRaw { get; set; }
 
-    /// <summary>底纹网格的格数。留空 = 12；写 0 = 不画网格。</summary>
-    [XmlElement("GridCells")] public string GridCellsRaw { get; set; }
-
-    /// <summary>网格线宽（像素）。留空 = 2。</summary>
-    [XmlElement("GridPixelSize")] public string GridPixelSizeRaw { get; set; }
-
     // ======================= 解析结果 =======================
 
     /// <summary>终端与窗口顶部显示的程序名。</summary>
@@ -169,8 +166,19 @@ public class ProxyKillerConfig
     /// <summary>shell 过载倍速的目标值。</summary>
     [XmlIgnore] public float ShellOverloadTarget { get; private set; } = DefaultShellOverloadTarget;
 
-    /// <summary>背景粒子颜色。</summary>
+    /// <summary>背景粒子颜色的静态值（<see cref="BackgroundColorAuto"/> 为 true 时不用它）。</summary>
     [XmlIgnore] public Color BackgroundColor { get; private set; } = Color.White;
+
+    /// <summary>
+    /// true = <c>&lt;BackgroundColor&gt;</c> 写了 <c>auto</c>（或留空 / <c>NONE</c>）——
+    /// 此时颜色取**主题高亮色**。
+    ///
+    /// <para>
+    /// 为什么不在配置里直接取好：配置解析时拿不到 <c>os</c>（主题高亮色在它上面），
+    /// 所以只能记住"要自动"，由 Exe 绘制时每帧取。顺带的好处是主题中途变化也能跟上。
+    /// </para>
+    /// </summary>
+    [XmlIgnore] public bool BackgroundColorAuto { get; private set; }
 
     /// <summary>反解出的密度幂律系数（<c>n = Coefficient × 高度^DensityExponent</c>）。</summary>
     [XmlIgnore] public float BackgroundDensityCoefficient { get; private set; }
@@ -190,10 +198,6 @@ public class ProxyKillerConfig
     [XmlIgnore] public float LoadTrailGain { get; private set; } = DefaultLoadTrailGain;
     /// <summary>满负荷时速度的倍数。</summary>
     [XmlIgnore] public float LoadSpeedGain { get; private set; } = DefaultLoadSpeedGain;
-    /// <summary>底纹网格格数（0 = 不画）。</summary>
-    [XmlIgnore] public int GridCells { get; private set; } = DefaultGridCells;
-    /// <summary>网格线宽（像素）。</summary>
-    [XmlIgnore] public float GridPixelSize { get; private set; } = DefaultGridPixelSize;
 
     /// <summary>本配置对应的 flag 名（不含前缀）；由加载器填入，供反查与日志使用。</summary>
     [XmlIgnore] public string SourceName { get; set; }
@@ -282,8 +286,15 @@ public class ProxyKillerConfig
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ShellOverloadTarget> '{ShellOverloadTargetRaw}', "
                 + $"expected {MinShellOverloadTarget}~{MaxShellOverloadTarget}; using {DefaultShellOverloadTarget}.");
 
-        // 颜色走统一入口：这样才吃得到 CustomColor 预设名与动态色
-        BackgroundColor = CustomColorManager.GetDynamicColor(BackgroundColorRaw, Color.White);
+        // 背景颜色：auto（含留空 / NONE）走主题高亮色，其余走统一颜色入口
+        // （这样才吃得到 CustomColor 预设名与动态色）
+        string bgRaw = BackgroundColorRaw?.Trim();
+        BackgroundColorAuto = string.IsNullOrEmpty(bgRaw)
+            || ConfigValue.IsNone(bgRaw)
+            || bgRaw.Equals(BackgroundColorAutoValue, StringComparison.OrdinalIgnoreCase);
+        BackgroundColor = BackgroundColorAuto
+            ? Color.White                                  // 占位；实际由 Exe 每帧取主题高亮色
+            : CustomColorManager.GetDynamicColor(bgRaw, Color.White);
 
         // ---- 背景：作者填"基准尺寸下的目标值"，这里反解出幂律系数 ----
         // 反解公式：n = C·h^k 且已知 (h0, n0) → C = n0 / h0^k
@@ -299,8 +310,6 @@ public class ProxyKillerConfig
         TrailPixels = ParseNum(TrailPixelsRaw, DefaultTrailPixels, 2f, 2000f, "TrailPixels");
         LoadTrailGain = ParseNum(LoadTrailGainRaw, DefaultLoadTrailGain, 1f, 20f, "LoadTrailGain");
         LoadSpeedGain = ParseNum(LoadSpeedGainRaw, DefaultLoadSpeedGain, 1f, 50f, "LoadSpeedGain");
-        GridCells = ToInt(ParseNum(GridCellsRaw, DefaultGridCells, 0f, 64f, "GridCells"));
-        GridPixelSize = ParseNum(GridPixelSizeRaw, DefaultGridPixelSize, 1f, 32f, "GridPixelSize");
     }
 
     /// <summary>解析一个数值背景参数：留空 = 默认（正常省略，不记日志）；畸形 / 超范围 = 回退 + Warn。</summary>
