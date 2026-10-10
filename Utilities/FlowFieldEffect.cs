@@ -373,21 +373,25 @@ namespace KernelExtensions.Utilities
         /// <summary>底纹点阵：整体缓慢上移，与粒子同向（强化"从下往上"的方向感）。</summary>
         private void DrawGrid(SpriteBatch sb, Rectangle dest, Color color, float load)
         {
-            int cells = (int)MathHelper.Clamp(GridCells, 2, 32);
+            int cells = (int)MathHelper.Clamp(GridCells, 2, 64);
             float stepY = (float)dest.Height / cells;
-            float stepX = Math.Min(dest.Width, dest.Height) / (float)cells;
+            // X 按**宽度**分格（原先误用 min(宽,高)，宽而矮的绘制区会横向铺出一片噪点）
+            float stepX = (float)dest.Width / cells;
+            int gw = Math.Max(1, (int)Math.Round(GridPixelSize));
 
             // 漂移方向与粒子一致（向上），速度只有粒子的一小部分
             float drift = (_time * BaseSpeed * 0.12f * MathHelper.Lerp(1f, LoadSpeedGain, load)) % stepY;
             Color gridColor = color * (BaseBrightness * 0.11f * MathHelper.Clamp(Opacity, 0f, 1f));
 
-            for (float row = 0f; row <= cells; row++)
+            for (int row = 0; row < cells; row++)
             {
-                int py = ClampToRange((int)(dest.Y + row * stepY - drift), dest.Y, dest.Y + dest.Height - 1);
-                for (float x = 0f; x < dest.Width; x += stepX)
+                // 取模回绕（夹取会让所有越界点堆在边缘排成一条实线）
+                float y = (row * stepY - drift + stepY * 2f) % stepY;
+                int py = ClampToRange(dest.Y + (int)y, dest.Y, dest.Y + dest.Height - gw);
+                for (int col = 0; col < cells; col++)
                 {
-                    int px = ClampToRange((int)(dest.X + x), dest.X, dest.X + dest.Width - 1);
-                    sb.Draw(Utils.white, new Rectangle(px, py, 1, 1), gridColor);
+                    int px = ClampToRange(dest.X + (int)(col * stepX), dest.X, dest.X + dest.Width - gw);
+                    sb.Draw(Utils.white, new Rectangle(px, py, gw, gw), gridColor);
                 }
             }
         }

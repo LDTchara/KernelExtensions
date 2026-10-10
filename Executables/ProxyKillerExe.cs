@@ -438,8 +438,8 @@ public class ProxyKillerExe : GameExecutable
         }
 
         // 底部 Exit 按钮（原版 SignalScramble 就是这条满宽黑条 + 按钮）
-        // 按钮条画在内容区**下方**（原先是压在内容区底部，会盖住背景）
-        Rectangle btn = new(content.X, content.Y + content.Height + 2, content.Width, bandH);
+        // 按钮条画在内容区**内部底部**（压住一点背景没关系；放到内容区外面会盖到别的 exe 窗口）
+        Rectangle btn = new(content.X, content.Y + content.Height - bandH, content.Width, bandH);
         spriteBatch.Draw(Utils.white, btn, Color.Black);
         if (Button.doButton(PID + ID_EXIT, btn.X + 1, btn.Y, btn.Width - 2, btn.Height,
                 KELoc.Loc("PROXY_KILLER_BTN_EXIT", "Exit"), os.lockedColor))
