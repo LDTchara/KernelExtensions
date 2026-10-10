@@ -72,8 +72,6 @@ namespace KernelExtensions.Executables
 
         // ---- 新建的自绘效果 ----
         private FlowFieldEffect _flowField;
-        /// <summary>上一帧内容区高度。Update 在 Draw 之前跑，所以流场折算数量用的是上一帧的尺寸。</summary>
-        private int _lastContentH;
 
         public EffectsPlayerExe() : base()
         {
@@ -176,7 +174,7 @@ namespace KernelExtensions.Executables
                 Name = "FlowField",
                 Note = "data torrent (load-driven)",
                 Duration = 0f,   // 0 = 不限时（它是无缝循环的）
-                Update = dt => _flowField.Update(dt, LoadRamp(), _lastContentH),
+                Update = dt => _flowField.Update(dt, LoadRamp()),
                 Draw2D = (sb, b, t) => _flowField.Draw(sb, b, GetRainbowColor(), LoadRamp())
             });
 
@@ -296,9 +294,9 @@ namespace KernelExtensions.Executables
         /// <summary>
         /// 原版 PortHack 立方体序列的时间缩放。
         /// 它原生速度大约每秒 86°（二十层还各错开 0.1 弧度），直接看是糊的；
-        /// 缩到 1/12 之后能看清一层层嵌套在转（0.16 仍偏快，用户反馈后再降）。
+        /// 缩到 1/6 之后能看清一层层嵌套在转。
         /// </summary>
-        private const float CubeTimeScale = 0.08f;
+        private const float CubeTimeScale = 0.16f;
 
         private float _cubeTime;
 
@@ -311,7 +309,6 @@ namespace KernelExtensions.Executables
             Rectangle bg = new(bounds.X + 2, bounds.Y + PANEL_HEIGHT + 14,
                                bounds.Width - 4, bounds.Height - PANEL_HEIGHT - 16);
             if (bg.Width <= 8 || bg.Height <= 8) return;
-            _lastContentH = bg.Height;
             spriteBatch.Draw(Utils.white, bg, new Color(10, 10, 10));
 
             if (_effects.Count == 0) return;
@@ -328,13 +325,12 @@ namespace KernelExtensions.Executables
 
             // 负荷指示：只有自绘流场在乎它，但统一显示便于对照
             string load = "load " + (LoadRamp() * 100f).ToString("000") + "%";
-            // 流场额外报一段速度层信息 —— 排查"分层"与"粒子消失"时看它最直接
+            // 流场额外报一段参数 —— 排查"分层""粒子消失""速度不够"时看它最直接
             if (cur.Draw2D != null && cur.Name == "FlowField")
                 load += $"  speed x{_flowField.MinSpeedFactor:0.00}~x{_flowField.MaxSpeedFactor:0.00}"
                      + $" /{_flowField.SpeedTiers}tier  life x{_flowField.LifeGain:0.00}"
-                + $"  n={_flowField.EffectiveCount(bg.Height)}/{_flowField.Count}"
-                + $" p={_flowField.DensityExponent:0.00} ref={_flowField.ReferenceHeight:0}"
-                + $" speedScale x{_flowField.SpeedScale(bg.Height):0.00}";
+                     + $"  trail {_flowField.TrailPixels:0}px x{_flowField.LoadTrailGain:0.0}"
+                     + $"  n={_flowField.Count}";
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
 

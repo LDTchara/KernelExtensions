@@ -59,65 +59,10 @@ namespace KernelExtensions.Utilities
         // ---- 可调观感参数 ----
 
         /// <summary>粒子数上限（实际用 <see cref="Count"/>）。</summary>
-        public int Count { get; set; } = 180;
+        public int Count { get; set; } = 260;
 
-        /// <summary>
-        /// 密度基准高度（像素）—— 定义"哪个窗口高度下 <see cref="Count"/> 就是正确的数量"。
-        /// 默认 200：试出来的结论是 200 的窗口下 180 个粒子观感正好。
-        /// </summary>
-        public float ReferenceHeight { get; set; } = 200f;
-
-        /// <summary>
-        /// 数量随高度增长的指数。实际数量 = <c>Count × (高/基准高)^DensityExponent</c>。
-        ///
-        /// <para>
-        /// <b>2.0</b> = 维持恒定覆盖率（面积是二维的，所以面积等比就是平方）。
-        /// 但实测下来这个太陡：大窗口铺 1000+ 粒子显得太密，而小窗口只有 45 个又太少
-        /// —— 也就是说"画面越大越能容忍低覆盖率"。默认取 <b>1.2</b>（由 1.65 → 1.4 → 1.2 逐步下调）。
-        ///
-        /// ⚠️ 注意覆盖率不能只按头部面积估：粒子尺寸固定时**拖尾才是视觉主体**
-        /// （实测拖尾占视觉体积约 3/4，头只占 1/4），所以同一个数量看起来比"按头算"
-        /// 密得多。调这个指数前先看 EffectPlayer 面板上的 n= 与 p= 两个数。
-        /// </para>
-        ///
-        /// <para>
-        /// 调这个数就等于整体调"密度随尺寸变化的曲线"：
-        /// 调大 → 大窗口更多、小窗口更少；调小 → 反过来。
-        /// </para>
-        /// </summary>
-        public float DensityExponent { get; set; } = 1.2f;
-
-        /// <summary>折算后的实际数量下限 / 上限（防止极端尺寸下几乎没有粒子或卡顿）。</summary>
-        public int MinEffectiveCount { get; set; } = 24;
-        public int MaxEffectiveCount { get; set; } = 1400;
-
-        /// <summary>基础上升速度（满屏高 / 秒）。实际速度还会按 <see cref="SpeedReferenceHeight"/> 反比缩放。</summary>
+        /// <summary>基础上升速度（满屏高 / 秒）。</summary>
         public float BaseSpeed { get; set; } = 0.42f;
-
-        /// <summary>
-        /// 速度基准高度（像素）。**速度按这个高度反比缩放**。
-        ///
-        /// <para>
-        /// 为什么需要它：<see cref="BaseSpeed"/> 的单位是"满屏高/秒"，属于归一化速度 ——
-        /// 于是窗口越高，每秒移动的**像素**越多。实测 200 及以上观感都够快，
-        /// 但 100 的窗口慢得明显（负荷满也只有 109 px/s，是 200 的一半、600 的六分之一）。
-        /// </para>
-        ///
-        /// <para>
-        /// 所以按高度反比折算：<c>实际速度 = BaseSpeed × (基准高 / 目标高)</c>，结果是
-        /// **每秒像素数恒定** —— 100 和 600 的窗口看到的移动速度一样快。
-        /// 代价是穿越一屏的**时间**变短（小窗口穿得更快），这正是这里要的效果。
-        /// </para>
-        /// </summary>
-        public float SpeedReferenceHeight { get; set; } = 200f;
-
-        /// <summary>
-        /// 反比缩放的夹取范围。**范围要够宽**：夹太紧会在中间尺寸就顶到边界，
-/// 反而让每秒像素恒定失效（例如上限 0.7 时 300 以上又逐级变快）。
-/// 只在极端窗口尺寸下才该生效。
-        /// </summary>
-        public float MinSpeedScale { get; set; } = 0.25f;
-        public float MaxSpeedScale { get; set; } = 3.0f;
 
         /// <summary>
         /// 速度档位数。粒子速度在 <see cref="MinSpeedFactor"/> ~ <see cref="MaxSpeedFactor"/> 之间
@@ -171,7 +116,7 @@ namespace KernelExtensions.Utilities
 
         public FlowFieldEffect()
         {
-            _particles = new Particle[2048];
+            _particles = new Particle[1024];
             Reset();
         }
 
@@ -231,62 +176,18 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
-        /// 按目标高度折算实际粒子数：<c>Count × (高 / ReferenceHeight)^DensityExponent</c>，夹在上下限内。
-        ///
-        /// <para>
-        /// 用幂律而不是线性/平方：线性折算小窗口仍偏密；平方（恒定覆盖率）大窗口又太密。
-        /// 指数默认 1.65，见 <see cref="DensityExponent"/> 的说明。
-        /// </para>
-        ///
-        /// <para>
-        /// 依据目标矩形实时计算，所以窗口被拉伸/缩放时密度自动跟上。
-        /// </para>
+        /// 推进粒子。<paramref name="load"/> = 0~1 负荷，驱动上升速度。
+        /// 传 <c>dt = 0</c> 即完全静止（供暂停使用）。
         /// </summary>
-        public int EffectiveCount(int destHeight)
-        {
-            float refH = ReferenceHeight <= 1f ? 200f : ReferenceHeight;
-            float ratio = destHeight > 0 ? destHeight / refH : 1f;
-            float p = MathHelper.Clamp(DensityExponent, 0f, 4f);
-            int n = (int)Math.Round(Count * Math.Pow(ratio, p));
-            return (int)MathHelper.Clamp(n, MinEffectiveCount, Math.Min(MaxEffectiveCount, _particles.Length));
-        }
-
-        /// <summary>
-        /// 速度的反比缩放系数：<c>SpeedReferenceHeight / 目标高</c>，夹在
-        /// <see cref="MinSpeedScale"/> ~ <see cref="MaxSpeedScale"/> 之间。
-        /// 乘上 <see cref="BaseSpeed"/> 之后，每秒像素数就不再随窗口高度变化。
-        /// </summary>
-        public float SpeedScale(int destHeight)
-        {
-            float refH = SpeedReferenceHeight <= 1f ? 200f : SpeedReferenceHeight;
-            float h = destHeight > 0 ? destHeight : refH;
-            return MathHelper.Clamp(refH / h, MinSpeedScale, MaxSpeedScale);
-        }
-
-        /// <summary>
-        /// 推进粒子。传 <c>dt = 0</c> 即完全静止（供暂停使用）。
-        /// </summary>
-        /// <param name="dt">帧间隔（秒）。</param>
-        /// <param name="load">负荷 0~1，驱动上升速度与拖尾长度。</param>
-        /// <param name="destHeight">
-        /// 目标矩形高度 —— 用来折算粒子数（见 <see cref="EffectiveCount"/>）
-        /// 与速度缩放（见 <see cref="SpeedScale"/>）。传 0 表示按基准高度处理。
-        /// </param>
-        public void Update(float dt, float load, int destHeight = 0)
+        public void Update(float dt, float load)
         {
             if (dt <= 0f) return;
 
             load = MathHelper.Clamp(load, 0f, 1f);
             _time += dt;
 
-            // 速度、拖尾都按目标高度折算，Draw 里要用同一套，所以先算出来
-            float speedScale = SpeedScale(destHeight);
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * speedScale;
-            int count = EffectiveCount(destHeight);
-
-            // 拖尾长度（归一化）：头出顶后尾巴还要滑出去，淡出要按尾巴位置算，所以这里要它。
-            float trailNorm = CurrentTrailPixels(load)
-                / Math.Max(1f, destHeight > 0 ? destHeight : ReferenceHeight);
+            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
+            int count = (int)MathHelper.Clamp(Count, 1, _particles.Length);
 
             for (int i = 0; i < count; i++)
             {
@@ -299,14 +200,8 @@ namespace KernelExtensions.Utilities
                 p.Pos.Y -= p.Speed * speedGain * dt;
                 p.Life -= dt;
 
-                // ⚠️ 判据是"**头部出顶**"，不是"整条尾巴出顶"。
-                // 用后者粒子会在顶部多活一大截（实测 100px 窗口下头出顶后还要飘 1.6~3.4 秒），
-                // 观感就是"在顶部停了一会才消失"。头一出顶就重生，尾巴被顶边自然裁掉，
-                // 看起来仍是尾巴一点点滑出去（淡出在 Draw 里按尾巴位置算）。
-                float despawnY = -trailNorm * 0.5f;
-
-                // 飞完 / 出侧 / 寿命尽 → 从底边重新起飞
-                if (p.Pos.Y < despawnY || p.Life <= 0f || p.Pos.X < -0.05f || p.Pos.X > 1.05f)
+                // 出顶 / 出侧 / 寿命尽 → 从底边重新起飞
+                if (p.Pos.Y < -0.05f || p.Life <= 0f || p.Pos.X < -0.05f || p.Pos.X > 1.05f)
                 {
                     p = NewParticle(seedPos: false);
                     // 重生点横向随机化，否则会形成一条固定的"起飞线"
@@ -315,18 +210,6 @@ namespace KernelExtensions.Utilities
 
                 _particles[i] = p;
             }
-        }
-
-        /// <summary>
-        /// 当前拖尾长度（像素）。抽出来是因为 <see cref="Update"/> 与 <see cref="Draw"/> 都要用它：
-        /// Update 用它算重生判定与归一化拖尾长度，Draw 用它画线 ——
-        /// 两边必须取同一个值，否则会出现"还没飞完就重生"或"画到一半被清掉"。
-        /// </summary>
-        private int CurrentTrailPixels(float load, int destHeight = 0)
-        {
-            float px = TrailPixels * MathHelper.Lerp(1f, LoadTrailGain, MathHelper.Clamp(load, 0f, 1f));
-            // 拖尾长度不随高度缩放：它是粒子跑了多远的表达，固定像素才与速度感一致
-            return Math.Max(2, (int)Math.Round(px));
         }
 
         /// <summary>
@@ -339,16 +222,16 @@ namespace KernelExtensions.Utilities
             if (dest.Width <= 4 || dest.Height <= 4) return;
 
             load = MathHelper.Clamp(load, 0f, 1f);
-            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load) * SpeedScale(dest.Height);
+            float speedGain = MathHelper.Lerp(1f, LoadSpeedGain, load);
             float brightness = BaseBrightness * MathHelper.Lerp(0.8f, 1.35f, load);
 
             // 固定像素：轨迹宽 = 头部宽，两者比例在任何窗口下都一致
             int w = Math.Max(1, (int)Math.Round(ParticlePixels));
-            int trailLen = CurrentTrailPixels(load);   // 与 Update 的 despawn 判定取同一个值
+            int trailLen = Math.Max(2, (int)Math.Round(TrailPixels * MathHelper.Lerp(1f, LoadTrailGain, load)));
 
             if (ShowGrid) DrawGrid(sb, dest, color, load);
 
-            int count = EffectiveCount(dest.Height);
+            int count = (int)MathHelper.Clamp(Count, 1, _particles.Length);
             for (int i = 0; i < count; i++)
             {
                 Particle p = _particles[i];
@@ -360,14 +243,11 @@ namespace KernelExtensions.Utilities
                 float speedRatio = p.Speed * speedGain / Math.Max(0.02f, BaseSpeed);
                 int tailLen = Math.Max(2, (int)(trailLen * MathHelper.Clamp(speedRatio, 0.5f, 2.2f)));
 
-                // ⚠️ 淡出按**尾巴位置**算，不按头部 —— 这是"看着像在顶部停了一会"的另一半原因。
-                //
-                // 头顶先出顶，此时尾巴还大段露在画面里；如果按头的 y 算淡出，头一出顶
-                // 整条（含还在画面里的尾巴）就已经淡到很暗，剩下的时间就是"隐约的影子在顶部悬着"。
-                // 改为"尾巴还在画面里就全亮、尾巴开始出顶才淡"，观感才是尾巴一点点滑出去。
-                float tailBottomY = p.Pos.Y + tailLen / (float)Math.Max(1, dest.Height);   // 尾端（归一化）
-                float fade = MathHelper.Clamp(tailBottomY / 0.12f, 0f, 1f);
-                Color c = color * (brightness * MathHelper.Lerp(0.35f, 1f, fade));
+                // ⚠️ 不在生成处做"透明淡入"：原先 y 靠近 1 时亮度趋近 0，粒子一出生
+                // 几乎看不见、要等一会儿才浮现，观感就是"凭空出现/凭空消失"。
+                // 现在只在顶端做一点收尾淡出（那里本来就要重生），底部全亮。
+                float fade = MathHelper.Clamp((1.05f - p.Pos.Y) * 3f, 0f, 1f);
+                Color c = color * (brightness * MathHelper.Lerp(0.55f, 1f, fade));
 
                 // 拖尾：从头部往下（来路）的一条竖线，上下端夹进 dest
                 int tailTop = ClampToRange(headY, dest.Y, dest.Y + dest.Height);
