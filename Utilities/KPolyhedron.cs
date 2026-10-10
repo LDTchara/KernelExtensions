@@ -318,15 +318,34 @@ namespace KernelExtensions.Utilities
                         if (len < 1e-12) continue; // 三点共线，定不出平面
                         for (int c = 0; c < 3; c++) normal[c] /= len;
 
-                        double d = Dot(normal, verts[i]);
+                        // 三点顺序（i&lt;j&lt;k）决定的叉积朝向是朝外还是朝里并不固定，
+                        // 所以「顶点全在同侧」的两种情况都要接受：否则纯三角形面恰好有一半
+                        // 会因为朝向相反被整片漏掉（四边形 / 五边形面有多个三点组合，总能撞上
+                        // 正确朝向，所以只有三角形面会成片丢失 —— 正四面体、正八面体、正二十面体）。
+                        double plane = Dot(normal, verts[i]);
                         double maxProjection = double.NegativeInfinity;
-                        for (int m = 0; m < n; m++) maxProjection = Math.Max(maxProjection, Dot(normal, verts[m]));
-                        if (maxProjection - d > PlaneEpsilon) continue; // 顶点落在平面两侧：不是支撑面
+                        double minProjection = double.PositiveInfinity;
+                        for (int m = 0; m < n; m++)
+                        {
+                            double p = Dot(normal, verts[m]);
+                            maxProjection = Math.Max(maxProjection, p);
+                            minProjection = Math.Min(minProjection, p);
+                        }
+                        bool supportsAtTop = maxProjection - plane <= PlaneEpsilon;
+                        bool supportsAtBottom = plane - minProjection <= PlaneEpsilon;
+                        if (!supportsAtTop && !supportsAtBottom) continue; // 顶点落在平面两侧：不是支撑面
+
+                        // 统一转成外法线，后面的共面判定与排环都用它
+                        if (!supportsAtTop)
+                        {
+                            for (int c = 0; c < 3; c++) normal[c] = -normal[c];
+                            plane = -plane;
+                        }
 
                         var onPlane = new List<int>();
                         for (int m = 0; m < n; m++)
                         {
-                            if (maxProjection - Dot(normal, verts[m]) <= PlaneEpsilon) onPlane.Add(m);
+                            if (Math.Abs(Dot(normal, verts[m]) - plane) <= PlaneEpsilon) onPlane.Add(m);
                         }
                         if (onPlane.Count < 3) continue; // 只挨到一个顶点 / 一条棱的支撑平面，不是面
 

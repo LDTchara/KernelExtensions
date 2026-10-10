@@ -9,6 +9,10 @@ namespace KernelExtensions.Executables;
 /// 端口破解演出里的单个柏拉图立体线框动画：只绕「过顶点的 n 重对称轴」纯转，没有线框尾迹
 /// （原版靠 20 层螺旋尾迹堆体积感，这里是单立体，靠相位与角速度表达节奏）。
 ///
+/// 节奏（三段之和恒等于调用方给的总时长）：
+///   起转（浮现 + 加速，默认占总时长 <see cref="DEFAULT_SPINUP_RATIO"/>）→ 匀速 → 急刹
+///   （默认 <see cref="DEFAULT_SPINDOWN_SECONDS"/> 秒，剩余不够就截断）→ 匀速慢转。
+///
 /// 绘制分工（与调用方约定，双方都不要越界）：
 ///   · 调用方管理 RenderTarget 与主 spriteBatch 的 Begin / End，并把最终结果贴回主屏；
 ///   · <see cref="RenderFrame"/> 只把立体画进内部 RenderTarget，再用调用方传入的 rtBatch 贴到
@@ -21,17 +25,14 @@ namespace KernelExtensions.Executables;
 public class PortHackV2Sequence : IDisposable
 {
     // ---- 时间轴（秒 / 弧度每秒） ----
-    private const float STARTUP_TIME = 0.4f;        // 浮现：缩放 0 → 1
+    private const float STARTUP_RAMP = 0.4f;        // 浮现缩放窗口：并入起转，不再单独占一段时长
     private const float OMEGA0 = 0.3f;              // 起转角速度
-    private const float OMEGA_MAX = 3.2f;           // 匀速阶段的角速度：60fps 单帧约 3.1°，不闪
-    private const float OMEGA_IDLE = 0.5f;          // 演出结束后的慢转
-    private const float SPINDOWN_DECAY = 12f;       // 急刹强度（指数衰减系数）
+    private const float OMEGA_MAX = 3.2f;           // 匀速角速度：60fps 单帧约 3.1°，不闪
+    private const float OMEGA_IDLE = 0.5f;          // 急刹结束后的匀速慢转
+    private const float SPINDOWN_DECAY = 5f;        // 急刹曲线强度（指数）；1.7s 的窗口里看得见减速
     private const float IDLE_STOP_DECAY = 1.5f;     // IdleSpin=false 时从 ω_idle 停住的时间常数
 
-    /// <summary>预算下限（秒）：总时长太短时也不至于把各段压成瞬变。</summary>
-    private const float MIN_PHASE_TIME = 0.05f;
-
-    /// <summary>起转时长占总时长的比例上限；<see cref="SpinUpSeconds"/> &gt;= 0 时用它。</summary>
+    /// <summary>起转时长占总时长的比例；仅当 <see cref="SpinUpSeconds"/> &lt; 0 时生效。</summary>
     public const float DEFAULT_SPINUP_RATIO = 0.1f;
 
     /// <summary>急刹默认时长（秒）。</summary>
@@ -51,24 +52,18 @@ public class PortHackV2Sequence : IDisposable
     /// <summary>相机方向（单位向量，从原点指向相机位置）。</summary>
     private static readonly Vector3 CameraDirection = BuildCameraDirection();
 
-    private enum Phase
-    {
-        Startup = 0,
-        SpinUp = 1,
-        Runtime = 2,
-        SpinDown = 3,
-        Idle = 4
-    }
-
-    // ---- 动画状态（字段默认值等价于已 Reset：相位 Startup、缩放 0、角度 0） ----
-    private Phase _phase = Phase.Startup;
-    private float _phaseTime;
+    // ---- 动画状态（字段默认值等价于已 Reset：角度 0、缩放 0） ----
     private float _angle;
     private float _omega;
     private float _scale;
-    private float _spinDownFrom;
-    private float _elapsed;         // Cracking 已进行时长（调用方给的真实时钟）
-    private bool _wentIdle;         // 已进入慢转相位（时间轴允许时不会回退）
+    private float _idleTime;        // 慢转区内的停留时长（IdleSpin=false 时用来慢慢停住）
+    private bool _woundDown;        // 已经收过尾（进过急刹 / 慢转），不再回到高速
+
+    // ---- 时间轴（由 ApplyTimeline 按总时长结算） ----
+    private float _totalSeconds = 10f;
+    private float _spinUpTime;      // 起转（浮现 + 加速）实际时长
+    private float _spinDownTime;    // 急刹实际时长（已按剩余截断）
+    private float _steadyEnd;       // 匀速结束时刻 = 总时长 - 急刹时长
 
     // ---- 渲染资源（惰性创建；设备或尺寸变化时重建） ----
     private GraphicsDevice _device;
@@ -94,80 +89,68 @@ public class PortHackV2Sequence : IDisposable
     }
 
     /// <summary>
-    /// true = 急刹结束后保持 ω_idle（约 0.5 rad/s）慢转，供 COMPLETE 演出当背景；
-    /// false = 从 ω_idle 平滑停住，演出结束后画面静止。
+    /// true = 急刹结束后保持 ω_idle（约 0.5 rad/s）匀速慢转，供成功演出当背景；
+    /// false = 从 ω_idle 平滑停住（中断 / 失败收尾时画面归于静止）。
     /// </summary>
     public bool IdleSpin { get; set; }
 
     /// <summary>
-    /// 起转（加速）时长（秒）。<c>&lt; 0</c> = 用 <see cref="SpinUpRatio"/> × 总时长。
+    /// 起转（浮现 + 加速）时长（秒）。<c>&lt; 0</c> = 用 <see cref="SpinUpRatio"/> × 总时长。
     /// 配置项留空即此情形。
     /// </summary>
     public float SpinUpSeconds { get; set; } = -1f;
 
-    /// <summary>起转时长占总时长的比例；仅当 <see cref="SpinUpSeconds"/> &lt; 0 时生效。</summary>
+    /// <summary>起转时长占总时长的比例；仅当 <see cref="SpinUpSeconds"/> &lt; 0 时生效，超界夹到 0~1。</summary>
     public float SpinUpRatio { get; set; } = DEFAULT_SPINUP_RATIO;
 
     /// <summary>急刹（减速）时长（秒）。剩余时间不够时自动截断（见 <see cref="ApplyTimeline"/>）。</summary>
     public float SpinDownSeconds { get; set; } = DEFAULT_SPINDOWN_SECONDS;
 
-    // ---- 时间轴（由 ApplyTimeline 按总时长结算，每帧早退重算） ----
-    private float _totalSeconds = 10f;      // 根级总时长
-    private float _startupTime;             // 浮现实际时长
-    private float _spinUpTime;              // 起转实际时长
-    private float _spinDownReserve;         // 为急刹预留的时长（已含截断）
-    private float _steadyStart;             // 匀速开始时刻（= 浮现 + 起转）
-    private float _steadyEnd;               // 匀速结束时刻（= 总时长 - 急刹预留）
-
     /// <summary>
-    /// 按总时长结算时间轴：
-    /// 浮现 → 起转（默认总时长的 <see cref="DEFAULT_SPINUP_RATIO"/>）→ 匀速 → 急刹
-    /// （默认 <see cref="DEFAULT_SPINDOWN_SECONDS"/> 秒，**剩余时间不够就截断**）。
-    /// 急刹优先占用预算：预留它之后起转才按比例取，免得起转把时间吃光、急刹被截成瞬变。
+    /// 按总时长结算时间轴（每帧调用，所以运行时改配置也能立刻生效）：
+    /// 起转 → 匀速 → 急刹，三段之和恒等于总时长（都是 0 的退化情形也不会超时）。
+    ///
+    /// 预算优先级：**起转优先、急刹取剩余**（用户约定「急刹剩余不够就截断」）。
+    /// 这么定的理由：起转是比例预算（默认总时长的 10%），天然随总时长缩放，不会把急刹挤没；
+    /// 而两者真的冲突时（总时长 ≲ 2s，或作者显式写了很大的起转绝对值），截急刹只是「刹得更干脆」，
+    /// 截起转却会让「加速」这段视觉叙事整个消失 —— 观众直接看到一个满速立体，急刹也就没了对照。
     /// </summary>
     private void ApplyTimeline(float totalSeconds)
     {
         if (float.IsNaN(totalSeconds) || float.IsInfinity(totalSeconds) || totalSeconds < 0f) totalSeconds = 0f;
         _totalSeconds = totalSeconds;
 
-        _startupTime = Math.Min(STARTUP_TIME, totalSeconds);
-        float afterStartup = Math.Max(0f, totalSeconds - _startupTime);
+        float ratio = SpinUpRatio;
+        if (float.IsNaN(ratio) || ratio < 0f) ratio = DEFAULT_SPINUP_RATIO;
+        if (ratio > 1f) ratio = 1f;
+        float requested = SpinUpSeconds >= 0f ? SpinUpSeconds : _totalSeconds * ratio;
+        _spinUpTime = Math.Min(requested, _totalSeconds);
 
-        float reserve = Math.Max(0f, SpinDownSeconds);
-        if (reserve > afterStartup) reserve = afterStartup;      // 剩余不够 → 截断
-        if (afterStartup - reserve < MIN_PHASE_TIME) reserve = Math.Max(0f, afterStartup - MIN_PHASE_TIME);
-        _spinDownReserve = reserve;
+        float spinDown = SpinDownSeconds;
+        if (float.IsNaN(spinDown) || spinDown < 0f) spinDown = DEFAULT_SPINDOWN_SECONDS;
+        _spinDownTime = Math.Min(spinDown, Math.Max(0f, _totalSeconds - _spinUpTime));
 
-        float spinUp = SpinUpSeconds >= 0f ? SpinUpSeconds : totalSeconds * Math.Max(0f, SpinUpRatio);
-        float spinUpBudget = Math.Max(0f, afterStartup - reserve);
-        _spinUpTime = Math.Min(spinUp, spinUpBudget);
-        if (_spinUpTime < MIN_PHASE_TIME && spinUpBudget >= MIN_PHASE_TIME) _spinUpTime = MIN_PHASE_TIME;
-
-        _steadyStart = _startupTime + _spinUpTime;
-        _steadyEnd = Math.Max(_steadyStart, totalSeconds - reserve);
+        _steadyEnd = _totalSeconds - _spinDownTime;
     }
 
-    /// <summary>回到初始状态（浮现开始、角度归零、<see cref="IdleSpin"/> 复位）。新一次破解演出开始时调用。</summary>
+    /// <summary>回到初始状态（角度归零、缩放归零、<see cref="IdleSpin"/> 复位）。新一次破解演出开始时调用。</summary>
     public void Reset()
     {
-        _phase = Phase.Startup;
-        _phaseTime = 0f;
         _angle = 0f;
         _omega = 0f;
         _scale = 0f;
-        _spinDownFrom = 0f;
-        _elapsed = 0f;
-        _wentIdle = false;
+        _idleTime = 0f;
+        _woundDown = false;
         IdleSpin = false;
     }
 
     /// <summary>
     /// 推进时间轴。<paramref name="elapsed"/> 是 Cracking 已进行时长、<paramref name="totalSeconds"/>
-    /// 是根级总时长；两者的比值即破解进度。
+    /// 是根级总时长。
     ///
-    /// 节奏：浮现（缩放 0 → 1，不转）→ 起转（ω 从 <see cref="OMEGA0"/> 加到 <see cref="OMEGA_MAX"/>）
-    /// → 匀速 → 进度到 1 时急刹 → 慢转（是否保持由 <see cref="IdleSpin"/> 决定）。
-    /// 各段时长由 <see cref="ApplyTimeline"/> 按总时长每帧结算，所以中途改配置也能立刻生效。
+    /// 角速度按 <paramref name="elapsed"/> 直接求值（纯函数，不看历史），角度再按帧间隔积分。
+    /// 这样做有两个好处：把总时长改小时不会出现「刹住又加速」（elapsed 一过新的总时长就是慢转）；
+    /// 调用方在成功演出期间让 elapsed 停住时，慢转仍能靠 dt 继续走。
     /// </summary>
     /// <param name="t">帧间隔（秒）。非正数 / NaN 视作 0；超过上限会被夹住。</param>
     /// <param name="elapsed">Cracking 已进行时长（秒），由调用方累计。</param>
@@ -178,123 +161,60 @@ public class PortHackV2Sequence : IDisposable
         if (float.IsNaN(t) || float.IsInfinity(t) || t <= 0f) t = 0f;
         else if (t > MAX_STEP) t = MAX_STEP;
         if (float.IsNaN(elapsed) || float.IsInfinity(elapsed) || elapsed < 0f) elapsed = 0f;
-        if (float.IsNaN(totalSeconds) || float.IsInfinity(totalSeconds) || totalSeconds < 0f) totalSeconds = 0f;
-        _elapsed = elapsed;
 
         ApplyTimeline(totalSeconds);
-        float progress = totalSeconds <= 0f ? 1f : Clamp01(elapsed / totalSeconds);
 
-        // 一帧内可能跨过多个相位（卡顿时），用剩余时间循环消耗；guard 只是防御性上限
-        float remaining = t;
-        int guard = 0;
-        while (remaining > 1e-6f && guard++ < 8)
-        {
-            switch (_phase)
-            {
-                case Phase.Startup:
-                {
-                    float step = Math.Min(remaining, _startupTime - _phaseTime);
-                    Integrate(step);
-                    remaining -= step;
-                    _omega = 0f; // 浮现阶段不转：先立起来，再起转
-                    _scale = _startupTime <= 0f ? 1f : Utils.QuadraticOutCurve(Clamp01(_phaseTime / _startupTime));
-                    // 浮现时长可能为 0（总时长为 0）：此时直接给出满缩放进入下一相位
-                    if (_startupTime <= 0f || _phaseTime >= _startupTime - 1e-6f)
-                    {
-                        _phase = Phase.SpinUp;
-                        _phaseTime = 0f;
-                        _scale = 1f;
-                    }
-                    break;
-                }
+        // 慢转区停留时长：IdleSpin=false 时用它把 ω 从 ω_idle 平滑衰减到 0
+        _idleTime = elapsed >= _totalSeconds ? _idleTime + t : 0f;
 
-                case Phase.SpinUp:
-                {
-                    if (_spinUpTime <= 0f)
-                    {
-                        // 没有起转预算：直接以 ωmax 进入匀速（不留在 0 转速上）
-                        _phase = Phase.Runtime;
-                        _phaseTime = 0f;
-                        _omega = OMEGA_MAX;
-                        break;
-                    }
-                    float step = Math.Min(remaining, _spinUpTime - _phaseTime);
-                    float u = Clamp01((_phaseTime + step) / _spinUpTime);
-                    _omega = MathHelper.Lerp(OMEGA0, OMEGA_MAX, u);   // 匀速起转
-                    Integrate(step);
-                    remaining -= step;
-                    if (_phaseTime >= _spinUpTime - 1e-6f)
-                    {
-                        _phase = Phase.Runtime;
-                        _phaseTime = 0f;
-                        _omega = OMEGA_MAX;
-                    }
-                    break;
-                }
+        bool woundDown = elapsed >= _steadyEnd; // 已进急刹区间（或更晚）
+        float omega = EvaluateOmega(elapsed);
 
-                case Phase.Runtime:
-                {
-                    _omega = OMEGA_MAX;
-                    Integrate(remaining);
-                    remaining = 0f;
-                    if (progress >= 1f) ForceSpinDown();
-                    break;
-                }
+        // 已经收过尾就不再回到高速：总时长被改大时 elapsed 会重新落回匀速区，
+        // 但演出已经收过尾，退回去会看到「刹住又加速」。一次性闩锁，Reset 时清掉。
+        if (woundDown) _woundDown = true;
+        else if (_woundDown) omega = Math.Min(omega, OMEGA_IDLE);
 
-                case Phase.SpinDown:
-                {
-                    if (SpinDownSeconds <= 0f)
-                    {
-                        _phase = Phase.Idle;
-                        _phaseTime = 0f;
-                        _wentIdle = true;
-                        _omega = OMEGA_IDLE;
-                        break;
-                    }
-                    float step = Math.Min(remaining, SpinDownSeconds - _phaseTime);
-                    float u = Clamp01((_phaseTime + step) / SpinDownSeconds);
-                    _omega = OMEGA_IDLE + (_spinDownFrom - OMEGA_IDLE) * (float)Math.Exp(-SPINDOWN_DECAY * u);
-                    Integrate(step);
-                    remaining -= step;
-                    if (_phaseTime >= SpinDownSeconds - 1e-6f)
-                    {
-                        _phase = Phase.Idle;
-                        _phaseTime = 0f;
-                        _wentIdle = true;
-                        _omega = OMEGA_IDLE;
-                    }
-                    break;
-                }
-
-                default: // Phase.Idle
-                {
-                    if (IdleSpin)
-                    {
-                        _omega = OMEGA_IDLE;
-                    }
-                    else
-                    {
-                        _omega = OMEGA_IDLE * (float)Math.Exp(-_phaseTime / IDLE_STOP_DECAY);
-                        if (_omega < 0.005f) _omega = 0f; // 视觉上已经停住，直接归零免得一直微动
-                    }
-                    Integrate(remaining);
-                    remaining = 0f;
-                    break;
-                }
-            }
-
-            // 已经开始急刹就别再回到前面的相位：总时长被调小时时间轴会前移，
-            // 但演出已经收尾了，退回去会看到"刹住又加速"的怪异观感。
-            if (_wentIdle || _phase == Phase.SpinDown) break;
-        }
+        _omega = omega;
+        _angle += _omega * t;
+        _scale = EvaluateScale(elapsed);
     }
 
-    /// <summary>进入急刹相位（从当前角速度开始按指数衰减）。只在还没收尾时生效。</summary>
-    private void ForceSpinDown()
+    /// <summary>按 elapsed 求角速度：起转线性加速 → 匀速 ωmax → 急刹指数落到 ω_idle → 匀速慢转。</summary>
+    private float EvaluateOmega(float elapsed)
     {
-        _spinDownFrom = _omega;
-        _phase = Phase.SpinDown;
-        _phaseTime = 0f;
+        if (_totalSeconds <= 0f) return IdleOmega(); // 总时长 0：直接进慢转
+
+        if (elapsed < _spinUpTime)
+        {
+            float u = _spinUpTime <= 0f ? 1f : Clamp01(elapsed / _spinUpTime);
+            return MathHelper.Lerp(OMEGA0, OMEGA_MAX, u);
+        }
+        if (elapsed < _steadyEnd) return OMEGA_MAX;
+
+        if (elapsed >= _totalSeconds || _spinDownTime <= 0f) return IdleOmega();
+        float brake = Clamp01((elapsed - _steadyEnd) / _spinDownTime);
+        return OMEGA_IDLE + (OMEGA_MAX - OMEGA_IDLE) * (float)Math.Exp(-SPINDOWN_DECAY * brake);
+    }
+
+    /// <summary>急刹结束后的角速度：保持 ω_idle 慢转，或按 <see cref="IdleSpin"/> 平滑停住。</summary>
+    private float IdleOmega()
+    {
+        if (IdleSpin) return OMEGA_IDLE;
+        float omega = OMEGA_IDLE * (float)Math.Exp(-_idleTime / IDLE_STOP_DECAY);
+        return omega < 0.005f ? 0f : omega; // 视觉上已经停住，直接归零免得一直微动
+    }
+
+    /// <summary>
+    /// 浮现缩放：并入起转 —— 两者从 0 时刻同时开始，浮现不再单独占 0.4s 时长。
+    /// 窗口取 min(0.4s, 起转时长)：长破解（总时长 30s → 起转 3s）若把浮现拉满整个起转窗口，
+    /// 会变成「慢动作长大」；短破解则保证浮现一定在起转窗口内完成。
+    /// </summary>
+    private float EvaluateScale(float elapsed)
+    {
+        float ramp = Math.Min(STARTUP_RAMP, _spinUpTime);
+        if (ramp <= 0f) return 1f; // 没有起转预算（总时长≈0 或作者把起转配成 0）：不拖浮现
+        return Utils.QuadraticOutCurve(Clamp01(elapsed / ramp));
     }
 
     /// <summary>
@@ -499,13 +419,6 @@ public class PortHackV2Sequence : IDisposable
         _edgeCount = 0;
         _vertexBufferShape = (KPlatonicShape)(-1);
         _axisShape = (KPlatonicShape)(-1);
-    }
-
-    /// <summary>按当前角速度推进角度与相位计时（step 为本段时长，秒）。</summary>
-    private void Integrate(float step)
-    {
-        _angle += _omega * step;
-        _phaseTime += step;
     }
 
     private static float Clamp01(float x) => x <= 0f ? 0f : (x >= 1f ? 1f : x);
