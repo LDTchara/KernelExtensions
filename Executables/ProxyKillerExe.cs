@@ -69,8 +69,6 @@ public class ProxyKillerExe : GameExecutable
     /// 启动时所连节点的 ip —— 用它判断玩家有没有走开（<c>ExitOnDisconnect</c>，对齐原版跟着连接走的语义）。
     /// </summary>
     private string _homeIp;
-    /// <summary>上一次加速过的目标 ip —— 仅用于"换目标"时记一条日志。</summary>
-    private string _lastAccelTargetIp;
 
     // ---- 颜色与背景 ----
     private Color _accent = Color.White;
@@ -255,33 +253,41 @@ public class ProxyKillerExe : GameExecutable
     // ======================= 核心：加速目标节点上的 shell 过载 =======================
 
     /// <summary>
-    /// 加速**正在过载当前所连节点的那些 Shell**。
+    /// 加速**所有正在过载的 Shell**（不区分它们各自对着哪个节点）。
     ///
     /// <para>
-    /// 加速对象是**当前所连节点**（<c>os.connectedComp</c>），不是本程序所在节点 ——
-    /// 后者永远是玩家自己的机器（扩展 exe 都跑在玩家机上），没有可加速的东西。
-    /// 且**每帧重新取**：玩家切到哪台，就加速针对哪台的那些 shell
-    /// （对齐原版 <c>ShellExe.StartOverload()</c> 里 <c>destComp = 当前所连节点</c> 的取法）。
+    /// 为什么不按 IP 过滤：shell 分布运行在多个节点上（每个 shell 的 <c>targetIP</c> 是它创建时
+    /// 所连的那台，之后不变），而原版的多 shell 叠加本来就不挑目标 ——
+    /// 每个 shell 各自 <c>ticks -= t</c>，谁指着哪台无所谓。所以这里也**不按目标筛选**：
+    /// 你在几台上开了 shell 并让它们过载，本程序就同时加速那几个。
+    /// </para>
+    ///
+    /// <para>
+    /// 但仍要**排除空闲的 shell**：<c>proxyOverloadTicks</c> 是 shell 自身持久的字段，
+    /// 过载完之后停在 0；若不加判断，那些没在过载的 shell 的 ticks 会被减成负数，
+    /// 下次它真的去过载时会从负数开始 —— 等于把那台机器的过载直接归零，这不是加速。
+    /// 所以判据是"该 shell 正在过载"，用两个条件确认：
+    /// <c>0 &lt; ticks ≤ 目标机 startingOverloadTicks</c>（过载中被逐帧减小的区间）
+    /// 且**目标机的代理仍存活**（代理已瘫痪 = 就算还有余量也是针对旧状态，不该再推）。
     /// </para>
     ///
     /// <para>
     /// 语义：倍速 <c>mul</c> = <c>Lerp(1, ProxyOverloadTarget, 爬升进度)</c>。
-    /// 目标机上每个 shell 原本每帧减 <c>t</c>（那是原版速度 = 倍速 1），
-    /// 所以这里给每个 shell 补上差额 <c>t * (mul - 1)</c>；N 个 shell 的总速率就是
-    /// <c>N * mul</c>（原版本身在多 shell 时也是简单叠加，见接力报告的调研）。
+    /// 每个 shell 原本每帧减 <c>t</c>（原版速度 = 倍速 1），所以这里补差额 <c>t * (mul - 1)</c>；
+    /// N 个 shell 的总速率就是 <c>N * mul</c>。
     /// </para>
     ///
     /// <para>
-    /// 为什么不用 Harmony 去 patch <c>ShellExe.Update</c> 里的那一行：那要动一个 internal 类型
-    /// 的方法体，会与将来任何改 `ShellExe` 的模组打架；而这里只是在**已发生的过载**上补差额，
+    /// 为什么不用 Harmony 去 patch <c>ShellExe.Update</c> 里那一行：那要动一个 internal 类型的
+    /// 方法体，会与将来任何改 <c>ShellExe</c> 的模组打架；这里只是在**已发生的过载**上补差额，
     /// 不改变 shell 自己的状态机（它照旧负责"ticks ≤ 0 时置 proxyActive = false"的收尾）。
     /// </para>
     ///
     /// <para>
     /// 倍速**峰值恰好等于目标值**（出现在 RAM 爬满那一刻），爬升期间平均为 <c>(1 + 目标值) / 2</c>。
     /// <c>RampRate = 0</c> 时 RAM 不爬、倍速恒为 1（等于不加速）。
-    /// 当前节点没有 shell 在过载它的代理时，本程序**什么都不做**
-    /// （这是有意保留的护栏：它不替玩家拆"过载需要 admin"那道门槛，见类注释）。
+    /// 没有任何 shell 在过载时，本程序**什么都不做**
+    /// （它不替玩家拆"过载需要 admin"那道门槛，见类注释）。
     /// </para>
     /// </summary>
     private void AccelerateTargetShells(float t)
@@ -289,11 +295,6 @@ public class ProxyKillerExe : GameExecutable
         float mul = MathHelper.Lerp(1f, _mulTarget, RampProgress());
         float extraPerShell = t * (mul - 1f);
         if (extraPerShell <= 0f) return;   // 倍速 ≤ 1：不加速（也不该去"冻结"别人的 shell）
-
-        // 目标 = 当前所连节点，**每帧重取**；没连接就等于没有目标（不回退到玩家自己的机器）
-        Computer target = os?.connectedComp;
-        if (target == null) return;
-        if (!target.hasProxy || !target.proxyActive) return;   // 没代理 / 已瘫痪：没有可加速的东西
 
         try
         {
@@ -308,21 +309,31 @@ public class ProxyKillerExe : GameExecutable
 
                 // 只看 ShellExe（internal，用类型名判定）；其余程序一律不碰
                 if (shell.GetType().FullName != ShellExeTypeName) continue;
-                // 只加速对着当前所连节点的 shell —— 每个 shell 的 targetIP 是它创建时所连的节点，之后不变
-                if (shellTargetIpField?.GetValue(shell) as string != target.ip) continue;
 
-                if (ticksField?.GetValue(shell) is float ticks)
-                {
-                    float next = ticks - extraPerShell;
-                    ticksField.SetValue(shell, next > 0f ? next : 0f);
-                    hit++;
-                }
+                if (ticksField?.GetValue(shell) is not float ticks || ticks <= 0f) continue;
+
+                // 该 shell 正在过载的那台机器（用它判断代理是否还活着）
+                if (shellTargetIpField?.GetValue(shell) as string is not string targetIp) continue;
+                Computer dest = Programs.getComputer(os, targetIp);
+                if (dest == null || !dest.hasProxy || !dest.proxyActive) continue;
+
+                // "正在过载"的区间：ticks 在 (0, startingOverloadTicks] 内。
+                // 超出上限说明不是过载状态（例如作者用 addProxy 给了一台新代理），此时不碰。
+                if (dest.startingOverloadTicks > 0f && ticks > dest.startingOverloadTicks) continue;
+
+                float next = ticks - extraPerShell;
+                ticksField.SetValue(shell, next > 0f ? next : 0f);
+                hit++;
             }
 
-            if (hit > 0 && _lastAccelTargetIp != target.ip)
+            if (hit > 0 && !_accelerating)
             {
-                _lastAccelTargetIp = target.ip;
-                KELog.Info($"{LogTag} accelerating {hit} shell(s) overload @ '{target.idName}'.");
+                _accelerating = true;
+                KELog.Info($"{LogTag} accelerating {hit} shell(s) overload.");
+            }
+            else if (hit == 0)
+            {
+                _accelerating = false;
             }
         }
         catch (Exception ex)
@@ -334,6 +345,8 @@ public class ProxyKillerExe : GameExecutable
             }
         }
     }
+
+    private bool _accelerating;
 
     /// <summary>原版 ShellExe 的类型全名（internal 类型，只能按名字找）。</summary>
     private const string ShellExeTypeName = "Hacknet.ShellExe";

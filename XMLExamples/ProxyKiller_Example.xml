@@ -55,14 +55,18 @@
   <RampRate>200</RampRate>
 
   <!-- ── shell 过载倍速 / Shell overload speed ──
-       ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速正在过载
-       **当前所连节点**的那些 Shell（原版 shell 程序的 Overload 状态）。
-       This program never overloads a proxy itself. It only speeds up the Shells that are
-       already overloading the proxy of the currently connected computer.
-       因此：目标机上没有开着的 shell 在过载时，这一项不产生任何效果。
-       So with no live shell overloading that target, this setting does nothing at all.
-       原版要先在目标机上拿到 admin 才能开 shell —— 那道门槛本程序不去拆。
-       Vanilla requires admin on the target to open a shell; that gate is left intact.
+       ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速**正在过载的所有 Shell**，
+       不区分那些 shell 各自对着哪个节点。
+       This program never overloads a proxy itself. It only speeds up every Shell that is
+       currently overloading a proxy — regardless of which node each one targets.
+       shell 分布运行在多个节点上（每个 shell 的 targetIP 是它创建时所连的那台，之后不变），
+       所以你在几台上开了 shell 并让它们过载，本程序就同时加速那几个。
+       Shells live on different nodes, so if you opened several and set them overloading,
+       all of them get accelerated at once.
+       原版要先在目标机上拿到 admin 才能开 shell —— 那道门槛本程序不去拆
+       （没有 shell 在过载时，这一项不产生任何效果）。
+       Vanilla requires admin on each target to open a shell; that gate is left intact
+       (with nothing overloading, this setting does nothing).
        N 个 shell 的总速率 = N × 倍速（原版多 shell 本来就是简单叠加）。
 
        倍速不是一次性跳到目标，而是由 RAM 爬升**线性驱动**：
@@ -77,9 +81,7 @@
        1.0 = vanilla overload speed; 2.0 = double. Empty = 1.0.
        倍速峰值恰好等于这里填的值（RAM 爬满那一刻）；RampRate 越小，低倍速停留越久。
        The peak multiplier equals this value (reached when RAM tops out); a smaller RampRate
-       means it lingers at low multipliers longer.
-       玩家切到别的节点时加速对象随之切换（每帧取当前所连节点）。
-       The accelerated target follows the current connection, re-read every frame. -->
+       means it lingers at low multipliers longer. -->
   <ProxyOverloadTarget>1.0</ProxyOverloadTarget>
 
   <!-- ── 强调色 / Accent color ──

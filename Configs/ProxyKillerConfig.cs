@@ -8,7 +8,7 @@ namespace KernelExtensions.Configs;
 /// <summary>
 /// ProxyKiller 的配置：一个"加速目标代理瘫痪"的展示窗口。
 ///
-/// 定位（2026-10-10 二次定位）：**它自己不瘫痪任何代理**，只**加速正在过载当前所连节点的 Shell**。
+/// 定位（2026-10-10 二次定位）：**它自己不瘫痪任何代理**，只**加速所有正在过载的 Shell**。
 /// 原版把代理过载做成 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
 /// 而 Shell 需要目标机 admin 才能开 —— 那道门槛是设计护栏，本程序不去拆：
 /// 没有 shell 在过载，它就什么都不做。它做的是把"力量倍增器"这件事显式化：
@@ -75,7 +75,7 @@ public class ProxyKillerConfig
     /// <summary>
     /// **shell 过载**的倍速目标值。留空 = <see cref="DefaultProxyOverloadTarget"/>（1.0）。
     ///
-    /// ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速正在过载**当前所连节点**的那些 Shell。
+    /// ⚠️ 本程序**自己不瘫痪任何代理** —— 它只加速**正在过载的所有 Shell**（不区分目标节点）。
     /// 原版把代理过载做成 Shell 的一个状态（<c>ShellExe</c> 的 <c>proxyOverloadTicks -= t</c>），
     /// 而 Shell 需要目标机 admin 才能开 —— 那道门槛是设计上的护栏，本程序不去拆它：
     /// 没有 shell 在过载，它就什么都不做。
