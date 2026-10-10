@@ -80,6 +80,16 @@ public class PortHackV2Exe : GameExecutable
         public float Elapsed;
         /// <summary>本协议是否已成功（决定根级结算时开不开端口、给不给 admin）。</summary>
         public bool Succeeded;
+        /// <summary>
+        /// 是否已执行过"启动瞬间"的一次性初始化（掷 RNG / OnStart 钩子 / started 日志）。
+        ///
+        /// <para>
+        /// ⚠️ 必须独立于 <see cref="Started"/>：后者是 <c>DelayElapsed &gt;= StartDelay</c> 的
+        /// **状态判断**，在 <c>StartDelay = 0</c> 时第一帧就为 true —— 拿它当"还没初始化"的判据
+        /// 会让初始化整块被跳过（实机 bug：delay=0 的协议从不执行 OnStart）。
+        /// </para>
+        /// </summary>
+        public bool Initialized;
 
         public bool Started => Def != null && DelayElapsed >= Def.StartDelay;
         public bool Finished { get; set; }
@@ -355,13 +365,14 @@ public class PortHackV2Exe : GameExecutable
             _runtimes.Add(new ProtocolRuntime { Def = p });
         }
 
-        // 排错用：列出实际建成的运行时与各自的关键数值。
-        // "某协议从不启动"只能靠这几个数区分（名字、StartDelay 解析值、Def 是否为 null）。
+        // 保留一条汇总 Debug：协议何时启动、各自延迟多少，是排查时序问题的第一手信息。
+        // （"某协议从不启动"这类问题只能靠它区分 —— 名字、StartDelay 解析值、Def 是否为 null。）
         foreach (ProtocolRuntime rt in _runtimes)
         {
-            KELog.Debug($"[PortHackV2] runtime built #{rt.Id}: name='{rt.Def?.Name}'"
+            KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}' runtime #{rt.Id}: name='{rt.Def?.Name}'"
                 + $" startDelay={rt.Def?.StartDelay ?? -1f:0.###}"
-                + $" timeIfSuccess={rt.Def?.TimeIfSuccess ?? -1f:0.###}");
+                + $" timeIfSuccess={rt.Def?.TimeIfSuccess ?? -1f:0.###}"
+                + $" timeIfFail={rt.Def?.TimeIfFail ?? -1f:0.###}");
         }
 
         string source = CurrentConfig.SourceName;
@@ -437,50 +448,38 @@ public class PortHackV2Exe : GameExecutable
     /// <summary>
     /// 推进单个协议：StartDelay 到点 → **掷一次 RNG**（分支就此定下）→ 跑分支时长 →
     /// 到点立刻结算本协议（自己的 OnComplete / OnFail），不等其它协议。
+    ///
+    /// <para>
+    /// ⚠️ **初始化必须用独立的标志位判定，不能挂在 <c>if (!rt.Started)</c> 上。**
+    /// <c>Started</c> 的定义是 <c>DelayElapsed &gt;= StartDelay</c>，而 <c>StartDelay = 0</c> 时
+    /// 它在**第一帧就是 true** —— 于是 <c>if (!rt.Started)</c> 整块被跳过，
+    /// 掷 RNG、OnStart 钩子、MarkHostile、started 日志**一次都不执行**；
+    /// 只有 <c>StartDelay &gt; 0</c> 的协议才会走到那块。实机症状是
+    /// "delay=0 的协议从不执行 OnStart、也不记 started，却照常跑完流程"，
+    /// 而且没有任何报错（因为根本没有异常）。
+    /// </para>
     /// </summary>
     private void UpdateProtocol(ProtocolRuntime rt, float t)
     {
-        // 进入时的状态：仅在头几帧打印。用于定位"某协议从不产生任何日志"这类问题 ——
-        // 必须先确认它到底有没有进这个方法，再谈钩子为什么没跑。
-        if (_crackTime <= t * 3f)
-        {
-            KELog.Debug($"[PortHackV2] UpdateProtocol enter #{rt.Id}: name='{rt.Def?.Name}'"
-                + $" finished={rt.Finished} started={rt.Started}"
-                + $" delayElapsed={rt.DelayElapsed:0.###}"
-                + $" elapsed={rt.Elapsed:0.###} startDelay={rt.Def?.StartDelay ?? -1f:0.###}");
-        }
-
         if (rt.Finished) return;
 
-        if (!rt.Started)
-        {
-            rt.DelayElapsed += t;
-            if (!rt.Started)
-            {
-                // 本帧还没到启动点。打印状态：排错时"某协议从不启动"只能靠这几个数定位
-                // （Def 是否为 null、StartDelay 解析成了多少、计时到了哪里）。
-                // 只在头几帧打印，避免每帧刷屏。
-                if (rt.DelayElapsed <= t * 3f)
-                {
-                    float defDelay = rt.Def == null ? -1f : rt.Def.StartDelay;
-                    string defName = rt.Def == null ? "<null def>" : rt.Def.Name;
-                    KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}' protocol #{rt.Id} '{defName}'"
-                        + $" not started yet: delayElapsed={rt.DelayElapsed:0.###}"
-                        + $" startDelay={defDelay:0.###} t={t:0.####}");
-                }
-                return;    // 本帧还没到启动点
-            }
+        // ---- 1. 延迟计时 ----
+        if (!rt.Started) rt.DelayElapsed += t;
 
-            KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}': protocol #{rt.Id} "
-                + $"'{rt.Def?.Name}' entering start branch (delayElapsed={rt.DelayElapsed:0.###}).");
+        // ---- 2. 到点则**一次性初始化**（与是否已 Started 无关） ----
+        if (!rt.Initialized && rt.Started)
+        {
+            rt.Initialized = true;
 
             // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
             rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
             string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
 
-            // ⚠️ 钩子失败**绝不能**打断协议启动：这里若抛异常会一路冒到 OS.Update 被上层吞掉，
-            // 于是本协议永远进不了 started、最后被总时长强制收尾，而且**连日志都没有** ——
-            // 实机曾出现过这个症状。
+            KELog.Debug($"[PortHackV2] '{CurrentConfig.SourceName}': protocol #{rt.Id} "
+                + $"'{rt.Def.Name}' starting (delayElapsed={rt.DelayElapsed:0.###}).");
+
+            // ⚠️ 钩子失败**绝不能**打断协议启动：调用方在 OS.Update 里，异常冒出去会被上层吞掉，
+            // 于是本协议永远进不了 started、而且**连日志都没有**。
             SafeHook(() => rt.Def.OnStart?.Execute(os, protoSource, "OnStart"), protoSource, "OnStart");
 
             // 每个协议启动时也记一次敌对行为 —— 多协议是错开启动的，
@@ -490,6 +489,9 @@ public class PortHackV2Exe : GameExecutable
             KELog.Info($"[PortHackV2] '{protoSource}': started "
                 + $"(success shape={rt.Succeeded}, duration={(rt.Succeeded ? rt.Def.TimeIfSuccess : rt.Def.TimeIfFail)}s).");
         }
+
+        // 还没到启动点：本帧到此为止
+        if (!rt.Started) return;
 
         rt.Elapsed += t;
         if (rt.IsDone) CompleteProtocol(rt, forced: false);
