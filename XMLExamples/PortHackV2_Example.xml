@@ -7,9 +7,9 @@
     定位：剧情资产。每份配置对应一次破解，放 <扩展根>/PortHackV2/ 下。
     Position: story asset. One config per crack, under <extensionRoot>/PortHackV2/.
 
-    启用方式：给玩家挂上存档 flag CustomPortHackV2_<文件名>（不含 .xml）。
+    启用方式：给玩家挂上存档 flag PortHackV2_<文件名>（不含 .xml）。
     flag 就是"入口牌"：无 flag 程序锁定；出现多个 flag 视为作者配置错误（锁定 + 日志报错）。
-    How to enable: set the save flag CustomPortHackV2_<fileName> (without .xml) on the player.
+    How to enable: set the save flag PortHackV2_<fileName> (without .xml) on the player.
     The flag is the entry token: none means locked; more than one is an authoring error.
 
     颜色：支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），

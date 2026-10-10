@@ -15,7 +15,7 @@ namespace KernelExtensions.Executables;
 /// PortHackV2 —— 原版 PortHack 的可配置重制版。
 ///
 /// <para>
-/// 入口是**存档 flag**（`CustomPortHackV2_&lt;配置文件名&gt;`），不是命令行参数：
+/// 入口是**存档 flag**（`PortHackV2_&lt;配置文件名&gt;`），不是命令行参数：
 /// 程序启动即校验，没有欢迎页。恰好一个 flag → 加载 `<c>PortHackV2/&lt;名&gt;.xml</c>`；
 /// 零个 → 锁定（没被剧本启用）；多个 → 作者配置错误（锁定 + 报错）。
 /// </para>
@@ -179,7 +179,7 @@ public class PortHackV2Exe : GameExecutable
     }
 
     /// <summary>
-    /// 找出存档里所有属于本程序的 flag（`CustomPortHackV2_*`）。
+    /// 找出存档里所有属于本程序的 flag（`PortHackV2_*`）。
     /// 正常情况下应恰好一个（flag = 入口牌）；0 个 → 锁定；多个 → 作者配置错误。
     /// </summary>
     private static List<string> FindConfigFlags()

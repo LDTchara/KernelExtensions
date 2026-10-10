@@ -236,10 +236,10 @@ public class PortHackV2Config
 
     /// <summary>
     /// 存档 flag 前缀。**flag 是本程序的入口牌**：
-    /// 形如 <c>CustomPortHackV2_MyAttack</c> → 对应 <c>&lt;扩展根&gt;/PortHackV2/MyAttack.xml</c>。
+    /// 形如 <c>PortHackV2_MyAttack</c> → 对应 <c>&lt;扩展根&gt;/PortHackV2/MyAttack.xml</c>。
     /// 无 flag → 程序锁定；多 flag → 作者配置错误。
     /// </summary>
-    public const string FlagPrefix = "CustomPortHackV2_";
+    public const string FlagPrefix = "PortHackV2_";
 
     /// <summary>配置目录（扩展根下）。</summary>
     public const string ConfigDir = "PortHackV2";
