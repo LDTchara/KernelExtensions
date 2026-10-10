@@ -100,6 +100,8 @@ namespace KernelExtensions.Executables
             _rainbowConfig = Managers.CustomColorManager.ParseColorString("LDTchara");
             _cubeSeq = new PortHackCubeSequence();
             _flowField = new FlowFieldEffect();
+            // 保持原先"高度 55 → 218px/s、555 → 450px/s"的曲线，改用系数式表达
+            _flowField.SpeedCoefficient = 450f / (float)Math.Pow(555f, _flowField.SpeedExponent);
         }
 
         private void LoadEffects()
@@ -295,10 +297,20 @@ namespace KernelExtensions.Executables
 
         /// <summary>
         /// 原版 PortHack 立方体序列的时间缩放。
-        /// 它原生速度大约每秒 86°（二十层还各错开 0.1 弧度），直接看是糊的；
-        /// 缩到 1/6 之后能看清一层层嵌套在转。
+        ///
+        /// <para>
+        /// 原版 <c>PortHackExe</c> 的参数是 <c>CRACK_TIME = 6f</c>，
+        /// 调用 <c>DrawSequence(dest, t, CRACK_TIME)</c> 且 <c>t</c> 是**真实帧间隔** ——
+        /// 也就是 6 秒里转约 5.3 弧度（**平均约 50°/秒**，内层还更快），
+        /// 它本来就是设计成一闪而过的破解动画。预览里必须大幅减速才看得清层级。
+        /// </para>
+        ///
+        /// <para>
+        /// 0.04 = 1/25 速度，一圈约 22 秒；0.16（上一版）实测仍偏快。
+        /// 想更慢就继续降这个数。
+        /// </para>
         /// </summary>
-        private const float CubeTimeScale = 0.16f;
+        private const float CubeTimeScale = 0.04f;
 
         private float _cubeTime;
 

@@ -99,18 +99,22 @@ namespace KernelExtensions.Utilities
         public float BaseSpeed { get; set; } = 0.42f;
 
         /// <summary>
-        /// 粒子速度的两个锚点，单位是**每秒像素**。
+        /// 粒子速度的幂律：<c>v = SpeedCoefficient × 高度^SpeedExponent</c>，单位**每秒像素**。
         ///
         /// <para>
-        /// 低锚点 = 已被确认"正好"的那档（严格反比方案在 Size 100 内容区 70 下的速度）；
-        /// 高锚点 = "明显要更快"的那档（Size 400 内容区 370）。
-        /// 两者之间按对数线性插值，之外外推。
+        /// 与密度同一套结构（<see cref="DensityCoefficient"/>），所以两个效果的参数形态一致、
+        /// 调用方也都能用"基准尺寸下的目标值"反解系数。默认值对应
+        /// <c>速度 = 218 × (高度/55)^0.3135 → 高度 555 时约 450 px/s</c>。
         /// </para>
         /// </summary>
-        public float SpeedLowAnchorHeight { get; set; } = 55f;
-        public float SpeedLowAnchorPxPerSec { get; set; } = 218f;
-        public float SpeedHighAnchorHeight { get; set; } = 370f;
-        public float SpeedHighAnchorPxPerSec { get; set; } = 300f;
+        public float SpeedCoefficient { get; set; }
+        public float SpeedExponent { get; set; } = 0.3135f;
+
+        /// <summary>
+        /// <see cref="SpeedCoefficient"/> 未设置时用的兜底值，对应
+        /// <c>高度 55 → 218 px/s</c>、<c>555 → 450 px/s</c>（即 <c>218 / 55^0.3135 ≈ 61.5</c>）。
+        /// </summary>
+        public float DefaultSpeedCoefficient { get; set; } = 61.512f;
 
         /// <summary>
         /// 速度档位数。粒子速度在 <see cref="MinSpeedFactor"/> ~ <see cref="MaxSpeedFactor"/> 之间
@@ -152,6 +156,12 @@ namespace KernelExtensions.Utilities
 
         /// <summary>底纹网格是否绘制。</summary>
         public bool ShowGrid { get; set; } = true;
+
+        /// <summary>**网格**的线宽 / 点径（像素）。与粒子尺寸分开 —— 网格是背景参照，不该跟粒子一样粗。</summary>
+        public float GridPixelSize { get; set; } = 1f;
+
+        /// <summary>整体不透明度倍数。给调用方做淡出用（1 = 原亮度）。</summary>
+        public float Opacity { get; set; } = 1f;
 
         /// <summary>粒子亮度基准。</summary>
         public float BaseBrightness { get; set; } = 0.85f;
@@ -241,27 +251,23 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
-        /// 该高度下的实际速度（**每秒像素**）：过
-        /// (<see cref="SpeedLowAnchorHeight"/>, <see cref="SpeedLowAnchorPxPerSec"/>)
-        /// 与 (<see cref="SpeedHighAnchorHeight"/>, <see cref="SpeedHighAnchorPxPerSec"/>)
-        /// 两点按**对数线性**插值/外推。
+        /// 该高度下的实际速度（**每秒像素**）：<c>SpeedCoefficient × 高度^SpeedExponent</c>。
         ///
         /// <para>
-        /// 为什么用"每秒像素"而不是"满屏高/秒"：后者是归一化单位，同一组参数在 70 与 600 的
-        /// 内容区下每秒像素能差 8 倍，光看参数根本判断不出实际快慢 —— 前几轮调整就是被这个
+        /// 为什么用"每秒像素"而不是"满屏高/秒"：后者是归一化单位，同一组参数在 55 与 600 的
+        /// 内容区下每秒像素能差 10 倍，光看参数根本判断不出实际快慢 —— 前几轮调整就是被这个
         /// 单位误导的。像素/秒是能直接对着屏幕感受的量。
+        /// </para>
+        ///
+        /// <para>
+        /// <see cref="SpeedCoefficient"/> 未设置时用 <see cref="DefaultSpeedCoefficient"/> 兜底。
         /// </para>
         /// </summary>
         public float SpeedPxPerSecond(int destHeight)
         {
-            float h = destHeight > 0 ? destHeight : SpeedLowAnchorHeight;
-            float loH = SpeedLowAnchorHeight <= 1f ? 70f : SpeedLowAnchorHeight;
-            float hiH = SpeedHighAnchorHeight <= 1f ? 370f : SpeedHighAnchorHeight;
-            float loV = Math.Max(1f, SpeedLowAnchorPxPerSec);
-            float hiV = Math.Max(1f, SpeedHighAnchorPxPerSec);
-
-            float exponent = (float)(Math.Log((double)hiV / loV) / Math.Log((double)hiH / loH));
-            return loV * (float)Math.Pow(h / loH, exponent);
+            float h = destHeight > 0 ? destHeight : 1f;
+            float c = SpeedCoefficient > 0f ? SpeedCoefficient : DefaultSpeedCoefficient;
+            return c * (float)Math.Pow(h, SpeedExponent);
         }
 
         /// <summary>
@@ -322,7 +328,7 @@ namespace KernelExtensions.Utilities
             load = MathHelper.Clamp(load, 0f, 1f);
             float speedGain = SpeedPxPerSecond(dest.Height) * MathHelper.Lerp(1f, LoadSpeedGain, load)
                 / Math.Max(1, dest.Height);
-            float brightness = BaseBrightness * MathHelper.Lerp(0.8f, 1.35f, load);
+            float brightness = BaseBrightness * MathHelper.Lerp(0.8f, 1.35f, load) * MathHelper.Clamp(Opacity, 0f, 1f);
 
             // 固定像素：轨迹宽 = 头部宽，两者比例在任何窗口下都一致
             int w = Math.Max(1, (int)Math.Round(ParticlePixels));
@@ -373,7 +379,7 @@ namespace KernelExtensions.Utilities
 
             // 漂移方向与粒子一致（向上），速度只有粒子的一小部分
             float drift = (_time * BaseSpeed * 0.12f * MathHelper.Lerp(1f, LoadSpeedGain, load)) % stepY;
-            Color gridColor = color * (BaseBrightness * 0.11f);
+            Color gridColor = color * (BaseBrightness * 0.11f * MathHelper.Clamp(Opacity, 0f, 1f));
 
             for (float row = 0f; row <= cells; row++)
             {

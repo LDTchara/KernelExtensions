@@ -65,18 +65,30 @@ public class ProxyKillerConfig
     public const float MinShellOverloadTarget = 0f;
     public const float MaxShellOverloadTarget = 1000f;
 
-    // ---- 背景（DepthDotGrid）默认参数：取自原版 SignalScramble 的那次调用 ----
+    // ---- 背景（上升数据流）默认参数 ----
 
-    /// <summary>递归时每层内缩的像素数（<c>pixelsInOnRecurse</c>）。</summary>
-    public const float DefaultPixelsInOnRecurse = 30f;
-    /// <summary>递归层数（<c>recursionSteps</c>）。</summary>
-    public const int DefaultRecursionSteps = 10;
-    /// <summary>点间距（<c>dotSeperation</c>）。</summary>
-    public const float DefaultDotSeparation = 60f;
-    /// <summary>点大小（<c>dotSize</c>）。</summary>
-    public const float DefaultDotSize = 10f;
-    /// <summary>最大景深偏移距离（<c>MaxDepthEffectDistance</c>）。</summary>
-    public const float DefaultMaxDepthDistance = 0f;
+    /// <summary>基准窗口下想要的粒子数；与 <see cref="DefaultDensityExponent"/> 一起换算成幂律系数。</summary>
+    public const int DefaultCountAtReference = 230;
+    /// <summary>密度的基准窗口尺寸（像素，取绘制区高度）。</summary>
+    public const float DefaultReferenceHeight = 200f;
+    /// <summary>密度幂律指数（约 1/2，即数量随高度按平方根增长）。</summary>
+    public const float DefaultDensityExponent = 0.5052f;
+    /// <summary>基准高度下的速度（每秒像素）；与 <see cref="DefaultSpeedExponent"/> 一起换算成速度幂律。</summary>
+    public const float DefaultSpeedAtReference = 300f;
+    /// <summary>速度幂律指数。</summary>
+    public const float DefaultSpeedExponent = 0.3135f;
+    /// <summary>粒子（含拖尾）的线宽像素数。</summary>
+    public const float DefaultParticlePixels = 5f;
+    /// <summary>拖尾基础长度（像素）。</summary>
+    public const float DefaultTrailPixels = 27f;
+    /// <summary>满负荷时拖尾的倍数。</summary>
+    public const float DefaultLoadTrailGain = 2f;
+    /// <summary>满负荷时速度的倍数。</summary>
+    public const float DefaultLoadSpeedGain = 2.6f;
+    /// <summary>底纹网格的格数。</summary>
+    public const int DefaultGridCells = 12;
+    /// <summary>网格线宽（像素）。</summary>
+    public const float DefaultGridPixelSize = 2f;
 
     // ======================= XML 原始值（string 承接） =======================
 
@@ -106,25 +118,42 @@ public class ProxyKillerConfig
     /// </summary>
     [XmlElement("ShellOverloadTarget")] public string ShellOverloadTargetRaw { get; set; }
 
-    // ---- 背景参数（只在加载时解析一次，运行时不变）----
+    // ---- 背景（上升数据流）参数 ----
+    //
+    // 背景效果的"密度"与"速度"都是幂律公式：n = C × 高度^k、v = C × 高度^k
+    // （那个效果的内部实现，见 Utilities/FlowFieldEffect.cs）。
+    // 这里**不直接暴露 C/k**，而是让作者填"基准尺寸下的目标值"——
+    // 那样更直观（"这个窗口下我要多少粒子、多快"），由 ResolveValues 反解出系数。
 
     /// <summary>背景粒子颜色。留空 / <c>NONE</c> = <b>白色</b>。支持 CustomColor 预设名与动态色。</summary>
     [XmlElement("BackgroundColor")] public string BackgroundColorRaw { get; set; }
 
-    /// <summary>递归每层内缩像素（<c>pixelsInOnRecurse</c>）。留空 = 30。</summary>
-    [XmlElement("PixelsInOnRecurse")] public string PixelsInOnRecurseRaw { get; set; }
+    /// <summary>基准尺寸下想要的粒子数。留空 = 230。</summary>
+    [XmlElement("BackgroundCount")] public string BackgroundCountRaw { get; set; }
 
-    /// <summary>递归层数（<c>recursionSteps</c>）。留空 = 10。</summary>
-    [XmlElement("RecursionSteps")] public string RecursionStepsRaw { get; set; }
+    /// <summary>基准尺寸（像素，指绘制区高度）。留空 = 200。</summary>
+    [XmlElement("BackgroundReferenceHeight")] public string BackgroundReferenceHeightRaw { get; set; }
 
-    /// <summary>点间距（<c>dotSeperation</c>）。留空 = 60。</summary>
-    [XmlElement("DotSeparation")] public string DotSeparationRaw { get; set; }
+    /// <summary>基准尺寸下想要的速度（每秒像素）。留空 = 300。</summary>
+    [XmlElement("BackgroundSpeed")] public string BackgroundSpeedRaw { get; set; }
 
-    /// <summary>点大小（<c>dotSize</c>）。留空 = 10。</summary>
-    [XmlElement("DotSize")] public string DotSizeRaw { get; set; }
+    /// <summary>粒子与拖尾的线宽（像素）。留空 = 5。</summary>
+    [XmlElement("ParticlePixels")] public string ParticlePixelsRaw { get; set; }
 
-    /// <summary>最大景深偏移距离（<c>MaxDepthEffectDistance</c>）。留空 = 0。</summary>
-    [XmlElement("MaxDepthDistance")] public string MaxDepthDistanceRaw { get; set; }
+    /// <summary>拖尾基础长度（像素）。留空 = 27。</summary>
+    [XmlElement("TrailPixels")] public string TrailPixelsRaw { get; set; }
+
+    /// <summary>满负荷时拖尾的倍数。留空 = 2.0。</summary>
+    [XmlElement("LoadTrailGain")] public string LoadTrailGainRaw { get; set; }
+
+    /// <summary>满负荷时速度的倍数。留空 = 2.6 —— 这就是"加速"在背景上的体现。</summary>
+    [XmlElement("LoadSpeedGain")] public string LoadSpeedGainRaw { get; set; }
+
+    /// <summary>底纹网格的格数。留空 = 12；写 0 = 不画网格。</summary>
+    [XmlElement("GridCells")] public string GridCellsRaw { get; set; }
+
+    /// <summary>网格线宽（像素）。留空 = 2。</summary>
+    [XmlElement("GridPixelSize")] public string GridPixelSizeRaw { get; set; }
 
     // ======================= 解析结果 =======================
 
@@ -143,16 +172,28 @@ public class ProxyKillerConfig
     /// <summary>背景粒子颜色。</summary>
     [XmlIgnore] public Color BackgroundColor { get; private set; } = Color.White;
 
-    /// <summary>递归每层内缩像素。</summary>
-    [XmlIgnore] public float PixelsInOnRecurse { get; private set; } = DefaultPixelsInOnRecurse;
-    /// <summary>递归层数。</summary>
-    [XmlIgnore] public int RecursionSteps { get; private set; } = DefaultRecursionSteps;
-    /// <summary>点间距。</summary>
-    [XmlIgnore] public float DotSeparation { get; private set; } = DefaultDotSeparation;
-    /// <summary>点大小。</summary>
-    [XmlIgnore] public float DotSize { get; private set; } = DefaultDotSize;
-    /// <summary>最大景深偏移距离。</summary>
-    [XmlIgnore] public float MaxDepthDistance { get; private set; } = DefaultMaxDepthDistance;
+    /// <summary>反解出的密度幂律系数（<c>n = Coefficient × 高度^DensityExponent</c>）。</summary>
+    [XmlIgnore] public float BackgroundDensityCoefficient { get; private set; }
+    /// <summary>反解出的速度幂律系数（<c>v = Coefficient × 高度^SpeedExponent</c>，单位每秒像素）。</summary>
+    [XmlIgnore] public float BackgroundSpeedCoefficient { get; private set; }
+
+    /// <summary>密度幂律指数（固定值，约 1/2）。</summary>
+    [XmlIgnore] public float BackgroundDensityExponent => DefaultDensityExponent;
+    /// <summary>速度幂律指数（固定值）。</summary>
+    [XmlIgnore] public float BackgroundSpeedExponent => DefaultSpeedExponent;
+
+    /// <summary>粒子与拖尾的线宽（像素）。</summary>
+    [XmlIgnore] public float ParticlePixels { get; private set; } = DefaultParticlePixels;
+    /// <summary>拖尾基础长度（像素）。</summary>
+    [XmlIgnore] public float TrailPixels { get; private set; } = DefaultTrailPixels;
+    /// <summary>满负荷时拖尾的倍数。</summary>
+    [XmlIgnore] public float LoadTrailGain { get; private set; } = DefaultLoadTrailGain;
+    /// <summary>满负荷时速度的倍数。</summary>
+    [XmlIgnore] public float LoadSpeedGain { get; private set; } = DefaultLoadSpeedGain;
+    /// <summary>底纹网格格数（0 = 不画）。</summary>
+    [XmlIgnore] public int GridCells { get; private set; } = DefaultGridCells;
+    /// <summary>网格线宽（像素）。</summary>
+    [XmlIgnore] public float GridPixelSize { get; private set; } = DefaultGridPixelSize;
 
     /// <summary>本配置对应的 flag 名（不含前缀）；由加载器填入，供反查与日志使用。</summary>
     [XmlIgnore] public string SourceName { get; set; }
@@ -244,11 +285,22 @@ public class ProxyKillerConfig
         // 颜色走统一入口：这样才吃得到 CustomColor 预设名与动态色
         BackgroundColor = CustomColorManager.GetDynamicColor(BackgroundColorRaw, Color.White);
 
-        PixelsInOnRecurse = ParseNum(PixelsInOnRecurseRaw, DefaultPixelsInOnRecurse, 0f, 1000f, "PixelsInOnRecurse");
-        RecursionSteps = ToInt(ParseNum(RecursionStepsRaw, DefaultRecursionSteps, 0f, 64f, "RecursionSteps"));
-        DotSeparation = ParseNum(DotSeparationRaw, DefaultDotSeparation, 1f, 1000f, "DotSeparation");
-        DotSize = ParseNum(DotSizeRaw, DefaultDotSize, 0f, 500f, "DotSize");
-        MaxDepthDistance = ParseNum(MaxDepthDistanceRaw, DefaultMaxDepthDistance, 0f, 10000f, "MaxDepthDistance");
+        // ---- 背景：作者填"基准尺寸下的目标值"，这里反解出幂律系数 ----
+        // 反解公式：n = C·h^k 且已知 (h0, n0) → C = n0 / h0^k
+        float refH = ParseNum(BackgroundReferenceHeightRaw, DefaultReferenceHeight, 10f, 10000f,
+            "BackgroundReferenceHeight");
+        float wantCount = ParseNum(BackgroundCountRaw, DefaultCountAtReference, 1f, 5000f, "BackgroundCount");
+        float wantSpeed = ParseNum(BackgroundSpeedRaw, DefaultSpeedAtReference, 1f, 10000f, "BackgroundSpeed");
+
+        BackgroundDensityCoefficient = wantCount / (float)Math.Pow(refH, DefaultDensityExponent);
+        BackgroundSpeedCoefficient = wantSpeed / (float)Math.Pow(refH, DefaultSpeedExponent);
+
+        ParticlePixels = ParseNum(ParticlePixelsRaw, DefaultParticlePixels, 1f, 64f, "ParticlePixels");
+        TrailPixels = ParseNum(TrailPixelsRaw, DefaultTrailPixels, 2f, 2000f, "TrailPixels");
+        LoadTrailGain = ParseNum(LoadTrailGainRaw, DefaultLoadTrailGain, 1f, 20f, "LoadTrailGain");
+        LoadSpeedGain = ParseNum(LoadSpeedGainRaw, DefaultLoadSpeedGain, 1f, 50f, "LoadSpeedGain");
+        GridCells = ToInt(ParseNum(GridCellsRaw, DefaultGridCells, 0f, 64f, "GridCells"));
+        GridPixelSize = ParseNum(GridPixelSizeRaw, DefaultGridPixelSize, 1f, 32f, "GridPixelSize");
     }
 
     /// <summary>解析一个数值背景参数：留空 = 默认（正常省略，不记日志）；畸形 / 超范围 = 回退 + Warn。</summary>

@@ -66,13 +66,13 @@ public class ProxyKillerExe : GameExecutable
     private float _target;
     private float _mulTarget;
 
-    // ---- 背景 ----
+    // ---- 背景：上升数据流（自下而上的粒子洪流，随 RAM 爬升加速）----
     private Color _bgColor = Color.White;
-    private Hacknet.Effects.DepthDotGridEffect _grid;
+    private readonly FlowFieldEffect _flow = new();
     private bool _bgWarned;
 
-    /// <summary>加速状态文字用的计时（原版 SignalScramble 用它驱动假读数的抖动）。</summary>
-    private float _textTimer;
+    /// <summary>上一帧绘制区高度 —— 背景的密度/速度幂律都要按高度算（见 FlowFieldEffect）。</summary>
+    private int _lastAreaHeight;
 
     private const int ID_EXIT = 910;
 
@@ -131,17 +131,19 @@ public class ProxyKillerExe : GameExecutable
         _ram = _ramStart;
         ramCost = (int)_ram;
 
-        try
-        {
-            _grid = new Hacknet.Effects.DepthDotGridEffect(os.content);
-        }
-        catch (Exception ex)
-        {
-            KELog.Error($"{LogTag} could not create the DepthDotGrid effect: {ex.Message}");
-            Lock(KELoc.Loc("PROXY_KILLER_LOAD_FAILED",
-                "ProxyKiller: configuration could not be loaded."));
-            return;
-        }
+        // 背景：上升数据流。参数全部来自配置，运行时不变（它们是形态而不是动画进度）。
+        _flow.DensityCoefficient = _cfg.BackgroundDensityCoefficient;
+        _flow.DensityExponent = _cfg.BackgroundDensityExponent;
+        _flow.SpeedCoefficient = _cfg.BackgroundSpeedCoefficient;
+        _flow.SpeedExponent = _cfg.BackgroundSpeedExponent;
+        _flow.ParticlePixels = _cfg.ParticlePixels;
+        _flow.TrailPixels = _cfg.TrailPixels;
+        _flow.LoadTrailGain = _cfg.LoadTrailGain;
+        _flow.LoadSpeedGain = _cfg.LoadSpeedGain;
+        _flow.GridCells = _cfg.GridCells;
+        _flow.GridPixelSize = _cfg.GridPixelSize;
+        _flow.ShowGrid = _cfg.GridCells > 0;
+        _flow.Reset();
 
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
             + $"at {_cfg.RampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
@@ -231,7 +233,8 @@ public class ProxyKillerExe : GameExecutable
             ramCost = (int)_ram;
         }
 
-        _textTimer += t;
+        // 背景按 RAM 爬升推进（速度与拖尾都在 Draw 里按进度给）
+        _flow.Update(t, RampProgress(), _lastAreaHeight);
 
         // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 50MB → BurstTarget
         AccelerateShells(t);
@@ -367,6 +370,8 @@ public class ProxyKillerExe : GameExecutable
 
         // 窗口被 fade 收缩到内容装不下时，连背景也不用画了（原版在同一位置也有这道闸）
         if (content.Width <= 8 || content.Height <= 8) return;
+        // Update 在 Draw 之前跑，背景的密度/速度幂律要用上一帧的高度
+        _lastAreaHeight = content.Height;
 
         if (_locked)
         {
@@ -380,7 +385,7 @@ public class ProxyKillerExe : GameExecutable
         }
         if (_cfg == null) return;
 
-        DrawGrid(content);
+        DrawFlowBackground(content);
 
         // 状态文字带（原版 SignalScramble 在"图形区底部往上 2 行"的位置放它）
         const int bandH = 25;
@@ -433,7 +438,8 @@ public class ProxyKillerExe : GameExecutable
         }
 
         // 底部 Exit 按钮（原版 SignalScramble 就是这条满宽黑条 + 按钮）
-        Rectangle btn = new(content.X, content.Y + content.Height - bandH, content.Width, bandH);
+        // 按钮条画在内容区**下方**（原先是压在内容区底部，会盖住背景）
+        Rectangle btn = new(content.X, content.Y + content.Height + 2, content.Width, bandH);
         spriteBatch.Draw(Utils.white, btn, Color.Black);
         if (Button.doButton(PID + ID_EXIT, btn.X + 1, btn.Y, btn.Width - 2, btn.Height,
                 KELoc.Loc("PROXY_KILLER_BTN_EXIT", "Exit"), os.lockedColor))
@@ -444,19 +450,31 @@ public class ProxyKillerExe : GameExecutable
     }
 
     /// <summary>
-    /// 背景：原版 <c>DepthDotGridEffect</c>（SignalScramble 用的那个），参数全部来自配置、
-    /// **运行时不变**；<c>chaosPercent</c> 随 RAM 爬升从 1 降到 0 —— 这是"burst"的视觉表达。
+    /// 背景：**上升数据流**（自下而上的粒子洪流）。
+    ///
+    /// <para>
+    /// 三个量都挂在 RAM 爬升进度上 —— 这就是"过载"在背景上的表达：
+    /// <list type="bullet">
+    ///   <item><b>速度</b>随进度升到 <c>LoadSpeedGain</c> 倍（数据冲得更快）</item>
+    ///   <item><b>拖尾</b>随进度变长（越快尾巴越长，这是"高速"最直接的视觉线索）</item>
+    ///   <item>整体<b>不透明度</b>随进度淡入，退出时乘 <c>fade</c>（与窗口一起退场）</item>
+    /// </list>
+    /// </para>
+    ///
+    /// <para>
+    /// 不透明度这样给：启动时 <c>0.35 → 1</c> 淡入，退出时 <c>× fade</c>。
+    /// 前者让程序出现得不那么突兀，后者与"原版靠窗口收缩退场"的机制配合。
+    /// </para>
     /// </summary>
-    private void DrawGrid(Rectangle area)
+    private void DrawFlowBackground(Rectangle area)
     {
-        if (_grid == null || _cfg == null) return;
+        if (_cfg == null) return;
 
         try
         {
-            _grid.DrawGrid(area, Vector2.Zero, spriteBatch,
-                _cfg.PixelsInOnRecurse, _cfg.RecursionSteps, _bgColor,
-                _cfg.DotSeparation, _cfg.DotSize, _cfg.MaxDepthDistance,
-                os.timer, 1f - RampProgress());
+            float progress = RampProgress();
+            _flow.Opacity = MathHelper.Lerp(0.35f, 1f, progress) * (isExiting ? fade : 1f);
+            _flow.Draw(spriteBatch, area, _bgColor, progress);
         }
         catch (Exception ex)
         {
@@ -468,14 +486,10 @@ public class ProxyKillerExe : GameExecutable
         }
     }
 
-    /// <summary>
-    /// 程序被移除时的收尾。
-    /// 这里**不需要释放**背景效果：原版这些 Effects 都不实现 IDisposable，
-    /// 它们用的纹理来自游戏本体的 ContentManager（由引擎统一管理）。
-    /// </summary>
+    /// <summary>程序被移除时的收尾（背景效果不需要释放，它不持有非托管资源）。</summary>
     public override void OnComplete()
     {
-        _grid = null;
+        _flow.Reset();
         base.OnComplete();
     }
 }
