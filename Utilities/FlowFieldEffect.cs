@@ -81,9 +81,9 @@ namespace KernelExtensions.Utilities
         /// 9.67 里内容区高 = ramcost − 15（只减标题栏）。
         /// </para>
         /// </summary>
-        public float LowAnchorHeight { get; set; } = 70f;
+        public float LowAnchorHeight { get; set; } = 55f;
         public int CountAtLowAnchor { get; set; } = 140;
-        public float HighAnchorHeight { get; set; } = 170f;
+        public float HighAnchorHeight { get; set; } = 155f;
         public int CountAtHighAnchor { get; set; } = 210;
 
         /// <summary>折算后的实际数量下限 / 上限（防止极端尺寸下几乎没有粒子或卡顿）。</summary>
@@ -105,7 +105,7 @@ namespace KernelExtensions.Utilities
         /// 两者之间按对数线性插值，之外外推。
         /// </para>
         /// </summary>
-        public float SpeedLowAnchorHeight { get; set; } = 70f;
+        public float SpeedLowAnchorHeight { get; set; } = 55f;
         public float SpeedLowAnchorPxPerSec { get; set; } = 218f;
         public float SpeedHighAnchorHeight { get; set; } = 370f;
         public float SpeedHighAnchorPxPerSec { get; set; } = 300f;

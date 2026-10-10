@@ -308,8 +308,12 @@ namespace KernelExtensions.Executables
             drawOutline();
             drawTarget();
 
-            Rectangle bg = new(bounds.X + 2, bounds.Y + PANEL_HEIGHT + 14,
-                               bounds.Width - 4, bounds.Height - PANEL_HEIGHT - 16);
+            // 内容区**紧跟标题栏**（bounds 去掉面板高），与 ProxyKiller / PortHackV2 一致。
+            // 原先这里多减了 14（标题栏高度），等于内容区凭空下移一条标题栏 ——
+            // 效果绘制区整体偏低。高度留出底部 30 给按钮条，按钮画在内容区**下方**。
+            const int BUTTON_ROW_H = 30;
+            Rectangle bg = new(bounds.X + 2, bounds.Y + PANEL_HEIGHT,
+                               bounds.Width - 4, bounds.Height - PANEL_HEIGHT - BUTTON_ROW_H);
             if (bg.Width <= 8 || bg.Height <= 8) return;
             _lastContentH = bg.Height;
             spriteBatch.Draw(Utils.white, bg, new Color(10, 10, 10));
@@ -338,7 +342,8 @@ namespace KernelExtensions.Executables
             TextItem.doFontLabel(new Vector2(bg.X + bg.Width - 90, bg.Y + 4), load,
                 GuiData.smallfont, Color.White * 0.5f);
 
-            int btnY = bounds.Y + bounds.Height - 26;
+            // 按钮条画在**内容区下方**（不再压在内容上），与内容区同宽
+            int btnY = bg.Y + bg.Height + 4;
             if (Button.doButton(9001 + PID, bg.X + 6, btnY, 50, 22, "Prev", os.highlightColor))
                 PrevEffect();
             if (Button.doButton(9002 + PID, bg.X + 62, btnY, 46, 22, _paused ? "Play" : "Pause", os.lockedColor))
@@ -361,7 +366,7 @@ namespace KernelExtensions.Executables
             int[] heights = { 100, 200, 400, 600 };
             _sizeIndex = (_sizeIndex + 1) % heights.Length;
             int h = heights[_sizeIndex];
-            int minH = PANEL_HEIGHT + 14 + 44;    // 面板高 + 标题栏 + 按钮条
+            int minH = PANEL_HEIGHT + 30 + 20;    // 面板高 + 按钮条 + 内容区最少 20
             bounds.Height = Math.Max(minH, h);
             // ⚠️ 原版 ExeModule.Update 每帧执行 bounds.Height = ramCost，所以光改 bounds 会被覆盖回去
             ramCost = bounds.Height;
