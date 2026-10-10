@@ -212,7 +212,7 @@ namespace KernelExtensions.Executables
             _effects.Add(new EffectEntry
             {
                 Name = "PortHackCubeSequence",
-                Note = "vanilla PortHack 20-layer cube (own timeline)",
+                Note = "vanilla PortHack 20-layer cube (WIP - feel not matched yet)",
                 Duration = 0f,
                 Update = dt => UpdateCubePreview(dt),
                 Draw3D = (gd, sb, b, t) => DrawCubeLayers(gd, b)
