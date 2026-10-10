@@ -105,6 +105,8 @@ namespace KernelExtensions
             KELog.Info("EffectsPlayer registered.");
             ExecutableManager.RegisterExecutable<WPTEST>("#WPTEST#");
             KELog.Info("WPTEST registered.");
+            ExecutableManager.RegisterExecutable<ProxyTunerExe>("#KE_PROXYTUNER#");
+            KELog.Info("ProxyTuner registered.");
 
             // ============================================================
             //  2. Action 注册（按系统分组）

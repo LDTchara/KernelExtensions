@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ============================================================
+    KernelExtensions ProxyTuner 配置示例
+    ProxyTuner Configuration Example
+    ============================================================
+    定位：开发者调参工具。放 <扩展根>/ProxyTuner/ 下。
+    Position: authoring tool for tuning. Place under <extensionRoot>/ProxyTuner/.
+
+    启用方式 / How to enable:
+      给玩家挂上存档 flag  CustomProxyTuner_<文件名>（不含 .xml）
+      flag 就是"入口牌"：无 flag 程序锁定；出现多个 flag 视为作者配置错误（锁定 + 日志报错）
+      然后在终端执行 #KE_PROXYTUNER#
+      Set the save flag CustomProxyTuner_<fileName> on the player.
+      The flag is the entry token: none means locked; more than one is an authoring error.
+      Then run #KE_PROXYTUNER# in the terminal.
+
+    这个程序做什么 / What it does:
+      · 中部动画区用原版 DepthDotGrid 效果（不需要自带资源）
+      · 右侧可调项可以边看边改，改动**立即生效**，每改一次写一条英文日志
+      · "Overload x" 会把过载倍数实时作用到当前连接机器的代理上（自动过载驱动）
+      · 调参结果**不写盘** —— 退出后配置仍是原值，调好后请自己把数值抄回本文件
+      · The middle area plays the vanilla DepthDotGrid effect; the right-hand rows are live:
+        every tweak takes effect immediately and logs one English line. Nothing is saved to disk.
+-->
+
+<ProxyTunerConfig>
+
+  <!-- ── 程序名 / Program name ──
+       终端与窗口标题里显示的名字。留空 = ProxyTuner。
+       程序在终端里的注册名 #KE_PROXYTUNER# 不受此处影响。 -->
+  <ProgramName>ProxyTuner</ProgramName>
+
+  <!-- ── 过载倍数 / Overload multiplier ──
+       代理过载速度的倍数：1.0 = 原版速度，2.0 = 两倍速，0 = 冻结（便于观察起始状态）。
+       范围 0~100，留空 = 1.0。
+
+       实际影响的是"代理过载速度"：程序按此倍数自动推进当前连接机器的
+       proxyOverloadTicks（原版 shell 的 Overload 是每帧 -1 倍）。
+       目标机没有代理 / 代理已被过载时，这一项不产生游戏内效果。
+       Range 0~100. 1.0 = vanilla rate. It drives proxy overload on the connected computer. -->
+  <SpeedMultiplier>1.0</SpeedMultiplier>
+
+  <!-- ── 资源占用 / Resource cost ──
+       程序占用的内存（MB）。范围 0~100000，留空 = 30。
+       右侧面板里可以实时改（原版 SignalScramble 也这样动态改 ramCost）。
+       注意：引擎是否允许启动本程序，是在启动那一刻按 30MB 判定的。 -->
+  <RamCost>30</RamCost>
+
+  <!-- ── 主题高亮色 / Accent color ──
+       动画点阵与强调文字的颜色。语法：#RGB / #RRGGBB / #AARRGGBB /
+       R,G,B[,A] / XNA 命名色（Red、CornflowerBlue…）。
+       留空 / NONE / 解析失败 = 用当前主题的高亮色。 -->
+  <AccentColor>#00A2E8</AccentColor>
+
+  <!-- ── 动画形态 / Animation style ──
+       目前只实现了 DepthDotGrid（原版 SignalScramble 用的效果）。
+       留空 = DepthDotGrid；写别的值 → 记一条 Warn 并回退 DepthDotGrid。
+       这是为后续换形态预留的配置位。 -->
+  <AnimationStyle>DepthDotGrid</AnimationStyle>
+
+  <!-- ── 动画推进速率 / Animation speed ──
+       动画时间轴的推进倍数：1.0 = 原始速度，0 = 画面静止。范围 0~100，留空 = 1.0。 -->
+  <AnimationSpeed>1.0</AnimationSpeed>
+
+  <!-- ── 递归步数 / Recursion depth ──
+       点阵向外递归的层数，层数越深景深感越强。范围 0~64，留空 = 4。
+       原版效果每层把点大小乘 0.6，所以层数不会真的画满 64 层。 -->
+  <Depth>4</Depth>
+
+  <!-- ── 点大小 / Dot size ──
+       单个点的直径（像素）。范围 0~200，留空 = 3。 -->
+  <DotSize>3</DotSize>
+
+  <!-- ── 点间距 / Dot separation ──
+       点与点的间隔（像素），越大点阵越稀疏。范围 0~500，留空 = 14。
+       低于 2 会被抬到 2 并记一条 Warn：间距过小时单帧绘制量暴涨（0 会让原版效果死循环）。 -->
+  <DotSeparation>14</DotSeparation>
+
+  <!-- ── 混沌度 / Chaos ──
+       点阵的随机扰动程度。范围 0~1（0 = 完全规整），留空 = 0.35。 -->
+  <Chaos>0.35</Chaos>
+
+  <!-- ── 结束后退出延时 / Exit delay ──
+       按 Exit 之后、窗口真正关闭前的停留秒数。范围 0~600，留空 = 5。
+       倒计时期间可以按 Skip 立即退出。 -->
+  <CompleteDelay>5</CompleteDelay>
+
+</ProxyTunerConfig>
+
+<!--
+    ============================================================
+    变体 / Variants（把对应行放进上面的根元素）
+    ============================================================
+
+    [最快：过载瞬间完成]
+      <SpeedMultiplier>100</SpeedMultiplier>
+
+    [冻结过载，只看画面]
+      <SpeedMultiplier>0</SpeedMultiplier>
+
+    [用主题色，不指定颜色]
+      删掉 <AccentColor>
+
+    [按 Exit 立即关闭]
+      <CompleteDelay>0</CompleteDelay>
+
+    [密集点阵，无景深]
+      <Depth>0</Depth>
+      <DotSize>1</DotSize>
+      <DotSeparation>6</DotSeparation>
+      <Chaos>0</Chaos>
+
+    [稀疏大点，强景深]
+      <Depth>6</Depth>
+      <DotSize>8</DotSize>
+      <DotSeparation>28</DotSeparation>
+      <Chaos>0.6</Chaos>
+-->
