@@ -4,35 +4,14 @@
 
 > 开发中 · 2026
 >
-> **对比基线**：`0.6.0`（2026-05-12）→ `dev`
-> 规模：**29 → 128 个 `.cs` 文件**，约 **4,900 → 21,700 行**；新增 39 个 Action / Executable 注册名（13 → 52）。
-
-### ⚠️ 破坏性变更
-
-> 本节列出**会影响已有扩展**的改动。已在下方逐项给出规避方式。
-
-- **PortHackV2 / ProxyKiller 的 flag 前缀去掉了 `Custom` 前缀**
-  - `CustomPortHackV2_xxx` → **`PortHackV2_xxx`**
-  - `CustomProxyTuner_xxx` → **`ProxyKiller_xxx`**（该程序在本版内还经历过一次更名：`ProxyTuner` → `ProxyKiller`）
-  - 影响：若扩展里写了带旧前缀的 flag 名，需要改名。**这两个程序都是 0.7 新增**，因此只影响本版开发期内的用法。
-- **PortHackV2 删除了 `<Usable>` 配置位**
-  - 可用性改由**运行时前置**决定（`<Require*>` 系列 + 程序自身的锁定状态），配置里不再需要它。
-- **PortHackV2 删除了根级 `OnFail`**
-  - 根级没有随机性，总时长跑满固定走成功演出；某个协议有没有破开由**该协议自己的 `OnFail`** 表达。
-- **`ChangeThemeColor` 的属性 `Locate` 改名为 `Fields`**
-  - `<ChangeThemeColor Locate="…" />` → `<ChangeThemeColor Fields="…" />`。
-- **（计划中）动作点写法统一**
-  - 目前各系统的动作点写法不一致（有的用 `file` 属性、有的用元素文本内容）。本版计划统一为「**既能内联写动作，也能填路径**」。
-  - 统一时会**保留 `file` 属性的兼容**，因此已有配置**不需要改**；详见下方「动作点」条目。
-
-**不受影响的项**（已逐一核对）：`0.6.0` 的 13 个注册名（`FailTrial` / `AttackAircraft` / `TerminalWrite` 等）**全部保留**，无删改；7 个被移动的文件都是**改名换目录**，注册字符串冻结不变。
+> 本节只列出已完成文档化的内容，完整清单待发布时补齐。
 
 ### 新增功能
 
 - **PortHackV2 破解程序（`#PORTHACKV2#`）**
   - 原版 `PortHack` 的可配置重制版：破解流程、时长、外观、前置条件与收尾动作全部由 XML 配置驱动。
   - 多协议**并行**推进，各自按 `StartDelay` 错开启动；每个协议独立掷成败，但两条分支的演出完全一样（只有时长不同）。
-  - 根级与协议级两层动作点（`OnStart` / `OnComplete` / `OnFail`）。
+  - 根级与协议级两层动作点（`OnStart` / `OnComplete` / `OnFail`），一次性效果一律走动作文件。
   - 可选前置：防火墙、代理瘫痪、指定端口、以及**目标机已破解端口数量**（`auto` 对齐节点自身要求）。
   - 5 种柏拉图立体线框动画，走离屏渲染；每种立体绕自己的旋转对称轴自转且轴保持竖直。
   - 详见 [PortHackV2 破解程序](./../systems/port-hack-v2.md)。
@@ -41,45 +20,22 @@
   - 倍速由内存爬升线性驱动（起始 50MB）；每帧重新遍历，所以先运行、后开的 shell 一样被加速。
   - 背景为自绘的上升数据流，底部状态文字三级：`Spinning up...` → `Overdrive` → `Spinning down...`。
   - 详见[可执行程序](./../components/executables.md)。
-- **动作点支持内联动作**
-  - 系统的动作点既可以直接写 `<Actions>` / `<ConditionalActions>`，也可以指向动作文件，两者还能同时用（**先文件、后内联**）。
-  - 目前用于 PortHackV2 的 5 个动作点；后续会推广到所有系统（见上方破坏性变更）。
-  - 未知的元素名或条件名会记一条明确的警告并跳过，**不会**让整段动作失败。
-- **目标机原子 Action（9 个）**
-  - 端口：`PortOpen` / `PortClose` / `PortFirewallAdd` / `PortFirewallSolve` / `PortFirewallReroll` / `PortFirewallConfigure` / `PortProxyAdd` / `PortProxySolve` / `PortProxyReset`
-  - 一个 Action 干一件事，便于在动作点里自由组合。
-- **`ListPorts`：列出所有已注册的端口协议**
-  - 输出形如 `[22] ssh - SSH (vanilla)`，用于在写配置时确认该用哪个端口协议名。
-- **PhaseSwift 场景切换系统（`#PHASESWIFT#`）** —— 多场景拓扑 + 多轨音乐 + 主题/黑名单/持久化
-- **Clock 定时器**（`ClockStart` / `ClockStop`）—— 按间隔循环执行一组 Action
-- **自定义结局 `StartEnding`** —— 报幕 / 演讲 / 制作人员名单，节奏与文本全面可配
-- **标题横幅 `ShowTitle`** 与 **全屏警告 `StartScreenBleedEffectWCC`**
-- **节点图标 `SetNodeIcon`**、**节点连接控制 `LinkControl*` 三件套**、**RAM 显示 `RamDisplay`**
-- **破碎之心 `BreakHeart`** —— 复刻原版心脏结局，`OnHeartbreak` / `OnComplete` 两个动作点
-- **效果预览器（`#EFFECTS#`）** 与 **动态壁纸测试（`#WPTEST#`）** 两个调试程序
 
 ### 改进与优化
 
 - **颜色字符串解析统一**：命名色、`#RGB` / `#RRGGBB` / `#AARRGGBB`（Alpha 在首位）、`R,G,B[,A]` 与 CustomColor 预设名、动态色（`LDTchara` / `Rainbow` / `Gradient:…`）走同一条解析链；此前散落各处、在 FNA 下静默失效的 `ColorConverter` 兜底已移除。详见[自定义动态色系统](./../systems/custom-color.md)。
 - **配置约定统一**：字符串配置项用 `NONE`（大小写不敏感）或留空表示禁用；数值配置项**负数 = 使用默认 / 继承 / 无限**（`NaN` / `Infinity` 同样回退默认）。
 - **日志分级统一**：Debug（源码排错，默认关）/ Info（动作级结果）/ Warn（可恢复）/ Error（不该发生）；日志文本一律英文半角，玩家终端输出走本地化。
-- **扩展内路径越界校验**：作者书写的路径统一走 `KEPath`，`..` 穿越、绝对路径、盘符一律拒绝并记日志。
-- **Action 层规范化**：31 个 Action 统一切换到 `KEAction` 基类 → XML 属性名**大小写不敏感**；目录按系统归类（`Aircraft/` `PhaseSwift/` `CustomTrial/` `VMAttack/` `Clock/` `Ending/` `Node/` `Misc/`）。
 
 ### 尚在测试中
 
 以下内容已实施但尚未完成实机验证，发布前会补上细节：
 
-- PortHackV2 与 ProxyKiller（**全部功能待实机**）
-- 目标机原子 Action（9 个）与 `ListPorts`
-- 内联动作的几种写法
-- 颜色解析统一与 `ChangeThemeColor`
 - 节点连接控制 Action 三件套
 - 相位穿梭：停止时的拓扑恢复策略可配置、音乐组自定义循环点
 - 内置文本本地化系统的完善
 - VM 攻击恢复模块的 Linux 支持
 - 第三方模组兼容（音频链共存等）
-- 效果预览器里的 `PortHackCubeSequence` 预览（观感尚未与原版对齐，**标记为 WIP**）
 
 ## 0.6.0 — 飞机 Daemon、水印与稳定性增强
 

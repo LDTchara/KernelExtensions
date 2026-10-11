@@ -4,117 +4,38 @@
 
 > In development · 2026
 >
-> **Baseline**: `0.6.0` (2026-05-12) → `dev`
-> Scale: **29 → 128 `.cs` files**, roughly **4,900 → 21,700 lines**; 39 new Action / Executable
-> registrations (13 → 52).
-
-### ⚠️ Breaking changes
-
-> Changes that affect **existing extensions**. A workaround is given per item.
-
-- **PortHackV2 / ProxyKiller flag prefixes dropped the `Custom` prefix**
-  - `CustomPortHackV2_xxx` → **`PortHackV2_xxx`**
-  - `CustomProxyTuner_xxx` → **`ProxyKiller_xxx`** (this program was also renamed during the
-    cycle: `ProxyTuner` → `ProxyKiller`)
-  - Impact: rename any flag names in your extension that use the old prefix. **Both programs are new
-    in 0.7**, so this only affects usage from within this development cycle.
-- **PortHackV2 removed the `<Usable>` config option**
-  - Usability is now decided by **runtime prerequisites** (the `<Require*>` family plus the program's
-    own lock state); the option is no longer needed.
-- **PortHackV2 removed the root-level `OnFail`**
-  - The root level has no randomness — once the total time elapses it always plays the success
-    sequence. Whether a protocol broke is expressed by **that protocol's own `OnFail`**.
-- **`ChangeThemeColor` attribute `Locate` renamed to `Fields`**
-  - `<ChangeThemeColor Locate="…" />` → `<ChangeThemeColor Fields="…" />`.
-- **Unified action-point syntax (planned)**
-  - Action points are currently written inconsistently across systems (some use a `file` attribute,
-    others use element text content). This release plans to unify them so every action point can
-    **either hold inline actions or a path**.
-  - The unification will **keep `file` attribute compatibility**, so existing configs **do not need to
-    change**; see the "Inline actions" entry under New Features.
-
-**Not affected** (verified item by item): all 13 registrations from `0.6.0` (`FailTrial` /
-`AttackAircraft` / `TerminalWrite` …) are **still present** — none removed or renamed; the 7 moved
-files were **renamed and relocated**, with their registration strings frozen.
+> This section lists only what has been documented so far; the full list will be filled in at release.
 
 ### New Features
 
 - **PortHackV2 Cracker (`#PORTHACKV2#`)**
-  - A configurable remake of vanilla `PortHack`: cracking flow, durations, appearance, prerequisites
-    and finishing actions are all driven by XML.
-  - Protocols run **in parallel**, each staggered by its own `StartDelay`; every protocol rolls its own
-    outcome, but both branches look identical (only the duration differs).
-  - Two levels of action points — root and per-protocol (`OnStart` / `OnComplete` / `OnFail`).
-  - Optional prerequisites: firewall, proxy overload, specific ports, and the number of
-    **already-cracked ports** on the target (`auto` aligns with the node's own requirement).
-  - Five Platonic solid wireframe animations rendered off-screen; every solid spins around its own
-    rotational symmetry axis, and that axis is kept vertical.
+  - A configurable remake of vanilla `PortHack`: cracking flow, durations, appearance, prerequisites and finishing actions are all driven by XML.
+  - Protocols run **in parallel**, each staggered by its own `StartDelay`; every protocol rolls its own outcome, but both branches look identical (only the duration differs).
+  - Two levels of action points — root and per-protocol (`OnStart` / `OnComplete` / `OnFail`); one-shot effects always go through action files.
+  - Optional prerequisites: firewall, proxy overload, specific ports, and the number of **already-cracked ports** on the target (`auto` aligns with the node's own requirement).
+  - Five Platonic solid wireframe animations rendered off-screen; every solid spins around its own rotational symmetry axis, and that axis is kept vertical.
   - See [PortHackV2 Cracker](./../systems/port-hack-v2.md).
 - **ProxyKiller Resident Accelerator (`#PROXYKILLER#`)**
-  - Speeds up **every shell that is currently overloading**, so proxies crash sooner. It does **not**
-    overload any proxy itself — running a shell requires admin on the target, and that guard rail is
-    not removed.
-  - The multiplier is driven linearly by the RAM ramp (starting at 50MB); it re-scans every frame, so
-    shells started after it are accelerated just the same.
-  - Background is a self-drawn upward data stream; the bottom status text has three levels:
-    `Spinning up...` → `Overdrive` → `Spinning down...`.
+  - Speeds up **every shell that is currently overloading**, so proxies crash sooner. It does **not** overload any proxy itself — running a shell requires admin on the target, and that guard rail is not removed.
+  - The multiplier is driven linearly by the RAM ramp (starting at 50MB); it re-scans every frame, so shells started after it are accelerated just the same.
+  - Background is a self-drawn upward data stream; the bottom status text has three levels: `Spinning up...` → `Overdrive` → `Spinning down...`.
   - See [Executables](./../components/executables.md).
-- **Inline actions in action points**
-  - A system's action points can hold `<Actions>` / `<ConditionalActions>` directly, or point at an
-    action file — and both can be combined (**file first, then inline**).
-  - Currently used by PortHackV2's five action points; it will be rolled out to all systems (see the
-    breaking-changes section above).
-  - Unknown element or condition names log a clear warning and are skipped — they **do not** fail the
-    whole action set.
-- **Nine atomic target-computer Actions**
-  - Ports: `PortOpen` / `PortClose` / `PortFirewallAdd` / `PortFirewallSolve` / `PortFirewallReroll` /
-    `PortFirewallConfigure` / `PortProxyAdd` / `PortProxySolve` / `PortProxyReset`
-  - One Action does one thing, so they compose freely inside action points.
-- **`ListPorts`: list every registered port protocol**
-  - Output looks like `[22] ssh - SSH (vanilla)`, so you can confirm which protocol name to use while
-    writing config.
-- **Phase Swift scene-switching system (`#PHASESWIFT#`)** — multi-scene topology + multi-track music +
-  theme / blacklist / persistence
-- **Clock timer** (`ClockStart` / `ClockStop`) — run a set of Actions on an interval
-- **Custom ending `StartEnding`** — title cards / speech / credits, pacing and text fully configurable
-- **Title banner `ShowTitle`** and **full-screen warning `StartScreenBleedEffectWCC`**
-- **Node icons `SetNodeIcon`**, **node connection control `LinkControl*` trio**, **RAM display `RamDisplay`**
-- **`BreakHeart`** — a recreation of the vanilla heart ending, with `OnHeartbreak` / `OnComplete` action points
-- **Effects previewer (`#EFFECTS#`)** and **live wallpaper test (`#WPTEST#`)** — two debug programs
 
 ### Improvements & Optimisations
 
-- **Unified colour string parsing**: named colours, `#RGB` / `#RRGGBB` / `#AARRGGBB` (alpha first),
-  `R,G,B[,A]`, CustomColor preset names and dynamic colours (`LDTchara` / `Rainbow` / `Gradient:…`)
-  all go through one parsing chain; the scattered `ColorConverter` fallbacks that silently failed
-  under FNA have been removed. See the [Custom Color System](./../systems/custom-color.md).
-- **Unified configuration conventions**: string options use `NONE` (case-insensitive) or empty for
-  "disabled"; numeric options treat **negative as "use the default / inherit / unlimited"** (`NaN` /
-  `Infinity` likewise fall back to the default).
-- **Unified log levels**: Debug (source-level troubleshooting, off by default) / Info (action-level
-  results) / Warn (recoverable) / Error (should not happen); log text is plain ASCII English while
-  player-facing terminal output is localised.
-- **In-extension path confinement**: author-supplied paths all go through `KEPath`; `..` traversal,
-  absolute paths and drive letters are rejected and logged.
-- **Action layer normalisation**: all 31 Actions moved to the `KEAction` base class → XML attribute
-  names are now **case-insensitive**; files are grouped by system (`Aircraft/` `PhaseSwift/`
-  `CustomTrial/` `VMAttack/` `Clock/` `Ending/` `Node/` `Misc/`).
+- **Unified colour string parsing**: named colours, `#RGB` / `#RRGGBB` / `#AARRGGBB` (alpha first), `R,G,B[,A]`, CustomColor preset names and dynamic colours (`LDTchara` / `Rainbow` / `Gradient:…`) all go through one parsing chain; the scattered `ColorConverter` fallbacks that silently failed under FNA have been removed. See the [Custom Color System](./../systems/custom-color.md).
+- **Unified configuration conventions**: string options use `NONE` (case-insensitive) or empty for "disabled"; numeric options treat **negative as "use the default / inherit / unlimited"** (`NaN` / `Infinity` likewise fall back to the default).
+- **Unified log levels**: Debug (source-level troubleshooting, off by default) / Info (action-level results) / Warn (recoverable) / Error (should not happen); log text is plain ASCII English while player-facing terminal output is localised.
 
 ### Still under test
 
 Implemented but not yet verified in-game; details will be filled in before release:
 
-- PortHackV2 and ProxyKiller (**all behaviour pending in-game verification**)
-- The nine atomic target-computer Actions and `ListPorts`
-- The inline-action forms
-- Unified colour parsing and `ChangeThemeColor`
 - The node connection control action trio
 - Phase Swift: configurable topology restore on stop, custom loop points for music phases
 - Further work on the built-in text localisation system
 - Linux support for the VM attack restore module
 - Third-party mod compatibility (audio chain coexistence, etc.)
-- The `PortHackCubeSequence` preview in the effects previewer (look does not yet match vanilla,
-  marked **WIP**)
 
 ## 0.6.0 — Aircraft Daemon, Watermark & Stability Enhancements
 
