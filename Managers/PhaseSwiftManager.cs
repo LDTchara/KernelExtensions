@@ -131,9 +131,7 @@ namespace KernelExtensions.Managers
 
             try
             {
-                using var fs = new FileStream(configPath, FileMode.Open);
-                var serializer = new XmlSerializer(typeof(PhaseSwiftConfig));
-                Config = (PhaseSwiftConfig)serializer.Deserialize(fs);
+                Config = XmlConfigLoader.Load<PhaseSwiftConfig>(configPath, "PhaseSwift");
             }
             catch { return; }
 

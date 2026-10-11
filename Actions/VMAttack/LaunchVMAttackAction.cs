@@ -43,12 +43,7 @@ namespace KernelExtensions.Actions.VMAttack
                 return;
             }
 
-            VMAttackConfig config;
-            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(VMAttackConfig));
-            using (var fs = new FileStream(configPath, FileMode.Open))
-            {
-                config = (VMAttackConfig)serializer.Deserialize(fs);
-            }
+            VMAttackConfig config = XmlConfigLoader.Load<VMAttackConfig>(configPath, relativePath);
 
             // 记录来源路径：感染 flag 与引导标记都以它作标识
             config.SourcePath = relativePath;

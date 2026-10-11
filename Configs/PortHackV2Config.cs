@@ -350,9 +350,7 @@ public class PortHackV2Config
 
         try
         {
-            var serializer = new XmlSerializer(typeof(PortHackV2Config));
-            using var fs = new FileStream(path, FileMode.Open);
-            var cfg = (PortHackV2Config)serializer.Deserialize(fs);
+            var cfg = XmlConfigLoader.Load<PortHackV2Config>(path, rel);
             if (cfg == null || cfg.ProtocolNames.Count == 0)
             {
                 KELog.Error($"[PortHackV2] config '{rel}' needs at least one <Protocol> with a non-empty <Name>.");

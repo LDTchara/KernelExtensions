@@ -245,9 +245,7 @@ public class ProxyKillerConfig
 
         try
         {
-            var serializer = new XmlSerializer(typeof(ProxyKillerConfig));
-            using var fs = new FileStream(path, FileMode.Open);
-            var cfg = (ProxyKillerConfig)serializer.Deserialize(fs);
+            var cfg = XmlConfigLoader.Load<ProxyKillerConfig>(path, rel);
             if (cfg == null)
             {
                 KELog.Error($"[ProxyKiller] config '{rel}' deserialized to null.");

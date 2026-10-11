@@ -293,9 +293,7 @@ namespace KernelExtensions.Executables
             // 反序列化 XML 为 TrialConfig 对象
             try
             {
-                XmlSerializer serializer = new(typeof(TrialConfig));
-                using FileStream fs = new(configPath, FileMode.Open);
-                config = (TrialConfig)serializer.Deserialize(fs);
+                config = XmlConfigLoader.Load<TrialConfig>(configPath, configName);
             }
             catch (Exception e)
             {

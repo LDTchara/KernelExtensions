@@ -3,6 +3,7 @@ using Hacknet.Extensions;
 using HarmonyLib;
 using KernelExtensions.Configs;
 using KernelExtensions.Managers;
+using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Patches
 {
@@ -49,9 +50,7 @@ namespace KernelExtensions.Patches
             VMAttackConfig config;
             try
             {
-                var serializer = new System.Xml.Serialization.XmlSerializer(typeof(VMAttackConfig));
-                using (var fs = new FileStream(configPath, FileMode.Open))
-                    config = (VMAttackConfig)serializer.Deserialize(fs);
+                config = XmlConfigLoader.Load<VMAttackConfig>(configPath, flag);
                 config.SourcePath = flag.Substring(VMInfectionManager.InfectionFlagPrefix.Length);
                 VMInfectionManager.CurrentConfig = config;
             }

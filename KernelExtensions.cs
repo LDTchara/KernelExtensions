@@ -565,9 +565,7 @@ namespace KernelExtensions
             VMAttackConfig config;
             try
             {
-                var serializer = new XmlSerializer(typeof(VMAttackConfig));
-                using var fs = new FileStream(configPath, FileMode.Open);
-                config = (VMAttackConfig)serializer.Deserialize(fs);
+                config = XmlConfigLoader.Load<VMAttackConfig>(configPath, flag);
             }
             catch (Exception ex)
             {
