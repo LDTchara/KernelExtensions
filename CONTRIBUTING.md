@@ -90,6 +90,13 @@ Must finish with **0 errors and 0 warnings**. `GenerateDocumentationFile` is on,
     ① forgetting `base.LoadFromXml(info)` → `Delay`/`DelayHost` silently stop working (`TerminalFocus`);
     ② hard-coding an attribute name (e.g. `GetString("text", …)`) → authors writing `Text=` get silent no-ops (`TerminalWrite`).
   - **Multi-frame drawing must re-register `os.postFXDrawActions` every frame** — it is a **one-shot** delegate: the OS invokes it and immediately sets it to `null` (`OS.cs:1257`). Registering only once in `Start()` draws a single frame (effectively invisible). See `PorthackHeartDaemon` / `ScreenBleedWCCManager` for the correct pattern.
+- **Action points** (the config fields that attach Actions, e.g. `OnStart` / `OnComplete` / `OnFail` / `OnSwitch`):
+  - ⚠️ **The existing systems are inconsistent** (some use a `file` attribute, some use element text content, some `string` fields). **New action points must use the `Configs/ActionHook` type** — see the target shape below.
+  - `ActionHook` accepts all three forms: **element text content** (a path), the legacy **`file` attribute**, and **inline elements** (`<Actions>` / `<ConditionalActions>`). When both a path and inline content are present, the **file runs first, then the inline part**.
+  - Call sites use `hook.Execute(os, source, point)` — do not call `ActionHelper` directly.
+  - **Attributes vs elements is not a style choice.** Attributes suit compact records / key-value pairs; elements suit content, containers and nesting. **An action point is inherently a container** (it must be able to hold `<Actions>`), so **it cannot use the attribute form** — XML attributes cannot carry child elements at all.
+  - **Parse failures must name the offending element.** `ActionsLoader.ReadAction` throws `KeyNotFoundException` for unregistered names and `LoadActionSets` throws `FormatException` for unknown conditions; catch both and report the element name plus a hint. Never let these escape into `OS.Update` — they are swallowed there and leave no log at all.
+  - **Never pre-filter by "is this name valid".** `ActionManager.RegisterAction<T>(name)` accepts **arbitrary strings**, and Pathfinder exposes no public way to query the registry — any local allow-list will silently skip legitimate third-party actions.
 
 ## 5. Commit Messages
 
@@ -195,6 +202,13 @@ dotnet build KernelExtensions.csproj --no-restore
     ① 忘记调 `base.LoadFromXml(info)` → `Delay`/`DelayHost` 静默失效（`TerminalFocus` 曾如此）；
     ② 硬编码属性名（如 `GetString("text", …)`）→ 作者写 `Text=` 时静默无输出（`TerminalWrite` 曾如此）。
   - **持续多帧绘制必须每帧重挂 `os.postFXDrawActions`**——它是**一次性**委托：OS 调用后立即置 `null`（`OS.cs:1257`）。只在 `Start()` 挂一次只会绘制一帧（肉眼几乎不可见）。参考 `PorthackHeartDaemon` / `ScreenBleedWCCManager` 的写法。
+- **动作点**（配置里挂 Action 的字段，如 `OnStart` / `OnComplete` / `OnFail` / `OnSwitch`）：
+  - ⚠️ **存量各系统写法不一致**（有的用 `file` 属性、有的用元素文本内容、有的是 `string` 字段）。**新增动作点一律用 `Configs/ActionHook` 类型**，按下面的目标形态来。
+  - `ActionHook` 同时支持三种写法：**元素文本内容**（路径）、兼容旧写法的 **`file` 属性**、**内联元素**（`<Actions>` / `<ConditionalActions>`）。同时给了路径与内联时，**先执行文件、再执行内联**。
+  - 调用点写 `hook.Execute(os, source, point)`——不要自己调 `ActionHelper`。
+  - **属性 vs 元素不是风格选择**：属性适合紧凑记录 / 键值对，元素适合内容 / 容器 / 嵌套。**动作点天生是容器**（必须能塞 `<Actions>`），所以**不能用属性形态**——XML 属性在语法上无法承载子元素。
+  - **解析失败必须点名到具体元素**：`ActionsLoader.ReadAction` 对未注册名抛 `KeyNotFoundException`、`LoadActionSets` 对未知条件抛 `FormatException`，两者都要接住并报出元素名 + 提示。**绝不能让它们冒到 `OS.Update`**——那里会被吞掉，连日志都不留。
+  - **不要做"名字是否合法"的预过滤**：`ActionManager.RegisterAction<T>(name)` 接受**任意字符串**，且 Pathfinder 没有查询注册表的公开接口——任何本地白名单都会静默跳过合法的第三方动作。
 
 ## 5. 提交信息
 

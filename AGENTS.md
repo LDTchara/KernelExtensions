@@ -40,6 +40,21 @@ dotnet build KernelExtensions.csproj --no-restore
 - 需要持续多帧绘制时，**每帧重新挂** `os.postFXDrawActions`（那是一次性委托，OS 调用后即为 null）
 - **目录分类**：`Actions/` 根目录只留 `KEAction.cs`；系统级各占一个文件夹（`Aircraft/` `PhaseSwift/` `CustomTrial/` `VMAttack/` `Clock/` `Ending/` `Node/`），其余归 `Misc/`。**非 Action 的辅助类不要放进 `Actions/`**
 
+## 编写动作点（配置里挂 Action 的字段）
+
+⚠️ **现状各系统写法不一致，新增动作点一律按下面的目标形态来**（存量迁移见 plans 的「动作点统一」立项）。
+
+- **一律用 `Configs/ActionHook` 类型**，不要新增 `string` 或 `ActionFileRef` 形态的动作点字段
+- `ActionHook` 同时支持三种写法：**元素文本内容**（路径）/ **`file` 属性**（旧写法兼容）/ **内联元素**（`<Actions>` / `<ConditionalActions>`）；执行顺序是**先文件、后内联**
+- 调用点写 `hook.Execute(os, source, point)`，不要自己调 `ActionHelper`
+- **属性 vs 元素不是风格选择**：属性适合紧凑记录 / 键值对，元素适合内容 / 容器。
+  **动作点天生是容器**（要能塞 `<Actions>`），所以**不能用属性形态** —— 属性在语法上无法承载子元素
+- 解析失败**必须点名到具体元素**：`ActionsLoader.ReadAction` 对未注册名抛 `KeyNotFoundException`、
+  `LoadActionSets` 对未知条件抛 `FormatException`，都要接住并报出元素名 + 提示
+  （不要让异常冒到 `OS.Update` —— 那里会被吞掉、连日志都不留）
+- **不要做"名字是否合法"的预过滤**：`ActionManager.RegisterAction<T>(name)` 接受**任意字符串**，
+  且 Pathfinder 没有公开查询注册表的接口 —— 任何本地白名单都会误伤第三方动作
+
 ## 配置约定
 
 - **NONE 约定**：字符串配置项写 `NONE`（大小写不敏感）或留空 = 显式禁用；不写该属性 = 使用默认值。判断统一走 `Utilities/ConfigValue.IsNone()`

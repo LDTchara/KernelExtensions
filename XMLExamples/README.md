@@ -69,11 +69,24 @@
 - 音乐等字段既支持原版**内容名**（如 `Music/Ambient/AmbientDrone_Clipped`），也支持**扩展内相对路径**（如 `Music/MySong.ogg`，可含 `../Extensions/...` 跨扩展引用）。
   Music fields accept vanilla **content names** or **relative paths** inside the extension (e.g. `Music/MySong.ogg`, or even `../Extensions/...`).
 
-### 5. 动作文件引用 / Action File References
+### 5. 动作点写法 / Action Point Syntax
 
-- 统一用 **`file` 属性**指向动作文件：`<OnStart file="Actions/OnStart.xml" />`。
+⚠️ **各系统写法尚未统一，写错会静默不执行。动手前先查下表。**
+
+| 系统 | 写法 | 例子 |
+|------|------|------|
+| 自定义试炼 / 相位穿梭 | **`file` 属性** | `<OnStart file="Actions/OnStart.xml" />` |
+| 定时器 / 破碎之心 / VM 攻击 / 假恢复模块 | **元素文本内容** | `<OnComplete>Clocks/done.xml</OnComplete>` |
+| PortHackV2 | **元素文本内容**，**也支持内联动作** | `<OnStart>Actions/x.xml</OnStart>`<br>`<OnStart><Actions><TerminalWrite Text="hi" /></Actions></OnStart>` |
+
 - 省略该元素 = 不执行任何动作。
-  Use the **`file` attribute** to reference an Action file; omit the element = no action runs.
+  Omit the element = no action runs.
+- **内联动作**（目前仅 PortHackV2）：动作点里直接写 `<Actions>` / `<ConditionalActions>`；
+  也可与路径同时写 → **先执行文件、再执行内联**。
+  **Inline actions** (PortHackV2 only for now): put `<Actions>` / `<ConditionalActions>` straight into
+  the action point; combining both runs the file first, then the inline part.
+- 详细规则与逐系统表见文档站《配置文件 · 动作点写法速查》。
+  See the documentation site's *Configuration Files → Action Point Syntax Cheat Sheet*.
 
 ### 6. 可选字段：省略 / NONE / 空 / 默认 / Optional Fields: omit vs NONE vs empty vs default
 
