@@ -76,6 +76,61 @@ answers "where does it go".
 
 ---
 
+## 4. Action Point Syntax Cheat Sheet
+
+An **action point** is any config field meaning "run something at this moment" (`OnStart` / `OnComplete` /
+`OnFail` / `OnSwitch` …). Its syntax is **not yet consistent across systems**, and writing it the wrong
+way **silently does nothing** (the parser ignores unrecognised syntax without an error).
+**Check the table before writing one.**
+
+| System | Action points | Syntax | Example |
+|--------|---------------|--------|---------|
+| PortHackV2 | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` | **element text content**; **inline actions also supported** | `<OnStart>Actions/x.xml</OnStart>`<br>`<OnStart><Actions><TerminalWrite Text="hi" /></Actions></OnStart>` |
+| Custom Trial | `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete` / `OnPhaseStart` / `OnFail` | **`file` attribute** | `<OnStart file="Actions/x.xml" />` |
+| Phase Swift | `OnSwitch` | **`file` attribute** | `<OnSwitch file="Actions/x.xml" />` |
+| Clock | `OnComplete` | **attribute of `<Clock>`** | `<Clock ID="x" Interval="5" OnComplete="Clocks/done.xml">` |
+| Porthack Heart (daemon) | `OnComplete` / `OnHeartbreak` | **attribute of `<CustomHeartDaemon>`** | `<CustomHeartDaemon … OnHeartbreak="Actions/x.xml">` |
+| Porthack Heart (Action) | `OnComplete` / `OnHeartbreak` | **attribute of `BreakHeart`** | `<BreakHeart OnComplete="Actions/x.xml" />` |
+| Aircraft Daemon | `OnFailed` / `OnSaved` | **attribute of `<FlightDaemon>`** | `<FlightDaemon OnFailed="Actions/Failed" OnSaved="Actions/Saved" />` |
+| Fake Recovery | `ActionOnGuideTextStart` | **element text content** | `<ActionOnGuideTextStart>Actions/x.xml</ActionOnGuideTextStart>` |
+
+!!! note "The two families"
+    - **Child elements** (PortHackV2 / Custom Trial / Phase Swift / Fake Recovery) — the action point *is* an
+      element, so it **can hold inline actions**.
+    - **Attributes** (Clock / Porthack Heart / Aircraft Daemon) — the action point is an attribute of its
+      parent element, and **an XML attribute cannot carry child elements**, so these can only take a path.
+      Inline support for them is planned (it needs new child-element syntax on the parent).
+
+### Inline actions (PortHackV2 only, for now)
+
+PortHackV2's action points can hold Actions directly, so you do not need a file for one or two of them:
+
+```xml
+<OnStart>
+    <Actions>
+        <TerminalWrite Text="bypassing firewall..." />
+    </Actions>
+</OnStart>
+```
+
+- Actions inside `<Actions>` run **immediately**, in order; `<ConditionalActions>` waits for its
+  condition (conditions work exactly as in vanilla — see the vanilla Hacknet wiki).
+- You can also write **both**: put a file path as the value *and* add child elements → the **file runs
+  first, then the inline part**.
+- Conditions and available Actions: see [Actions](./actions.md).
+
+!!! warning "A wrong action point will not crash — but it will not run either"
+    A missing file, an out-of-bounds path, or an unrecognised element name only **logs a message and
+    skips** — it never interrupts the crack / scene / trial. **So "no error" does not mean "it worked" —
+    check the log when something seems not to happen.**
+
+!!! info "Unification in progress"
+    The differences between systems are **historical**. The plan is to unify them so **every action point
+    supports both inline actions and a path**. The unification keeps `file` attribute compatibility, so
+    **existing configs will not need changes**.
+
+---
+
 ## See Also
 
 - [Home](./../index.md) – Return to main index
