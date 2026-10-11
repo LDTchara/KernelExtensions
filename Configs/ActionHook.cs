@@ -46,9 +46,28 @@ namespace KernelExtensions.Configs
     {
         /// <summary>
         /// 钩子元素里的**纯文本** —— 视为动作文件路径（相对于扩展根）。
+        ///
+        /// <para>
+        /// 形如 <c>&lt;OnStart&gt;Actions/x.xml&lt;/OnStart&gt;</c>。
+        /// ⚠️ <see cref="XmlTextAttribute"/> 会把元素内的**缩进换行也吃进来**：
+        /// 写成多行的空元素时这里会拿到空白串，所以取值处一律 <c>Trim()</c>，判空用
+        /// <c>string.IsNullOrWhiteSpace</c>（见 <see cref="HasContent"/>）。
+        /// </para>
         /// </summary>
         [XmlText]
         public string FilePath { get; set; }
+
+        /// <summary>
+        /// **`file` 属性形式**的动作文件路径：<c>&lt;OnStart file="Actions/x.xml" /&gt;</c>。
+        ///
+        /// <para>
+        /// 这是兼容既有系统的写法（<c>ActionFileRef</c> 用的就是它），统一动作点类型后
+        /// 老配置**不需要改**。<see cref="XmlSerializer"/> 对未知属性是静默忽略的，
+        /// 所以这个属性若不存在，老配置会"静默不执行任何动作"且没有任何日志。
+        /// </para>
+        /// </summary>
+        [XmlAttribute("file")]
+        public string FileAttribute { get; set; }
 
         /// <summary>
         /// 钩子元素里的**内联动作元素**（<c>&lt;Actions&gt;</c> / <c>&lt;ConditionalActions&gt;</c> 等），
@@ -56,6 +75,32 @@ namespace KernelExtensions.Configs
         /// </summary>
         [XmlAnyElement]
         public XmlElement[] InlineActions { get; set; }
+
+        /// <summary>
+        /// 动作文件路径。<b>优先级：`file` 属性 &gt; 元素文本内容</b>（两者都写时以属性为准并记 Warn）。
+        /// 都为空时返回 null。
+        /// </summary>
+        public string ResolvedFilePath
+        {
+            get
+            {
+                string attr = FileAttribute?.Trim();
+                string text = FilePath?.Trim();
+
+                if (!string.IsNullOrEmpty(attr))
+                {
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        // 两种写法同时给了路径 —— 说清哪个生效，否则作者无从判断
+                        KELog.Warn("[ActionHook] both `file` attribute and text content give a path; "
+                            + $"using the attribute ('{attr}'), ignoring the text ('{text}').");
+                    }
+                    return attr;
+                }
+
+                return string.IsNullOrEmpty(text) ? null : text;
+            }
+        }
 
         /// <summary>
         /// 内联内容（元素部分，拼成 XML 文本）；没有内联元素时返回 null。
@@ -74,7 +119,9 @@ namespace KernelExtensions.Configs
 
         /// <summary>是否有任何内容（空元素 / 纯空白 = 没配这个钩子）。</summary>
         public bool HasContent
-            => !string.IsNullOrWhiteSpace(FilePath) || (InlineActions != null && InlineActions.Length > 0);
+            => !string.IsNullOrWhiteSpace(FileAttribute)
+            || !string.IsNullOrWhiteSpace(FilePath)
+            || (InlineActions != null && InlineActions.Length > 0);
 
         /// <summary>
         /// 执行本钩子：先文件（若有）再内联（若有），两者都执行。
@@ -100,7 +147,7 @@ namespace KernelExtensions.Configs
                     return;
                 }
 
-                string path = FilePath?.Trim();
+                string path = ResolvedFilePath;
                 if (!string.IsNullOrEmpty(path))
                 {
                     KELog.Debug($"[ActionHook] '{source}:<{point}>' file = '{path}'");
