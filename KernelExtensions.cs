@@ -819,6 +819,17 @@ namespace KernelExtensions
                 if (running == null) return;
                 e.OS.write(KELoc.Format("EXECUTABLE_ALREADY_RUNNING", "{0} already running!", running.IdentifierName));
                 e.Result = ExecutionResult.Cancelled;
+                return;
+            }
+
+            if (info.ExeType == typeof(ProxyKillerExe))
+            {
+                // 本程序**常驻**且副作用**全局**（每帧削所有过载中 shell 的 proxyOverloadTicks）：
+                // 开两个会让同一个 shell 被削两次 —— 加速与 RAM 都凭空翻倍，故必须互斥。
+                var running = ProxyKillerExe.RunningInstance;
+                if (running == null) return;
+                e.OS.write(KELoc.Format("EXECUTABLE_ALREADY_RUNNING", "{0} already running!", running.IdentifierName));
+                e.Result = ExecutionResult.Cancelled;
             }
         }
 

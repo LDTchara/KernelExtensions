@@ -65,6 +65,17 @@ public class ProxyKillerConfig
     public const float MinShellOverloadTarget = 0f;
     public const float MaxShellOverloadTarget = 1000f;
 
+    /// <summary>自己过载代理的默认速率（<c>0</c> = 不主动过载，保持既有行为）。</summary>
+    public const float DefaultSelfOverload = 0f;
+    /// <summary>自己过载速率的上限：1 = 与原版单个 shell 同速。</summary>
+    public const float MaxSelfOverload = 1f;
+
+    /// <summary>跟随连接的默认值：<c>false</c> = 常驻（既有行为，零破坏）。</summary>
+    public const bool DefaultFollowConnection = false;
+
+    /// <summary>过载完成自动关闭的默认值：<c>false</c> = 常驻到玩家自己按 Exit。</summary>
+    public const bool DefaultAutoCloseOnOverload = false;
+
     // ---- 背景（上升数据流）默认参数 ----
 
     /// <summary>
@@ -121,6 +132,50 @@ public class ProxyKillerConfig
     /// </summary>
     [XmlElement("ShellOverloadTarget")] public string ShellOverloadTargetRaw { get; set; }
 
+    /// <summary>
+    /// **自己过载代理**的速率（相对原版单个 shell 的倍数）。留空 / <c>0</c>（含任意负数）= **不主动过载**。
+    ///
+    /// <para>
+    /// 与 <see cref="ShellOverloadTargetRaw"/> 的区别：那项是"加速**别人**正在做的过载"，
+    /// 本项是"**自己**推进过载"—— 不需要玩家开 shell，因此不依赖目标机的管理员权限
+    /// （原版里过载代理本来就不设权限门槛，门槛只在"运行 shell"上）。
+    /// </para>
+    ///
+    /// <para>
+    /// ⚠️ **本项有效（&gt;0）时会强制跟随连接**（见 <see cref="ResolvedFollowConnection"/>）：
+    /// 因为过载会持续触发目标机的敌对行为（起 trace），
+    /// 不跟随的话就是"跑到哪打到哪还爆 trace"，故此项优先于 <see cref="FollowConnectionRaw"/>。
+    /// </para>
+    ///
+    /// <para>
+    /// 速率仍由 RAM 爬升线性驱动：<c>0 → 本值</c> 对应 <c>50MB → BurstTarget</c>，
+    /// 与倍速共用同一个进度 —— 玩家调的是"给多少内存"，两个能力一起涨。
+    /// </para>
+    /// </summary>
+    [XmlElement("SelfOverload")] public string SelfOverloadRaw { get; set; }
+
+    /// <summary>
+    /// 是否**跟随连接**：<c>true</c> 时玩家离开启动时所在的节点就自动关闭。
+    /// 留空 = <see cref="DefaultFollowConnection"/>（<c>false</c> = 常驻）。
+    ///
+    /// <para>
+    /// <c>false</c>（常驻）时程序会一直加速**后来才开的** shell —— 每帧重新遍历，不看创建时机。
+    /// ⚠️ 如果 <see cref="SelfOverloadRaw"/> 是有效值，本项**被忽略并强制为 true**（见该类说明）。
+    /// </para>
+    /// </summary>
+    [XmlElement("FollowConnection")] public string FollowConnectionRaw { get; set; }
+
+    /// <summary>
+    /// **过载完成自动关闭**：所盯节点的代理从"生效"变为"已瘫痪"后自动关闭。
+    /// 留空 = <see cref="DefaultAutoCloseOnOverload"/>（<c>false</c>）。
+    ///
+    /// <para>
+    /// 所盯节点 = 跟随连接时的**当前所连节点**、否则是启动时所在节点（见
+    /// <see cref="ResolvedFollowConnection"/>）。这就是"任务做完了别赖着"的那一项。
+    /// </para>
+    /// </summary>
+    [XmlElement("AutoCloseOnOverload")] public string AutoCloseOnOverloadRaw { get; set; }
+
     // ---- 背景（上升数据流）参数 ----
     //
     // 背景效果的"密度"与"速度"都是幂律公式：n = C × 高度^k、v = C × 高度^k
@@ -165,6 +220,26 @@ public class ProxyKillerConfig
 
     /// <summary>shell 过载倍速的目标值。</summary>
     [XmlIgnore] public float ShellOverloadTarget { get; private set; } = DefaultShellOverloadTarget;
+
+    /// <summary>
+    /// 自己过载代理的速率（相对原版单个 shell 的倍数）。<c>0</c> = 不主动过载。
+    /// 速率由 RAM 爬升线性驱动，与 <see cref="ShellOverloadTarget"/> 共用同一个进度。
+    /// </summary>
+    [XmlIgnore] public float SelfOverload { get; private set; } = DefaultSelfOverload;
+
+    /// <summary>
+    /// 有效解析后的"是否跟随连接"。
+    ///
+    /// <para>
+    /// ⚠️ <b><see cref="SelfOverload"/> 有效（&gt;0）时强制为 <c>true</c></b>，
+    /// 无视作者写的 <c>FollowConnection</c>：主动过载会持续触发目标机敌对行为（起 trace），
+    /// 不跟随就是"跑到哪打到哪还爆 trace"。此项优先。
+    /// </para>
+    /// </summary>
+    [XmlIgnore] public bool ResolvedFollowConnection { get; private set; } = DefaultFollowConnection;
+
+    /// <summary>过载完成（所盯节点代理失效）后是否自动关闭。</summary>
+    [XmlIgnore] public bool AutoCloseOnOverload { get; private set; } = DefaultAutoCloseOnOverload;
 
     /// <summary>背景粒子颜色的静态值（<see cref="BackgroundColorAuto"/> 为 true 时不用它）。</summary>
     [XmlIgnore] public Color BackgroundColor { get; private set; } = Color.White;
@@ -284,6 +359,25 @@ public class ProxyKillerConfig
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ShellOverloadTarget> '{ShellOverloadTargetRaw}', "
                 + $"expected {MinShellOverloadTarget}~{MaxShellOverloadTarget}; using {DefaultShellOverloadTarget}.");
 
+        // 自己过载：留空 / 0 / 任意负数 = 关闭（负数不套 9.55 的"负数 = 用默认"，
+        // 否则 -1 会变成"按默认速率 0 过载"，那反而歧义；这里统一夹到 0）
+        SelfOverload = ConfigValue.ParseInRange(SelfOverloadRaw, DefaultSelfOverload,
+            0f, MaxSelfOverload, out bool selfOk);
+        if (!selfOk)
+            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <SelfOverload> '{SelfOverloadRaw}', "
+                + $"expected 0~{MaxSelfOverload}; using {DefaultSelfOverload} (no self-overload).");
+
+        bool wantFollow = ParseBool(FollowConnectionRaw, DefaultFollowConnection);
+        ResolvedFollowConnection = SelfOverload > 0f || wantFollow;
+        if (SelfOverload > 0f && wantFollow == false && !string.IsNullOrWhiteSpace(FollowConnectionRaw))
+        {
+            // 作者显式写了 false，但主动过载要求跟随 —— 说清楚为什么被覆盖
+            KELog.Warn($"[ProxyKiller] '{SourceName}': <FollowConnection>false</FollowConnection> is ignored "
+                + "because <SelfOverload> is active (self-overload always follows the connection).");
+        }
+
+        AutoCloseOnOverload = ParseBool(AutoCloseOnOverloadRaw, DefaultAutoCloseOnOverload);
+
         // 背景颜色：auto（含留空 / NONE）走主题高亮色，其余走统一颜色入口
         // （这样才吃得到 CustomColor 预设名与动态色）
         string bgRaw = BackgroundColorRaw?.Trim();
@@ -317,6 +411,19 @@ public class ProxyKillerConfig
         if (!ok)
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <{name}> '{raw}', expected {min}~{max}; using {fallback}.");
         return v;
+    }
+
+    /// <summary>
+    /// 解析一个布尔项：留空 = 默认（正常省略，不记日志）；无法识别 = 回退 + Warn。
+    /// （<c>ConfigValue</c> 只有数值与 NONE 的工具，布尔在这里就地处理。）
+    /// </summary>
+    private bool ParseBool(string raw, bool fallback)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return fallback;
+        string v = raw.Trim();
+        if (bool.TryParse(v, out bool b)) return b;
+        KELog.Warn($"[ProxyKiller] '{SourceName}': invalid boolean '{raw}', expected true/false; using {fallback}.");
+        return fallback;
     }
 
     /// <summary>float → int 的安全取整（先夹到 int 范围内，避免大值溢出成负数）。</summary>

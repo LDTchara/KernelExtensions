@@ -17,20 +17,35 @@
     The flag is the entry token: none means locked; more than one is an authoring error.
     Then run #PROXYKILLER# in the terminal.
 
-    ⚠️ 它**自己不瘫痪任何代理**。
-    This program never overloads a proxy itself.
+    ⚠️ 默认情况下它**自己不瘫痪任何代理**。
+    By default it never overloads a proxy itself.
     原版把代理过载做成 Shell 的一个状态（原版 shell 程序的 Overload 按钮），
     而 Shell 需要目标机 admin 才能开 —— 那道门槛本程序不去拆。
-    所以：目标机上没有开着的 shell 在过载时，它只是占着内存跑动画，什么也不影响。
+    所以默认：目标机上没有开着的 shell 在过载时，它只是占着内存跑动画，什么也不影响。
     Vanilla makes proxy overload a state of the Shell, and a Shell needs admin on the target.
-    That gate is left intact: with no Shell overloading, this program just holds RAM and
-    animates; it changes nothing.
+    That gate is left intact: by default, with no Shell overloading, this program just holds
+    RAM and animates; it changes nothing.
     它只让"玩家已经在做的事"更快：N 个 shell 的总过载速率 = N × 倍速。
     It only makes what the player is already doing faster: N shells give N x the multiplier.
 
-    它会一直运行（不随连接变化关闭），由玩家的 Exit 按钮结束。
-    It keeps running (it does not close when the connection changes) until the player
-    presses Exit.
+    ★ 本程序也可以**自己过载代理**（<SelfOverload>），此时不再需要 shell，
+      因此**不依赖目标机的管理员权限** —— 原版里"过载代理"本身就没有权限门槛，
+      门槛只在"运行 shell"上，所以这不是拆护栏，而是补一个原版缺失的手段。
+    ★ It can also overload the proxy **by itself** (<SelfOverload>). That needs no Shell and
+      therefore no admin on the target: in vanilla, overloading a proxy has no permission gate
+      of its own — only running a Shell does. So this is not removing a guard rail, it fills in
+      a means vanilla never provided.
+
+    运行时长由三项决定：跟随连接（<FollowConnection>）、过载完成自动关闭
+    （<AutoCloseOnOverload>）、以及玩家自己按 Exit。
+    前三项都不写时是**常驻**（既有行为）。
+    How long it runs is decided by <FollowConnection>, <AutoCloseOnOverload>, or the player's
+    Exit button. With all of them unset the program is **resident** (the previous behaviour).
+
+    ⚠️ 同一时间只能有一个实例（重复执行会被拒绝）：它常驻且副作用是全局的，
+    两个实例会让同一个 shell 被削两次。
+    Only one instance may run at a time (a second launch is rejected): it is resident and its
+    effect is global, so two instances would tick the same Shell twice.
 -->
 <ProxyKillerConfig>
 
@@ -77,6 +92,50 @@
        otherwise the next overload they start would begin below zero, which would zero the
        proxy outright instead of speeding it up. -->
   <ShellOverloadTarget>2.0</ShellOverloadTarget>
+
+  <!-- ── 自己过载代理 / Self-overload ──
+       留空 / 0（含任意负数）= **不主动过载**（默认，保持既有行为）。
+       Empty / 0 (or any negative) = no self-overload (default, previous behaviour).
+
+       填了有效值（0 < x ≤ 1）时：本程序**不用 shell 也能削减目标节点的代理过载进度**，
+       速率 = x 倍原版单个 shell。1 = 与原版一个 shell 同速。
+       With a valid value (0 < x <= 1) the program reduces the watched node's proxy overload
+       progress **without any Shell**, at x times the rate of one vanilla Shell. 1 = same as one.
+
+       速率同样由 RAM 爬升**线性驱动**：0 → SelfOverload 对应 50MB → BurstTarget
+       （与倍速共用同一个进度）—— 所以你调的是"给多少内存"，两个能力一起涨。
+       The rate is driven by the same RAM ramp: 0 -> SelfOverload across 50MB -> BurstTarget.
+       You tune "how much memory", and both abilities grow together.
+
+       ⚠️ 有效时**强制跟随连接**（<FollowConnection> 会被忽略并记一条 Warn）：
+       过载会持续触发目标机的敌对行为（起 trace），不跟随的话就是跑到哪打到哪。
+       ⚠️ When active it **forces follow-the-connection** (<FollowConnection> is ignored with a
+       warning): overloading keeps triggering the target's hostile response (trace), so not
+       following would mean "shoot wherever you go".
+
+       ⚠️ 如果同一扩展里还有 PortHackV2 的 <RequireProxyOverload>，开了本项会让那个前置
+       直接被满足 —— 要一起用就靠 flag 或其它前置把它门控住。
+       ⚠️ If the same extension also uses PortHackV2's <RequireProxyOverload>, enabling this
+       satisfies that prerequisite for free — gate them apart with flags if that matters. -->
+  <SelfOverload>0</SelfOverload>
+
+  <!-- ── 运行时长 / How long it runs ──
+       FollowConnection：true = 玩家离开**启动时所在的节点**就自动关闭。
+                         留空 = false = 常驻（默认，既有行为）。
+                         true = close once the player leaves the node it was started on.
+                         Empty = false = resident (default, previous behaviour).
+       AutoCloseOnOverload：所盯节点的代理由"生效"变"已瘫痪"后自动关闭。
+                         留空 = false。
+                         所盯节点 = 跟随连接时是**当前所连节点**，否则是启动时所在节点。
+                         Close once the watched node's proxy goes from active to down.
+                         Empty = false. The watched node is the currently connected one when
+                         following, otherwise the node it was started on.
+                         实现上要求**先见到过它生效**，否则刚开时一个本来就没代理（或代理
+                         已瘫痪）的节点会被立刻判为"完成"而秒关。
+                         It must first have seen the proxy active, otherwise a node whose proxy
+                         was already down would close the program immediately. -->
+  <FollowConnection>false</FollowConnection>
+  <AutoCloseOnOverload>false</AutoCloseOnOverload>
 
   <!-- ── 背景：上升数据流 / Background: rising data stream ──
        一串串粒子从底部向上飞出去，每颗后面拖一条与速度成正比的尾巴。
@@ -145,6 +204,18 @@
     [不管加速，只想占内存 / Only here for the RAM footprint]
       <BurstTarget>2048</BurstTarget>
       <ShellOverloadTarget>1.0</ShellOverloadTarget>
+
+    [自己过载：不开 shell 也能削代理，半速 / Self-overload at half the vanilla Shell rate]
+      <SelfOverload>0.5</SelfOverload>
+
+    [自己过载：与原版一个 shell 同速 / Self-overload at one vanilla Shell's rate]
+      <SelfOverload>1.0</SelfOverload>
+
+    [跟着连接走，离开就关 / Follow the connection, close when you leave]
+      <FollowConnection>true</FollowConnection>
+
+    [代理一瘫痪就自动关 / Close as soon as the proxy goes down]
+      <AutoCloseOnOverload>true</AutoCloseOnOverload>
 
     [稀疏：粒子少而尾巴短 / Sparse: fewer particles, shorter trails]
       <BackgroundCount>120</BackgroundCount>

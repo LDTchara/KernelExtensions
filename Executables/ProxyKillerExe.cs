@@ -66,6 +66,26 @@ public class ProxyKillerExe : GameExecutable
     private float _target;
     private float _mulTarget;
 
+    // ---- 自己过载 / 跟随连接 / 自动关闭（见 ProxyKillerConfig 的三项）----
+
+    /// <summary>自己过载代理的速率目标（0 = 不主动过载）。</summary>
+    private float _selfOverloadTarget;
+
+    /// <summary>启动时所在节点（跟随连接时用它判断"玩家走开了"）。</summary>
+    private string _homeIp;
+
+    /// <summary>
+    /// 所盯节点：<see cref="ProxyKillerConfig.ResolvedFollowConnection"/> 为 true 时是**当前所连节点**，
+    /// 否则是启动时所在节点。它的 <c>proxyActive</c> 由 true 变 false = 过载完成 → 可自动关闭。
+    /// </summary>
+    private Computer _watched;
+
+    /// <summary>是否已经看到过所盯节点的代理处于生效状态（避免刚开就误判为"已完成"）。</summary>
+    private bool _sawProxyActive;
+
+    /// <summary>自己过载的命中计数（仅用于日志降噪）。</summary>
+    private bool _selfOverloading;
+
     // ---- 背景：上升数据流（自下而上的粒子洪流，随 RAM 爬升加速）----
     private Color _bgColor = Color.White;
     /// <summary>true = 背景色是配置里写死的静态色（不再每帧取主题高亮色）。</summary>
@@ -87,9 +107,41 @@ public class ProxyKillerExe : GameExecutable
         this.ramCost = ProxyKillerConfig.RamCost;
     }
 
+    // ---------- 实例登记与无痕互斥（对齐 CustomTrialExe / PhaseSwiftExe）----------
+
+    private static readonly List<ProxyKillerExe> activeInstances = new();
+
+    /// <summary>是否存在正在运行的实例（事件层无痕互斥检查用）。</summary>
+    public static bool HasRunningInstance() => activeInstances.Any(inst => !inst.isExiting);
+
+    /// <summary>当前正在运行的实例（事件层无痕互斥提示用，与 OnInitialize 兜底查找一致）。</summary>
+    public static ProxyKillerExe RunningInstance => activeInstances.FirstOrDefault(inst => !inst.isExiting);
+
     public override void OnInitialize()
     {
         base.OnInitialize();
+
+        activeInstances.Add(this);
+
+        // 互斥检查（兜底防御，主防线在事件层 KernelExtensions.OnExecutableExecute_Mutex）：
+        // 本程序是**常驻**的，而副作用是**全局**的 —— 每帧扫所有过载中的 shell 逐帧削减
+        // proxyOverloadTicks。开两个 = 同一个 shell 被削两次 = 加速与 RAM 都凭空翻倍，
+        // 原版没有对应物，纯属自己叠加自己。
+        var other = activeInstances.FirstOrDefault(inst => inst != this && !inst.isExiting);
+        if (other != null)
+        {
+            os.write(KELoc.Format("EXECUTABLE_ALREADY_RUNNING", "{0} already running!", other.IdentifierName));
+            isExiting = true;
+            activeInstances.Remove(this);
+            try
+            {
+                // ExeModule internal 无法直接访问，反射处理（同 CustomTrialExe）
+                var exes = AccessTools.Field(typeof(OS), "exes")?.GetValue(os) as System.Collections.IList;
+                exes?.Remove(this);
+            }
+            catch { }
+            return;
+        }
 
         List<string> flags = FindConfigFlags();
         if (flags.Count != 1)
@@ -133,8 +185,13 @@ public class ProxyKillerExe : GameExecutable
         _ramStart = ProxyKillerConfig.RamCost;
         _target = Math.Max(_ramStart, _cfg.BurstTarget);
         _mulTarget = _cfg.ShellOverloadTarget;
+        _selfOverloadTarget = _cfg.SelfOverload;
         _ram = _ramStart;
         ramCost = (int)_ram;
+
+        // 跟随连接的判定基准：启动时所在节点（不跟随时就盯它）
+        _homeIp = os?.connectedComp?.ip;
+        _watched = _cfg.ResolvedFollowConnection ? os?.connectedComp : FindComputerByIp(_homeIp);
 
         // 背景：上升数据流。参数全部来自配置，运行时不变（它们是形态而不是动画进度）。
         _flow.DensityCoefficient = _cfg.BackgroundDensityCoefficient;
@@ -149,7 +206,11 @@ public class ProxyKillerExe : GameExecutable
 
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
             + $"at {_cfg.RampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
-            + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}.");
+            + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}"
+            + (_selfOverloadTarget > 0f
+                ? $", self-overload x{_selfOverloadTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} (follows connection)"
+                : ", no self-overload")
+            + $", follow={_cfg.ResolvedFollowConnection}, autoCloseOnOverload={_cfg.AutoCloseOnOverload}.");
 
         // 反射可用性一次报清 —— 失败时加速会静默失效，必须让它可见
         if (ReflectionReady)
@@ -245,8 +306,13 @@ public class ProxyKillerExe : GameExecutable
         // 而状态文字已经写着 "Spinning down..."，两者完全脱节（用户实测就是这个现象）。
         // 所以：退出时只跳过 RAM 爬升与 shell 加速（那两个没必要再算），背景照旧推进。
 
-        // 本程序**常驻**：不跟随连接变化关闭（无 ExitOnDisconnect），只由玩家按 Exit 结束。
-        // 这也意味着它可以一直加速**后来才开的** shell —— 每帧重新遍历，不看创建时机。
+        // 跟随连接 / 过载完成自动关闭：两项都是"该不该退"的判定，放在最前
+        if (!isExiting)
+        {
+            CheckFollowConnection();
+            CheckAutoCloseOnOverload();
+        }
+
         if (!isExiting)
         {
             // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率可配）
@@ -258,6 +324,14 @@ public class ProxyKillerExe : GameExecutable
 
             // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 50MB → BurstTarget
             AccelerateShells(t);
+
+            // 自己过载（不依赖 shell / 管理员权限）；与加速共用同一个 RAM 进度
+            bool self = SelfOverloadProxy(t);
+            if (self != _selfOverloading)
+            {
+                _selfOverloading = self;
+                if (self) KELog.Debug($"{LogTag} self-overloading the watched node's proxy.");
+            }
         }
 
         // 背景始终推进（速度与拖尾在 Draw 里按进度给）—— 退出期间它就是"降速"的视觉
@@ -382,6 +456,164 @@ public class ProxyKillerExe : GameExecutable
 
     /// <summary>原版 ShellExe 的类型全名（internal 类型，只能按名字找）。</summary>
     private const string ShellExeTypeName = "Hacknet.ShellExe";
+
+    /// <summary>
+    /// 自己过载代理 —— 不需要 shell，因此**不依赖目标机管理员权限**。
+    ///
+    /// <para>
+    /// 原版里"过载代理"本身没有权限门槛（<c>ShellExe.StartOverload</c> 里没有任何检查），
+    /// 门槛只在"运行 shell"上。所以本项不是绕过任何规则，而是补上一个原版缺失的手段。
+    /// </para>
+    ///
+    /// <para>
+    /// 速率由 RAM 爬升线性驱动：<c>0 → SelfOverload</c> 对应 <c>50MB → BurstTarget</c>，
+    /// 与 shell 倍速共用同一个进度 —— 玩家调的是"给多少内存"，两个能力一起涨。
+    /// </para>
+    ///
+    /// <para>
+    /// ⚠️ 每帧调一次目标机的 <c>hostileActionTaken()</c>（对齐原版 shell 的做法）：
+    /// 它内部自带 <b>0.35 秒</b>节流，且**只在玩家正连着该节点时才真的起 trace** ——
+    /// 所以"跟随连接"的强制要求在这里自然成立（不跟随就会跑到哪打到哪）。
+    /// </para>
+    /// </summary>
+    /// <returns>本帧是否真的推进了某个节点的过载。</returns>
+    private bool SelfOverloadProxy(float t)
+    {
+        if (_selfOverloadTarget <= 0f) return false;
+
+        Computer dest = WatchedComputer();
+        if (dest == null) return false;
+        if (!dest.hasProxy || !dest.proxyActive) return false;
+
+        float ticks = dest.proxyOverloadTicks;
+        if (ticks <= 0f) return false;
+
+        // 速率：0 → 目标值，对应 50MB → BurstTarget（与 shell 倍速同一进度）
+        float rate = _selfOverloadTarget * RampProgress();
+        if (rate <= 0f) return false;
+
+        float next = ticks - t * rate;
+        dest.proxyOverloadTicks = next > 0f ? next : 0f;
+
+        if (dest.proxyOverloadTicks <= 0f)
+        {
+            dest.proxyActive = false;
+            KELog.Info($"{LogTag} self-overload finished on '{dest.ip}'.");
+        }
+        else
+        {
+            // 敌对行为：原版每个过载帧都调（内部 0.35s 节流 + 只对玩家所连节点起 trace）
+            TryHostileAction(dest);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 当前"所盯节点"：跟随连接时取**当前所连节点**（连接变了就换），否则取启动时所在节点。
+    /// </summary>
+    private Computer WatchedComputer()
+    {
+        if (_cfg != null && _cfg.ResolvedFollowConnection)
+        {
+            Computer now = os?.connectedComp;
+            if (now != null && !ReferenceEquals(now, _watched))
+            {
+                // 换节点 = 换了目标，重新起算"是否见过代理生效"
+                _watched = now;
+                _sawProxyActive = false;
+            }
+        }
+        return _watched;
+    }
+
+    /// <summary>
+    /// 过载完成自动关闭：所盯节点的代理由"生效"变为"已瘫痪"。
+    ///
+    /// <para>
+    /// 必须**先见到过它生效**（<see cref="_sawProxyActive"/>），否则刚开程序时
+    /// 一个本来就已瘫痪（或压根没有）代理的节点会被立刻判为"完成"而秒关。
+    /// </para>
+    /// </summary>
+    private void CheckAutoCloseOnOverload()
+    {
+        if (_cfg == null || !_cfg.AutoCloseOnOverload) return;
+
+        Computer w = WatchedComputer();
+        if (w == null) return;
+
+        if (w.hasProxy && w.proxyActive) { _sawProxyActive = true; return; }
+
+        if (_sawProxyActive)
+        {
+            KELog.Info($"{LogTag} proxy on '{w.ip}' is down; closing (AutoCloseOnOverload).");
+            isExiting = true;
+        }
+    }
+
+    /// <summary>
+    /// 跟随连接：玩家离开启动时所在的节点就关（<c>FollowConnection</c>）。
+    ///
+    /// <para>
+    /// ⚠️ 自己过载时本项恒真（<see cref="ProxyKillerConfig.ResolvedFollowConnection"/> 已强制），
+    /// 因为过载会持续触发敌对行为，不跟随会"跑到哪打到哪"。
+    /// </para>
+    /// </summary>
+    private void CheckFollowConnection()
+    {
+        if (_cfg == null || !_cfg.ResolvedFollowConnection) return;
+        if (string.IsNullOrEmpty(_homeIp)) return;
+
+        string now = os?.connectedComp?.ip;
+        if (now != _homeIp)
+        {
+            KELog.Info($"{LogTag} left node '{_homeIp}'"
+                + (_selfOverloadTarget > 0f ? " (self-overload forces follow)" : "")
+                + "; exiting.");
+            isExiting = true;
+        }
+    }
+
+    /// <summary>按 ip 找一台机器（找不到返回 null）。</summary>
+    private Computer FindComputerByIp(string ip)
+    {
+        if (string.IsNullOrEmpty(ip) || os?.netMap?.nodes == null) return null;
+        for (int i = 0; i < os.netMap.nodes.Count; i++)
+        {
+            Computer c = os.netMap.nodes[i];
+            if (c != null && c.ip == ip) return c;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 调目标机的 <c>hostileActionTaken()</c>（internal 类型上的 public 方法，走反射）。
+    /// 失败只警告一次 —— 它只影响 trace / 音效，不影响过载本身。
+    /// </summary>
+    private void TryHostileAction(Computer dest)
+    {
+        try
+        {
+            hostileActionMethod?.Invoke(dest, null);
+        }
+        catch (Exception ex)
+        {
+            if (!_hostileWarned)
+            {
+                _hostileWarned = true;
+                KELog.Warn($"{LogTag} could not fire hostile action: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary><c>Computer.hostileActionTaken()</c> 的反射句柄（找不到时为 null）。</summary>
+    private static readonly System.Reflection.MethodInfo hostileActionMethod =
+        typeof(Computer).GetMethod("hostileActionTaken",
+            System.Reflection.BindingFlags.Instance
+            | System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.NonPublic);
+
+    private bool _hostileWarned;
 
     /// <summary>
     /// <c>ShellExe.destComp</c> —— 这个 shell 正在过载的那台机器。
