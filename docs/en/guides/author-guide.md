@@ -70,7 +70,81 @@ No extra Flags are required. Just add `<FlightDaemon>` to the target computer's 
 
 ---
 
-## 4. Writing Mission Files
+## 4. Action Points: Inline or File
+
+The mechanism of Actions themselves, and the available Actions and conditions, are **already fully
+covered by the vanilla Hacknet wiki** — this page does not repeat them. This section covers only the
+**extra form KE systems add** when a config attaches Actions.
+
+KE action points (`OnStart` / `OnComplete` / `OnFail`, etc.) come in two forms, and **you can use both**:
+
+### Reference an action file
+
+The value is a path relative to the **extension root** (see the previous section for paths and casing):
+
+```xml
+<OnComplete>Actions/crackSuccess.xml</OnComplete>
+```
+
+```xml
+<!-- Actions/crackSuccess.xml -->
+<Actions>
+    <PortOpen Ports="ssh" />
+    <TerminalWrite Text="done" />
+</Actions>
+```
+
+### Inline actions (KE-specific)
+
+**Write the Actions straight into the action point** — no need to create a file for one or two Actions:
+
+```xml
+<OnStart>
+    <Actions>
+        <TerminalWrite Text="bypassing firewall..." />
+    </Actions>
+</OnStart>
+```
+
+Inline content goes through the **same** loader as action files, so `<Actions>`,
+`<ConditionalActions>` and every condition work identically.
+
+You can also write both — **the file runs first, then the inline part**:
+
+```xml
+<OnComplete>Actions/crackSuccess.xml
+    <Actions><TerminalWrite Text="done" /></Actions>
+</OnComplete>
+```
+
+!!! tip "Which form to use"
+    One or two Actions used in exactly one place → **inline**; keeping the logic next to the config is
+    easier to read. Reused in several places, or a longer sequence → **action file**.
+
+### Which systems expose action points
+
+| System | Action points |
+|--------|---------------|
+| [PortHackV2 Cracker](./../systems/port-hack-v2.md) | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` |
+| [Custom Timer (Clock)](./../systems/clock.md) | `OnComplete` |
+| [Phase Swift](./../systems/phase-swift.md) | per-scene action points |
+| [Custom Ending (StartEnding)](./../systems/custom-ending.md) | ending action points |
+| [Custom Trial](./../systems/custom-trial.md) | per-phase action points |
+
+### Conventions and caveats
+
+- **Paths** are always relative to the **extension root** and must stay inside it
+  (`..` traversal, absolute paths and drive letters are **rejected** and logged)
+- **`NONE` / empty** means "this action point does not run" — a **valid config**, not an error
+- **File not found** logs a warning and skips; it **never interrupts the flow**
+
+!!! tip "Mistakes will not break anything"
+    A missing file, an out-of-bounds path, or invalid content **logs a message and continues** — it never
+    interrupts the crack / scene / trial. You cannot kill the flow by getting a config wrong.
+
+---
+
+## 5. Writing Mission Files
 
 The `MissionFile` in a trial points to a standard Hacknet mission XML.  
 **Important settings**:
@@ -88,7 +162,7 @@ The `MissionFile` in a trial points to a standard Hacknet mission XML.
 
 ---
 
-## 5. Custom Colours
+## 6. Custom Colours
 
 All colour configuration fields (e.g. `BackgroundColor`, `GlobalTimerColor`) support:
 
@@ -100,7 +174,7 @@ If left empty or an unrecognised value is used, the game's current theme highlig
 
 ---
 
-## 6. Music Paths
+## 7. Music Paths
 
 Music configuration fields (e.g. `StartMusic`, `TrialStartMusic`, `Music`, `SuccessMusic`) support the following formats, automatically resolved by `MusicPathResolver`:
 
@@ -118,34 +192,26 @@ Music configuration fields (e.g. `StartMusic`, `TrialStartMusic`, `Music`, `Succ
 
 ---
 
-## 7. Delayed Execution
+## 8. Delayed Execution
 
-Many custom Actions support `Delay` and `DelayHost` attributes for delayed execution.
+The **full rules for `Delay` / `DelayHost` live in the vanilla wiki** (each Action there is also marked
+Delayable). Only the KE-side points are worth repeating here:
 
-- `Delay`: number of seconds to wait (positive).
-- `DelayHost`: the ID of a host providing the delay service; that host must have a `FastActionHost` daemon.
-- If `Delay` is 0 or omitted, the action runs immediately and no `DelayHost` is needed.
-- Exception: `AddIRCMessage` supports `Delay` without `DelayHost`, and can be negative.
-
-Example:
-```xml
-<ConditionalActions>
-    <Instantly>
-        <FailTrial />
-    </Instantly>
-</ConditionalActions>
-```
+- `Delay` belongs to the **action itself**, regardless of whether it sits in `<Actions>` or
+  `<ConditionalActions>` — the container decides *when its turn comes*, `Delay` decides *how long to
+  wait after that turn*.
+- When a `DelayHost` is needed, that host must have the `FastActionHost` daemon installed.
 
 ---
 
-## 8. Localisation
+## 9. Localisation
 
 KernelExtensions currently has hardcoded multi‑language support for buttons and prompt text (Chinese, Japanese, Korean, Russian, German, French, Spanish, Turkish, Dutch, English).  
 Language‑file‑based localisation is planned for a future release, which will allow extension authors to provide custom translations.
 
 ---
 
-## 9. Quick Reference Links
+## 10. Quick Reference Links
 
 - [Custom Trial System](./../systems/custom-trial.md)
 - [VM Attack System](./../systems/vm-attack.md)

@@ -82,7 +82,9 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 
 ### Action points
 
-Both the root level and each protocol have action points; every value is a path to an action file **relative to the extension root**:
+Both the root level and each protocol have action points; each accepts **either an inline action or a
+path to an action file** (relative to the extension root) — see
+[Extension Author Guide § 4](./../guides/author-guide.md#4-action-points-inline-or-file).
 
 | Action point | Level | Fires when |
 |--------------|-------|------------|
@@ -169,6 +171,7 @@ Every Platonic solid spins around **its own rotational symmetry axis**, and that
 ## See Also
 
 - [Executables](./../components/executables.md) – all programs
+- [Extension Author Guide](./../guides/author-guide.md) – the two forms of action points and available conditions
 - [Configuration Files](./../components/configuration.md) – shared config conventions (NONE, negative values, colour formats)
 - [Custom Color System](./custom-color.md) – colour parsing details
 - [Changelog](./../guides/changelog.md)

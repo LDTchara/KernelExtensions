@@ -68,7 +68,80 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 
 ---
 
-## 四、任务文件的编写
+## 四、动作点：内联还是引文件
+
+Action 本身的机制、可用的动作与条件，**原版 Wiki 已经讲全了**，这里不重复；
+本节只讲 KE 系统在配置里挂动作时**多出来的那一种写法**。
+
+KE 的动作点（`OnStart` / `OnComplete` / `OnFail` 等）有两种写法，**可以同时用**：
+
+### 引用动作文件
+
+值是一个路径，相对**扩展根目录**（写法与大小写规则见上一节）：
+
+```xml
+<OnComplete>Actions/crackSuccess.xml</OnComplete>
+```
+
+```xml
+<!-- Actions/crackSuccess.xml -->
+<Actions>
+    <PortOpen Ports="ssh" />
+    <TerminalWrite Text="done" />
+</Actions>
+```
+
+### 内联动作（KE 特有）
+
+**直接把动作写在动作点里**，不用为一两行动作单独建文件：
+
+```xml
+<OnStart>
+    <Actions>
+        <TerminalWrite Text="bypassing firewall..." />
+    </Actions>
+</OnStart>
+```
+
+内联内容与动作文件走**同一套装载逻辑**，所以 `<Actions>`、`<ConditionalActions>`
+以及各种条件都能用，写法完全一致。
+
+两者也可以一起写 —— **先执行文件、再执行内联**：
+
+```xml
+<OnComplete>Actions/crackSuccess.xml
+    <Actions><TerminalWrite Text="done" /></Actions>
+</OnComplete>
+```
+
+!!! tip "什么时候用哪种"
+    一两行动作、且只在这一个地方用 → **内联**，配置和逻辑在一起更好读。
+    多处复用、或动作较多 → **动作文件**。
+
+### 哪些系统有动作点
+
+| 系统 | 动作点 |
+|------|--------|
+| [PortHackV2 破解程序](./../systems/port-hack-v2.md) | 根级 `OnStart` / `OnComplete`；协议级 `OnStart` / `OnComplete` / `OnFail` |
+| [自定义定时器（Clock）](./../systems/clock.md) | `OnComplete` |
+| [相位穿梭（PhaseSwift）](./../systems/phase-swift.md) | 场景级动作点 |
+| [自定义结局（StartEnding）](./../systems/custom-ending.md) | 结局动作点 |
+| [自定义试炼](./../systems/custom-trial.md) | 阶段动作点 |
+
+### 约定与注意事项
+
+- **路径**：一律相对于**扩展根目录**，且必须落在扩展目录内
+  （`..` 穿越、绝对路径、盘符都会被**拒绝**并记日志）
+- **`NONE` / 留空**：表示"这个动作点不执行"，是**正常配置**，不会报错
+- **找不到文件**：记一条 Warn 并跳过，**不会中断流程**
+
+!!! tip "写错了不会崩"
+    动作点写了不存在的文件、路径越界、或内容非法，**只会记一条日志并继续** ——
+    不会让整个破解 / 场景 / 试炼中断。改配置时不必担心把流程搞死。
+
+---
+
+## 五、任务文件的编写
 
 试炼中的 `MissionFile` 指向标准的 Hacknet 任务 XML。  
 **关键设置**：
@@ -86,7 +159,7 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 
 ---
 
-## 五、颜色自定义
+## 六、颜色自定义
 
 所有颜色配置项（如 `BackgroundColor`、`GlobalTimerColor` 等）支持：
 
@@ -98,7 +171,7 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 
 ---
 
-## 六、音乐路径
+## 七、音乐路径
 
 音乐配置项（如 `StartMusic`、`TrialStartMusic`、`Music`、`SuccessMusic`）支持以下格式，由 `MusicPathResolver` 自动解析：
 
@@ -115,34 +188,24 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 
 ---
 
-## 七、延迟执行
+## 八、延迟执行
 
-许多自定义 Action 支持 `Delay` 和 `DelayHost` 属性用于延迟执行。
+`Delay` / `DelayHost` 的**完整规则见原版 Wiki**（每个动作还标了是否 Delayable），这里只提 KE 侧的要点：
 
-- `Delay`：延迟的秒数（正数）。
-- `DelayHost`：提供延迟服务的主机 ID，该主机必须拥有 `FastActionHost` 守护进程。
-- 若 `Delay` 为 0 或未填写，动作会立即执行，无需 `DelayHost`。
-- 例外：`AddIRCMessage` 支持 `Delay` 但不需要 `DelayHost`，可为负数。
-
-示例：
-```xml
-<ConditionalActions>
-    <Instantly>
-        <FailTrial />
-    </Instantly>
-</ConditionalActions>
-```
+- `Delay` 写在**动作自身**上，与它放在 `<Actions>` 还是 `<ConditionalActions>` 里无关 ——
+  容器只管"什么时候轮到它"，`Delay` 管"轮到之后再等多久"。
+- 需要 `DelayHost` 时，那个主机必须装有 `FastActionHost` 守护进程。
 
 ---
 
-## 八、多语言
+## 九、多语言
 
 KernelExtensions 目前对按钮和提示文字做了硬编码多语言（中文、日语、韩语、俄语、德语、法语、西班牙语、土耳其语、荷兰语、英语）。  
 未来会加入基于语言文件的多语言支持，届时扩展作者可自行定制。
 
 ---
 
-## 九、快速参考链接
+## 十、快速参考链接
 
 - [自定义试炼系统](./../systems/custom-trial.md)
 - [VM攻击系统](./../systems/vm-attack.md)
