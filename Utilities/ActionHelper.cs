@@ -134,10 +134,7 @@ namespace KernelExtensions.Utilities
                     else if (node.Name == "ConditionalActions")
                     {
                         // 交给 os 的条件动作表；<Instantly> 等条件满足后由它驱动执行
-                        RunnableConditionalActions sets = ActionsLoader.LoadActionSets(node);
-                        os.ConditionalActions.Actions.AddRange(sets.Actions);
-                        if (!os.ConditionalActions.IsUpdating)
-                            os.ConditionalActions.Update(0f, os);
+                        TryLoadConditionalActions(os, node, label);
                     }
                     else
                     {
@@ -160,15 +157,18 @@ namespace KernelExtensions.Utilities
         /// 把一个元素读成动作；**失败时记一条可读日志并返回 false，而不是抛异常**。
         ///
         /// <para>
-        /// 为什么需要这层：<see cref="ActionsLoader.ReadAction"/> 对未知元素名会
+        /// 为什么需要这层：<see cref="ActionsLoader.ReadAction"/> 对未注册的元素名会
         /// <c>throw new KeyNotFoundException</c>。内联路径里一个名字写错，
         /// 整段内联就都会失败（只留一条笼统的 Error），作者无从判断是哪个元素的问题。
-        /// 这里先判断名字是否可能合法，不认识就点名报出来。
         /// </para>
         ///
         /// <para>
-        /// 判断顺序：内置动作名 → 交给 <see cref="ActionsLoader.ReadAction"/>
-        /// （KE 与第三方注册的动作都在里面，Pathfinder 没提供枚举接口，无法预先判断）→ 都不中就警告。
+        /// ⚠️ <b>不做"名字是否合法"的预判，一律交给 <see cref="ActionsLoader.ReadAction"/></b>：
+        /// 它内部先查 <c>ActionManager</c> 的注册表（KE 与任何第三方通过
+        /// <c>ActionManager.RegisterAction&lt;T&gt;(name)</c> 注册的动作都在这里，
+        /// <b>名字可以是任意字符串</b>），命中不了才落到内置的 26 个。
+        /// Pathfinder 没有提供查询注册表的公开接口，所以任何本地白名单都会误伤第三方动作 ——
+        /// 只能"先让它判，再翻译它的异常"。
         /// </para>
         /// </summary>
         /// <param name="node">要读取的元素。</param>
@@ -178,13 +178,6 @@ namespace KernelExtensions.Utilities
         {
             action = null;
 
-            if (!IsBuiltInActionName(node.Name) && !IsLikelyRegisteredAction(node.Name))
-            {
-                KELog.Warn($"[ActionHelper] '{label}': unknown action or container <{node.Name}>; skipped."
-                    + HintFor(node.Name));
-                return false;
-            }
-
             try
             {
                 action = ActionsLoader.ReadAction(node);
@@ -192,9 +185,8 @@ namespace KernelExtensions.Utilities
             }
             catch (KeyNotFoundException)
             {
-                // Pathfinder 对"未注册的元素名"就是抛 KeyNotFoundException。
-                // 走到这里说明名字长得合法（PascalCase）但并不存在 ——
-                // 最典型的是**拼写错误**。此时把名字点出来，比让异常原文糊一整段更有用。
+                // Pathfinder 对"未注册的元素名"就是抛这个。最典型的是**拼写错误**，
+                // 也包含误用 Faction 的 <Action> 单数容器。把名字点出来，比让异常原文糊一整段更有用。
                 KELog.Warn($"[ActionHelper] '{label}': no action or container named <{node.Name}>; skipped."
                     + HintFor(node.Name));
                 return false;
@@ -208,51 +200,50 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
-        /// 原版与 Pathfinder 认识的<b>内置</b>动作元素名（共 26 个）。
+        /// 把 <c>&lt;ConditionalActions&gt;</c> 装进 <c>os.ConditionalActions</c>；
+        /// **未知条件名时点名警告，而不是让异常冒出去**。
         ///
         /// <para>
-        /// 抄自 <c>Hacknet.SerializableAction.Deserialize</c> 的字典键与
-        /// Pathfinder <c>ActionsLoader.ReadAction</c> 的 switch 分支 —— 这两处是**完全一致的 26 个**。
-        /// 之所以要抄一份：Pathfinder 没提供"这个名字是不是合法动作"的公开查询，
-        /// 只能自己拿内置名单做前置校验，才能对拼错的名字给出可读提示。
-        /// </para>
-        ///
-        /// <para>
-        /// ⚠️ 升级 Pathfinder 时若它新增内置动作，这份名单需要同步（漏了只是多一条 Warn，不会误伤）。
+        /// 与 <see cref="TryReadAction"/> 同理：<see cref="ActionsLoader.LoadActionSets"/> 对未注册的
+        /// 条件名抛 <c>FormatException</c>（"Condition X could not be found!"），
+        /// 且 <c>ConditionManager</c> 同样没有公开查询接口。异常消息里已含条件名，直接取用。
         /// </para>
         /// </summary>
-        private static readonly HashSet<string> BuiltInActionNames = new HashSet<string>(StringComparer.Ordinal)
+        /// <returns>成功入队返回 true。</returns>
+        private static bool TryLoadConditionalActions(OS os, ElementInfo node, string label)
         {
-            "LoadMission", "RunFunction", "AddAsset", "AddMissionToHubServer",
-            "RemoveMissionFromHubServer", "AddThreadToMissionBoard", "AddIRCMessage",
-            "AddConditionalActions", "CopyAsset", "CrashComputer", "DeleteFile",
-            "LaunchHackScript", "SwitchToTheme", "StartScreenBleedEffect",
-            "CancelScreenBleedEffect", "AppendToFile", "KillExe", "ChangeAlertIcon",
-            "HideNode", "GivePlayerUserAccount", "ChangeIP", "ChangeNetmapSortMethod",
-            "SaveGame", "HideAllNodes", "ShowNode", "SetLock",
-        };
-
-        private static bool IsBuiltInActionName(string name) => BuiltInActionNames.Contains(name);
+            try
+            {
+                RunnableConditionalActions sets = ActionsLoader.LoadActionSets(node);
+                os.ConditionalActions.Actions.AddRange(sets.Actions);
+                if (!os.ConditionalActions.IsUpdating)
+                    os.ConditionalActions.Update(0f, os);
+                return true;
+            }
+            catch (FormatException e)
+            {
+                string cond = ExtractConditionName(e.Message);
+                KELog.Warn($"[ActionHelper] '{label}': unknown condition <{cond}>; skipped."
+                    + " Supported: Instantly / OnConnect / OnDisconnect / HasFlags / OnAdminGained"
+                    + " / DoesNotHaveFlags, plus any registered custom condition.");
+                return false;
+            }
+        }
 
         /// <summary>
-        /// 名字**看起来**像已注册的动作（KE / 第三方）。
-        ///
-        /// <para>
-        /// Pathfinder 没给枚举接口，无法精确判断；但动作元素名都是 PascalCase 标识符，
-        /// 所以用"首字母大写 + 只含字母数字下划线"作为放行条件，把它交给
-        /// <see cref="ActionsLoader.ReadAction"/> 去定夺。这样既不会误伤第三方动作，
-        /// 又能让小写 / 怪异名字得到明确提示。
-        /// </para>
+        /// 从 Pathfinder 的 <c>"Condition X could not be found!"</c> 里取出条件名。
         /// </summary>
-        private static bool IsLikelyRegisteredAction(string name)
+        /// <param name="message">异常消息。</param>
+        private static string ExtractConditionName(string message)
         {
-            if (string.IsNullOrEmpty(name)) return false;
-            if (!char.IsUpper(name[0])) return false;
-            foreach (char ch in name)
+            const string prefix = "Condition ";
+            const string suffix = " could not be found";
+            if (message != null && message.StartsWith(prefix, StringComparison.Ordinal))
             {
-                if (!char.IsLetterOrDigit(ch) && ch != '_') return false;
+                int end = message.IndexOf(suffix, StringComparison.Ordinal);
+                if (end > prefix.Length) return message.Substring(prefix.Length, end - prefix.Length);
             }
-            return true;
+            return "?";
         }
 
         /// <summary>对几个已知易错写法给出针对性提示。</summary>
