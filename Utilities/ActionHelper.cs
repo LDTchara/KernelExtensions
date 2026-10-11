@@ -126,8 +126,7 @@ namespace KernelExtensions.Utilities
                         // 列表内的动作**立即**逐个执行
                         foreach (ElementInfo child in node.Children)
                         {
-                            SerializableAction action = ActionsLoader.ReadAction(child);
-                            if (action == null) continue;
+                            if (!TryReadAction(child, label, out SerializableAction action)) continue;
                             action.Trigger(os);
                             ran++;
                         }
@@ -143,8 +142,7 @@ namespace KernelExtensions.Utilities
                     else
                     {
                         // 兜底：顶层直接写单个动作（不带 <Actions> 容器）也支持
-                        SerializableAction action = ActionsLoader.ReadAction(node);
-                        if (action == null) continue;
+                        if (!TryReadAction(node, label, out SerializableAction action)) continue;
                         action.Trigger(os);
                         ran++;
                     }
@@ -156,6 +154,118 @@ namespace KernelExtensions.Utilities
             {
                 KELog.Error($"[ActionHelper] '{label}': inline action failed: {e.Message}");
             }
+        }
+
+        /// <summary>
+        /// 把一个元素读成动作；**失败时记一条可读日志并返回 false，而不是抛异常**。
+        ///
+        /// <para>
+        /// 为什么需要这层：<see cref="ActionsLoader.ReadAction"/> 对未知元素名会
+        /// <c>throw new KeyNotFoundException</c>。内联路径里一个名字写错，
+        /// 整段内联就都会失败（只留一条笼统的 Error），作者无从判断是哪个元素的问题。
+        /// 这里先判断名字是否可能合法，不认识就点名报出来。
+        /// </para>
+        ///
+        /// <para>
+        /// 判断顺序：内置动作名 → 交给 <see cref="ActionsLoader.ReadAction"/>
+        /// （KE 与第三方注册的动作都在里面，Pathfinder 没提供枚举接口，无法预先判断）→ 都不中就警告。
+        /// </para>
+        /// </summary>
+        /// <param name="node">要读取的元素。</param>
+        /// <param name="label">日志定位用。</param>
+        /// <param name="action">读出的动作；失败时为 null。</param>
+        private static bool TryReadAction(ElementInfo node, string label, out SerializableAction action)
+        {
+            action = null;
+
+            if (!IsBuiltInActionName(node.Name) && !IsLikelyRegisteredAction(node.Name))
+            {
+                KELog.Warn($"[ActionHelper] '{label}': unknown action or container <{node.Name}>; skipped."
+                    + HintFor(node.Name));
+                return false;
+            }
+
+            try
+            {
+                action = ActionsLoader.ReadAction(node);
+                return action != null;
+            }
+            catch (KeyNotFoundException)
+            {
+                // Pathfinder 对"未注册的元素名"就是抛 KeyNotFoundException。
+                // 走到这里说明名字长得合法（PascalCase）但并不存在 ——
+                // 最典型的是**拼写错误**。此时把名字点出来，比让异常原文糊一整段更有用。
+                KELog.Warn($"[ActionHelper] '{label}': no action or container named <{node.Name}>; skipped."
+                    + HintFor(node.Name));
+                return false;
+            }
+            catch (Exception e)
+            {
+                // 名字存在但装载失败（缺必需属性、值非法等）
+                KELog.Warn($"[ActionHelper] '{label}': <{node.Name}> could not be loaded: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 原版与 Pathfinder 认识的<b>内置</b>动作元素名（共 26 个）。
+        ///
+        /// <para>
+        /// 抄自 <c>Hacknet.SerializableAction.Deserialize</c> 的字典键与
+        /// Pathfinder <c>ActionsLoader.ReadAction</c> 的 switch 分支 —— 这两处是**完全一致的 26 个**。
+        /// 之所以要抄一份：Pathfinder 没提供"这个名字是不是合法动作"的公开查询，
+        /// 只能自己拿内置名单做前置校验，才能对拼错的名字给出可读提示。
+        /// </para>
+        ///
+        /// <para>
+        /// ⚠️ 升级 Pathfinder 时若它新增内置动作，这份名单需要同步（漏了只是多一条 Warn，不会误伤）。
+        /// </para>
+        /// </summary>
+        private static readonly HashSet<string> BuiltInActionNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "LoadMission", "RunFunction", "AddAsset", "AddMissionToHubServer",
+            "RemoveMissionFromHubServer", "AddThreadToMissionBoard", "AddIRCMessage",
+            "AddConditionalActions", "CopyAsset", "CrashComputer", "DeleteFile",
+            "LaunchHackScript", "SwitchToTheme", "StartScreenBleedEffect",
+            "CancelScreenBleedEffect", "AppendToFile", "KillExe", "ChangeAlertIcon",
+            "HideNode", "GivePlayerUserAccount", "ChangeIP", "ChangeNetmapSortMethod",
+            "SaveGame", "HideAllNodes", "ShowNode", "SetLock",
+        };
+
+        private static bool IsBuiltInActionName(string name) => BuiltInActionNames.Contains(name);
+
+        /// <summary>
+        /// 名字**看起来**像已注册的动作（KE / 第三方）。
+        ///
+        /// <para>
+        /// Pathfinder 没给枚举接口，无法精确判断；但动作元素名都是 PascalCase 标识符，
+        /// 所以用"首字母大写 + 只含字母数字下划线"作为放行条件，把它交给
+        /// <see cref="ActionsLoader.ReadAction"/> 去定夺。这样既不会误伤第三方动作，
+        /// 又能让小写 / 怪异名字得到明确提示。
+        /// </para>
+        /// </summary>
+        private static bool IsLikelyRegisteredAction(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            if (!char.IsUpper(name[0])) return false;
+            foreach (char ch in name)
+            {
+                if (!char.IsLetterOrDigit(ch) && ch != '_') return false;
+            }
+            return true;
+        }
+
+        /// <summary>对几个已知易错写法给出针对性提示。</summary>
+        private static string HintFor(string name)
+        {
+            // <Action> 是 Faction 的容器（Hacknet.Factions.CustomFactionAction 的硬编码元素名），
+            // 只在 <CustomFaction> 里被解析，不能用于通用动作点。
+            if (string.Equals(name, "Action", StringComparison.Ordinal))
+            {
+                return " Did you mean <Actions>? <Action> (singular) is a Faction-only container"
+                     + " and is not parsed outside <CustomFaction>.";
+            }
+            return string.Empty;
         }
 
         /// <summary>内联内容的临时根元素名（只用于让 XML 有唯一根）。</summary>
