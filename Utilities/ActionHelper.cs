@@ -11,14 +11,27 @@ namespace KernelExtensions.Utilities
     /// 动作执行工具：把"一段动作 XML"跑起来。
     ///
     /// <para>
-    /// 两种来源共用同一套解析路径 —— 动作**文件**与配置里的**内联**动作点，
-    /// 都走 Pathfinder 的 <see cref="EventExecutor"/>，因此支持的写法完全一致：
+    /// **两种来源，两条执行路径**（行为等价，但实现不同，改动时两边都要看）：
+    /// <list type="number">
+    ///   <item><b>动作文件</b>（<see cref="ExecuteFile"/>）—— 交给 Pathfinder 的
+    ///     <see cref="EventExecutor"/>：它按元素名流式解析，命中 <c>Actions</c> /
+    ///     <c>ConditionalActions</c> 时回调我们注册的处理器。</item>
+    ///   <item><b>内联动作</b>（<see cref="ExecuteInline"/>）—— 走
+    ///     <see cref="EventExecutor"/> 会在构造/解析阶段抛异常（实机表现为"内联动作毫无反应、
+    ///     连日志都没有"，异常冒到 <c>OS.Update</c> 被上层吞掉）。故改为把 XML 解析成
+    ///     <see cref="ElementInfo"/> 树，直接调 Pathfinder **public** 的
+    ///     <see cref="ActionsLoader.ReadAction"/> / <see cref="ActionsLoader.LoadActionSets"/> ——
+    ///     与 <c>EventExecutor</c> 内部用的是同一套，行为一致但不碰解析器。</item>
+    /// </list>
+    /// </para>
+    ///
+    /// <para>
+    /// 两条路支持的写法一致，因为最终都归结为同样的三种处理：
     /// <list type="bullet">
-    ///   <item><c>&lt;Actions&gt;</c> —— 其中的动作**立即**逐个执行；</item>
-    ///   <item><c>&lt;ConditionalActions&gt;</c> —— 交给 <c>os.ConditionalActions</c>，
-    ///     由条件决定何时执行（<c>&lt;Instantly&gt;</c> 在加载后立即触发，
-    ///     <c>&lt;OnConnect&gt;</c> / <c>&lt;HasFlags&gt;</c> 等则等待条件满足）；</item>
-    ///   <item>其它元素 —— 按 Pathfinder 的 <c>SerializableAction</c> 直接执行。</item>
+    ///   <item><c>&lt;Actions&gt;</c> —— 其中的动作**立即**逐个 <c>Trigger(os)</c>；</item>
+    ///   <item><c>&lt;ConditionalActions&gt;</c> —— 加入 <c>os.ConditionalActions.Actions</c>，
+    ///     由 OS 每帧 <c>Update</c> 逐个求条件，命中后**执行并从表中移除**（只触发一次）；</item>
+    ///   <item>其它元素 —— 当作单个动作直接 <c>Trigger(os)</c>。</item>
     /// </list>
     /// </para>
     /// </summary>
