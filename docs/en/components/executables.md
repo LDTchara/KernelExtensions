@@ -83,7 +83,7 @@ no shell needed at all.
 | `<RampRate>` | RAM ramp rate in MB/s. Empty = 200 |
 | `<ShellOverloadTarget>` | **Accelerating existing shells**: multiplier at full ramp. Empty = 1 (no acceleration) |
 | `<SelfOverload>` | **Overloading the proxy itself** — the switch. Empty = `false` (no self-overload) |
-| `<SelfOverloadRate>` | Rate for self-overload. **`1` = one vanilla shell's overload speed**. Empty = 1. Range 0–1000 |
+| `<SelfOverloadRate>` | Rate for self-overload. **`1` = one vanilla shell's overload speed**. Empty = 1. **No upper bound** |
 | `<FollowConnection>` | `true` = close once the player leaves the node it was started on. Empty = `false` (resident) |
 | `<AutoCloseOnOverload>` | Close once the watched node's proxy goes **from active to down**. Empty = `false` |
 | `<BackgroundColor>` | Data-stream colour. `auto` (case-insensitive) = theme highlight; empty / `NONE` = theme highlight |
