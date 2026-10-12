@@ -78,8 +78,22 @@ public class ProxyKillerConfig
     /// </summary>
     public const float DefaultSelfOverloadRate = 1f;
 
-    /// <summary>自己过载速率的上限：1 = 与原版单个 shell 同速。</summary>
-    public const float MaxSelfOverloadRate = 1f;
+    /// <summary>
+    /// 自己过载速率的上限 —— 与 <see cref="MaxShellOverloadTarget"/> 取同一个值。
+    ///
+    /// <para>
+    /// ⚠️ 曾经是 1（当时的理由是"一个原版 shell 已经很快了"），但那是个**错误的判断**：
+    /// 加速**别人**的倍速上限给到 1000，而自己过载只给 1，两者不对称；
+    /// 更要命的是超范围值会被 <c>ConfigValue.ParseInRange</c> **回退成默认 1**，
+    /// 于是作者写 10 实际得到 1 —— 体感"不像 10"，且只有一条 Warn。
+    /// </para>
+    ///
+    /// <para>
+    /// 数值本身有原版兜底：<c>proxyOverloadTicks</c> 被减到 0 以下就贴 0，
+    /// 不存在"过快导致溢出 / 负数"的问题。真正的平衡是**扩展作者的事**。
+    /// </para>
+    /// </summary>
+    public const float MaxSelfOverloadRate = MaxShellOverloadTarget;
 
     /// <summary>跟随连接的默认值：<c>false</c> = 常驻（既有行为，零破坏）。</summary>
     public const bool DefaultFollowConnection = false;
@@ -168,7 +182,8 @@ public class ProxyKillerConfig
 
     /// <summary>
     /// **自己过载**的速率倍数 —— <c>1.0</c> = **原版一个 shell 的过载速度**。
-    /// 留空 = <see cref="DefaultSelfOverloadRate"/>（<c>1.0</c>）。有效范围 <c>0~1</c>。
+    /// 留空 = <see cref="DefaultSelfOverloadRate"/>（<c>1.0</c>）。有效范围 <c>0~1000</c>
+    /// （上限与 <see cref="MaxShellOverloadTarget"/> 一致）。
     ///
     /// <para>
     /// 仅在 <see cref="SelfOverloadRaw"/> 打开时起作用；写 <c>0</c> = 打开但速率恒为 0
@@ -403,8 +418,24 @@ public class ProxyKillerConfig
         SelfOverloadRate = ConfigValue.ParseInRange(SelfOverloadRateRaw, DefaultSelfOverloadRate,
             0f, MaxSelfOverloadRate, out bool selfRateOk);
         if (!selfRateOk)
+        {
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <SelfOverloadRate> '{SelfOverloadRateRaw}', "
                 + $"expected 0~{MaxSelfOverloadRate}; using {DefaultSelfOverloadRate}.");
+
+            // ⚠️ 只说"expected 0~N"是不够的：作者写的若是**合法数字但超上限**，
+            //    他会在日志里看到一句笼统的 invalid，而实际生效的是默认值 1 ——
+            //    表现就是"体感不像我写的那个数"（曾经真的这样坑过一次，上限还只有 1）。
+            //    所以这里额外点名"你的值被丢掉了、生效的是几"。
+            if (float.TryParse(SelfOverloadRateRaw?.Trim(),
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out float given)
+                && !float.IsNaN(given) && !float.IsInfinity(given) && given > MaxSelfOverloadRate)
+            {
+                KELog.Warn($"[ProxyKiller] '{SourceName}': <SelfOverloadRate> {given} exceeds the maximum "
+                    + $"{MaxSelfOverloadRate} and was DISCARDED - the effective rate is "
+                    + $"{DefaultSelfOverloadRate} (the default), not {given}.");
+            }
+        }
         if (SelfOverload && SelfOverloadRate <= 0f)
         {
             // 开了但速率为 0 = 什么都不做的哑配置，多半是笔误
