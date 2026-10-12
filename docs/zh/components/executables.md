@@ -54,7 +54,7 @@ KernelExtensions 向 Pathfinder 注册了 **6 个**自定义可执行程序，�
 !!! warning "默认不瘫痪任何代理"
     原版把「代理过载」做成 Shell 的一种状态，而运行 Shell 需要目标机的管理员权限 —— 那道门槛是设计护栏。
 
-    **默认**（`<SelfOverload>` 为 0）它只加速**已经在过载中**的 Shell：
+    **默认**（`<SelfOverload>` 为 `false`）它只加速**已经在过载中**的 Shell：
     没有 shell 正在过载时，它只是占着内存跑动画。
 
     开启 `<SelfOverload>` 后它会自己推进过载。这**不是拆护栏**：原版里「过载代理」本身没有权限门槛
@@ -73,7 +73,8 @@ KernelExtensions 向 Pathfinder 注册了 **6 个**自定义可执行程序，�
 | `<BurstTarget>` | 爬满时的目标内存（MB）。留空 = 100 |
 | `<RampRate>` | 内存爬升速率（MB/秒）。留空 = 200 |
 | `<ShellOverloadTarget>` | **加速已有 Shell** 时，爬满时的倍速。留空 = 1（不加速） |
-| `<SelfOverload>` | **自己过载代理**的速率（相对原版单个 Shell 的倍数）。`0` / 负数 / 留空 = 不主动过载（默认）。上限 1 |
+| `<SelfOverload>` | **自己过载代理**的开关。留空 = `false`（不主动过载） |
+| `<SelfOverloadRate>` | 自己过载的速率倍数。**`1` = 原版一个 Shell 的过载速度**。留空 = 1。范围 0~1 |
 | `<FollowConnection>` | `true` = 玩家离开启动时所在的节点就自动关闭。留空 = `false`（常驻）|
 | `<AutoCloseOnOverload>` | 所盯节点的代理**由生效变瘫痪**后自动关闭。留空 = `false` |
 | `<BackgroundColor>` | 数据流颜色。`auto`（大小写不敏感）= 主题高亮色；留空 / `NONE` = 主题高亮色 |
@@ -85,12 +86,18 @@ KernelExtensions 向 Pathfinder 注册了 **6 个**自定义可执行程序，�
 | `<LoadTrailGain>` | 爬满时拖尾的放大倍数。留空 = 2 |
 | `<LoadSpeedGain>` | 爬满时流速的放大倍数。留空 = 2.6 |
 
-!!! note "`<SelfOverload>` 会强制跟随连接"
-    开启自己过载时，`<FollowConnection>` **被忽略并强制为 `true`**（会记一条 Warn）。
-    原因：过载会持续触发目标机的敌对行为（起 trace），不跟随就成了"跑到哪打到哪"。
+!!! note "`<SelfOverload>` 打开时强制跟随连接"
+    打开自己过载时，`<FollowConnection>` **被忽略并强制为 `true`**（会记一条 Warn）。
+    这是该能力的**固有约束，不是可配选项**：过载会持续触发目标机的敌对行为（起 trace），
+    不跟随就成了"跑到哪打到哪"。
 
     「所盯节点」= 跟随连接时的**当前所连节点**、否则是启动时所在节点；
     `<AutoCloseOnOverload>` 看的就是它的代理状态。
+
+!!! tip "开关与速率为什么是两个字段"
+    `<SelfOverload>` 只管**开不开**，`<SelfOverloadRate>` 只管**多快**。
+    合成一个字段（用 `0` 表示关）会让 `0` 同时表示"关掉"和"速率为零"两件事，
+    作者也就无法表达"打开、但速率还没想好"。
 
 !!! tip "与 PortHackV2 的 `<RequireProxyOverload>` 同用时注意"
     `<SelfOverload>` 开启后，「目标机代理已瘫痪」这个前置会被**免费满足**。

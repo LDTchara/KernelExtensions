@@ -60,7 +60,7 @@ no shell needed at all.
     Vanilla models "proxy overload" as a state of a shell, and running a shell requires admin on the
     target — that gate is a deliberate guard rail.
 
-    **By default** (`<SelfOverload>` = 0) it only accelerates shells that are *already* overloading:
+    **By default** (`<SelfOverload>` = `false`) it only accelerates shells that are *already* overloading:
     with no shell overloading, it just sits there using RAM and drawing its animation.
 
     With `<SelfOverload>` enabled it advances the overload on its own. That is **not** removing the
@@ -82,7 +82,8 @@ no shell needed at all.
 | `<BurstTarget>` | Target RAM when fully ramped, in MB. Empty = 100 |
 | `<RampRate>` | RAM ramp rate in MB/s. Empty = 200 |
 | `<ShellOverloadTarget>` | **Accelerating existing shells**: multiplier at full ramp. Empty = 1 (no acceleration) |
-| `<SelfOverload>` | **Overloading the proxy itself**, as a multiple of one vanilla shell's rate. `0` / negative / empty = no self-overload (default). Max 1 |
+| `<SelfOverload>` | **Overloading the proxy itself** — the switch. Empty = `false` (no self-overload) |
+| `<SelfOverloadRate>` | Rate for self-overload. **`1` = one vanilla shell's overload speed**. Empty = 1. Range 0–1 |
 | `<FollowConnection>` | `true` = close once the player leaves the node it was started on. Empty = `false` (resident) |
 | `<AutoCloseOnOverload>` | Close once the watched node's proxy goes **from active to down**. Empty = `false` |
 | `<BackgroundColor>` | Data-stream colour. `auto` (case-insensitive) = theme highlight; empty / `NONE` = theme highlight |
@@ -95,12 +96,18 @@ no shell needed at all.
 | `<LoadSpeedGain>` | Flow-speed multiplier at full ramp. Empty = 2.6 |
 
 !!! note "`<SelfOverload>` forces follow-the-connection"
-    When self-overload is active, `<FollowConnection>` is **ignored and forced to `true`** (a warning
-    is logged). Reason: overloading keeps triggering the target's hostile response (trace), so not
-    following would mean "shoot wherever you go".
+    When self-overload is on, `<FollowConnection>` is **ignored and forced to `true`** (a warning
+    is logged). That is an **inherent constraint of this ability, not an option**: overloading keeps
+    triggering the target's hostile response (trace), so not following would mean "shoot wherever
+    you go".
 
     The **watched node** is the **currently connected node** when following, otherwise the node the
     program was started on; `<AutoCloseOnOverload>` watches that node's proxy state.
+
+!!! tip "Why the switch and the rate are two separate fields"
+    `<SelfOverload>` only says **whether** to do it; `<SelfOverloadRate>` only says **how fast**.
+    Merging them (using `0` for "off") would overload the value `0` with two meanings —
+    "disabled" and "rate is zero" — leaving no way to say "on, rate not decided yet".
 
 !!! tip "Sharing an extension with PortHackV2's `<RequireProxyOverload>`"
     With `<SelfOverload>` on, the "target proxy is down" prerequisite is satisfied **for free**.
