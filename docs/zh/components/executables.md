@@ -74,7 +74,7 @@ KernelExtensions 向 Pathfinder 注册了 **6 个**自定义可执行程序，�
 | `<RampRate>` | 内存爬升速率（MB/秒）。留空 = 200 |
 | `<ShellOverloadTarget>` | **加速已有 Shell** 时，爬满时的倍速。留空 = 1（不加速） |
 | `<SelfOverload>` | **自己过载代理**的开关。留空 = `false`（不主动过载） |
-| `<SelfOverloadRate>` | 自己过载的速率倍数。**`1` = 原版一个 Shell 的过载速度**。留空 = 1。范围 0~1 |
+| `<SelfOverloadRate>` | 自己过载的速率倍数。**`1` = 原版一个 Shell 的过载速度**。留空 = 1。范围 0~1000 |
 | `<FollowConnection>` | `true` = 玩家离开启动时所在的节点就自动关闭。留空 = `false`（常驻）|
 | `<AutoCloseOnOverload>` | 所盯节点的代理**由生效变瘫痪**后自动关闭。留空 = `false` |
 | `<BackgroundColor>` | 数据流颜色。`auto`（大小写不敏感）= 主题高亮色；留空 / `NONE` = 主题高亮色 |
