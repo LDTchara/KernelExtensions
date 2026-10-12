@@ -531,7 +531,18 @@ public class ProxyKillerExe : GameExecutable
         }
         else
         {
-            // 敌对行为：原版每个过载帧都调（内部 0.35s 节流 + 只对玩家所连节点起 trace）
+            // 敌对行为：原版每个过载帧都调（见 ShellExe.Update 的 case 1）。
+            //
+            // hostileActionTaken() 是原版通用惯例（13 处调用：每个端口破解器、PortHack、
+            // FTP/HTTP/SSH/SQL 等各一次）。它的实际效果分两半，都由原版自己判定：
+            //   · 只有**玩家正连着那台机**才生效（内部先判 os.connectedComp.ip）
+            //   · 其中「起 trace」还要求该机 traceTime > 0 —— 即**安全等级 ≥ 4** 的机器
+            //     （Computer.cs: 仅 security >= 4 才赋正值）。低安机器只会收到视觉提示
+            //     （SFX 圆圈）、不会起 trace。
+            //   · trace 之外还有 0.35 秒节流的视觉/音效提示（内部 timeLastPinged）
+            //
+            // 所以「跟随连接」对本能力是**双重必要**：既是 trace 生效的前提，
+            // 也是"别跑到哪打到哪"的约束（见 ProxyKillerConfig.ResolvedFollowConnection）。
             TryHostileAction(dest);
         }
 
