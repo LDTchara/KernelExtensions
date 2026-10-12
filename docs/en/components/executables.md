@@ -97,9 +97,17 @@ no shell needed at all.
 
 !!! note "`<SelfOverload>` forces follow-the-connection"
     When self-overload is on, `<FollowConnection>` is **ignored and forced to `true`** (a warning
-    is logged). That is an **inherent constraint of this ability, not an option**: overloading keeps
-    triggering the target's hostile response (trace), so not following would mean "shoot wherever
-    you go".
+    is logged). That is an **inherent constraint of this ability, not an option**, for **two**
+    reasons:
+
+    - **Overloading keeps firing the target's hostile response.** This follows vanilla, which does
+      the same every frame while a Shell overloads; every vanilla port cracker does it too. It
+      produces the trace and the visual ping.
+    - That hostile response **only fires while the player is connected to that machine** — so not
+      following would mean "shoot wherever you go": every node you touch gets its hostile reaction.
+
+    ⚠️ The **trace** half additionally requires the target to be **security level ≥ 4** (vanilla
+    only assigns a trace value to those). Lower-security machines get the visual ping only.
 
     The **watched node** is the **currently connected node** when following, otherwise the node the
     program was started on; `<AutoCloseOnOverload>` watches that node's proxy state.
@@ -108,6 +116,19 @@ no shell needed at all.
     `<SelfOverload>` only says **whether** to do it; `<SelfOverloadRate>` only says **how fast**.
     Merging them (using `0` for "off") would overload the value `0` with two meanings —
     "disabled" and "rate is zero" — leaving no way to say "on, rate not decided yet".
+
+!!! info "Relationship to vanilla `SignalScramble` (DLCTraceSlower)"
+    This program's look comes from vanilla `SignalScramble`, but its mechanics are **inverted**,
+    so the two can coexist:
+
+    | | vanilla SignalScramble | ProxyKiller |
+    |---|---|---|
+    | Effect | **suppresses** trace speed | accelerates proxy overload / self-overload |
+    | Hostile response | **not called** | called (every overload frame) |
+    | Follows the connection | **yes** (exits the moment you switch) | optional; forced with self-overload |
+
+    Vanilla's follow-the-connection is exactly why this program turned `<FollowConnection>` into a
+    config option and forces it for self-overload.
 
 !!! tip "Sharing an extension with PortHackV2's `<RequireProxyOverload>`"
     With `<SelfOverload>` on, the "target proxy is down" prerequisite is satisfied **for free**.
