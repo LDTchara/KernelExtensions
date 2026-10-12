@@ -118,12 +118,11 @@ public class PortHackV2Effects
     }
     public static void addFirewall(OS os,string compid,int lenth,float addtime,string solve)
     {
-        Computer c = Programs.getComputer(os,compid);
+        Computer c = Programs.getComputer(os, compid);
         if(c == null) { Console.WriteLine($"Computer {compid} Not Found"); return; }
         Firewall f = new();
 
         f.additionalDelay = addtime;
-        f.solutionLength = solve.Length;
         if (f.solution.ToLower() == "@random")
         {
             f.generateRandomSolution();
@@ -131,6 +130,15 @@ public class PortHackV2Effects
             f.solution = s;
         }
         else f.solution = solve;
+
+        // ⚠️ solutionLength 决定"这一局要推多少行 / 玩家要输几位"，**必须与最终的 solution 一致**。
+        // 原先这里在开头写 `f.solutionLength = solve.Length`，截断之后不再重算，于是：
+        //   · solve="@random"（7 字符）→ solutionLength 变成 8，而 Length 参数完全没生效
+        //   · Length < 8 时更糟：解被截成 N 位，solutionLength 却仍是 8
+        //     → 玩家要输 8 位、而解只有 N 位 → **防火墙无解**
+        // 兄弟方法 ReRandomFirewallSolution 一直是在截断后取 s.Length，这里漏了同一句。
+        // 放在最后统一赋值，两条分支都不会漏。
+        f.solutionLength = f.solution.Length;
         c.firewall = f;
         c.firewall.solved=false;
     }

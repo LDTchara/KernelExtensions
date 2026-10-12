@@ -61,8 +61,9 @@ namespace KernelExtensions.Configs
         /// **`file` 属性形式**的动作文件路径：<c>&lt;OnStart file="Actions/x.xml" /&gt;</c>。
         ///
         /// <para>
-        /// 这是兼容既有系统的写法（<c>ActionFileRef</c> 用的就是它），统一动作点类型后
-        /// 老配置**不需要改**。<see cref="XmlSerializer"/> 对未知属性是静默忽略的，
+        /// 这是**兼容既有系统的写法** —— 早期各系统的动作点用的是一个只有 <c>file</c> 属性的
+        /// 小类型（已随统一动作点删除），所以老配置写的就是这个形式。
+        /// 统一动作点类型后老配置**不需要改**。<see cref="XmlSerializer"/> 对未知属性是静默忽略的，
         /// 所以这个属性若不存在，老配置会"静默不执行任何动作"且没有任何日志。
         /// </para>
         /// </summary>

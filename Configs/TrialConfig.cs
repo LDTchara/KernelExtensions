@@ -1,4 +1,4 @@
-﻿using System.Xml.Serialization;
+using System.Xml.Serialization;
 
 namespace KernelExtensions.Configs
 {
@@ -19,8 +19,8 @@ namespace KernelExtensions.Configs
         [XmlElement("StartMusic")] public string StartMusic = null;                  // 程序启动到点击按钮前的背景音乐
         [XmlElement("TrialStartMusic")] public string TrialStartMusic = null;        // 点击“开始试炼”后播放的音乐
         [XmlElement("StartButtonText")] public string StartButtonText = null;        // “开始试炼”按钮文字（NONE/空=回退十国本地化）
-        [XmlElement("OnStart")] public ActionHook OnStart = null;                 // 点击“开始试炼”后立即执行的动作
-        [XmlElement("OnAnimationComplete")] public ActionHook OnAnimationComplete = null; // 所有动画完成后执行的动作
+        [XmlElement("OnStart")] public ActionHook OnStart = null;                 // 点击“开始试炼”后立即执行的动作点
+        [XmlElement("OnAnimationComplete")] public ActionHook OnAnimationComplete = null; // 所有动画完成后执行的动作点
 
         // ==================== 自定义颜色（可选，不设置则使用当前主题色） ====================
         [XmlElement("BackgroundColor")] public string BackgroundColor = null;        // 程序窗口背景颜色（支持名称/#RRGGBB/机密）
@@ -46,7 +46,7 @@ namespace KernelExtensions.Configs
         // ==================== 全局计时器 ====================
         [XmlElement("GlobalTimeout")] public float GlobalTimeout = 0f;               // 全局超时秒数，0=无限制
         [XmlElement("EnableGlobalTimer")] public bool EnableGlobalTimer = false;     // 是否显示全局倒计时条
-        [XmlElement("OnGlobalFail")] public ActionHook OnGlobalFail = null;       // 全局超时时执行的动作文件
+        [XmlElement("OnGlobalFail")] public ActionHook OnGlobalFail = null;       // 全局超时时执行的动作点
 
         // ==================== 邮件摧毁阶段聚焦遮罩 ====================
         /// <summary>
@@ -80,7 +80,7 @@ namespace KernelExtensions.Configs
         public List<PhaseConfig> Phases = new();
 
         // ==================== 最终完成动作 ====================
-        [XmlElement("OnComplete")] public ActionHook OnComplete = null;           // 所有阶段完成后执行的动作
+        [XmlElement("OnComplete")] public ActionHook OnComplete = null;           // 所有阶段完成后执行的动作点
         [XmlElement("OutroText")] public string OutroText = null;                    // 试炼完成时显示在终端的描述文本（支持文件路径或内嵌文本）
         [XmlElement("ConnectTarget")] public string ConnectTarget = null;            // 试炼完成后连接的目标节点 ID
         [XmlElement("StopMusicOnConnect")] public bool StopMusicOnConnect = true;    // 转连前是否停止音乐，默认 true
@@ -98,19 +98,11 @@ namespace KernelExtensions.Configs
         [XmlElement("MissionFile")] public string MissionFile;  // 任务 XML 文件路径（相对于扩展根目录）
         [XmlElement("Timeout")] public float Timeout = 0f;      // 阶段超时秒数，0=无限制
         [XmlElement("Music")] public string Music = null;       // 本阶段专用背景音乐
-        [XmlElement("OnPhaseStart")] public ActionHook OnPhaseStart; // 阶段开始时执行的动作文件（新增）
-        [XmlElement("OnComplete")] public ActionHook OnComplete; // 阶段完成时执行的动作文件
-        [XmlElement("OnFail")] public ActionHook OnFail;     // 阶段失败时执行的动作文件
+        [XmlElement("OnPhaseStart")] public ActionHook OnPhaseStart; // 阶段开始时执行的动作点
+        [XmlElement("OnComplete")] public ActionHook OnComplete; // 阶段完成时执行的动作点
+        [XmlElement("OnFail")] public ActionHook OnFail;     // 阶段失败时执行的动作点
         [XmlElement("EnableResetOnFail")] public bool EnableResetOnFail = false; // 失败后是否重置当前阶段
         [XmlElement("ResetText")] public string ResetText = null;   // 重置时额外显示的文本（支持文件路径或内嵌）
         [XmlElement("ExecuteOnPhaseStartOnReset")] public bool ExecuteOnPhaseStartOnReset = false;   // 重置阶段时是否再次执行 OnPhaseStart 动作
-    }
-
-    /// <summary>
-    /// 动作文件引用，包含一个 file 属性。
-    /// </summary>
-    public class ActionFileRef
-    {
-        [XmlAttribute("file")] public string FilePath;          // 动作 XML 文件的路径（相对或绝对）
     }
 }
