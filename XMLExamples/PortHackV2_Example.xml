@@ -29,10 +29,12 @@
        The registration name #PORTHACKV2# is not affected by this. -->
   <ProgramName>PortHackV2</ProgramName>
 
-  <!-- ── 界面标题 / Screen title ──
-       破解界面左上角显示的文字。留空 = 用第一个协议名。
-       Text drawn at the top-left of the window. Empty = the first protocol name. -->
-  <Title>SSH Brute Force</Title>
+  <!-- 注意：**没有** <Title> 配置项。
+       破解界面顶部那行是固定文案（说明"为什么还停在这一屏"，走 KELoc 本地化），
+       不随配置变化；窗口顶部那行画的是程序的 IdentifierName（见文档站《可执行程序》页）。
+       Note: there is **no** <Title> option. The line at the top of the cracking screen is a
+       fixed, localised message (it explains why the program is still on that screen);
+       the window title bar draws the executable's IdentifierName instead. -->
 
   <!-- ── 根级时长（秒）/ Root-level time (seconds) ──
        Cracking 阶段的总时长 —— 底部进度条走的就是它。留空 = 10。
