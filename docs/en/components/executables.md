@@ -53,27 +53,38 @@ A Flag starting with `ProxyKiller_` selects the configuration to load (e.g. `Pro
 with the config placed under `<extensionRoot>/ProxyKiller/`.
 
 It is a **resident accelerator**: it speeds up every shell that is **currently overloading**, so
-proxies crash sooner.
+proxies crash sooner. With `<SelfOverload>` enabled it can also **overload the proxy by itself** —
+no shell needed at all.
 
-!!! warning "It does not overload any proxy itself"
+!!! warning "By default it does not overload any proxy itself"
     Vanilla models "proxy overload" as a state of a shell, and running a shell requires admin on the
-    target — that gate is a deliberate guard rail, and this program **does not remove it**.
-    ProxyKiller only accelerates shells that are *already* overloading.
+    target — that gate is a deliberate guard rail.
 
-    As a result: with no shell overloading, it just sits there using RAM and drawing its animation.
+    **By default** (`<SelfOverload>` = 0) it only accelerates shells that are *already* overloading:
+    with no shell overloading, it just sits there using RAM and drawing its animation.
+
+    With `<SelfOverload>` enabled it advances the overload on its own. That is **not** removing the
+    guard rail: in vanilla, overloading a proxy has **no permission gate of its own**
+    (`ShellExe.StartOverload` performs no checks) — only **running a shell** does. This option fills
+    in a means vanilla never provided.
 
 - The speed multiplier is driven **linearly by the RAM ramp** (starting at 50MB, ramping towards `<BurstTarget>`).
 - With N shells overloading at once, the total rate is N × the multiplier.
 - It re-scans every frame, so shells **started after it** are accelerated just the same.
 - It only touches shells that are **currently overloading** — otherwise an idle shell would start its
   next overload from a negative counter, which would kill it instantly.
+- **Only one instance may run at a time** — a second launch is rejected. The program is resident and
+  its effect is global, so two instances would tick the same shell twice.
 
 | Element | Description |
 |---------|-------------|
 | `<ProgramName>` | Name shown in the terminal. Empty = `ProxyKiller` |
 | `<BurstTarget>` | Target RAM when fully ramped, in MB. Empty = 100 |
 | `<RampRate>` | RAM ramp rate in MB/s. Empty = 200 |
-| `<ShellOverloadTarget>` | Speed multiplier relative to the base rate at full ramp. Empty = 1 |
+| `<ShellOverloadTarget>` | **Accelerating existing shells**: multiplier at full ramp. Empty = 1 (no acceleration) |
+| `<SelfOverload>` | **Overloading the proxy itself**, as a multiple of one vanilla shell's rate. `0` / negative / empty = no self-overload (default). Max 1 |
+| `<FollowConnection>` | `true` = close once the player leaves the node it was started on. Empty = `false` (resident) |
+| `<AutoCloseOnOverload>` | Close once the watched node's proxy goes **from active to down**. Empty = `false` |
 | `<BackgroundColor>` | Data-stream colour. `auto` (case-insensitive) = theme highlight; empty / `NONE` = theme highlight |
 | `<BackgroundCount>` | Particle count at the reference height. Empty = 230 |
 | `<BackgroundReferenceHeight>` | Reference height for the particle count, in pixels. Empty = 200 |
@@ -83,7 +94,20 @@ proxies crash sooner.
 | `<LoadTrailGain>` | Trail multiplier at full ramp. Empty = 2 |
 | `<LoadSpeedGain>` | Flow-speed multiplier at full ramp. Empty = 2.6 |
 
-**Fixed, not configurable**: starting RAM of 50MB and the background type (upward data stream).
+!!! note "`<SelfOverload>` forces follow-the-connection"
+    When self-overload is active, `<FollowConnection>` is **ignored and forced to `true`** (a warning
+    is logged). Reason: overloading keeps triggering the target's hostile response (trace), so not
+    following would mean "shoot wherever you go".
+
+    The **watched node** is the **currently connected node** when following, otherwise the node the
+    program was started on; `<AutoCloseOnOverload>` watches that node's proxy state.
+
+!!! tip "Sharing an extension with PortHackV2's `<RequireProxyOverload>`"
+    With `<SelfOverload>` on, the "target proxy is down" prerequisite is satisfied **for free**.
+    If the same extension also has a cracker depending on it, gate the two apart with flags.
+
+**Fixed, not configurable**: starting RAM of 50MB, the background type (upward data stream), and the
+hostile-response interval (vanilla's 0.35s).
 
 Particle count and flow speed are derived from the **content-area height** — the
 `BackgroundCount` / `BackgroundSpeed` values in the config are "at `BackgroundReferenceHeight`",

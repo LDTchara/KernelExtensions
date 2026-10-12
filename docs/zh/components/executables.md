@@ -49,24 +49,33 @@ KernelExtensions 向 Pathfinder 注册了 **6 个**自定义可执行程序，�
 配置放在 `<扩展根>/ProxyKiller/` 下。
 
 它是**常驻加速器**：加速所有**正在过载**的 Shell，让代理更快瘫痪。
+也可以开启 `<SelfOverload>` 让它**自己过载代理** —— 那时不再需要 Shell。
 
-!!! warning "它自己不瘫痪任何代理"
-    原版把「代理过载」做成 Shell 的一种状态，而运行 Shell 需要目标机的管理员权限 ——
-    那道门槛是设计护栏，本程序**不去拆它**。ProxyKiller 只加速**已经在过载中**的 Shell。
+!!! warning "默认不瘫痪任何代理"
+    原版把「代理过载」做成 Shell 的一种状态，而运行 Shell 需要目标机的管理员权限 —— 那道门槛是设计护栏。
 
-    因此：没有 shell 正在过载时，它只是占着内存跑动画。
+    **默认**（`<SelfOverload>` 为 0）它只加速**已经在过载中**的 Shell：
+    没有 shell 正在过载时，它只是占着内存跑动画。
+
+    开启 `<SelfOverload>` 后它会自己推进过载。这**不是拆护栏**：原版里「过载代理」本身没有权限门槛
+    （`ShellExe.StartOverload` 内无任何检查），门槛只在**运行 Shell** 上 —— 这一项补的是原版一直缺失的手段。
 
 - 倍速由**内存爬升**线性驱动（起始 50MB，`<BurstTarget>` 为爬满目标）。
 - N 个 shell 同时在过载时，总速率 = N × 倍速。
 - 每帧重新遍历，所以**先运行、后开的 shell 一样会被加速**。
 - 只碰**正在过载**的 shell —— 否则空闲 shell 下次过载会从负数起跑，等于秒杀。
+- **同一时间只能运行一个实例**：重复执行会被拒绝。它常驻且副作用是全局的，
+  两个实例会让同一个 shell 被削两次。
 
 | 元素 | 说明 |
 |------|------|
 | `<ProgramName>` | 终端里显示的程序名。留空 = `ProxyKiller` |
 | `<BurstTarget>` | 爬满时的目标内存（MB）。留空 = 100 |
 | `<RampRate>` | 内存爬升速率（MB/秒）。留空 = 200 |
-| `<ShellOverloadTarget>` | 爬满时相对基础速度的倍速。留空 = 1 |
+| `<ShellOverloadTarget>` | **加速已有 Shell** 时，爬满时的倍速。留空 = 1（不加速） |
+| `<SelfOverload>` | **自己过载代理**的速率（相对原版单个 Shell 的倍数）。`0` / 负数 / 留空 = 不主动过载（默认）。上限 1 |
+| `<FollowConnection>` | `true` = 玩家离开启动时所在的节点就自动关闭。留空 = `false`（常驻）|
+| `<AutoCloseOnOverload>` | 所盯节点的代理**由生效变瘫痪**后自动关闭。留空 = `false` |
 | `<BackgroundColor>` | 数据流颜色。`auto`（大小写不敏感）= 主题高亮色；留空 / `NONE` = 主题高亮色 |
 | `<BackgroundCount>` | 在参考高度下的粒子数。留空 = 230 |
 | `<BackgroundReferenceHeight>` | 粒子数的参考高度（像素）。留空 = 200 |
@@ -76,7 +85,18 @@ KernelExtensions 向 Pathfinder 注册了 **6 个**自定义可执行程序，�
 | `<LoadTrailGain>` | 爬满时拖尾的放大倍数。留空 = 2 |
 | `<LoadSpeedGain>` | 爬满时流速的放大倍数。留空 = 2.6 |
 
-**固定不可配**：起始内存 50MB、背景类型（上升数据流）。
+!!! note "`<SelfOverload>` 会强制跟随连接"
+    开启自己过载时，`<FollowConnection>` **被忽略并强制为 `true`**（会记一条 Warn）。
+    原因：过载会持续触发目标机的敌对行为（起 trace），不跟随就成了"跑到哪打到哪"。
+
+    「所盯节点」= 跟随连接时的**当前所连节点**、否则是启动时所在节点；
+    `<AutoCloseOnOverload>` 看的就是它的代理状态。
+
+!!! tip "与 PortHackV2 的 `<RequireProxyOverload>` 同用时注意"
+    `<SelfOverload>` 开启后，「目标机代理已瘫痪」这个前置会被**免费满足**。
+    如果同一扩展里还有依赖它的破解程序，请用 flag 或其它前置把两者门控开。
+
+**固定不可配**：起始内存 50MB、背景类型（上升数据流）、敌对行为的触发间隔（沿用原版 0.35 秒）。
 
 粒子数与流速按**内容区高度**换算 —— 配置里的 `BackgroundCount` / `BackgroundSpeed`
 是"在 `BackgroundReferenceHeight` 这个高度下"的值，窗口大小变化时按幂律缩放，所以不同窗口下观感一致。
