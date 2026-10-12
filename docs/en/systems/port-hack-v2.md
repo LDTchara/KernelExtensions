@@ -63,6 +63,8 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<Time>` | Total length of the Cracking phase in seconds. Empty = 10 |
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) |
+| `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
+| `<IdleSpinSpeed>` | Speed of the slow background spin during the success sequence. Empty = scaled from `SpinSpeed` |
 | `<AccentColor>` | Colour of the **solid** (shared by wireframe and faces; faces use it as the base and the renderer adds shading) |
 | `<ProgressColor>` | Colour of the bottom progress bar. Empty = follow `AccentColor` |
 | `<BackgroundColor>` | Panel background colour. Empty = follow `AccentColor` |
@@ -192,6 +194,41 @@ away from it — the look is "a solid turning", not "a light following it".
     Face rendering is a new capability, so the default must equal the behaviour from before it
     existed — existing configs keep their exact look. Write `<PolyhedronStyle>` explicitly to try
     the filled modes.
+
+#### Spin speed (`<SpinSpeed>`)
+
+The animation's angular velocity is a **slow → fast → slow** curve: linear ramp-up to the target
+speed, steady until the crack finishes, then an exponential brake back to a slow spin.
+`<SpinSpeed>` sets that **target speed**, in radians per second:
+
+| Value | Feel |
+|-------|------|
+| `0` | Not spinning (a static exhibit) |
+| `1.6` | Slow |
+| `3.2` | **Default**, about one turn every 2 seconds |
+| `6.4` | Noticeably faster |
+| `9.6` | Very fast, and you start to see it stepping |
+
+The ramp-up speed and the post-brake idle speed **scale with it at fixed ratios** (0.094 and 0.156),
+so the shape of the curve stays the same — which is what you normally want when tuning speed.
+
+!!! warning "The spin speed cannot be raised without limit"
+    The faster it spins, the larger the **per-frame rotation**, and past some point it stops looking
+    like "spinning fast" and starts looking like it is **stepping/juddering**. At 60fps the per-frame
+    rotation is roughly `SpinSpeed × 0.955` degrees:
+
+    | `SpinSpeed` | Per frame | Feel |
+    |---|---|---|
+    | 3.2 (default) | ~3.1° | Smooth |
+    | 6.4 | ~6.1° | Judder is visible |
+    | 12 | ~11.5° | Clearly stepping |
+
+    Below 60fps the numbers grow further. **For a more energetic feel, adjusting `<Time>` or the
+    presentation mode usually works better than pushing the spin speed.**
+
+`<IdleSpinSpeed>` controls only the slow spin **during the success sequence** (that phase is
+`IdleSpin` — the solid keeps turning as a backdrop). Empty or negative = scaled from `SpinSpeed`;
+set it explicitly if you want the finishing shot to move more.
 
 ---
 
