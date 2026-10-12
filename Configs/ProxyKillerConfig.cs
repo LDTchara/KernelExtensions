@@ -154,8 +154,9 @@ public class ProxyKillerConfig
     /// （例如 8 ≈ 6.25 秒），不必去动 <c>BurstTarget</c>。
     ///
     /// <para>
-    /// 写 <c>0</c> = **不爬，直接到位**：界面停在起始状态（粒子最混沌、读数 0%），
-    /// 而两个能力**立刻是满值**。⚠️ 别把 0 当成"关掉加速" —— 它只是没有爬升过程；
+    /// 写 <c>0</c> = **不爬，直接到位**：RAM 第一帧就跳到 <c>BurstTarget</c>，
+    /// 界面与两个能力**一起**立刻满值（显示 <c>Overdrive</c>）。
+    /// ⚠️ 别把 0 当成"关掉加速" —— 它只是没有爬升过程；
     /// 要关掉某个能力请写它自己的开关 / 目标（<c>ShellOverloadTarget=1</c> / <c>SelfOverload=false</c>）。
     /// </para>
     /// </summary>

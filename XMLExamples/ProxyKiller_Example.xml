@@ -72,15 +72,15 @@
                     自己过载速率从 0 爬到目标倍数（三者共用同一进度）。
                     默认 200 时 50 → 100 只要 0.25 秒，形同瞬间 —— 想看清爬升过程就调小它
                     （例如 8 ≈ 6.25 秒），不必去动 BurstTarget。
-                    写 0 = **不爬、直接到位**：界面停在起始状态（读数 0%），而两个能力立刻满值。
+                    写 0 = **不爬、直接到位**：RAM 第一帧就跳到 BurstTarget，界面与两个能力一起满值。
                     ⚠️ 别把 0 当成"关掉加速"—— 要关掉某个能力请写它自己的目标
                     （ShellOverloadTarget=1 / SelfOverload=false）。
                     It sets the duration of three things: the visual settle, the shell-multiplier
                     ramp, and the self-overload rate ramp (all share one progress).
                     At 200, 50 -> 100 takes 0.25s, i.e. instant; lower it to watch the ramp
                     (8 gives about 6.25s) instead of raising BurstTarget.
-                    0 means **no ramp, straight to full**: the readout stays at 0% but both
-                    abilities are immediately at their targets. Do NOT read 0 as "disable
+                    0 means **no ramp, straight to full**: RAM jumps to BurstTarget on the first
+                    frame, so the readout and both abilities are at full right away. Do NOT read 0 as "disable
                     acceleration" — disable an ability via its own target instead. -->
   <BurstTarget>100</BurstTarget>
   <RampRate>200</RampRate>

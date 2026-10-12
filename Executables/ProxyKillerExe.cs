@@ -319,9 +319,21 @@ public class ProxyKillerExe : GameExecutable
         if (!isExiting)
         {
             // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率可配）
-            if (_ram < _target && _cfg.RampRate > 0f)
+            if (_ram < _target)
             {
-                _ram = Math.Min(_target, _ram + _cfg.RampRate * t);
+                if (_cfg.RampRate > 0f)
+                {
+                    _ram = Math.Min(_target, _ram + _cfg.RampRate * t);
+                }
+                else
+                {
+                    // RampRate = 0 的语义是**不爬、直接到位**，不是"停在起步值"。
+                    // ⚠️ 这里曾经是"跳过整段"，于是 _ram 恒为起始 50MB：
+                    //    能力进度（AbilityProgress）会因 RampRate<=0 直接满值，
+                    //    而界面进度看的是 _ram，就一直是 0% + "Spinning up..." ——
+                    //    表现为"能力是满的、画面说在起步"，两边对不上。
+                    _ram = _target;
+                }
                 ramCost = (int)_ram;
             }
 
