@@ -75,7 +75,15 @@ public class PortHackV2Sequence : IDisposable
     private RenderTarget2D _wireframeTexture;
     private BasicEffect _effect;
     private VertexBuffer _vertexBuffer;
+
+    /// <summary>实心面的顶点缓冲（三角形列表）。<see cref="KPolyhedronStyle.Wireframe"/> 时不建。</summary>
+    private VertexBuffer _faceBuffer;
+
     private RasterizerState _rasterizer;
+
+    /// <summary>画实心面用的光栅状态：开启背面剔除 + 深度测试（线框那个是 <c>CullNone</c>）。</summary>
+    private RasterizerState _faceRasterizer;
+
     private KPlatonicShape _vertexBufferShape = (KPlatonicShape)(-1);
     private KPlatonicShape _axisShape = (KPlatonicShape)(-1);
     private Vector3 _axis = Vector3.UnitY;
@@ -87,6 +95,46 @@ public class PortHackV2Sequence : IDisposable
     private bool _disposed;
 
     private KPlatonicShape _shape = KPlatonicShape.Cube;
+
+    private KPolyhedronStyle _presentation = KPolyhedronStyle.Wireframe;
+
+    /// <summary>呈现方式（见 <see cref="KPolyhedronStyle"/>）。改动在下一帧生效（面缓冲按需重建）。</summary>
+    public KPolyhedronStyle Mode
+    {
+        get => _presentation;
+        set => _presentation = value;
+    }
+
+    /// <summary>是否需要实心面（<see cref="KPolyhedronStyle.Wireframe"/> 之外都要）。</summary>
+    private bool WantsFaces => _presentation != KPolyhedronStyle.Wireframe;
+
+    /// <summary>是否需要线框（<see cref="KPolyhedronStyle.Solid"/> 不要）。</summary>
+    private bool WantsWire => _presentation != KPolyhedronStyle.Solid;
+
+    /// <summary>
+    /// 逐面明暗的**光向**（**纹素空间**，已归一）。
+    ///
+    /// <para>
+    /// 为什么在纹素空间而不是世界空间：这个立体是个**单色剪影** —— 顶点色只是明暗，
+    /// 真正的颜色由 <see cref="RenderFrame"/> 贴图时乘 <c>_lastColor</c> 给。
+    /// 若在世界空间着色，明暗会随自转一起转（同一面转到背光侧才变暗），
+    /// 看起来像"光跟着立体转"；在纹素空间着色则**光固定**，立体转过去面才变暗 ——
+    /// 那才像实体。（代价：每帧按当前旋转重算顶点色，面数 4~20，可忽略。）
+    /// </para>
+    /// </summary>
+    private static readonly Vector3 FaceLightDirection = Vector3.Normalize(new Vector3(-0.45f, 0.8f, 0.55f));
+
+    /// <summary>最暗面的亮度下限（不留全黑；太低会让背光面糊成一团）。</summary>
+    private const float FaceAmbient = 0.30f;
+
+    /// <summary>
+    /// 面顶点缓冲要画的**三角形个数**（各面扇化的三角形之和）。
+    /// 用来告诉 <c>DrawPrimitives</c> 画多少。
+    /// </summary>
+    private int _faceTriangleCount;
+
+    /// <summary>面缓冲所属的立体（换了要重建）。</summary>
+    private KPlatonicShape _faceBufferShape = (KPlatonicShape)(-1);
 
     /// <summary>当前立体（默认立方体）。切换后下一帧重建顶点缓冲与旋转轴。</summary>
     public KPlatonicShape Shape
@@ -320,6 +368,18 @@ public class PortHackV2Sequence : IDisposable
                 MultiSampleAntiAlias = true
             };
         }
+        if (_faceRasterizer == null)
+        {
+            // 画实心面：**开背面剔除**。
+            // 这里能直接用默认的 CullCounterClockwiseFace，是因为 KPolyhedron 给的面环
+            // 已经是"从外面看逆时针"（外法线排环）—— 不必自己判朝向。
+            _faceRasterizer = new RasterizerState
+            {
+                CullMode = CullMode.CullCounterClockwiseFace,
+                FillMode = FillMode.Solid,
+                MultiSampleAntiAlias = true
+            };
+        }
         if (_wireframeTexture == null || _wireframeTexture.Width != dest.Width || _wireframeTexture.Height != dest.Height)
         {
             _wireframeTexture?.Dispose();
@@ -327,6 +387,7 @@ public class PortHackV2Sequence : IDisposable
         }
 
         EnsureVertexBuffer(gd);
+        if (WantsFaces) EnsureFaceBuffer(gd);
         if (_axisShape != Shape)
         {
             _axis = KPolyhedron.SpinAxis(Shape);
@@ -343,18 +404,25 @@ public class PortHackV2Sequence : IDisposable
     /// 内部 RenderTarget：优先 4x MSAA（FNA 改不了线宽，1px 线靠 MSAA 别太硬）；
     /// PreserveContents 让「这一帧没重画」时 <see cref="DrawOverlay"/> 还能贴上一帧的结果。
     /// 驱动不支持 MSAA 就退回无 MSAA；两种都失败则抛出，由 RenderFrame 统一兜底。
+    ///
+    /// <para>
+    /// ⚠️ <b>必须带深度缓冲</b>。只画线时确实用不到（线框本来就该看见背面那几条棱，
+    /// 深度状态也一直是 <c>None</c>）；但画实心面时没有深度测试就会**背面盖住正面**，
+    /// 表现为一团乱 —— 且不会报任何错，只是难看。所以这里统一申请深度，
+    /// 由绘制路径按是否需要实心面来决定用不用它。
+    /// </para>
     /// </summary>
     private static RenderTarget2D CreateRenderTarget(GraphicsDevice gd, int width, int height)
     {
         try
         {
             return new RenderTarget2D(gd, width, height, false, SurfaceFormat.Color,
-                DepthFormat.None, 4, RenderTargetUsage.PreserveContents);
+                DepthFormat.Depth24, 4, RenderTargetUsage.PreserveContents);
         }
         catch (Exception)
         {
             return new RenderTarget2D(gd, width, height, false, SurfaceFormat.Color,
-                DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
+                DepthFormat.Depth24, 0, RenderTargetUsage.PreserveContents);
         }
     }
 
@@ -376,6 +444,116 @@ public class PortHackV2Sequence : IDisposable
         _vertexBuffer.SetData(data);
         _edgeCount = edges.Length;
         _vertexBufferShape = Shape;
+    }
+
+    /// <summary>
+    /// 建面顶点缓冲：把每个凸多边形面**扇化成三角形**。
+    ///
+    /// <para>
+    /// 绕序直接沿用 <see cref="KPolyhedron.Faces"/> 给的（从外面看逆时针），
+    /// 所以硬件背面剔除与 FNA 默认的 <c>CullCounterClockwiseFace</c> 直接对得上 ——
+    /// 不必自己判断朝向。
+    /// </para>
+    ///
+    /// <para>
+    /// 顶点色全部写白：明暗由 <see cref="EnsureFaceShading"/> 每帧按当前旋转重算。
+    /// 之所以不在这里就算好：本方法只在换立体时跑一次，而立体每帧都在转。
+    /// </para>
+    /// </summary>
+    private void EnsureFaceBuffer(GraphicsDevice gd)
+    {
+        if (_faceBuffer != null && _faceBufferShape == Shape) return;
+
+        Vector3[] verts = KPolyhedron.Vertices(Shape);
+        int[][] faces = KPolyhedron.Faces(Shape);
+
+        // 先算总数（每个 n 边形扇化出 n-2 个三角形）
+        int tris = 0;
+        foreach (int[] f in faces) if (f.Length >= 3) tris += f.Length - 2;
+        var data = new VertexPositionColor[tris * 3];
+
+        int w = 0;
+        foreach (int[] f in faces)
+        {
+            if (f.Length < 3) continue;
+            // 扇化：(v0, v_i, v_i+1) —— 对**凸**多边形总是正确且不越界
+            for (int i = 1; i + 1 < f.Length; i++)
+            {
+                data[w++] = new VertexPositionColor(verts[f[0]], Color.White);
+                data[w++] = new VertexPositionColor(verts[f[i]], Color.White);
+                data[w++] = new VertexPositionColor(verts[f[i + 1]], Color.White);
+            }
+        }
+
+        _faceBuffer?.Dispose();
+        _faceBuffer = new VertexBuffer(gd, VertexPositionColor.VertexDeclaration, data.Length, BufferUsage.WriteOnly);
+        _faceBuffer.SetData(data);
+        _faceTriangleCount = tris;
+        _faceBufferShape = Shape;
+    }
+
+    /// <summary>
+    /// 按当前旋转重算逐面明暗，写回面缓冲的顶点色。
+    ///
+    /// <para>
+    /// 在**纹素空间**做：法线乘 <c>_orientation</c> 与自转角，光向固定不动
+    /// （见 <see cref="FaceLightDirection"/>）。这样一个面转到背光侧才变暗，观感是"实体在转"。
+    /// </para>
+    ///
+    /// <para>
+    /// 每个面**整片一个亮度**（平面着色），这正是低多边形"看得出体积"的来源；
+    /// 逐顶点插值会把棱角磨平，反而糊。
+    /// </para>
+    /// </summary>
+    private void EnsureFaceShading()
+    {
+        if (_faceBuffer == null || !WantsFaces) return;
+
+        Vector3[] verts = KPolyhedron.Vertices(Shape);
+        int[][] faces = KPolyhedron.Faces(Shape);
+
+        // 与 RenderToTexture 里的 World 保持一致（等比缩放不影响方向，故只取旋转两段）
+        Matrix rot = _orientation * Matrix.CreateFromAxisAngle(Vector3.UnitY, _angle * SPIN_DIRECTION_SIGN);
+
+        var shades = new Color[faces.Length];
+        for (int fi = 0; fi < faces.Length; fi++)
+        {
+            int[] f = faces[fi];
+            if (f.Length < 3) { shades[fi] = Color.White; continue; }
+
+            // 绕序是"从外看逆时针"，故 (v1-v0) × (v2-v0) 即**外法线**
+            Vector3 n = Vector3.Cross(verts[f[1]] - verts[f[0]], verts[f[2]] - verts[f[0]]);
+            if (n.LengthSquared() < 1e-12f) { shades[fi] = Color.White; continue; }
+            n.Normalize();
+            n = Vector3.TransformNormal(n, rot);
+            n.Normalize();
+
+            float lambert = Math.Max(0f, Vector3.Dot(n, FaceLightDirection));
+            float lum = FaceAmbient + (1f - FaceAmbient) * lambert;
+            shades[fi] = new Color(lum, lum, lum, 1f);
+        }
+
+        // 重建顶点色数组。面数 4~20、顶点数 ≤ 100 量级 —— 每帧重算与重传都可忽略，
+        // 换来的是不必维护"面 → 顶点区间"的映射。
+        int tris = 0;
+        foreach (int[] f in faces) if (f.Length >= 3) tris += f.Length - 2;
+        var data = new VertexPositionColor[tris * 3];
+
+        int w = 0;
+        for (int fi = 0; fi < faces.Length; fi++)
+        {
+            int[] f = faces[fi];
+            if (f.Length < 3) continue;
+            Color c = shades[fi];
+            for (int i = 1; i + 1 < f.Length; i++)
+            {
+                data[w++] = new VertexPositionColor(verts[f[0]], c);
+                data[w++] = new VertexPositionColor(verts[f[i]], c);
+                data[w++] = new VertexPositionColor(verts[f[i + 1]], c);
+            }
+        }
+
+        if (w > 0) _faceBuffer.SetData(data);
     }
 
     private void RenderToTexture(GraphicsDevice gd, Rectangle dest)
@@ -409,10 +587,35 @@ public class PortHackV2Sequence : IDisposable
 
             if (_scale > 0.001f)
             {
-                foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+                // ── 实心面：先画（带深度，背面被硬件剔除），线框后画 ──
+                // 顺序不能反：线框用 DepthStencilState.None（要能看见背面那几条棱），
+                // 若先画线再画面，面会把线盖掉一部分，棱就断了。
+                if (WantsFaces && _faceBuffer != null && _faceTriangleCount > 0)
                 {
-                    pass.Apply();
-                    gd.DrawPrimitives(PrimitiveType.LineList, 0, _edgeCount);
+                    // 逐面明暗：按当前旋转重算顶点色（纹素空间，光固定）
+                    EnsureFaceShading();
+
+                    gd.RasterizerState = _faceRasterizer;             // 开背面剔除
+                    gd.DepthStencilState = DepthStencilState.Default; // 开深度测试 + 写入
+                    gd.SetVertexBuffer(_faceBuffer);
+
+                    foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        gd.DrawPrimitives(PrimitiveType.TriangleList, 0, _faceTriangleCount);
+                    }
+                }
+
+                if (WantsWire)
+                {
+                    gd.RasterizerState = _rasterizer;
+                    gd.DepthStencilState = DepthStencilState.None; // 线框本来就该看见背面那几条棱
+                    gd.SetVertexBuffer(_vertexBuffer);
+                    foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        gd.DrawPrimitives(PrimitiveType.LineList, 0, _edgeCount);
+                    }
                 }
             }
         }
@@ -436,12 +639,18 @@ public class PortHackV2Sequence : IDisposable
         _wireframeTexture = null;
         _vertexBuffer?.Dispose();
         _vertexBuffer = null;
+        _faceBuffer?.Dispose();
+        _faceBuffer = null;
         _effect?.Dispose();
         _effect = null;
         _rasterizer?.Dispose();
         _rasterizer = null;
+        _faceRasterizer?.Dispose();
+        _faceRasterizer = null;
         _edgeCount = 0;
+        _faceTriangleCount = 0;
         _vertexBufferShape = (KPlatonicShape)(-1);
+        _faceBufferShape = (KPlatonicShape)(-1);
         _axisShape = (KPlatonicShape)(-1);
     }
 

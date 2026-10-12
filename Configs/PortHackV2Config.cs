@@ -161,6 +161,27 @@ public class PortHackV2Config
     [XmlIgnore] public KPlatonicShape PolyhedronShape { get; private set; } = KPlatonicShape.Cube;
 
     /// <summary>
+    /// 立体的**呈现方式**：<c>Wireframe</c>（默认）/ <c>Solid</c> / <c>SolidWire</c>（大小写不敏感）。
+    ///
+    /// <list type="bullet">
+    ///   <item><c>Wireframe</c> —— 只画线框。**默认**，与原版 <c>PortHack</c> 观感一致，
+    ///     也是加入面渲染之前的行为（老配置零变化）。</item>
+    ///   <item><c>Solid</c> —— 只画实心面，带**逐面明暗**（平面着色）与背面剔除。</item>
+    ///   <item><c>SolidWire</c> —— 实心面 + 线框叠加：低多边形观感，棱始终可见。</item>
+    /// </list>
+    ///
+    /// <para>
+    /// ⚠️ 面数少的立体（正四面体 4 / 立方体 6 / 正八面体 8）实心后体积感最好；
+    /// 面数多的（正十二面体 12 / 正二十面体 20）实心后可能显得"糊成一团"，
+    /// 那种情况下 <c>SolidWire</c> 通常比纯 <c>Solid</c> 好看。
+    /// </para>
+    /// </summary>
+    [XmlElement("PolyhedronStyle")] public string PolyhedronStyleRaw { get; set; }
+
+    /// <summary>立体呈现方式的解析结果。</summary>
+    [XmlIgnore] public KPolyhedronStyle PolyhedronStyle { get; private set; } = KPolyhedronStyle.Wireframe;
+
+    /// <summary>
     /// 强调色：**动画立体（多边体线框）**专用。
     ///
     /// 留空 / <c>NONE</c> = <see cref="DefaultAccentColor"/>（**白色**）。
@@ -382,6 +403,7 @@ public class PortHackV2Config
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 
         PolyhedronShape = ParsePolyhedron(PolyhedronRaw);
+        PolyhedronStyle = ParsePolyhedronStyle(PolyhedronStyleRaw);
 
         // 强调色：动态色（CC 预设/彩虹/渐变）也要能解析 —— 与其它颜色配置项走同一个入口。
         // 留空 / NONE 时 GetDynamicColor 直接返回默认色（白色），故不需要额外判空。
@@ -466,6 +488,40 @@ public class PortHackV2Config
         KELog.Warn($"[PortHackV2] '{SourceName}': unknown <Polyhedron> '{raw}'; "
             + "expected Tetrahedron / Cube / Octahedron / Dodecahedron / Icosahedron. Using Cube.");
         return KPlatonicShape.Cube;
+    }
+
+    /// <summary>
+    /// 解析立体呈现方式（大小写不敏感）；留空 = 默认线框（不记日志，那是正常省略）；
+    /// 写了但无法识别 = 回退线框 + Warn（帮作者揪出拼写错误）。
+    ///
+    /// <para>
+    /// 默认刻意是 <c>Wireframe</c>：面渲染是**新增能力**，默认值必须等于加入之前的行为，
+    /// 否则已有扩展的观感会无声改变。
+    /// </para>
+    /// </summary>
+    private KPolyhedronStyle ParsePolyhedronStyle(string raw)
+    {
+        if (ConfigValue.IsNone(raw)) return KPolyhedronStyle.Wireframe;
+
+        // 顺带接受几个同义写法，省得作者去猜该用哪个词
+        string v = raw.Trim();
+        if (v.Equals("wire", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("wireframe", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("line", StringComparison.OrdinalIgnoreCase))
+            return KPolyhedronStyle.Wireframe;
+        if (v.Equals("solid", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("filled", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("face", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("faces", StringComparison.OrdinalIgnoreCase))
+            return KPolyhedronStyle.Solid;
+        if (v.Equals("solidwire", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("solid+wire", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("both", StringComparison.OrdinalIgnoreCase))
+            return KPolyhedronStyle.SolidWire;
+
+        KELog.Warn($"[PortHackV2] '{SourceName}': unknown <PolyhedronStyle> '{raw}'; "
+            + "expected Wireframe / Solid / SolidWire. Using Wireframe.");
+        return KPolyhedronStyle.Wireframe;
     }
 }
 

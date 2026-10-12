@@ -74,6 +74,30 @@ namespace KernelExtensions.Utilities
         public static (int A, int B)[] Edges(KPlatonicShape s) => ((int A, int B)[])Get(s).Edges.Clone();
 
         /// <summary>
+        /// 取该立体的面表。返回副本，调用方随便改。
+        ///
+        /// <para>
+        /// 每个面是**顶点下标的闭合环**（含 3~5 个下标），并且<b>绕序已经统一</b>：
+        /// <see cref="BuildFaces"/> 会把法线统一成外法线，<see cref="OrderRing"/> 再按绕该法线的
+        /// 角度升序排环 —— 所以每个环都是"从外面看逆时针"。
+        /// </para>
+        ///
+        /// <para>
+        /// 这个绕序正是 <c>PrimitiveType.TriangleFan</c> 需要的，也是 FNA 默认
+        /// <c>CullMode.CullCounterClockwiseFace</c> 认定的**正面**绕序，因此调用方
+        /// 直接拿去扇化即可，不必再判朝向。⚠️ 但**前提是投影没有翻转手性**。
+        /// </para>
+        /// </summary>
+        /// <param name="s">立体种类；越界值退回立方体，不抛异常。</param>
+        public static int[][] Faces(KPlatonicShape s)
+        {
+            int[][] src = Get(s).Faces;
+            var copy = new int[src.Length][];
+            for (int i = 0; i < src.Length; i++) copy[i] = (int[])src[i].Clone();
+            return copy;
+        }
+
+        /// <summary>
         /// 该立体的旋转对称轴（已归一化）—— 取**重数最高、且方向最接近竖直**的那一根。
         ///
         /// <para>
