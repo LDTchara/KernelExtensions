@@ -26,9 +26,20 @@ public class PortHackV2Sequence : IDisposable
 {
     // ---- 时间轴（秒 / 弧度每秒） ----
     private const float STARTUP_RAMP = 0.4f;        // 浮现缩放窗口：并入起转，不再单独占一段时长
-    private const float OMEGA0 = 0.3f;              // 起转角速度
-    private const float OMEGA_MAX = 3.2f;           // 匀速角速度：60fps 单帧约 3.1°，不闪
-    private const float OMEGA_IDLE = 0.5f;          // 急刹结束后的匀速慢转
+
+    /// <summary>
+    /// 匀速（Cracking 期间）的默认目标角速度（弧度/秒）。
+    /// 默认值归配置域所有（<see cref="Configs.PortHackV2Config.DefaultSpinSpeed"/>）——
+    /// 那是面向作者的选项，不该由渲染类持有。
+    /// </summary>
+    public const float DEFAULT_SPIN_SPEED = Configs.PortHackV2Config.DefaultSpinSpeed;
+
+    /// <summary>起转角速度相对目标转速的比例（3.2 时即 0.3）。</summary>
+    private const float OMEGA0_RATIO = 0.3f / DEFAULT_SPIN_SPEED;
+
+    /// <summary>急刹后的慢转角速度相对目标转速的比例（3.2 时即 0.5）。</summary>
+    private const float OMEGA_IDLE_RATIO = 0.5f / DEFAULT_SPIN_SPEED;
+
     private const float SPINDOWN_DECAY = 5f;        // 急刹曲线强度（指数）；1.7s 的窗口里看得见减速
     private const float IDLE_STOP_DECAY = 1.5f;     // IdleSpin=false 时从 ω_idle 停住的时间常数
 
@@ -39,7 +50,46 @@ public class PortHackV2Sequence : IDisposable
     public const float DEFAULT_SPINDOWN_SECONDS = 1.7f;
 
     /// <summary>
+    /// 匀速（Cracking 期间）的**目标角速度**（弧度/秒）。默认 <see cref="DEFAULT_SPIN_SPEED"/>（3.2）。
+    ///
+    /// <para>
+    /// 起转角速度与急刹后的慢转角速度按**固定比例**跟着它缩放（分别是 <c>0.094</c> 与 <c>0.156</c> 倍），
+    /// 以保持"起转慢 → 匀速快 → 急刹回慢"这条曲线不变形 —— 这是调转速时通常想要的效果。
+    /// 想单独控制慢转请看 <see cref="IdleSpinSpeed"/>。
+    /// </para>
+    ///
+    /// <para>
+    /// ⚠️ 数值越高，单帧转角越大：60fps 下每帧约 <c>SpinSpeed × 0.955</c> 度。
+    /// 3.2 → 约 3.1°（原默认，稳）；6.4 → 约 6.1°（已能看出跳）；12 → 约 11.5°（明显跳帧）。
+    /// 低于 20fps 时倍数更大。所以快是好，但别指望能无限快。
+    /// </para>
+    /// </summary>
+    public float SpinSpeed { get; set; } = DEFAULT_SPIN_SPEED;
+
+    /// <summary>
+    /// 急刹结束后**慢转**的角速度（弧度/秒）。
+    /// <c>&lt; 0</c>（默认）= 按 <see cref="SpinSpeed"/> 等比缩放（3.2 时即 0.5）。
+    ///
+    /// <para>
+    /// 只在 <see cref="IdleSpin"/> 为 true 时有意义 —— 那是 Cracking 结束后的成功演出，
+    /// 立体作为背景继续慢转；<c>IdleSpin</c> 为 false 时它平滑停住、用不到这个值。
+    /// </para>
+    /// </summary>
+    public float IdleSpinSpeed { get; set; } = -1f;
+
+    /// <summary>起转角速度 = 目标转速 × 固定比例。</summary>
+    private float OmegaStart => SpinSpeed * OMEGA0_RATIO;
+
+    /// <summary>慢转角速度：单独配了就用配置值，否则按目标转速等比缩放。</summary>
+    private float OmegaIdle => IdleSpinSpeed >= 0f ? IdleSpinSpeed : SpinSpeed * OMEGA_IDLE_RATIO;
+
+    /// <summary>
     /// 单帧时长上限（秒）。低于 20fps 时演出宁可走慢一点，也不让单帧转角大到看起来是「跳帧闪烁」。
+    ///
+    /// <para>
+    /// ⚠️ 它只夹**时长**，不夹**角速度** —— 所以把 <see cref="SpinSpeed"/> 调得很高时，
+    /// 单帧转角会随之变大。那个"跳帧"由作者自己权衡（换算见 <see cref="SpinSpeed"/>）。
+    /// </para>
     /// </summary>
     private const float MAX_STEP = 0.05f;
 
@@ -245,28 +295,29 @@ public class PortHackV2Sequence : IDisposable
         _scale = EvaluateScale(clock);
     }
 
-    /// <summary>按内部时钟求角速度：起转线性加速 → 匀速 ωmax → 急刹指数落到 ω_idle → 匀速慢转。</summary>
+    /// <summary>按内部时钟求角速度：起转线性加速 → 匀速 <see cref="SpinSpeed"/> → 急刹指数落到
+    /// <see cref="OmegaIdle"/> → 匀速慢转。</summary>
     private float EvaluateOmega(float clock)
     {
-        if (_totalSeconds <= 0f && !CrackingFinished) return OMEGA0; // 总时长 0 且还没收尾：直接从起转开始
+        if (_totalSeconds <= 0f && !CrackingFinished) return OmegaStart; // 总时长 0 且还没收尾：直接从起转开始
         if (clock < _spinUpTime)
         {
             float u = _spinUpTime <= 0f ? 1f : Clamp01(clock / _spinUpTime);
-            return MathHelper.Lerp(OMEGA0, OMEGA_MAX, u);
+            return MathHelper.Lerp(OmegaStart, SpinSpeed, u);
         }
         // 匀速一直持续到 Cracking 结束（总时长跑满）
-        if (!CrackingFinished || clock < _totalSeconds) return OMEGA_MAX;
+        if (!CrackingFinished || clock < _totalSeconds) return SpinSpeed;
 
         if (_spinDownTime <= 0f) return IdleOmega();
         float brake = Clamp01((clock - _totalSeconds) / _spinDownTime);
-        return OMEGA_IDLE + (OMEGA_MAX - OMEGA_IDLE) * (float)Math.Exp(-SPINDOWN_DECAY * brake);
+        return OmegaIdle + (SpinSpeed - OmegaIdle) * (float)Math.Exp(-SPINDOWN_DECAY * brake);
     }
 
     /// <summary>急刹结束后的角速度：保持 ω_idle 慢转，或按 <see cref="IdleSpin"/> 平滑停住。</summary>
     private float IdleOmega()
     {
-        if (IdleSpin) return OMEGA_IDLE;
-        float omega = OMEGA_IDLE * (float)Math.Exp(-_idleTime / IDLE_STOP_DECAY);
+        if (IdleSpin) return OmegaIdle;
+        float omega = OmegaIdle * (float)Math.Exp(-_idleTime / IDLE_STOP_DECAY);
         return omega < 0.005f ? 0f : omega; // 视觉上已经停住，直接归零免得一直微动
     }
 

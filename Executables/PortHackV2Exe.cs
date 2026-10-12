@@ -186,6 +186,8 @@ public class PortHackV2Exe : GameExecutable
         // 动画参数交给序列；每帧还会按总时长重算一次时间轴，所以中途改配置也能立刻生效
         _sequence.Shape = CurrentConfig.PolyhedronShape;
         _sequence.Mode = CurrentConfig.PolyhedronStyle;
+        _sequence.SpinSpeed = CurrentConfig.SpinSpeed;
+        _sequence.IdleSpinSpeed = CurrentConfig.IdleSpinSpeed;
         _sequence.SpinUpSeconds = CurrentConfig.SpinUpSeconds;
         _sequence.SpinUpRatio = CurrentConfig.SpinUpRatio;
         _sequence.SpinDownSeconds = CurrentConfig.SpinDownSeconds;

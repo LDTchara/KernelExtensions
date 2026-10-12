@@ -156,11 +156,26 @@
        SpinUpTime   ：起转时长的绝对秒数；写了就以它为准，留空或负数 = 用比例。
                       Absolute ramp-up seconds; overrides the ratio. Empty or negative = use ratio.
        SpinDownTime ：急刹时长（秒）。留空 = 1.7；剩余时间不够时自动截断。
-                      Brake duration in seconds. Empty = 1.7; truncated if time runs short. -->
+                      Brake duration in seconds. Empty = 1.7; truncated if time runs short.
+       SpinSpeed    ：立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒转一圈）。
+                      觉得默认太慢就往上调；起转速度与急刹后的慢转**按固定比例跟着缩放**，
+                      所以"慢 → 快 → 慢"这条曲线不会变形。
+                      ⚠️ 转速越高、单帧转角越大，到某个点就从"转得快"变成"一跳一跳"：
+                        3.2 ≈ 3.1°/帧（默认，稳）· 6.4 ≈ 6.1°/帧（已能看出跳）· 12 ≈ 11.5°/帧（明显跳）。
+                      想更强烈的动感，调时长或呈现方式通常比一味提转速更有效。
+                      Target spin speed in radians/second. Empty = 3.2 (about one turn per 2s).
+                      Ramp-up and brake speeds scale with it, keeping the curve's shape.
+       IdleSpinSpeed：成功演出期间**背景慢转**的速度（弧度/秒）。
+                      留空或负数 = 按 SpinSpeed 等比缩放（3.2 时即 0.5）。
+                      只在成功演出（立体作为背景继续慢转）时有用。
+                      Speed of the slow background spin during the success sequence.
+                      Empty/negative = scaled from SpinSpeed (0.5 when SpinSpeed is 3.2). -->
   <Polyhedron>Cube</Polyhedron>
   <PolyhedronStyle>Wireframe</PolyhedronStyle>
   <SpinUpRatio>0.1</SpinUpRatio>
   <SpinDownTime>1.7</SpinDownTime>
+  <SpinSpeed>3.2</SpinSpeed>
+  <IdleSpinSpeed>-1</IdleSpinSpeed>
 
   <!-- ── 结束后行为 / On-finish behaviour ──
        TakeAdmin：成功后是否像原版 PortHack 一样取得目标机管理员权限（把 owner 设为玩家）。
@@ -282,6 +297,19 @@
     [只要实心面（面数少时体积感最好）/ Solid only (best volume read on low face counts)]
       <Polyhedron>Tetrahedron</Polyhedron>
       <PolyhedronStyle>Solid</PolyhedronStyle>
+
+    [嫌默认转得慢：加倍 / The default spin feels slow: double it]
+      <SpinSpeed>6.4</SpinSpeed>
+
+    [要明显更快（注意开始看出跳帧）/ Clearly faster (frame judder becomes visible)]
+      <SpinSpeed>9.6</SpinSpeed>
+
+    [收尾画面也转得快些 / Keep the finishing shot spinning faster too]
+      <SpinSpeed>6.4</SpinSpeed>
+      <IdleSpinSpeed>1.5</IdleSpinSpeed>
+
+    [不要转（当静态展品）/ Do not spin at all]
+      <SpinSpeed>0</SpinSpeed>
 
     [动作点写成内联 / Action hook written inline]
       不用建文件，直接写在钩子里（同样可挂在协议级的 <OnStart> / <OnComplete> / <OnFail>）：

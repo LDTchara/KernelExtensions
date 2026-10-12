@@ -235,6 +235,17 @@ public class PortHackV2Config
     public const string DefaultCompletionText = "COMPLETE";
 
     /// <summary>
+    /// 立体**目标转速**的默认值（弧度/秒）。
+    ///
+    /// <para>
+    /// 3.2 rad/s ≈ 每 2 秒转一圈，60fps 下每帧约 3.1° —— 刻意压在"再快就开始看出跳帧"的边缘。
+    /// 定义在这里（而不是渲染类里）是因为它属于**面向作者的默认值**；
+    /// 渲染类反过来引用它。
+    /// </para>
+    /// </summary>
+    public const float DefaultSpinSpeed = 3.2f;
+
+    /// <summary>
     /// 起转（加速）时长**占总时长的比例**。留空 = 0.1（总时长的 10%）。
     /// 与 <c>SpinUpTime</c> 同时写时以 <c>SpinUpTime</c> 为准。
     /// </summary>
@@ -245,6 +256,33 @@ public class PortHackV2Config
 
     /// <summary>急刹（减速）时长（秒）。留空 = 1.7；剩余时间不够时自动截断。</summary>
     [XmlElement("SpinDownTime")] public string SpinDownSecondsRaw { get; set; }
+
+    /// <summary>
+    /// 立体的**目标转速**（弧度/秒）。留空 = 3.2。
+    ///
+    /// <para>
+    /// 3.2 rad/s ≈ 每 2 秒转一圈（60fps 下每帧约 3.1°）。觉得默认太慢就往上调；
+    /// 起转与急刹后的慢转**按固定比例跟着缩放**，所以整条转速曲线（慢 → 快 → 慢）不会变形。
+    /// </para>
+    ///
+    /// <para>
+    /// ⚠️ 转速越高，单帧转角越大 —— 到某个点就会从"转得快"变成"一跳一跳"。
+    /// 参考（60fps）：<c>3.2</c> ≈ 3.1°/帧（稳）· <c>6.4</c> ≈ 6.1°/帧（已能看出跳）·
+    /// <c>12</c> ≈ 11.5°/帧（明显跳帧）。想更强烈的动感，调时长/呈现方式通常比一味提转速更有效。
+    /// </para>
+    /// </summary>
+    [XmlElement("SpinSpeed")] public string SpinSpeedRaw { get; set; }
+
+    /// <summary>
+    /// 急刹结束后**成功演出期间**的慢转角速度（弧度/秒）。
+    /// 留空或负数 = 按 <see cref="SpinSpeedRaw"/> 等比缩放（3.2 时即 0.5）。
+    ///
+    /// <para>
+    /// 只在成功演出（<c>IdleSpin</c>）期间有意义；那是背景里的慢转，
+    /// 想让"收尾画面"动得更明显就单独调它。
+    /// </para>
+    /// </summary>
+    [XmlElement("IdleSpinSpeed")] public string IdleSpinSpeedRaw { get; set; }
 
     /// <summary>成功演出结束后、退出前的停留秒数。留空 = 5（对齐原版 TIME_ALIVE_AFTER_SUCSESS）。</summary>
     [XmlElement("CompleteDelay")] public string CompleteDelayRaw { get; set; }
@@ -259,6 +297,12 @@ public class PortHackV2Config
 
     /// <summary>急刹时长的解析结果（秒）。</summary>
     [XmlIgnore] public float SpinDownSeconds { get; private set; } = 1.7f;
+
+    /// <summary>目标转速的解析结果（弧度/秒）。</summary>
+    [XmlIgnore] public float SpinSpeed { get; private set; } = DefaultSpinSpeed;
+
+    /// <summary>成功演出期间慢转速度的解析结果（弧度/秒）；&lt; 0 = 按目标转速等比缩放。</summary>
+    [XmlIgnore] public float IdleSpinSpeed { get; private set; } = -1f;
 
     /// <summary>成功演出后退出前停留（秒）。</summary>
     [XmlIgnore] public float CompleteDelay { get; private set; } = 5f;
@@ -454,6 +498,20 @@ public class PortHackV2Config
         SpinDownSeconds = ConfigValue.ParseInRange(SpinDownSecondsRaw, 1.7f, 0f, float.MaxValue, out bool sdsOk);
         if (!sdsOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinDownTime> '{SpinDownSecondsRaw}', expected 0~600; using 1.7.");
+
+        // 目标转速：允许 0（立体不转 —— 那是个合法设计选择），上限不限
+        // （平衡是作者的事；过高只会"跳帧"，不会出错）。
+        SpinSpeed = ConfigValue.ParseInRange(SpinSpeedRaw, DefaultSpinSpeed,
+            0f, float.MaxValue, out bool ssOk);
+        if (!ssOk)
+            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinSpeed> '{SpinSpeedRaw}', "
+                + $"expected a finite number >= 0; using {DefaultSpinSpeed}.");
+
+        // 慢转速度：负数 = 按目标转速等比缩放（「负数 = 用默认/继承」约定）
+        IdleSpinSpeed = ConfigValue.ParseInRange(IdleSpinSpeedRaw, -1f, -1f, float.MaxValue, out bool issOk);
+        if (!issOk)
+            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <IdleSpinSpeed> '{IdleSpinSpeedRaw}', "
+                + "expected a finite number >= 0 (or negative for auto); scaling with <SpinSpeed>.");
 
         foreach (var p in Protocols) p?.ResolveValues(SourceName);
     }
