@@ -62,7 +62,8 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<RamCost>` | RAM cost in MB. Empty = 246 (same as vanilla) |
 | `<Time>` | Total length of the Cracking phase in seconds. Empty = 10 |
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
-| `<AccentColor>` | Colour of the **wireframe solid** |
+| `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) |
+| `<AccentColor>` | Colour of the **solid** (shared by wireframe and faces; faces use it as the base and the renderer adds shading) |
 | `<ProgressColor>` | Colour of the bottom progress bar. Empty = follow `AccentColor` |
 | `<BackgroundColor>` | Panel background colour. Empty = follow `AccentColor` |
 | `<BackgroundEffect>` | Background effect type |
@@ -165,6 +166,32 @@ Empty or `NONE` means "use the default" (`ProgressColor` / `BackgroundColor` the
 The solid animation renders off-screen and is then composited back (vanilla is inside a single `SpriteBatch.Begin()` and cannot start a second batch mid-frame). It has spin-up, steady and brake phases.
 
 Every Platonic solid spins around **its own rotational symmetry axis**, and that axis is kept vertical.
+
+#### Presentation (`<PolyhedronStyle>`)
+
+| Value | Effect |
+|-------|--------|
+| `Wireframe` | **Default.** Lines only, matching vanilla `PortHack` |
+| `Solid` | Filled faces only: **per-face shading** (flat) + back-face culling |
+| `SolidWire` | Filled faces **plus** the wireframe overlay: a low-poly look where edges stay visible |
+
+Case-insensitive; `wire` / `solid` / `both` are also accepted. An unrecognised value falls back to
+`Wireframe` with a warning.
+
+Face shading is **one brightness per face** (not per-vertex interpolation) — that is exactly what
+makes a low-poly solid read as a volume; interpolating would smooth the edges away and look muddy.
+The light direction is **fixed in screen space**, so a face only darkens once the solid has rotated
+away from it — the look is "a solid turning", not "a light following it".
+
+!!! tip "Prefer `SolidWire` for high face counts"
+    Low face counts (tetrahedron 4 / cube 6 / octahedron 8) read best as pure `Solid`;
+    high ones (dodecahedron 12 / icosahedron 20) tend to look muddy when filled, and adding the
+    wireframe back (`SolidWire`) keeps the structure legible.
+
+!!! note "`Wireframe` is the default"
+    Face rendering is a new capability, so the default must equal the behaviour from before it
+    existed — existing configs keep their exact look. Write `<PolyhedronStyle>` explicitly to try
+    the filled modes.
 
 ---
 
