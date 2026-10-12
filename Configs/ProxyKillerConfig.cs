@@ -116,10 +116,16 @@ public class ProxyKillerConfig
     /// RAM 爬升速率（MB/s）。留空 = <see cref="DefaultRampRate"/>（200，与原版一致）。
     ///
     /// 它同时决定两件事的快慢：**界面**上粒子由混沌趋于整齐的时长，
-    /// 以及**倍速**从 1 爬到目标值的时长（两者共用同一个进度）。
+    /// 以及**两个能力**（shell 倍速、自己过载速率）从起始值爬到目标值的时长
+    /// （三者共用同一个进度）。
     /// 默认 200 时 50 → 100 只要 0.25 秒，形同瞬间；想看清爬升过程就调小它
     /// （例如 8 ≈ 6.25 秒），不必去动 <c>BurstTarget</c>。
-    /// 写 0 = 停在起始值不爬（倍速恒为 1）。
+    ///
+    /// <para>
+    /// 写 <c>0</c> = **不爬，直接到位**：界面停在起始状态（粒子最混沌、读数 0%），
+    /// 而两个能力**立刻是满值**。⚠️ 别把 0 当成"关掉加速" —— 它只是没有爬升过程；
+    /// 要关掉某个能力请把它自己的目标写成 0（<c>ShellOverloadTarget=1</c> / <c>SelfOverload=0</c>）。
+    /// </para>
     /// </summary>
     [XmlElement("RampRate")] public string RampRateRaw { get; set; }
 
@@ -133,23 +139,26 @@ public class ProxyKillerConfig
     [XmlElement("ShellOverloadTarget")] public string ShellOverloadTargetRaw { get; set; }
 
     /// <summary>
-    /// **自己过载代理**的速率（相对原版单个 shell 的倍数）。留空 / <c>0</c>（含任意负数）= **不主动过载**。
+    /// **自己过载代理**的速率倍数 —— <c>1.0</c> = **原版一个 shell 的过载速度**。
+    /// 留空 / <c>0</c>（含任意负数）= **不主动过载**。
     ///
     /// <para>
-    /// 与 <see cref="ShellOverloadTargetRaw"/> 的区别：那项是"加速**别人**正在做的过载"，
-    /// 本项是"**自己**推进过载"—— 不需要玩家开 shell，因此不依赖目标机的管理员权限
+    /// 与 <see cref="ShellOverloadTargetRaw"/> 的区别：那项是"加速**别人**正在做的过载"
+    /// （倍速，1 = 不加速）；本项是"**自己**推进过载"的**绝对速率**（1 = 与一个原版 shell 等速）。
+    /// 它不需要玩家开 shell，因此不依赖目标机的管理员权限
     /// （原版里过载代理本来就不设权限门槛，门槛只在"运行 shell"上）。
+    /// </para>
+    ///
+    /// <para>
+    /// 速率由 RAM 爬升线性驱动：<c>0 → 本值</c> 对应 <c>50MB → BurstTarget</c>，
+    /// 即**开局几乎不推进、随内存爬升逐渐加速到本值**，之后保持。
+    /// 与 shell 倍速共用同一个进度 —— 玩家调的是"给多少内存"，两个能力一起涨。
     /// </para>
     ///
     /// <para>
     /// ⚠️ **本项有效（&gt;0）时会强制跟随连接**（见 <see cref="ResolvedFollowConnection"/>）：
     /// 因为过载会持续触发目标机的敌对行为（起 trace），
     /// 不跟随的话就是"跑到哪打到哪还爆 trace"，故此项优先于 <see cref="FollowConnectionRaw"/>。
-    /// </para>
-    ///
-    /// <para>
-    /// 速率仍由 RAM 爬升线性驱动：<c>0 → 本值</c> 对应 <c>50MB → BurstTarget</c>，
-    /// 与倍速共用同一个进度 —— 玩家调的是"给多少内存"，两个能力一起涨。
     /// </para>
     /// </summary>
     [XmlElement("SelfOverload")] public string SelfOverloadRaw { get; set; }

@@ -356,9 +356,33 @@ public class ProxyKillerExe : GameExecutable
     private float BackgroundLoad()
         => isExiting ? RampProgress() * MathHelper.Clamp(fade, 0f, 1f) : RampProgress();
 
-    /// <summary>RAM 爬升进度 0~1（= 倍速爬升进度）。起始值 == 目标值时视为已满。</summary>
+    /// <summary>
+    /// RAM 爬升进度 0~1（= 倍速爬升进度）。起始值 == 目标值时视为已满。
+    ///
+    /// <para>
+    /// <b>视觉进度</b>：只看内存爬了多少，<c>RampRate = 0</c> 时恒为 0（画面停在起步状态）。
+    /// 用于背景的密度/流速——那里"没爬"就该是起步的观感。
+    /// </para>
+    /// </summary>
     private float RampProgress()
         => _target > _ramStart ? MathHelper.Clamp((_ram - _ramStart) / (_target - _ramStart), 0f, 1f) : 1f;
+
+    /// <summary>
+    /// <b>能力进度</b>（倍速 / 自己过载速率用它，**不要**用 <see cref="RampProgress"/>）。
+    ///
+    /// <para>
+    /// 与视觉进度的差别只在 <c>RampRate = 0</c> 这个边界：那时 RAM 根本不爬（见 <c>Update</c> 里的
+    /// 爬升守卫），<see cref="RampProgress"/> 恒为 0 —— 若能力也照它算，倍速会恒为 1、
+    /// <b>自己过载的速率会恒为 0（整个功能静默失效）</b>。
+    /// </para>
+    ///
+    /// <para>
+    /// 但 <c>RampRate = 0</c> 的语义是"<b>不爬，直接到位</b>"，不是"关掉功能"。
+    /// 所以这里返回 1 = 能力立刻满值。
+    /// </para>
+    /// </summary>
+    private float AbilityProgress()
+        => _cfg != null && _cfg.RampRate <= 0f ? 1f : RampProgress();
 
     // ======================= 核心：加速所有正在过载的 shell =======================
 
@@ -393,7 +417,7 @@ public class ProxyKillerExe : GameExecutable
     /// </summary>
     private void AccelerateShells(float t)
     {
-        float mul = MathHelper.Lerp(1f, _mulTarget, RampProgress());
+        float mul = MathHelper.Lerp(1f, _mulTarget, AbilityProgress());
         float extraPerShell = t * (mul - 1f);
         if (extraPerShell <= 0f) return;   // 倍速 ≤ 1：不加速（也不该去"冻结"别人的 shell）
 
@@ -488,8 +512,10 @@ public class ProxyKillerExe : GameExecutable
         float ticks = dest.proxyOverloadTicks;
         if (ticks <= 0f) return false;
 
-        // 速率：0 → 目标值，对应 50MB → BurstTarget（与 shell 倍速同一进度）
-        float rate = _selfOverloadTarget * RampProgress();
+        // 速率：0 → 目标值，对应 50MB → BurstTarget（与 shell 倍速同一进度）。
+        // ⚠️ 用 AbilityProgress 而非 RampProgress：RampRate = 0 时后者恒为 0，
+        //    会让这个功能**完全静默失效**（速率恒 0 = 一帧都不推进）。
+        float rate = _selfOverloadTarget * AbilityProgress();
         if (rate <= 0f) return false;
 
         float next = ticks - t * rate;

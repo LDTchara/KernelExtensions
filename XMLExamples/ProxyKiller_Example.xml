@@ -68,12 +68,20 @@
                     Ramp target in MB. Empty = 100.
        RampRate   ：RAM 爬升速率（MB/s）。留空 = 200（与原版一致）。
                     Ramp speed in MB/s. Empty = 200 (same as vanilla).
-                    它同时决定"粒子由乱到稳"和"倍速从 1 爬到目标值"的时长（两者共用同一进度）。
+                    它同时决定三件事的时长：粒子由乱到稳、shell 倍速从 1 爬到目标值、
+                    自己过载速率从 0 爬到目标倍数（三者共用同一进度）。
                     默认 200 时 50 → 100 只要 0.25 秒，形同瞬间 —— 想看清爬升过程就调小它
-                    （例如 8 ≈ 6.25 秒），不必去动 BurstTarget。写 0 = 停在起始值不爬。
-                    It sets the duration of both the visual settle and the multiplier ramp.
+                    （例如 8 ≈ 6.25 秒），不必去动 BurstTarget。
+                    写 0 = **不爬、直接到位**：界面停在起始状态（读数 0%），而两个能力立刻满值。
+                    ⚠️ 别把 0 当成"关掉加速"—— 要关掉某个能力请写它自己的目标
+                    （ShellOverloadTarget=1 / SelfOverload=0）。
+                    It sets the duration of three things: the visual settle, the shell-multiplier
+                    ramp, and the self-overload rate ramp (all share one progress).
                     At 200, 50 -> 100 takes 0.25s, i.e. instant; lower it to watch the ramp
-                    (8 gives about 6.25s) instead of raising BurstTarget. 0 means no ramp. -->
+                    (8 gives about 6.25s) instead of raising BurstTarget.
+                    0 means **no ramp, straight to full**: the readout stays at 0% but both
+                    abilities are immediately at their targets. Do NOT read 0 as "disable
+                    acceleration" — disable an ability via its own target instead. -->
   <BurstTarget>100</BurstTarget>
   <RampRate>200</RampRate>
 
@@ -102,10 +110,11 @@
        With a valid value (0 < x <= 1) the program reduces the watched node's proxy overload
        progress **without any Shell**, at x times the rate of one vanilla Shell. 1 = same as one.
 
-       速率同样由 RAM 爬升**线性驱动**：0 → SelfOverload 对应 50MB → BurstTarget
-       （与倍速共用同一个进度）—— 所以你调的是"给多少内存"，两个能力一起涨。
-       The rate is driven by the same RAM ramp: 0 -> SelfOverload across 50MB -> BurstTarget.
-       You tune "how much memory", and both abilities grow together.
+       速率由 RAM 爬升**线性驱动**：0 → SelfOverload 对应 50MB → BurstTarget
+       （与 shell 倍速共用同一个进度）—— 即**开局几乎不推进，随内存爬升逐渐加速到本值**，之后保持。
+       The rate is driven by the same RAM ramp: 0 -> SelfOverload across 50MB -> BurstTarget,
+       i.e. it barely advances at first and **gradually accelerates to this value** as RAM climbs,
+       then holds. (Shared with the shell multiplier, so both abilities grow together.)
 
        ⚠️ 有效时**强制跟随连接**（<FollowConnection> 会被忽略并记一条 Warn）：
        过载会持续触发目标机的敌对行为（起 trace），不跟随的话就是跑到哪打到哪。
