@@ -36,11 +36,11 @@ namespace KernelExtensions.Actions.Misc
             }
 
             // 长度：留空 = 用解本身的长度（对齐效果实现的语义）
-            float rawLen = ConfigValue.ParseInRange(Length, Solution.Length, 0f, 4096f, out bool lenOk);
+            float rawLen = ConfigValue.ParseInRange(Length, Solution.Length, 0f, float.MaxValue, out bool lenOk);
             if (!lenOk)
                 KELog.Warn($"[{nameof(PortFirewallAddAction)}] invalid <Length> '{Length}'; using the solution length.");
 
-            float delay = ConfigValue.ParseInRange(AdditionalDelay, 0f, 0f, 3600f, out bool dOk);
+            float delay = ConfigValue.ParseInRange(AdditionalDelay, 0f, 0f, float.MaxValue, out bool dOk);
             if (!dOk)
                 KELog.Warn($"[{nameof(PortFirewallAddAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; using 0.");
 

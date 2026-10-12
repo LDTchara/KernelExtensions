@@ -32,12 +32,12 @@ namespace KernelExtensions.Actions.Misc
 
             // Length 留空 = 保持原值：用现有防火墙的解长度打底
             float fallbackLen = target.firewall?.solutionLength ?? 0;
-            float len = ConfigValue.ParseInRange(Length, fallbackLen, 0f, 4096f, out bool lenOk);
+            float len = ConfigValue.ParseInRange(Length, fallbackLen, 0f, float.MaxValue, out bool lenOk);
             if (!lenOk)
                 KELog.Warn($"[{nameof(PortFirewallConfigureAction)}] invalid <Length> '{Length}'; keeping the current length.");
 
             float fallbackDelay = target.firewall?.additionalDelay ?? 0f;
-            float delay = ConfigValue.ParseInRange(AdditionalDelay, fallbackDelay, 0f, 3600f, out bool dOk);
+            float delay = ConfigValue.ParseInRange(AdditionalDelay, fallbackDelay, 0f, float.MaxValue, out bool dOk);
             if (!dOk)
                 KELog.Warn($"[{nameof(PortFirewallConfigureAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; keeping the current delay.");
 

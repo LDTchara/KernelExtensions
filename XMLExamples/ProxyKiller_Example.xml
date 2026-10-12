@@ -108,9 +108,9 @@
 
        SelfOverload     ：开关。留空 = false = 不主动过载（默认，保持既有行为）。
                           true = **不用 shell 也能削减所盯节点的代理过载进度**。
-       SelfOverloadRate ：速率倍数。**1 = 原版一个 shell 的过载速度**。留空 = 1。范围 0~1000
-                         例如 10 = 十个 shell 同时过载同速。
-                          （1 就是上限 —— 与原版一个 shell 同速已经很快了）。
+       SelfOverloadRate ：速率倍数。**1 = 原版一个 shell 的过载速度**。留空 = 1。**没有上限**。
+                          例如 0.5 = 半速、10 = 十个 shell 同时过载同速。
+                          多快属于你的设计自由 —— 解析层只要求它是一个有限的非负数。
                           写 0 = 打开但永不推进（等于没开，会记一条 Warn 提醒）。
 
        Two fields with distinct jobs: **the switch turns it on, the rate says how fast**.

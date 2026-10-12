@@ -22,7 +22,7 @@ namespace KernelExtensions.Actions.Misc
         {
             if (!TargetActionHelper.TryResolve(os, TargetComp, nameof(PortProxyAddAction), out Computer target)) return;
 
-            float t = ConfigValue.ParseInRange(Time, 10f, 0f, 100000f, out bool ok);
+            float t = ConfigValue.ParseInRange(Time, 10f, 0f, float.MaxValue, out bool ok);
             if (!ok)
                 KELog.Warn($"[{nameof(PortProxyAddAction)}] invalid <Time> '{Time}'; using 10.");
 

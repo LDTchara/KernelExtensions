@@ -59,11 +59,35 @@ public class ProxyKillerConfig
     /// <summary>倍速目标默认值：1.0 = 原版过载速度（不加速）。</summary>
     public const float DefaultShellOverloadTarget = 1f;
 
-    /// <summary>数值项范围。</summary>
+    /// <summary>
+    /// 数值项下限 / <see cref="BurstTarget"/> 的上限。
+    ///
+    /// <para>
+    /// <see cref="MaxRam"/> 是**唯一保留的"数值上限"常量**，理由是它要转 <c>int</c>
+    /// （超大的 <c>float</c> 转 <c>int</c> 会溢出成 <c>int.MinValue</c>）。
+    /// 其余数值项一律**不限上限** —— 见 <see cref="MinShellOverloadTarget"/> 的说明。
+    /// </para>
+    /// </summary>
     public const float MinRam = 0f;
     public const float MaxRam = 100000f;
+
+    /// <summary>
+    /// 加速已有 Shell 的倍速下限（0 = 不加速）。
+    ///
+    /// <para>
+    /// ⚠️ <b>刻意没有上限。</b> 这里曾经有 <c>MaxShellOverloadTarget = 1000f</c>、
+    /// 而"自己过载"的速率上限曾经是 <c>1f</c> —— 两个都是**顺手拍的数**。
+    /// 后果是作者写 <c>&lt;SelfOverloadRate&gt;10</c> 被
+    /// <c>ConfigValue.ParseInRange</c> **静默回退成默认 1**，表现为"配置写了但行为不符"。
+    /// </para>
+    ///
+    /// <para>
+    /// 现约定：解析层只挡"不是一个能用的数"（非数字 / <c>NaN</c> / <c>Infinity</c>）。
+    /// 数值平衡是**扩展作者的事**；数值本身也有原版兜底
+    /// （如 <c>proxyOverloadTicks</c> 减到 0 以下就贴 0）。
+    /// </para>
+    /// </summary>
     public const float MinShellOverloadTarget = 0f;
-    public const float MaxShellOverloadTarget = 1000f;
 
     /// <summary>自己过载代理的默认开关：<c>false</c> = 不主动过载（保持既有行为）。</summary>
     public const bool DefaultSelfOverload = false;
@@ -77,23 +101,6 @@ public class ProxyKillerConfig
     /// </para>
     /// </summary>
     public const float DefaultSelfOverloadRate = 1f;
-
-    /// <summary>
-    /// 自己过载速率的上限 —— 与 <see cref="MaxShellOverloadTarget"/> 取同一个值。
-    ///
-    /// <para>
-    /// ⚠️ 曾经是 1（当时的理由是"一个原版 shell 已经很快了"），但那是个**错误的判断**：
-    /// 加速**别人**的倍速上限给到 1000，而自己过载只给 1，两者不对称；
-    /// 更要命的是超范围值会被 <c>ConfigValue.ParseInRange</c> **回退成默认 1**，
-    /// 于是作者写 10 实际得到 1 —— 体感"不像 10"，且只有一条 Warn。
-    /// </para>
-    ///
-    /// <para>
-    /// 数值本身有原版兜底：<c>proxyOverloadTicks</c> 被减到 0 以下就贴 0，
-    /// 不存在"过快导致溢出 / 负数"的问题。真正的平衡是**扩展作者的事**。
-    /// </para>
-    /// </summary>
-    public const float MaxSelfOverloadRate = MaxShellOverloadTarget;
 
     /// <summary>跟随连接的默认值：<c>false</c> = 常驻（既有行为，零破坏）。</summary>
     public const bool DefaultFollowConnection = false;
@@ -182,8 +189,12 @@ public class ProxyKillerConfig
 
     /// <summary>
     /// **自己过载**的速率倍数 —— <c>1.0</c> = **原版一个 shell 的过载速度**。
-    /// 留空 = <see cref="DefaultSelfOverloadRate"/>（<c>1.0</c>）。有效范围 <c>0~1000</c>
-    /// （上限与 <see cref="MaxShellOverloadTarget"/> 一致）。
+    /// 留空 = <see cref="DefaultSelfOverloadRate"/>（<c>1.0</c>）。**无上限**（有限性即可，见下）。
+    ///
+    /// <para>
+    /// ⚠️ 曾经上限是 <c>1</c>，结果写 <c>10</c> 会被静默回退成默认 <c>1</c>。
+    /// 现在只要求"是一个有限的非负数"；多快是扩展作者的设计自由。
+    /// </para>
     ///
     /// <para>
     /// 仅在 <see cref="SelfOverloadRaw"/> 打开时起作用；写 <c>0</c> = 打开但速率恒为 0
@@ -404,37 +415,25 @@ public class ProxyKillerConfig
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <BurstTarget> '{BurstTargetRaw}', "
                 + $"expected {MinRam}~{MaxRam}; using {DefaultBurstTarget}.");
 
-        RampRate = ParseNum(RampRateRaw, DefaultRampRate, 0f, 100000f, "RampRate");
+        RampRate = ParseNum(RampRateRaw, DefaultRampRate, 0f, "RampRate");
 
         ShellOverloadTarget = ConfigValue.ParseInRange(ShellOverloadTargetRaw, DefaultShellOverloadTarget,
-            MinShellOverloadTarget, MaxShellOverloadTarget, out bool soOk);
+            MinShellOverloadTarget, float.MaxValue, out bool soOk);
         if (!soOk)
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ShellOverloadTarget> '{ShellOverloadTargetRaw}', "
-                + $"expected {MinShellOverloadTarget}~{MaxShellOverloadTarget}; using {DefaultShellOverloadTarget}.");
+                + $"expected a number >= {MinShellOverloadTarget}; using {DefaultShellOverloadTarget}.");
 
         // 自己过载：**开关**与**速率**分开两个字段 —— 一个字段同时表达"开不开"与"多快"
         // 会让 0 这个值承担两重含义（关掉 / 速率为零），作者无法表达"打开但速率待定"。
         SelfOverload = ParseBool(SelfOverloadRaw, DefaultSelfOverload);
+        // 无上限：数值平衡是扩展作者的事。这里挡的只有"不是一个能用的数"
+        // （非数字 / NaN / Infinity / 负数），不是"值看着太大"。
         SelfOverloadRate = ConfigValue.ParseInRange(SelfOverloadRateRaw, DefaultSelfOverloadRate,
-            0f, MaxSelfOverloadRate, out bool selfRateOk);
+            0f, float.MaxValue, out bool selfRateOk);
         if (!selfRateOk)
         {
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <SelfOverloadRate> '{SelfOverloadRateRaw}', "
-                + $"expected 0~{MaxSelfOverloadRate}; using {DefaultSelfOverloadRate}.");
-
-            // ⚠️ 只说"expected 0~N"是不够的：作者写的若是**合法数字但超上限**，
-            //    他会在日志里看到一句笼统的 invalid，而实际生效的是默认值 1 ——
-            //    表现就是"体感不像我写的那个数"（曾经真的这样坑过一次，上限还只有 1）。
-            //    所以这里额外点名"你的值被丢掉了、生效的是几"。
-            if (float.TryParse(SelfOverloadRateRaw?.Trim(),
-                    System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out float given)
-                && !float.IsNaN(given) && !float.IsInfinity(given) && given > MaxSelfOverloadRate)
-            {
-                KELog.Warn($"[ProxyKiller] '{SourceName}': <SelfOverloadRate> {given} exceeds the maximum "
-                    + $"{MaxSelfOverloadRate} and was DISCARDED - the effective rate is "
-                    + $"{DefaultSelfOverloadRate} (the default), not {given}.");
-            }
+                + $"expected a finite number >= 0; using {DefaultSelfOverloadRate}.");
         }
         if (SelfOverload && SelfOverloadRate <= 0f)
         {
@@ -466,26 +465,35 @@ public class ProxyKillerConfig
 
         // ---- 背景：作者填"基准尺寸下的目标值"，这里反解出幂律系数 ----
         // 反解公式：n = C·h^k 且已知 (h0, n0) → C = n0 / h0^k
-        float refH = ParseNum(BackgroundReferenceHeightRaw, DefaultReferenceHeight, 10f, 10000f,
+        float refH = ParseNum(BackgroundReferenceHeightRaw, DefaultReferenceHeight, 10f,
             "BackgroundReferenceHeight");
-        float wantCount = ParseNum(BackgroundCountRaw, DefaultCountAtReference, 1f, 5000f, "BackgroundCount");
-        float wantSpeed = ParseNum(BackgroundSpeedRaw, DefaultSpeedAtReference, 1f, 10000f, "BackgroundSpeed");
+        float wantCount = ParseNum(BackgroundCountRaw, DefaultCountAtReference, 1f, "BackgroundCount");
+        float wantSpeed = ParseNum(BackgroundSpeedRaw, DefaultSpeedAtReference, 1f, "BackgroundSpeed");
 
         BackgroundDensityCoefficient = wantCount / (float)Math.Pow(refH, DefaultDensityExponent);
         BackgroundSpeedCoefficient = wantSpeed / (float)Math.Pow(refH, DefaultSpeedExponent);
 
-        ParticlePixels = ParseNum(ParticlePixelsRaw, DefaultParticlePixels, 1f, 64f, "ParticlePixels");
-        TrailPixels = ParseNum(TrailPixelsRaw, DefaultTrailPixels, 2f, 2000f, "TrailPixels");
-        LoadTrailGain = ParseNum(LoadTrailGainRaw, DefaultLoadTrailGain, 1f, 20f, "LoadTrailGain");
-        LoadSpeedGain = ParseNum(LoadSpeedGainRaw, DefaultLoadSpeedGain, 1f, 50f, "LoadSpeedGain");
+        ParticlePixels = ParseNum(ParticlePixelsRaw, DefaultParticlePixels, 1f, "ParticlePixels");
+        TrailPixels = ParseNum(TrailPixelsRaw, DefaultTrailPixels, 2f, "TrailPixels");
+        LoadTrailGain = ParseNum(LoadTrailGainRaw, DefaultLoadTrailGain, 1f, "LoadTrailGain");
+        LoadSpeedGain = ParseNum(LoadSpeedGainRaw, DefaultLoadSpeedGain, 1f, "LoadSpeedGain");
     }
 
-    /// <summary>解析一个数值背景参数：留空 = 默认（正常省略，不记日志）；畸形 / 超范围 = 回退 + Warn。</summary>
-    private float ParseNum(string raw, float fallback, float min, float max, string name)
+    /// <summary>
+    /// 解析一个数值参数：留空 = 默认（正常省略，不记日志）；畸形 / 无效 = 回退 + Warn。
+    ///
+    /// <paramref name="max"/> 默认不限 —— 只有"语义有界"或"后续要转 int"才该给上限
+    /// （见 <see cref="ConfigValue.ParseInRange"/> 的说明）。Warn 文案按是否给了上限分别措辞，
+    /// 免得谎报一个并不存在的区间。
+    /// </summary>
+    private float ParseNum(string raw, float fallback, float min, string name, float max = float.MaxValue)
     {
         float v = ConfigValue.ParseInRange(raw, fallback, min, max, out bool ok);
         if (!ok)
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <{name}> '{raw}', expected {min}~{max}; using {fallback}.");
+        {
+            string range = max >= float.MaxValue ? $">= {min}" : $"{min}~{max}";
+            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <{name}> '{raw}', expected {range}; using {fallback}.");
+        }
         return v;
     }
 

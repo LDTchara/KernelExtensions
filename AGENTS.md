@@ -59,6 +59,9 @@ dotnet build KernelExtensions.csproj --no-restore
 
 - **NONE 约定**：字符串配置项写 `NONE`（大小写不敏感）或留空 = 显式禁用；不写该属性 = 使用默认值。判断统一走 `Utilities/ConfigValue.IsNone()`
 - **数值约定**：数值配置项**负数 = 使用默认 / 继承 / 无限**（`NaN` / `Infinity` 同样回退默认）。判断写 `< 0` 加有限性检查，**不要写 `== -1`** —— 会漏掉 `-2` 与 `NaN`
+- **数值上限约定（不要随手加）**：数值配置项**默认不限上限**。`ConfigValue.ParseInRange` 的 `max` 只在两类情况下给真实值：① **语义有界**（如百分比 0~100、比例 0~1）；② **后续要转 `int`**（超大 `float` 转 `int` 会溢出成 `int.MinValue`）。其余一律传 `float.MaxValue`
+    - ⚠️ 超范围值会被**回退成默认值**（不是夹到上限），所以一个随手拍的上限 = 作者写了配置却「行为不符」，且很难排查 —— 本项目曾给 `<SelfOverloadRate>` 定过上限 1，作者写 10 被静默换成 1，就是这个问题
+    - 数值平衡是**扩展作者的事**，解析层只管「是不是一个能用的数」
 - **扩展内路径**：作者书写的路径（`HelpFile` / `SystemLogFiles` / `FakeFiles[].Source` / `CheckFilePath` / `CheckFilePattern` 等）一律**相对于扩展根目录**，且**大小写必须与磁盘上的实际文件名一致**（Linux 文件系统区分大小写，Windows 上写错也能跑但同一内容到 Linux 会失效）。路径**不得逃出扩展目录**：不要新增裸的 `Path.Combine(扩展根, 作者字符串)`，越界校验计划统一走 `Utilities/KEPath.ResolveInsideExtension()`（`GetFullPath` 规范化后比对扩展根前缀）
 
 ## Harmony 补丁

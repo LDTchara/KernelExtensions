@@ -90,15 +90,15 @@ public class PortHackV2ProtocolConfig
         if (!rngOk)
             KELog.Warn($"[PortHackV2] '{tag}': invalid <Rng> '{RngRaw}', expected 0~100; using 100 (always succeeds).");
 
-        TimeIfSuccess = ConfigValue.ParseInRange(TimeIfSuccessRaw, 10f, 0f, 3600f, out bool tsOk);
+        TimeIfSuccess = ConfigValue.ParseInRange(TimeIfSuccessRaw, 10f, 0f, float.MaxValue, out bool tsOk);
         if (!tsOk)
             KELog.Warn($"[PortHackV2] '{tag}': invalid <TimeIfSuccess> '{TimeIfSuccessRaw}', expected 0~3600; using 10.");
 
-        TimeIfFail = ConfigValue.ParseInRange(TimeIfFailRaw, 3f, 0f, 3600f, out bool tfOk);
+        TimeIfFail = ConfigValue.ParseInRange(TimeIfFailRaw, 3f, 0f, float.MaxValue, out bool tfOk);
         if (!tfOk)
             KELog.Warn($"[PortHackV2] '{tag}': invalid <TimeIfFail> '{TimeIfFailRaw}', expected 0~3600; using 3.");
 
-        StartDelay = ConfigValue.ParseInRange(StartDelayRaw, 0f, 0f, 36000f, out bool sdOk);
+        StartDelay = ConfigValue.ParseInRange(StartDelayRaw, 0f, 0f, float.MaxValue, out bool sdOk);
         if (!sdOk)
             KELog.Warn($"[PortHackV2] '{tag}': invalid <StartDelay> '{StartDelayRaw}', expected 0~36000; using 0.");
     }
@@ -373,11 +373,11 @@ public class PortHackV2Config
     /// </summary>
     private void ResolveValues()
     {
-        CompleteDelay = ConfigValue.ParseInRange(CompleteDelayRaw, 5f, 0f, 600f, out bool cdOk);
+        CompleteDelay = ConfigValue.ParseInRange(CompleteDelayRaw, 5f, 0f, float.MaxValue, out bool cdOk);
         if (!cdOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <CompleteDelay> '{CompleteDelayRaw}', expected 0~600; using 5.");
 
-        Time = ConfigValue.ParseInRange(TimeRaw, 10f, 0f, 36000f, out bool tOk);
+        Time = ConfigValue.ParseInRange(TimeRaw, 10f, 0f, float.MaxValue, out bool tOk);
         if (!tOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 
@@ -409,7 +409,8 @@ public class PortHackV2Config
         }
         else
         {
-            float n = ConfigValue.ParseInRange(reqPorts, 0f, -1f, 100000f, out bool rpOk);
+            // 上限只为挡住"转 int 溢出"（下面有 (int)n），不是平衡考虑
+            float n = ConfigValue.ParseInRange(reqPorts, 0f, -1f, 1e18f, out bool rpOk);
             if (!rpOk)
                 KELog.Warn($"[PortHackV2] '{SourceName}': invalid <RequireCrackedPorts> '{RequireCrackedPortsRaw}'; "
                     + "expected 'auto' or a non-negative number. Not checked.");
@@ -424,11 +425,11 @@ public class PortHackV2Config
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinUpRatio> '{SpinUpRatioRaw}', expected 0~1; using 0.1.");
 
         // 负数 = 走比例（对齐本项目的「负数 = 用默认/继承」约定）
-        SpinUpSeconds = ConfigValue.ParseInRange(SpinUpSecondsRaw, -1f, -1f, 3600f, out bool susOk);
+        SpinUpSeconds = ConfigValue.ParseInRange(SpinUpSecondsRaw, -1f, -1f, float.MaxValue, out bool susOk);
         if (!susOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinUpTime> '{SpinUpSecondsRaw}', expected -1~3600; using the ratio.");
 
-        SpinDownSeconds = ConfigValue.ParseInRange(SpinDownSecondsRaw, 1.7f, 0f, 600f, out bool sdsOk);
+        SpinDownSeconds = ConfigValue.ParseInRange(SpinDownSecondsRaw, 1.7f, 0f, float.MaxValue, out bool sdsOk);
         if (!sdsOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinDownTime> '{SpinDownSecondsRaw}', expected 0~600; using 1.7.");
 

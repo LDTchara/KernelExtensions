@@ -36,11 +36,11 @@ namespace KernelExtensions.Actions.Misc
                 return;
             }
 
-            float len = ConfigValue.ParseInRange(Length, 12f, 0f, 4096f, out bool lenOk);
+            float len = ConfigValue.ParseInRange(Length, 12f, 0f, float.MaxValue, out bool lenOk);
             if (!lenOk)
                 KELog.Warn($"[{nameof(PortFirewallRerollAction)}] invalid <Length> '{Length}'; using 12.");
 
-            float delay = ConfigValue.ParseInRange(AdditionalDelay, 0f, 0f, 3600f, out bool dOk);
+            float delay = ConfigValue.ParseInRange(AdditionalDelay, 0f, 0f, float.MaxValue, out bool dOk);
             if (!dOk)
                 KELog.Warn($"[{nameof(PortFirewallRerollAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; using 0.");
 
