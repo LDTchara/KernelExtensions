@@ -542,7 +542,7 @@ namespace KernelExtensions.Executables
                                         KELog.Error($"[CustomTrialExe] ConnectTarget '{config.ConnectTarget}' not found.");
                                     }
                                 }
-                                ExecuteActionFile(config.OnComplete?.FilePath);
+                                ExecuteHook(config.OnComplete, "OnComplete");
                                 DeleteCurrentTrialFlag();
                                 Result = CompletionResult.Success;
                             }
@@ -575,7 +575,7 @@ namespace KernelExtensions.Executables
                     this.CanBeKilled = false;
                     if (!ConfigValue.IsNone(config.TrialStartMusic))
                         MusicManager.playSongImmediatley(MusicPathResolver.ResolveMusicPath(config.TrialStartMusic, extensionRoot));
-                    ExecuteActionFile(config.OnStart?.FilePath);
+                    ExecuteHook(config.OnStart, "OnStart");
                     currentState = RunState.SpinningUp;
                     break;
 
@@ -632,7 +632,7 @@ namespace KernelExtensions.Executables
                     PostProcessor.EndingSequenceFlashOutActive = false;
                     PostProcessor.EndingSequenceFlashOutPercentageComplete = 0f;
                     // 执行动画完成后的动作
-                    ExecuteActionFile(config.OnAnimationComplete?.FilePath);
+                    ExecuteHook(config.OnAnimationComplete, "OnAnimationComplete");
                     os.mailicon.isEnabled = true;        // 恢复点击（尽管稍后会被永久隐藏）
                     StartNextPhase();
                     mailExploded = false;   // 重置，以便下次进入该状态时正常爆炸
@@ -659,7 +659,7 @@ namespace KernelExtensions.Executables
                     break;
 
                 case RunState.OnMission:
-                    ExecuteActionFile(CurrentPhase?.OnComplete?.FilePath);
+                    ExecuteHook(CurrentPhase?.OnComplete, "OnComplete");
                     currentPhaseIdx++;
                     if (currentPhaseIdx >= config.Phases.Count)
                     {
@@ -723,7 +723,7 @@ namespace KernelExtensions.Executables
             else
                 currentDisplayText = rawText ?? "";
             // 执行阶段开始时的动作
-            ExecuteActionFile(CurrentPhase.OnPhaseStart?.FilePath);
+            ExecuteHook(CurrentPhase.OnPhaseStart, "OnPhaseStart");
         }
 
         private void PrepareOutro()
@@ -797,7 +797,7 @@ namespace KernelExtensions.Executables
         {
             if (!phaseTimerActive) return;       // 防止重复触发
             phaseTimerActive = false;            // 立即停用阶段计时器
-            ExecuteActionFile(CurrentPhase?.OnFail?.FilePath);
+            ExecuteHook(CurrentPhase?.OnFail, "OnFail");
             if (CurrentPhase.EnableResetOnFail)
                 ResetCurrentPhase();
             else
@@ -818,7 +818,7 @@ namespace KernelExtensions.Executables
             if (!globalTimerActive) return;      // 防止重复触发
             globalTimerActive = false;           // 关键：立即停用全局计时器
             phaseTimerActive = false;
-            ExecuteActionFile(config.OnGlobalFail?.FilePath);
+            ExecuteHook(config.OnGlobalFail, "OnGlobalFail");
             trialSucceeded = false;
             currentState = RunState.Outro;
             currentPhaseIdx = -1;           // 清空阶段
@@ -831,7 +831,7 @@ namespace KernelExtensions.Executables
         {
             if (!phaseTimerActive) return;
             phaseTimerActive = false;
-            ExecuteActionFile(CurrentPhase?.OnFail?.FilePath);
+            ExecuteHook(CurrentPhase?.OnFail, "OnFail");
             if (CurrentPhase.EnableResetOnFail)
                 ResetCurrentPhase();
             else
@@ -872,7 +872,7 @@ namespace KernelExtensions.Executables
             currentDisplayText = resetText + descText;
             // 根据配置决定是否执行阶段开始动作
             if (CurrentPhase.ExecuteOnPhaseStartOnReset)
-                ExecuteActionFile(CurrentPhase.OnPhaseStart?.FilePath);
+                ExecuteHook(CurrentPhase.OnPhaseStart, "OnPhaseStart");
             // 重置任务相关
             missionCompleted = false;
             // 重新加载任务
@@ -917,11 +917,24 @@ namespace KernelExtensions.Executables
         }
 
         // ---------- 动作执行 ----------
-        private void ExecuteActionFile(string filePath)
-        {
-            //现已变为公共方法
-            ActionHelper.ExecuteActionFile(os, filePath, extensionRoot);
-        }
+        /// <summary>
+        /// 执行一个动作点（<see cref="ActionHook"/>）：先文件、后内联，两者都执行。
+        ///
+        /// <para>
+        /// 语义完全交给钩子自己（见 <see cref="ActionHook.Execute"/>），这里只补上日志定位用的
+        /// 来源名与动作点名 —— 后者必须由调用方给出，因为同一个类里有多个动作点，
+        /// 而钩子自身不知道自己挂在哪个配置元素上。
+        /// </para>
+        ///
+        /// <para>
+        /// 之前这里是个只吃路径字符串的包装，统一动作点类型后必须改成吃钩子 ——
+        /// 否则内联内容根本没有机会被传进来。
+        /// </para>
+        /// </summary>
+        /// <param name="hook">动作点；为 null 表示未配置，直接跳过。</param>
+        /// <param name="point">动作点名（如 <c>OnStart</c>），仅用于日志定位。</param>
+        private void ExecuteHook(ActionHook hook, string point)
+            => hook?.Execute(os, CurrentConfigName, point);
 
         // ---------- 节点摧毁特效 ----------
         private void UpdateFlickering(float t)

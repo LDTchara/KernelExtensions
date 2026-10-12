@@ -413,16 +413,16 @@ namespace KernelExtensions.Modules
 
             // 在 UpdateGuideText 方法中，已读跳过之前插入这段
             if (guideLineIndex == 0 && guideCharCount == 0 &&
-                !ConfigValue.IsNone(config.ActionOnGuideTextStart) &&
+                config.ActionOnGuideTextStart != null && config.ActionOnGuideTextStart.HasContent &&
                 !os.Flags.HasFlag("Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config)))
             {
                 os.Flags.AddFlag("Kernel_VMGuideActionDone_" + VMInfectionManager.ConfigId(config));
-                string actionPath = config.ActionOnGuideTextStart;  // 例如 "Actions/ActionOnGuideTextStart.xml"
-                string extensionRoot = ExtensionLoader.ActiveExtensionInfo?.FolderPath;
 
-                KELog.Info("[FakeRecoveryModule] Executing guide start action via ActionHelper...");
+                KELog.Info("[FakeRecoveryModule] Executing guide start action via ActionHook...");
 
-                ActionHelper.ExecuteActionFile(os, actionPath, extensionRoot);
+                // 三种写法（元素文本 / file 属性 / 内联）都由钩子自己处理
+                config.ActionOnGuideTextStart.Execute(os, VMInfectionManager.ConfigId(config),
+                    "ActionOnGuideTextStart");
             }
 
             // 已读跳过：一次性输出所有引导文本（去除指令）

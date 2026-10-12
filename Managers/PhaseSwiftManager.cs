@@ -37,6 +37,13 @@ namespace KernelExtensions.Managers
         public static bool IsRunning { get; private set; }
         public static PhaseSwiftConfig Config { get; private set; }
         public static string ExtensionRoot { get; private set; }
+
+        /// <summary>
+        /// 当前生效的配置名（<c>PhaseSwift_</c> flag 去掉前缀的那段）。
+        /// 仅用于动作点的日志定位 —— <see cref="Configs.ActionHook.Execute"/> 需要它来指明
+        /// 是哪个配置的动作点出了问题。
+        /// </summary>
+        private static string _activeConfigName = "PhaseSwift";
         public static int CurrentScene { get; set; }
         public static int CurrentMusicPhase { get; set; }
         public static bool UseDualTrack { get; private set; } = true;
@@ -126,6 +133,7 @@ namespace KernelExtensions.Managers
                 KELog.Warn($"[PhaseSwift] config name escapes the extension folder: {configName}");
                 return;
             }
+            _activeConfigName = configName;
             configPath = configPath.Replace("\\", "/");
             if (!File.Exists(configPath)) { return; }
 
@@ -554,8 +562,7 @@ namespace KernelExtensions.Managers
                         ApplyTopology(targetScene);
                         UpdateVisibility(targetScene);
                         var onSwitch = Config.Scenes[targetScene].OnSwitch;
-                        if (onSwitch != null && !ConfigValue.IsNone(onSwitch.FilePath))
-                            ActionHelper.ExecuteActionFile(CurrentOS, onSwitch.FilePath, ExtensionRoot);
+                        onSwitch?.Execute(CurrentOS, _activeConfigName, "OnSwitch");
                     });
                     CurrentScene = targetScene;
                     return;
@@ -567,8 +574,7 @@ namespace KernelExtensions.Managers
             UpdateVisibility(targetScene);
 
             var onSwitch = Config.Scenes[targetScene].OnSwitch;
-            if (onSwitch != null && !ConfigValue.IsNone(onSwitch.FilePath))
-                ActionHelper.ExecuteActionFile(CurrentOS, onSwitch.FilePath, ExtensionRoot);
+            onSwitch?.Execute(CurrentOS, _activeConfigName, "OnSwitch");
 
             CurrentScene = targetScene;
         }

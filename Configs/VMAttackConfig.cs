@@ -1,4 +1,4 @@
-﻿using System.Xml.Serialization;
+using System.Xml.Serialization;
 
 namespace KernelExtensions.Configs
 {
@@ -45,8 +45,17 @@ namespace KernelExtensions.Configs
         // 引导文本（支持 % 停顿）
         [XmlArray("GuideText"), XmlArrayItem("Line")] public List<string> GuideText;
 
-        // 显示引导文本时执行的动作文件（相对于扩展根目录）
-        [XmlElement("ActionOnGuideTextStart")] public string ActionOnGuideTextStart;
+        /// <summary>
+        /// 显示引导文本开始时执行的动作点。
+        ///
+        /// <para>
+        /// 三种写法都支持：元素文本内容（路径）、<c>file</c> 属性（旧写法）、内联元素
+        /// （<c>&lt;Actions&gt;</c> / <c>&lt;ConditionalActions&gt;</c>）。
+        /// 旧写法 <c>&lt;ActionOnGuideTextStart&gt;Actions/x.xml&lt;/ActionOnGuideTextStart&gt;</c>
+        /// 不受影响。
+        /// </para>
+        /// </summary>
+        [XmlElement("ActionOnGuideTextStart")] public ActionHook ActionOnGuideTextStart;
 
         // 再进入恢复界面时若已读过一遍引导文本则是否跳过0.2秒输出
         [XmlElement("EnableGuideReadFlag")] public bool EnableGuideReadFlag = false;

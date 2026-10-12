@@ -34,24 +34,61 @@
 	<!-- "Begin Trial" button text (optional; NONE or empty = fall back to the built-in ten-language localization) -->
 	<StartButtonText>START TRIAL</StartButtonText>
 
-	<!-- ==================== 动作文件引用 ==================== -->
-	<!-- ==================== Action File References ==================== -->
+	<!-- ==================== 动作点 ==================== -->
+	<!-- ==================== Action Points ==================== -->
 
-	<!-- 点击“开始试炼”后立即执行的动作文件（可选） -->
-	<!-- Action file executed immediately after clicking "Begin Trial" (optional). -->
+	<!--
+	    每个动作点都支持三种写法，可任选其一（也可同时写：先执行文件、后执行内联）：
+
+	      ① 路径（file 属性）—— 旧写法，最省事
+	         <OnStart file="Actions/OnStart.xml" />
+	      ② 路径（元素文本内容）
+	         <OnStart>Actions/OnStart.xml</OnStart>
+	      ③ 内联动作 —— 逻辑与配置放在一起，不用为一两行动作单独建文件
+	         <OnStart>
+	             <Actions>
+	                 <TerminalWrite Text="starting..." />
+	             </Actions>
+	         </OnStart>
+
+	    内联内容的写法与**动作文件完全一致**：根用 <Actions>（内部动作立即逐个执行）
+	    或 <ConditionalActions>（交给条件系统决定何时执行，如 <Instantly> / <OnConnect>）。
+	    两者可混用。⚠️ 用 <Action>（单数）不被识别 —— 那是阵营专用的容器名。
+
+	    Each action point accepts three forms; pick one (you may also combine them:
+	    the file runs first, then the inline content):
+
+	      1. Path via the `file` attribute (the older form)
+	      2. Path as the element's text content
+	      3. Inline actions — keeps the logic next to the config, no separate file needed
+
+	    Inline content uses exactly the same syntax as an action file: root with
+	    <Actions> (its children run immediately) or <ConditionalActions> (handed to the
+	    condition system). Both may be mixed. Note: <Action> (singular) is NOT recognised
+	    — that container belongs to factions.
+	-->
+
+	<!-- 点击“开始试炼”后立即执行的动作点（可选） -->
+	<!-- Action point executed immediately after clicking "Begin Trial" (optional). -->
 	<OnStart file="Actions/OnStart.xml" />
 
-	<!-- 所有动画完成后执行的动作文件（可选） -->
-	<!-- Action file executed after all animations complete (optional). -->
+	<!-- 所有动画完成后执行的动作点（可选） -->
+	<!-- Action point executed after all animations complete (optional). -->
 	<OnAnimationComplete file="Actions/TrialStart.xml" />
 
-	<!-- 全局超时失败时执行的动作文件（可选） -->
-	<!-- Action file to execute on global timeout failure (optional). -->
+	<!-- 全局超时失败时执行的动作点（可选） -->
+	<!-- Action point to execute on global timeout failure (optional). -->
 	<OnGlobalFail file="Actions/GlobalFail.xml" />
 
-	<!-- 所有阶段完成后的最终动作（可选） -->
-	<!-- Final action after all phases are completed (optional). -->
-	<OnComplete file="Actions/AllComplete.xml" />
+	<!-- 所有阶段完成后的最终动作（可选）—— 这一处演示**内联**写法 -->
+	<!-- Final action after all phases are completed (optional) — shown here as INLINE. -->
+	<OnComplete>
+		<Actions>
+			<!-- 内联动作与动作文件里的写法完全相同 -->
+			<!-- Inline actions are written exactly as they would be in an action file. -->
+			<TerminalWrite Text="TRIAL COMPLETE" />
+		</Actions>
+	</OnComplete>
 
 	<!-- ==================== 动画与特效配置 ==================== -->
 	<!-- ==================== Animation & Effects ==================== -->
@@ -236,16 +273,21 @@
 			<!-- Phase-specific background music (optional, overrides global music). -->
 			<Music>Music/Ambient/AmbientDrone_Clipped</Music>
 
-			<!-- 阶段开始时执行的动作文件 -->
-			<!-- Action file to execute when the phase starts. -->
-			<OnPhaseStart file="Actions/Phase0Start.xml" />
+			<!-- 阶段开始时执行的动作点 —— 这一处演示**内联**写法（三种写法见文件开头的说明） -->
+			<!-- Action point executed when the phase starts — shown here as INLINE
+			     (the three forms are documented at the top of this file). -->
+			<OnPhaseStart>
+				<Actions>
+					<TerminalWrite Text="PHASE 0 START" />
+				</Actions>
+			</OnPhaseStart>
 
-			<!-- 阶段完成时执行的动作文件（可选） -->
-			<!-- Action file to execute on phase completion (optional). -->
+			<!-- 阶段完成时执行的动作点（可选） -->
+			<!-- Action point to execute on phase completion (optional). -->
 			<OnComplete file="Actions/Phase0Complete.xml" />
 
-			<!-- 阶段失败时执行的动作文件（可选，超时或追踪超时触发） -->
-			<!-- Action file to execute on phase failure (optional, triggered by timeout or trace timeout). -->
+			<!-- 阶段失败时执行的动作点（可选，超时或追踪超时触发） -->
+			<!-- Action point to execute on phase failure (optional, triggered by timeout or trace timeout). -->
 			<OnFail file="Actions/Phase0Fail.xml" />
 
 			<!-- 

@@ -95,7 +95,7 @@ namespace KernelExtensions.Configs
     {
         [XmlAttribute("id")] public int Id;
         [XmlElement("Theme")] public string Theme;
-        [XmlElement("OnSwitch")] public ActionFileRef OnSwitch = null;
+        [XmlElement("OnSwitch")] public ActionHook OnSwitch = null;
         [XmlArray("StartNodes"), XmlArrayItem("Node")] public List<PhaseSwiftNodeRef> StartNodes = new();
         [XmlArray("VisibleNodes"), XmlArrayItem("Node")] public List<PhaseSwiftNodeRef> VisibleNodes = new();
         [XmlArray("Topology"), XmlArrayItem("Link")] public List<PhaseSwiftLink> Topology = new();
