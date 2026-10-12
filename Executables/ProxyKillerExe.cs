@@ -66,10 +66,13 @@ public class ProxyKillerExe : GameExecutable
     private float _target;
     private float _mulTarget;
 
-    // ---- 自己过载 / 跟随连接 / 自动关闭（见 ProxyKillerConfig 的三项）----
+    // ---- 自己过载 / 跟随连接 / 自动关闭（见 ProxyKillerConfig 的相应字段）----
 
-    /// <summary>自己过载代理的速率目标（0 = 不主动过载）。</summary>
-    private float _selfOverloadTarget;
+    /// <summary>
+    /// 自己过载的速率（<c>1</c> = 原版一个 shell 的过载速度）。
+    /// 是否启用由 <see cref="ProxyKillerConfig.SelfOverload"/> 决定 —— 开关与速率是两个字段。
+    /// </summary>
+    private float _selfOverloadRate;
 
     /// <summary>启动时所在节点（跟随连接时用它判断"玩家走开了"）。</summary>
     private string _homeIp;
@@ -185,7 +188,7 @@ public class ProxyKillerExe : GameExecutable
         _ramStart = ProxyKillerConfig.RamCost;
         _target = Math.Max(_ramStart, _cfg.BurstTarget);
         _mulTarget = _cfg.ShellOverloadTarget;
-        _selfOverloadTarget = _cfg.SelfOverload;
+        _selfOverloadRate = _cfg.SelfOverloadRate;
         _ram = _ramStart;
         ramCost = (int)_ram;
 
@@ -207,8 +210,8 @@ public class ProxyKillerExe : GameExecutable
         KELog.Info($"{LogTag} '{_cfg.SourceName}' started: ram {_ramStart} -> {_target}MB "
             + $"at {_cfg.RampRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}MB/s, "
             + $"shell overload x1 -> x{_mulTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}"
-            + (_selfOverloadTarget > 0f
-                ? $", self-overload x{_selfOverloadTarget.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} (follows connection)"
+            + (_cfg.SelfOverload
+                ? $", self-overload x{_selfOverloadRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} (follows connection)"
                 : ", no self-overload")
             + $", follow={_cfg.ResolvedFollowConnection}, autoCloseOnOverload={_cfg.AutoCloseOnOverload}.");
 
@@ -503,7 +506,7 @@ public class ProxyKillerExe : GameExecutable
     /// <returns>本帧是否真的推进了某个节点的过载。</returns>
     private bool SelfOverloadProxy(float t)
     {
-        if (_selfOverloadTarget <= 0f) return false;
+        if (!_cfg.SelfOverload) return false;
 
         Computer dest = WatchedComputer();
         if (dest == null) return false;
@@ -515,7 +518,7 @@ public class ProxyKillerExe : GameExecutable
         // 速率：0 → 目标值，对应 50MB → BurstTarget（与 shell 倍速同一进度）。
         // ⚠️ 用 AbilityProgress 而非 RampProgress：RampRate = 0 时后者恒为 0，
         //    会让这个功能**完全静默失效**（速率恒 0 = 一帧都不推进）。
-        float rate = _selfOverloadTarget * AbilityProgress();
+        float rate = _selfOverloadRate * AbilityProgress();
         if (rate <= 0f) return false;
 
         float next = ticks - t * rate;
@@ -594,7 +597,7 @@ public class ProxyKillerExe : GameExecutable
         if (now != _homeIp)
         {
             KELog.Info($"{LogTag} left node '{_homeIp}'"
-                + (_selfOverloadTarget > 0f ? " (self-overload forces follow)" : "")
+                + (_cfg.SelfOverload ? " (self-overload forces follow)" : "")
                 + "; exiting.");
             isExiting = true;
         }

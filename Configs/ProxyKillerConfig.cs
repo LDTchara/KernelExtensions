@@ -65,10 +65,21 @@ public class ProxyKillerConfig
     public const float MinShellOverloadTarget = 0f;
     public const float MaxShellOverloadTarget = 1000f;
 
-    /// <summary>自己过载代理的默认速率（<c>0</c> = 不主动过载，保持既有行为）。</summary>
-    public const float DefaultSelfOverload = 0f;
+    /// <summary>自己过载代理的默认开关：<c>false</c> = 不主动过载（保持既有行为）。</summary>
+    public const bool DefaultSelfOverload = false;
+
+    /// <summary>
+    /// 自己过载速率的默认值：<c>1.0</c> = 与原版**一个** shell 的过载速度相同。
+    ///
+    /// <para>
+    /// 开关打开而没写速率时用这个 —— 不是 0。"打开但速率为 0"只会是个什么都
+    /// 不做的哑配置，不该是默认。
+    /// </para>
+    /// </summary>
+    public const float DefaultSelfOverloadRate = 1f;
+
     /// <summary>自己过载速率的上限：1 = 与原版单个 shell 同速。</summary>
-    public const float MaxSelfOverload = 1f;
+    public const float MaxSelfOverloadRate = 1f;
 
     /// <summary>跟随连接的默认值：<c>false</c> = 常驻（既有行为，零破坏）。</summary>
     public const bool DefaultFollowConnection = false;
@@ -124,7 +135,7 @@ public class ProxyKillerConfig
     /// <para>
     /// 写 <c>0</c> = **不爬，直接到位**：界面停在起始状态（粒子最混沌、读数 0%），
     /// 而两个能力**立刻是满值**。⚠️ 别把 0 当成"关掉加速" —— 它只是没有爬升过程；
-    /// 要关掉某个能力请把它自己的目标写成 0（<c>ShellOverloadTarget=1</c> / <c>SelfOverload=0</c>）。
+    /// 要关掉某个能力请写它自己的开关 / 目标（<c>ShellOverloadTarget=1</c> / <c>SelfOverload=false</c>）。
     /// </para>
     /// </summary>
     [XmlElement("RampRate")] public string RampRateRaw { get; set; }
@@ -139,14 +150,34 @@ public class ProxyKillerConfig
     [XmlElement("ShellOverloadTarget")] public string ShellOverloadTargetRaw { get; set; }
 
     /// <summary>
-    /// **自己过载代理**的速率倍数 —— <c>1.0</c> = **原版一个 shell 的过载速度**。
-    /// 留空 / <c>0</c>（含任意负数）= **不主动过载**。
+    /// **自己过载代理**的开关。留空 = <see cref="DefaultSelfOverload"/>（<c>false</c> = 不主动过载）。
+    ///
+    /// <para>
+    /// 打开后本程序 <b>不用 shell 也能推进所盯节点的代理过载</b> —— 因此**不依赖目标机的
+    /// 管理员权限**（原版里过载代理本来就不设权限门槛，门槛只在"运行 shell"上）。
+    /// 速率见 <see cref="SelfOverloadRateRaw"/>。
+    /// </para>
+    ///
+    /// <para>
+    /// ⚠️ 打开后会**强制跟随连接**（见 <see cref="ResolvedFollowConnection"/>）：
+    /// 过载会持续触发目标机的敌对行为（起 trace），
+    /// 不跟随的话就是"跑到哪打到哪还爆 trace"，故此项优先于 <see cref="FollowConnectionRaw"/>。
+    /// </para>
+    /// </summary>
+    [XmlElement("SelfOverload")] public string SelfOverloadRaw { get; set; }
+
+    /// <summary>
+    /// **自己过载**的速率倍数 —— <c>1.0</c> = **原版一个 shell 的过载速度**。
+    /// 留空 = <see cref="DefaultSelfOverloadRate"/>（<c>1.0</c>）。有效范围 <c>0~1</c>。
+    ///
+    /// <para>
+    /// 仅在 <see cref="SelfOverloadRaw"/> 打开时起作用；写 <c>0</c> = 打开但速率恒为 0
+    /// （等于没开，属作者笔误）。
+    /// </para>
     ///
     /// <para>
     /// 与 <see cref="ShellOverloadTargetRaw"/> 的区别：那项是"加速**别人**正在做的过载"
-    /// （倍速，1 = 不加速）；本项是"**自己**推进过载"的**绝对速率**（1 = 与一个原版 shell 等速）。
-    /// 它不需要玩家开 shell，因此不依赖目标机的管理员权限
-    /// （原版里过载代理本来就不设权限门槛，门槛只在"运行 shell"上）。
+    /// （<b>倍速</b>，1 = 不加速）；本项是"自己推进过载"的**绝对速率**（1 = 与一个原版 shell 等速）。
     /// </para>
     ///
     /// <para>
@@ -154,14 +185,8 @@ public class ProxyKillerConfig
     /// 即**开局几乎不推进、随内存爬升逐渐加速到本值**，之后保持。
     /// 与 shell 倍速共用同一个进度 —— 玩家调的是"给多少内存"，两个能力一起涨。
     /// </para>
-    ///
-    /// <para>
-    /// ⚠️ **本项有效（&gt;0）时会强制跟随连接**（见 <see cref="ResolvedFollowConnection"/>）：
-    /// 因为过载会持续触发目标机的敌对行为（起 trace），
-    /// 不跟随的话就是"跑到哪打到哪还爆 trace"，故此项优先于 <see cref="FollowConnectionRaw"/>。
-    /// </para>
     /// </summary>
-    [XmlElement("SelfOverload")] public string SelfOverloadRaw { get; set; }
+    [XmlElement("SelfOverloadRate")] public string SelfOverloadRateRaw { get; set; }
 
     /// <summary>
     /// 是否**跟随连接**：<c>true</c> 时玩家离开启动时所在的节点就自动关闭。
@@ -230,17 +255,21 @@ public class ProxyKillerConfig
     /// <summary>shell 过载倍速的目标值。</summary>
     [XmlIgnore] public float ShellOverloadTarget { get; private set; } = DefaultShellOverloadTarget;
 
+    /// <summary>是否**自己过载代理**（不依赖 shell / 管理员权限）。</summary>
+    [XmlIgnore] public bool SelfOverload { get; private set; } = DefaultSelfOverload;
+
     /// <summary>
-    /// 自己过载代理的速率（相对原版单个 shell 的倍数）。<c>0</c> = 不主动过载。
+    /// 自己过载的速率倍数（<c>1</c> = 原版一个 shell 的过载速度）。
     /// 速率由 RAM 爬升线性驱动，与 <see cref="ShellOverloadTarget"/> 共用同一个进度。
+    /// 仅在 <see cref="SelfOverload"/> 为 true 时有意义。
     /// </summary>
-    [XmlIgnore] public float SelfOverload { get; private set; } = DefaultSelfOverload;
+    [XmlIgnore] public float SelfOverloadRate { get; private set; } = DefaultSelfOverloadRate;
 
     /// <summary>
     /// 有效解析后的"是否跟随连接"。
     ///
     /// <para>
-    /// ⚠️ <b><see cref="SelfOverload"/> 有效（&gt;0）时强制为 <c>true</c></b>，
+    /// ⚠️ <b><see cref="SelfOverload"/> 为 true 时强制为 <c>true</c></b>，
     /// 无视作者写的 <c>FollowConnection</c>：主动过载会持续触发目标机敌对行为（起 trace），
     /// 不跟随就是"跑到哪打到哪还爆 trace"。此项优先。
     /// </para>
@@ -368,17 +397,24 @@ public class ProxyKillerConfig
             KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ShellOverloadTarget> '{ShellOverloadTargetRaw}', "
                 + $"expected {MinShellOverloadTarget}~{MaxShellOverloadTarget}; using {DefaultShellOverloadTarget}.");
 
-        // 自己过载：留空 / 0 / 任意负数 = 关闭（负数不套 9.55 的"负数 = 用默认"，
-        // 否则 -1 会变成"按默认速率 0 过载"，那反而歧义；这里统一夹到 0）
-        SelfOverload = ConfigValue.ParseInRange(SelfOverloadRaw, DefaultSelfOverload,
-            0f, MaxSelfOverload, out bool selfOk);
-        if (!selfOk)
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <SelfOverload> '{SelfOverloadRaw}', "
-                + $"expected 0~{MaxSelfOverload}; using {DefaultSelfOverload} (no self-overload).");
+        // 自己过载：**开关**与**速率**分开两个字段 —— 一个字段同时表达"开不开"与"多快"
+        // 会让 0 这个值承担两重含义（关掉 / 速率为零），作者无法表达"打开但速率待定"。
+        SelfOverload = ParseBool(SelfOverloadRaw, DefaultSelfOverload);
+        SelfOverloadRate = ConfigValue.ParseInRange(SelfOverloadRateRaw, DefaultSelfOverloadRate,
+            0f, MaxSelfOverloadRate, out bool selfRateOk);
+        if (!selfRateOk)
+            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <SelfOverloadRate> '{SelfOverloadRateRaw}', "
+                + $"expected 0~{MaxSelfOverloadRate}; using {DefaultSelfOverloadRate}.");
+        if (SelfOverload && SelfOverloadRate <= 0f)
+        {
+            // 开了但速率为 0 = 什么都不做的哑配置，多半是笔误
+            KELog.Warn($"[ProxyKiller] '{SourceName}': <SelfOverload> is on but <SelfOverloadRate> is 0, "
+                + "so self-overload will never advance (did you mean to turn <SelfOverload> off?).");
+        }
 
         bool wantFollow = ParseBool(FollowConnectionRaw, DefaultFollowConnection);
-        ResolvedFollowConnection = SelfOverload > 0f || wantFollow;
-        if (SelfOverload > 0f && wantFollow == false && !string.IsNullOrWhiteSpace(FollowConnectionRaw))
+        ResolvedFollowConnection = SelfOverload || wantFollow;
+        if (SelfOverload && !wantFollow && !string.IsNullOrWhiteSpace(FollowConnectionRaw))
         {
             // 作者显式写了 false，但主动过载要求跟随 —— 说清楚为什么被覆盖
             KELog.Warn($"[ProxyKiller] '{SourceName}': <FollowConnection>false</FollowConnection> is ignored "
