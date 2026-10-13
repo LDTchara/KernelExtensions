@@ -162,6 +162,16 @@ public class PortHackV2Sequence : IDisposable
     private bool WantsWire => _presentation != KPolyhedronStyle.Solid;
 
     /// <summary>
+    /// 线框是否**过深度测试**（即被实心面挡住的棱不可见）。
+    ///
+    /// <para>
+    /// 只在"实心 + 线框"时为 true：那时棱的作用是**勾出实心体的边**，所以被挡住的必须藏起来；
+    /// 纯线框模式下则相反 —— 看见背面那几条棱正是线框该有的样子。
+    /// </para>
+    /// </summary>
+    private bool WireDepthTested => WantsFaces && WantsWire;
+
+    /// <summary>
     /// 逐面明暗的**光向**（**纹素空间**，已归一）。
     ///
     /// <para>
@@ -171,11 +181,27 @@ public class PortHackV2Sequence : IDisposable
     /// 看起来像"光跟着立体转"；在纹素空间着色则**光固定**，立体转过去面才变暗 ——
     /// 那才像实体。（代价：每帧按当前旋转重算顶点色，面数 4~20，可忽略。）
     /// </para>
+    ///
+    /// <para>
+    /// ⚠️ <b>它必须与相机方向拉开角度。</b> 相机在 <c>(0, 0.259, 0.966)</c>（轻俯角 15°）。
+    /// 早先取的是 <c>(-0.45, 0.8, 0.55)</c>，归一化后与相机方向的点积高达 <b>0.69</b> ——
+    /// 等于"光几乎从相机这边照过去"，于是**所有朝向相机的面亮度都差不多**，立体看起来是平的
+    /// （实机反馈即此）。现改为偏竖直、明显偏左：与相机方向点积降到 <b>0.34</b>，
+    /// 竖直面之间才拉得开明暗。
+    /// </para>
     /// </summary>
-    private static readonly Vector3 FaceLightDirection = Vector3.Normalize(new Vector3(-0.45f, 0.8f, 0.55f));
+    private static readonly Vector3 FaceLightDirection = Vector3.Normalize(new Vector3(-0.55f, 0.88f, 0.25f));
 
-    /// <summary>最暗面的亮度下限（不留全黑；太低会让背光面糊成一团）。</summary>
-    private const float FaceAmbient = 0.30f;
+    /// <summary>
+    /// 最暗面的亮度下限。
+    ///
+    /// <para>
+    /// ⚠️ 别调高。它抬高会**压掉对比度** —— 早先取 0.30，于是 0.30~1.0 这段里
+    /// 好几个面挤在低端、还齐刷刷落在 0.30 的地板上，糊成一块。
+    /// 取 0.22 是"背光面不被压死"与"明暗拉得开"之间的折中。
+    /// </para>
+    /// </summary>
+    private const float FaceAmbient = 0.22f;
 
     /// <summary>
     /// 面顶点缓冲要画的**三角形个数**（各面扇化的三角形之和）。
@@ -411,12 +437,15 @@ public class PortHackV2Sequence : IDisposable
         }
         if (_rasterizer == null)
         {
-            // 只画线，剔除模式其实不起作用；MultiSampleAntiAlias 配合 MSAA 让 1px 线别太硬
+            // 只画线，剔除模式其实不起作用；MultiSampleAntiAlias 配合 MSAA 让 1px 线别太硬。
+            // DepthBias 是**负值** = 把线往相机方向拉一点：棱就落在面的边上，
+            // 不做这个移位的话两者共面，深度比较时胜负随机 → 棱会一段一段地闪（z-fighting）。
             _rasterizer = new RasterizerState
             {
                 CullMode = CullMode.None,
                 FillMode = FillMode.Solid,
-                MultiSampleAntiAlias = true
+                MultiSampleAntiAlias = true,
+                DepthBias = -100000
             };
         }
         if (_faceRasterizer == null)
@@ -579,7 +608,13 @@ public class PortHackV2Sequence : IDisposable
             n = Vector3.TransformNormal(n, rot);
             n.Normalize();
 
-            float lambert = Math.Max(0f, Vector3.Dot(n, FaceLightDirection));
+            // 点积 [-1,1] 先重映射到 [0,1] 再平方：
+            // ⚠️ 不要写 max(0, dot) —— 那样凡是背对光的面**全都压在同一个地板值**上，
+            //    八面体这种"多面同时背光"的形状会糊成一块死平的色块（实机反馈即此）。
+            //    重映射后最亮面仍是 1.0，而背光面之间仍有**有序的**明暗差（暗者更暗）。
+            float dot = Vector3.Dot(n, FaceLightDirection);
+            float lambert = (dot + 1f) * 0.5f;
+            lambert *= lambert;
             float lum = FaceAmbient + (1f - FaceAmbient) * lambert;
             shades[fi] = new Color(lum, lum, lum, 1f);
         }
@@ -660,8 +695,21 @@ public class PortHackV2Sequence : IDisposable
                 if (WantsWire)
                 {
                     gd.RasterizerState = _rasterizer;
-                    gd.DepthStencilState = DepthStencilState.None; // 线框本来就该看见背面那几条棱
                     gd.SetVertexBuffer(_vertexBuffer);
+
+                    if (WireDepthTested)
+                    {
+                        // 实心 + 线框：**线也过深度测试** —— 被实心面挡住的棱不再透出来，
+                        // 于是"实心体 + 高亮棱边"（低多边形观感），而不是半个线框骨架。
+                        // ⚠️ 不写深度（只在面已写好的深度上比较），否则线自己会互相遮挡。
+                        gd.DepthStencilState = DepthStencilState.DepthRead;
+                    }
+                    else
+                    {
+                        // 纯线框：本来就该看见背面那几条棱
+                        gd.DepthStencilState = DepthStencilState.None;
+                    }
+
                     foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
                     {
                         pass.Apply();
