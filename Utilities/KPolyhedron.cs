@@ -79,13 +79,15 @@ namespace KernelExtensions.Utilities
         /// <para>
         /// 每个面是**顶点下标的闭合环**（含 3~5 个下标），并且<b>绕序已经统一</b>：
         /// <see cref="BuildFaces"/> 会把法线统一成外法线，<see cref="OrderRing"/> 再按绕该法线的
-        /// 角度升序排环 —— 所以每个环都是"从外面看逆时针"。
+        /// 角度升序排环 —— 所以每个环在**模型空间**都是"从外面看逆时针"。
         /// </para>
-        ///
+        /// 
         /// <para>
-        /// 这个绕序正是 <c>PrimitiveType.TriangleFan</c> 需要的，也是 FNA 默认
-        /// <c>CullMode.CullCounterClockwiseFace</c> 认定的**正面**绕序，因此调用方
-        /// 直接拿去扇化即可，不必再判朝向。⚠️ 但**前提是投影没有翻转手性**。
+        /// ⚠️ <b>但别据此推断屏幕空间的绕序。</b> 透视投影（<c>CreatePerspectiveFieldOfView</c> /
+        /// <c>CreateLookAt</c>）会把**手性翻过来**，于是同一个环投到屏幕上变成**顺时针**。
+        /// 因此用硬件剔除时必须配 <c>CullMode.CullClockwiseFace</c>（而非默认的
+        /// <c>CullCounterClockwiseFace</c>，那会"保留背面、剔掉正面"—— 实机踩过）。
+        /// 详见 <c>PortHackV2Sequence._faceRasterizer</c> 的注释。
         /// </para>
         /// </summary>
         /// <param name="s">立体种类；越界值退回立方体，不抛异常。</param>

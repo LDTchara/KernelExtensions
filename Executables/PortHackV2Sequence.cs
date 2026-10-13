@@ -451,11 +451,16 @@ public class PortHackV2Sequence : IDisposable
         if (_faceRasterizer == null)
         {
             // 画实心面：**开背面剔除**。
-            // 这里能直接用默认的 CullCounterClockwiseFace，是因为 KPolyhedron 给的面环
-            // 已经是"从外面看逆时针"（外法线排环）—— 不必自己判朝向。
+            //
+            // ⚠️ 用 CullClockwiseFace 而不是默认的 CullCounterClockwiseFace —— 实测确认过。
+            // KPolyhedron 的面环在**模型空间**是"从外面看逆时针"（BuildFaces 统一外法线 +
+            // OrderRing 按绕法线角度升序），但 `CreatePerspectiveFieldOfView` / `CreateLookAt`
+            // 会把**手性翻过来**，投影到屏幕后就变成**顺时针**了。
+            // 用默认值的结果是"保留背面、剔掉正面"（就是看到内壁和地板、正对相机的面消失），
+            // 而**深度测试是好的**（没有 z-fighting）—— 所以那是纯粹的剔除方向错，不是深度问题。
             _faceRasterizer = new RasterizerState
             {
-                CullMode = CullMode.CullCounterClockwiseFace,
+                CullMode = CullMode.CullClockwiseFace,
                 FillMode = FillMode.Solid,
                 MultiSampleAntiAlias = true
             };
@@ -601,7 +606,9 @@ public class PortHackV2Sequence : IDisposable
             int[] f = faces[fi];
             if (f.Length < 3) { shades[fi] = Color.White; continue; }
 
-            // 绕序是"从外看逆时针"，故 (v1-v0) × (v2-v0) 即**外法线**
+            // 绕序在**模型空间**是"从外看逆时针"，故 (v1-v0) × (v2-v0) 即**外法线**。
+            // ⚠️ 这里在模型空间算，与投影手性**无关** —— 别因为"剔除要反过来"就动这里：
+            //    投影只翻转**屏幕空间**的绕序（影响 CullMode），不改变模型空间的叉积结果。
             Vector3 n = Vector3.Cross(verts[f[1]] - verts[f[0]], verts[f[2]] - verts[f[0]]);
             if (n.LengthSquared() < 1e-12f) { shades[fi] = Color.White; continue; }
             n.Normalize();
