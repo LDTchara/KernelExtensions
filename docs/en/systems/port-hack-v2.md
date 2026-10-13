@@ -175,7 +175,7 @@ Every Platonic solid spins around **its own rotational symmetry axis**, and that
 |-------|--------|
 | `Wireframe` | **Default.** Lines only, matching vanilla `PortHack` |
 | `Solid` | Filled faces only: **per-face shading** (flat) + back-face culling |
-| `SolidWire` | Filled faces **plus** the wireframe overlay: a low-poly look where edges stay visible |
+| `SolidWire` | Filled faces **plus** the wireframe overlay: a low-poly look where **edges hidden by a face are not drawn** (the lines depth-test too) |
 
 Case-insensitive; `wire` / `solid` / `both` are also accepted. An unrecognised value falls back to
 `Wireframe` with a warning.
