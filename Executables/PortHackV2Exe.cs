@@ -116,7 +116,6 @@ public class PortHackV2Exe : GameExecutable
     private readonly List<ProtocolRuntime> _runtimes = new();
     private float _stateTimer;          // Locked / Failed 的退出倒计时
     private float _crackTime;           // Cracking 已进行时长（根级 Time 的对照量）
-    private string _lockReason;         // Locked 屏显示的原因
     private float _completeElapsed;     // Complete 演出已进行时长（也驱动白线展开）
     private int _successCount;          // 已成功协议数
     private bool _rootHooksFired;       // 根级结算只做一次
@@ -157,12 +156,11 @@ public class PortHackV2Exe : GameExecutable
             // 0 个 = 没被剧本启用；多个 = 作者配置错误。两种都进锁定屏，但原因不同
             if (flags.Count == 0)
             {
-                _lockReason = "No configuration is armed.";
+                // 原因只进日志：锁定屏不显示（见 DrawLocked 的说明）
                 KELog.Info("[PortHackV2] no config flag present - locked.");
             }
             else
             {
-                _lockReason = "Multiple configurations are armed (authoring error).";
                 KELog.Error($"[PortHackV2] {flags.Count} config flags present, expected exactly one: "
                     + string.Join(", ", flags));
                 os.write("PortHackV2: multiple configurations are armed (authoring error).");
@@ -174,8 +172,7 @@ public class PortHackV2Exe : GameExecutable
         CurrentConfig = PortHackV2Config.LoadByFlag(flags[0]);
         if (CurrentConfig == null)
         {
-            // 加载失败的原因上一句已经记进日志了；这里给玩家一个可读的锁定屏
-            _lockReason = $"Configuration '{flags[0].Substring(PortHackV2Config.FlagPrefix.Length)}' failed to load.";
+            // 具体原因 LoadByFlag 内部已经记进日志（含文件路径与异常）；这里只给玩家一句
             os.write("PortHackV2: configuration could not be loaded.");
             EnterLocked();
             return;
@@ -785,10 +782,20 @@ public class PortHackV2Exe : GameExecutable
     /// <summary>
     /// 锁定屏。
     ///
+    /// <para>
+    /// ⚠️ <b>只画「LOCKED」与倒计时，不画锁定原因。</b> 锁定的三种成因
+    /// （无 flag / 多 flag / 配置加载失败）**全都是"要么还没到那段剧情、要么扩展作者写错了"** ——
+    /// 前者玩家迟早会看到程序正常打开，后者玩家什么也做不了、只有作者该知道。
+    /// 所以原因只进日志（各个锁定成因在触发处**各自**记了 <c>KELog</c>），
+    /// 不往玩家窗口里塞 —— 那行字玩家看不懂也用不上，还抢了这屏唯一的视觉重心。
+    /// </para>
+    ///
+    /// <para>
     /// ⚠️ **整屏内容都不参与淡出**：<c>isExiting</c> 一开始就整个停画
     /// —— 背景网格与文字在退出瞬间一起"啪"地消失（对齐 PhaseSwiftExe 的做法，
     /// 它整屏内容都不乘 <c>fade</c>），只留基类那层 shell 在淡出。
     /// 其余状态（Listing / Cracking / 演出）才走 <c>fade</c>。
+    /// </para>
     /// </summary>
     private void DrawLocked()
     {
@@ -797,23 +804,28 @@ public class PortHackV2Exe : GameExecutable
         Rectangle area = ContentArea;
         DrawBackground(area, applyFade: false);
 
-        int cx = bounds.X + bounds.Width / 2;
         string title = KELoc.Loc("PORT_HACK_V2_LOCKED_TITLE", "LOCKED");
-        Vector2 ts = GuiData.font.MeasureString(title);
-        spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(title, 0.05),
-            new Vector2(cx - ts.X / 2f, ContentTop + 24), os.lockedColor, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-
-        // 原因文本宽度自适应（文件名由作者给，可能很长）
-        if (!string.IsNullOrEmpty(_lockReason))
-        {
-            Rectangle reasonRect = new(area.X + 8, ContentTop + 52, area.Width - 16, 20);
-            TextItem.doFontLabelToSize(reasonRect, _lockReason, GuiData.smallfont, Color.White * 0.85f);
-        }
-
         string closing = KELoc.Format("PORT_HACK_V2_CLOSING", "Closing in {0}s",
             Math.Max(1, (int)Math.Ceiling(_stateTimer)));
-        TextItem.doFontLabel(new Vector2(bounds.X + 4, ContentBottom - 18), closing,
-            GuiData.detailfont, Color.White * 0.5f);
+
+        // ⚠️ 位置必须**按内容区算**，不能写死偏移：本程序占用的内存（RamCost）由作者配置，
+        // 而窗口高度是跟着 ramCost 变的 —— 写死偏移会让这屏在大窗口里靠上、小窗口里溢出。
+        //
+        // 两行作为一组在内容区**垂直居中**：字号不同（大字 LOCKED + 小字倒计时），
+        // 所以要先把两行的高度算出来，再让整组居中，否则居中的是大字、整组看着偏下。
+        Vector2 titleSize = GuiData.font.MeasureString(title);
+        Vector2 closingSize = GuiData.detailfont.MeasureString(closing);
+        const int gap = 8;                                  // 两行间距
+        float blockH = titleSize.Y + gap + closingSize.Y;
+        float blockTop = area.Y + (area.Height - blockH) * 0.5f;
+
+        spriteBatch.DrawString(GuiData.font, Utils.FlipRandomChars(title, 0.05),
+            new Vector2(area.X + (area.Width - titleSize.X) * 0.5f, blockTop),
+            os.lockedColor, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+
+        TextItem.doFontLabel(
+            new Vector2(area.X + (area.Width - closingSize.X) * 0.5f, blockTop + titleSize.Y + gap),
+            closing, GuiData.detailfont, Color.White * 0.5f);
     }
 
     /// <summary>内容区（背景层铺满它；对齐 CustomTrialExe 的 contentRect 算法）。</summary>
@@ -913,11 +925,15 @@ public class PortHackV2Exe : GameExecutable
 
         // 顶部固定文案：**不用 <Title>**（那个字段已删）。这里说明"为什么还停在这一屏"，
         // 字号比原来的标题小一号（GuiData.smallfont），不再抢前置行的视觉重心。
+        //
+        // ⚠️ 用白色而**不是强调色**：这行是**状态说明**（"为什么还没开始"），不是内容标题。
+        // 跟随 AccentColor 会让它在某些配色下与前缀行的语义色糊在一起，也把作者选的
+        // 强调色误用到了一句提示语上 —— 强调色该只影响立体/进度条/背景这些"主体"。
         bool blocked = !AllPrerequisitesMet();
         string headline = blocked
             ? KELoc.Loc("PORT_HACK_V2_PREREQ_UNMET", "Prerequisites not met")
             : KELoc.Loc("PORT_HACK_V2_NO_PREREQ", "No prerequisites - starting...");
-        TextItem.doFontLabel(new Vector2(x, ContentTop), headline, GuiData.smallfont, _accent * fade);
+        TextItem.doFontLabel(new Vector2(x, ContentTop), headline, GuiData.smallfont, Color.White * fade);
 
         List<ListingRow> rows = BuildListingRows();
 
