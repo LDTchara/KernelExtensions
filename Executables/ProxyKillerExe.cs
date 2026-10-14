@@ -57,7 +57,6 @@ public class ProxyKillerExe : GameExecutable
     // ---- 运行时状态 ----
     private ProxyKillerConfig _cfg;
     private bool _locked;
-    private string _lockedReason;
     private float _lockedTimer;
 
     /// <summary>当前实际 RAM 占用（浮点，爬升过程需要小数）。</summary>
@@ -151,13 +150,19 @@ public class ProxyKillerExe : GameExecutable
         {
             if (flags.Count == 0)
             {
-                Lock(KELoc.Loc("PROXY_KILLER_LOCKED", "ProxyKiller: no configuration is armed."));
+                // ⚠️ tellPlayer: false —— 没 flag 是最正常的情况（剧本还没发工具，
+                //    或前半段发了不给用）。锁定本身就是剧情的一部分，终端里不该剧透。
+                //    作者要提示玩家，用自己的剧情文案（TerminalWrite 等）。
+                Lock(KELoc.Loc("PROXY_KILLER_LOCKED", "ProxyKiller: no configuration is armed."),
+                    tellPlayer: false);
                 KELog.Info($"{LogTag} no config flag present - locked.");
             }
             else
             {
+                // 多 flag = 作者配置错误，玩家无从下手 —— 但让作者在终端里看见
                 Lock(KELoc.Loc("PROXY_KILLER_MULTI_FLAG",
-                    "ProxyKiller: multiple configurations are armed (authoring error)."));
+                    "ProxyKiller: multiple configurations are armed (authoring error)."),
+                    tellPlayer: true);
                 KELog.Error($"{LogTag} {flags.Count} config flags present, expected exactly one: "
                     + string.Join(", ", flags));
             }
@@ -167,8 +172,9 @@ public class ProxyKillerExe : GameExecutable
         _cfg = ProxyKillerConfig.LoadByFlag(flags[0]);
         if (_cfg == null)
         {
+            // 同样属作者错误（文件缺失 / 解析失败），让作者在终端里看见
             Lock(KELoc.Loc("PROXY_KILLER_LOAD_FAILED",
-                "ProxyKiller: configuration could not be loaded."));
+                "ProxyKiller: configuration could not be loaded."), tellPlayer: true);
             return;
         }
 
@@ -278,13 +284,30 @@ public class ProxyKillerExe : GameExecutable
         typeof(ProgressionFlags).GetField("Flags",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
-    private void Lock(string reason)
+    /// <summary>
+    /// 进入锁定态。
+    ///
+    /// <para>
+    /// <paramref name="tellPlayer"/> 决定要不要往**玩家终端**写一句。
+    /// ⚠️ 「没有 flag」这一种**不写**：那是最正常的情况 —— 剧本还没发这个工具、
+    /// 或者前半段发了但不给用，**锁定本身就是剧情的一部分**，不该在终端里剧透一句
+    /// "没有配置"。作者要提示玩家，应该用自己的剧情文案（`TerminalWrite` 之类）。
+    /// </para>
+    ///
+    /// <para>
+    /// 另外两种（多 flag / 配置加载失败）都是**作者配置错误**，玩家什么也做不了，
+    /// 但写一句至少让作者在终端里看见 —— 那正是"配置写了却没生效"最容易沉底的地方。
+    /// </para>
+    /// </summary>
+    private void Lock(string reason, bool tellPlayer)
     {
         _locked = true;
-        _lockedReason = reason;
         _lockedTimer = LOCKED_EXIT_SECONDS;
-        os.write(reason);
+        if (tellPlayer) os.write(reason);
     }
+
+    /// <summary>锁定态的"负荷"：固定给一个中间值，让粒子流匀速流动、不随 RAM 爬升变化。</summary>
+    private static float LockedLoad() => 0.5f;
 
     // ======================= Update =======================
 
@@ -300,6 +323,10 @@ public class ProxyKillerExe : GameExecutable
                 _lockedTimer -= t;
                 if (_lockedTimer <= 0f) isExiting = true;
             }
+            // ⚠️ 锁定态也要推进背景：那一屏只有一个词 + 一片粒子流，
+            //    背景停住就真的是一块死画面了（而它要停留 3 秒）。
+            //    `_cfg` 为 null 时用 FlowFieldEffect 自带的默认参数（见 Draw）。
+            _flow.Update(t, LockedLoad(), _lastAreaHeight);
             return;
         }
         if (_cfg == null) { isExiting = true; return; }
@@ -717,10 +744,26 @@ public class ProxyKillerExe : GameExecutable
         {
             // 锁定屏是"要么全在、要么全无"：退出瞬间连背景一起停画（不参与淡出）
             if (isExiting) return;
-            if (!string.IsNullOrEmpty(_lockedReason))
-                TextItem.doFontLabelToSize(
-                    new Rectangle(content.X + 6, content.Y + content.Height / 2 - 10, content.Width - 12, 20),
-                    _lockedReason, GuiData.smallfont, Color.White * 0.9f);
+
+            // ⚠️ 锁定态**没有** `_cfg`，所以用不了作者配的背景参数
+            //    （那 8 个值全在 `_cfg` 上）—— 直接用 FlowFieldEffect 自带的默认参数，
+            //    颜色跟随 `os.lockedColor`（主题的"锁定"语义色）。
+            //    这一屏只停留 3 秒，背景的作用是"别是一块死画面"，不需要配置化。
+            try
+            {
+                _flow.Opacity = 0.55f;
+                _flow.Draw(spriteBatch, content, os.lockedColor, LockedLoad());
+            }
+            catch { /* 背景是装饰：画不出来也不该影响"锁定"这件事被看见 */ }
+
+            // 只有一个词，居中（水平 + 垂直）。锁定原因不显示 ——
+            // 「没 flag」是剧情的一部分，「多 flag / 加载失败」是作者的事（进日志与终端）。
+            string locked = KELoc.Loc("PROXY_KILLER_LOCKED_TITLE", "LOCKED");
+            Vector2 lockedSize = GuiData.font.MeasureString(locked);
+            spriteBatch.DrawString(GuiData.font, locked,
+                new Vector2(content.X + (content.Width - lockedSize.X) * 0.5f,
+                            content.Y + (content.Height - lockedSize.Y) * 0.5f),
+                Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             return;
         }
         if (_cfg == null) return;
