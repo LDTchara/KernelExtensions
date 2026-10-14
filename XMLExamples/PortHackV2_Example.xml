@@ -202,12 +202,30 @@
        未满足时 Listing 屏对应行显示为 lockedColor，全部满足后自动进入破解。
        Unmet rows are drawn in the locked colour; the crack starts automatically once all are met.
        RequireOpenPortsBefore 是端口协议名列表，每个协议一行。
-       RequireOpenPortsBefore is a list of port protocol names, one row each. -->
+       RequireOpenPortsBefore is a list of port protocol names, one row each.
+
+       RequireCrackedPorts：要求目标机**已破解的端口数**。三种写法：
+                            不写 / 留空 / 0 / 负数 = **不检查**（默认）
+                            auto = 对齐**目标节点自己的要求** —— 照搬原版 PortHack 的判定
+                                   max(portsNeededForCrack + 1, 0)
+                            正整数 N = 固定要求**至少 N 个**已破解端口（不做 +1）
+                           ⚠️ auto 与手写数字的语义不同：auto 沿用引擎按 security 算出的
+                              portsNeededForCrack（界面显示的也是它 +1），手写则是"作者说几个就几个"。
+                           注意 Pathfinder 下"已破解"以端口状态表的 Cracked 为准。
+                           How many **already-cracked ports** the target must have.
+                           Omit / empty / 0 / negative = not checked (default);
+                           "auto" = match the node's own requirement (vanilla's
+                           max(portsNeededForCrack + 1, 0)); a positive N = at least N.
+                           Note the two differ: auto uses the engine's security-derived value,
+                           a literal N is taken as-is with no +1.
+       RequireSolveFirewall / RequireProxyOverload：同理，留空 = false = 不检查。
+                           Same idea; empty = false = not checked. -->
   <RequireOpenPortsBefore>
     <string>ftp</string>
   </RequireOpenPortsBefore>
   <RequireSolveFirewall>false</RequireSolveFirewall>
   <RequireProxyOverload>false</RequireProxyOverload>
+  <RequireCrackedPorts>0</RequireCrackedPorts>
 
   <!-- ── 动作点 / Action hooks（根级 / root level）──
        相对扩展根目录的动作文件路径。路径越界或文件不存在时跳过并记 Warn，不中断流程。
@@ -279,7 +297,14 @@
 
     [无任何前置要求，打开即可破解 / No prerequisites at all]
       删掉 <RequireOpenPortsBefore> / <RequireSolveFirewall> / <RequireProxyOverload>
-      Remove those three elements.
+      / <RequireCrackedPorts> / Remove those elements.
+
+    [要求目标机已经被破解过至少 2 个端口 / Require at least 2 cracked ports on the target]
+      <RequireCrackedPorts>2</RequireCrackedPorts>
+
+    [完全对齐原版 PortHack 的判定（引擎按 security 算出的要求）
+     / Match vanilla PortHack exactly (the engine's security-derived requirement)]
+      <RequireCrackedPorts>auto</RequireCrackedPorts>
 
     [总时长很短，但想让急刹看得清 / Very short total time, but a visible brake]
       总时长不够时急刹会自动截断（并保证起转至少有一点时长）。
