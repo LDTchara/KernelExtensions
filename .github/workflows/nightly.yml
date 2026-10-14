@@ -10,10 +10,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '6.x'
 
@@ -24,7 +24,7 @@ jobs:
       run: dotnet build KernelExtensions.csproj --configuration Release --no-restore
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: KernelExtensions-Nightly
         path: bin/Release/net472/KernelExtensions.dll
