@@ -291,7 +291,7 @@ namespace KernelExtensions
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("[KernelExtensions] Testing & feedback: ZQG, HN Extension Hub (QQ Group: 940056115) ");
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine("[KernelExtensions] MIT License - run `kelicense` in the in-game terminal to view it.");
+            Console.WriteLine("[KernelExtensions] MIT-0 License - run `kelicense` in the in-game terminal to view it.");
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;
@@ -384,7 +384,7 @@ namespace KernelExtensions
         }
 
         /// <summary>
-        /// `kelicense` 终端指令：输出 KE 的 MIT 许可证全文（内嵌资源，随 dll 分发）。
+        /// `kelicense` 终端指令：输出 KE 的 **MIT-0** 许可证全文（内嵌资源，随 dll 分发）。
         /// 法律文本不翻译；引导行用英文与其它终端输出保持一致。
         /// </summary>
         private static void OnKelicenseCommand(OS os, string[] args)
@@ -397,7 +397,7 @@ namespace KernelExtensions
                 return;
             }
 
-            os.write("[KernelExtensions] MIT License");
+            os.write("[KernelExtensions] MIT-0 License (no attribution required)");
             foreach (string line in lines)
                 os.write(line);
             os.write("The same text ships as LICENSE with the mod and is listed in NOTICE.md.");

@@ -117,3 +117,39 @@ Workarounds:
 - [Releases 页面](https://github.com/LDTchara/KernelExtensions/releases)  
 - 如有问题或建议，欢迎到 [Issues](https://github.com/LDTchara/KernelExtensions/issues) 或 [Discussions](https://github.com/LDTchara/KernelExtensions/discussions) 提出。  
   For issues or suggestions, open an [Issue](https://github.com/LDTchara/KernelExtensions/issues) or start a [Discussion](https://github.com/LDTchara/KernelExtensions/discussions).
+
+---
+
+## 📄 许可证 / License
+
+**MIT-0（MIT No Attribution）** —— 见 [LICENSE](LICENSE)。
+
+这是**去掉了署名条款**的 MIT：你可以自由使用、修改、再分发本模组或其中的代码，
+**不需要注明出处**。在游戏内终端执行 `kelicense` 也能看到全文。
+
+**MIT-0 (MIT No Attribution)** — see [LICENSE](LICENSE).
+
+MIT with the attribution clause removed: you may use, modify and redistribute this mod, or
+code taken from it, **without crediting anyone**. Run `kelicense` in-game to read the full text.
+
+> ### 一个请求（不是条件）/ A request (not a condition)
+>
+> 如果你把 KE 或它的一部分代码用进了自己发布的东西里，**能标一下出处就太好了** —— 但这是
+> 情分，不是义务；不标也完全没问题。
+>
+> If KernelExtensions or code from it ends up in something you publish, a mention would be
+> genuinely appreciated — but that is a courtesy, not a duty. Skipping it is perfectly fine.
+>
+> 想标的话可以写 / If you'd like to credit it:
+>
+> ```
+> Uses code from KernelExtensions by LDTchara
+> https://github.com/LDTchara/KernelExtensions
+> ```
+>
+> ⚠️ 另外说明一句：MIT-0 去掉的是**保留声明的义务**，不是**作者身份**。把本模组说成自己写的
+> 属于**虚假陈述**，与许可证无关 —— 这一点在之前的 MIT 下也一样。
+>
+> One clarification: MIT-0 removes the *duty to preserve a notice*, not authorship. Claiming
+> authorship of this work is a false statement, not a licensing question — equally true under
+> the MIT license this project used before.

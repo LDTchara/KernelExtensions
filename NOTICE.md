@@ -1,7 +1,17 @@
 # Third-Party Notices
 
 KernelExtensions is a mod for **Hacknet**. KernelExtensions itself is licensed under the
-**MIT License** — see [LICENSE](LICENSE).
+**MIT No Attribution license (MIT-0)** — see [LICENSE](LICENSE).
+
+> **MIT-0 drops the attribution requirement.** You may use, modify and redistribute this
+> mod, or code taken from it, without crediting anyone. The `LICENSE` file also carries a
+> **non-binding request** to mention the origin — a courtesy, not a condition.
+>
+> MIT-0 removes the *duty* to preserve a notice; it does not remove authorship. Claiming
+> authorship of this work is a false statement, not a licensing question.
+>
+> ⚠️ The **MIT License** text further down this file is **not** our license — it applies to
+> the redistributed third-party components (NVorbis, Costura.Fody) and must stay as it is.
 
 This file lists the third-party components involved and distinguishes those that are
 **redistributed inside this mod's assembly** from those supplied by the runtime environment.
@@ -81,10 +91,16 @@ It is not distributed with this mod; a legitimate copy of the game is required t
 
 ## 4. This mod's own license
 
-**KernelExtensions** is released under the **MIT License** — see `LICENSE` in the repository root.
+**KernelExtensions** is released under the **MIT No Attribution license (MIT-0)** — see `LICENSE`
+in the repository root.
 
-The full licence text is also **embedded in `KernelExtensions.dll`**, so it ships with the binary as well,
-and can be viewed in-game with the terminal command:
+MIT-0 is the MIT license with the attribution paragraph removed: use, modification and
+redistribution are unrestricted and **no credit is required**. `LICENSE` additionally carries a
+**non-binding request** to mention the origin if the mod or its code is reused — a courtesy, not
+a term of the license.
+
+The full licence text is also **embedded in `KernelExtensions.dll`**, so it ships with the binary
+as well, and can be viewed in-game with the terminal command:
 
 ```
 kelicense
