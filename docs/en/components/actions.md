@@ -196,23 +196,34 @@ red during an intrusion); the change lapses as soon as the player switches theme
 
 | Attribute | Required | Default | Description |
 |-----------|:--------:|---------|-------------|
-| `Locate` | ✅ | `""` | Comma-separated `field:colour` list |
+| `Fields` | ✅ | `""` | Comma-separated `field:colour` list |
+| `Duration` | ❌ | `-1` | Lifetime in seconds for **dynamic** colours; omitted / ≤ 0 / NaN / Infinity = indefinite (until the player switches theme). On expiry the pre-trigger colours are written back (dynamic fields only, plus `topBarColor` / `highlightColor` / `moduleColorSolid`) |
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed-action attributes |
 
-Colour values use the same unified parsing as other colour fields: XNA named colours (e.g. `Red`,
-case-insensitive), `#RGB`, `#RRGGBB`, `#AARRGGBB`, `R,G,B[,A]`. `NONE` / empty = leave that field
-unchanged. Field names must be theme colour fields such as `defaultHighlightColor`, `warningColor`,
-`moduleColorSolidDefault`, `terminalTextColor`.
+Colour values come in two kinds and **can be mixed inside one `Fields` list**:
+
+| Kind | Syntax | Behaviour |
+|------|--------|-----------|
+| **Static** | XNA named colours (e.g. `Red`, case-insensitive), `#RGB`, `#RRGGBB`, `#AARRGGBB`, `R,G,B[,A]` | Written **once** at trigger time; then kept until the player switches theme |
+| **Dynamic** | `LDTchara[:speed[:opacity[:saturation[:brightness]]]]`, `Rainbow` (alias of `LDTchara`), `Gradient:#from:#to:seconds`, CC preset name`[:speedMultiplier[:opacity]]` | Recomputed **every frame**; needs `Duration` to wrap up |
+
+`NONE` / empty = leave that field unchanged. Field names must be theme colour fields such as
+`defaultHighlightColor`, `warningColor`, `moduleColorSolidDefault`, `terminalTextColor`.
 
 ```xml
-<ChangeThemeColor Locate="defaultHighlightColor:Red,warningColor:#FF0000" />
+<ChangeThemeColor Fields="defaultHighlightColor:Red,warningColor:#FF0000" />
 <!-- only the highlight and warning colours change; the rest keep the current theme -->
+
+<ChangeThemeColor Fields="defaultHighlightColor:Rainbow,warningColor:#FF0000" Duration="10" />
+<!-- the highlight goes rainbow and is recomputed every frame, reverting after 10s;
+     the warning colour stays a static red -->
 ```
 
 - **Unknown field or unparsable colour** → that pair is skipped with a `KELog.Warn`; other fields still apply
 - **Revert**: only the in-memory OS values change — nothing is written to the save and the loaded theme
   object is untouched; after the player **switches theme** the OS fields are rewritten, so the change lapses
-- **No dynamic colours**: `Rainbow` / `LDTchara` / CC preset names are not part of this action's parsing
+- **Dynamic fields must be wrapped up explicitly** — they are rewritten every frame and only revert to
+  their pre-trigger values when `Duration` expires
 - **Use `SwitchToThemeKeepLayout`** if you want to change the layout along with the colours
 
 ---

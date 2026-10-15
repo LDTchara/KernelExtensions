@@ -185,23 +185,32 @@ RAM 条的长度仍按真实占用比例绘制。
 
 | 属性 | 必填 | 默认值 | 说明 |
 |------|:----:|--------|------|
-| `Locate` | ✅ | `""` | 逗号分隔的 `字段名:颜色值` 列表 |
+| `Fields` | ✅ | `""` | 逗号分隔的 `字段名:颜色值` 列表 |
+| `Duration` | ❌ | `-1` | **动态色**的持续秒数；不写 / ≤ 0 / NaN / Infinity = 不限期（到玩家切主题为止）。到期后把触发前的颜色写回（只还原动态字段与 `topBarColor` / `highlightColor` / `moduleColorSolid`） |
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
 
-颜色值走统一解析（与其它颜色字段相同）：XNA 命名色（如 `Red`，大小写不敏感）、`#RGB`、
-`#RRGGBB`、`#AARRGGBB`、`R,G,B[,A]`。写 `NONE` / 空 = 该字段保持不变。
-字段名须是主题的颜色字段，例如 `defaultHighlightColor`、`warningColor`、
-`moduleColorSolidDefault`、`terminalTextColor` 等。
+颜色值分**静态**与**动态**两类，**同一条 `Fields` 里可混用**：
+
+| 类别 | 写法 | 行为 |
+|------|------|------|
+| **静态** | XNA 命名色（如 `Red`，大小写不敏感）、`#RGB`、`#RRGGBB`、`#AARRGGBB`、`R,G,B[,A]` | 只**在触发时写一次**，之后按"切主题才失效"的既有语义保持 |
+| **动态** | `LDTchara[:速度[:透明度[:饱和度[:明度]]]]`、`Rainbow`（`LDTchara` 的别名）、`Gradient:#起始色:#结束色:秒数`、CC 预设名`[:速度倍率[:透明度]]` | **逐帧重算**；需靠 `Duration` 收尾 |
+
+写 `NONE` / 空 = 该字段保持不变。字段名须是主题的颜色字段，例如 `defaultHighlightColor`、
+`warningColor`、`moduleColorSolidDefault`、`terminalTextColor` 等。
 
 ```xml
-<ChangeThemeColor Locate="defaultHighlightColor:Red,warningColor:#FF0000" />
+<ChangeThemeColor Fields="defaultHighlightColor:Red,warningColor:#FF0000" />
 <!-- 只改高亮色与警告色，其余颜色保持当前主题 -->
+
+<ChangeThemeColor Fields="defaultHighlightColor:Rainbow,warningColor:#FF0000" Duration="10" />
+<!-- 高亮色走彩虹、逐帧重算，10 秒后还原；警告色仍是静态的红色 -->
 ```
 
 - **未知字段名或无法解析的颜色** → 该键值对跳过并 `KELog.Warn`，其余字段照常生效
 - **撤销**：只改当前 OS 的内存值，不写存档、不改已加载的主题对象；玩家**切换主题**后
   OS 字段被主题重新写入，改动自然失效
-- **不接管动态色**：`Rainbow` / `LDTchara` / CC 预设名等动态关键字不在此动作的解析范围内
+- **动态字段必须显式收尾** —— 它们逐帧回写，`Duration` 到期时才会还原触发前的原值
 - **要连布局一起改**请用 `SwitchToThemeKeepLayout`
 
 ---
