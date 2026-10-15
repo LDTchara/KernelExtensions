@@ -66,7 +66,7 @@
 - 修复 `AttackAircraft` 在目标计算机缺少 `FlightDaemon` 时抛出 `KeyNotFoundException` 的崩溃问题。
 - 修复 `CrashDelay == 0` 时可能出现的除零错误，逻辑已修正为直接立即坠毁。
 - 修复 `CustomTrialExe.OnComplete` 在特定状态下调用 `MusicManager.stop()` 导致的音频访问冲突（Access Violation）。
-- 修复 `FlightDaemon` 中 `AircraftFallStartsImmediately` 拼写错误（原 `AircraftFallStartsImmediatley`）。
+- **保留** `FlightDaemon` 中 `AircraftFallStartsImmediately` 的字段名与拼写（原版 `AircraftDaemon` 同样写作 `AircraftFallStartsImmediatley`）—— 该字段是从原版逐字继承的备用接口，保持同名同拼写便于与参考源码对照；它恒为 `true` 且**不可通过 XML 配置**。
 - 修复 `FlightDaemon` 坠毁后静态字典未被清理，可能引发内存泄漏的问题。
 - 修复 `FlightDaemon` 固件重载后离开节点仍持续更新高度数据的问题，现在断开连接时会自动取消订阅。
 

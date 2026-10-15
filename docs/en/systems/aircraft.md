@@ -31,9 +31,11 @@ Declare the daemon directly in the computer configuration file:
 
 ### FlightDaemon Configurable Attributes
 
+!!! warning "`FallDuration` is not in the table below — it belongs to the action, not here"
+    The `FlightDaemon` class does have this field, but it is **the only one in that table without `[XMLStorage]`**, so writing it inside `<FlightDaemon>` **has no effect**. Use the action's `FallDuration` instead (see [Related Actions](#related-actions)).
+
 | Attribute | Default | Description |
 |-----------|---------|-------------|
-| `FallDuration` | `135` | Total seconds for the aircraft to fall from 38,000 feet to the ground (in immediate fall mode). |
 | `OnFailed` | `null` | Action file executed when the aircraft crashes (altitude reaches 0). |
 | `OnSaved` | `null` | Action file executed when the aircraft is repaired (firmware reload succeeds and the DLL is restored). |
 | `CrashIPPrefix` | `DCLOC:` | Prefix prepended to the node's IP after a crash, making the old IP unreachable; empty / `NONE` = leave the IP untouched (the node stays reachable). |
@@ -45,7 +47,7 @@ Declare the daemon directly in the computer configuration file:
     rectangle), so they are independent of the texture size — but you will need to adjust them when swapping
     the texture or moving the endpoints. Values are clamped to `[0, 1]`.
 
-> Note: `FallDuration` only takes effect in immediate fall mode (`AircraftFallStartsImmediately = true`), which is enabled by default. The daemon initialises the runtime variable `H` from `FallDuration` on start‑up.
+> Note: `FallDuration` is **not** something this config file can change — it is an attribute of the action below (see [Related Actions](#related-actions)). `FlightDaemon` does have such a field, but **this class does not mark it with `[XMLStorage]`**, so writing it in XML has no effect. Use the action's `FallDuration` to control the crash duration.
 
 ---
 
@@ -63,7 +65,7 @@ Triggers a critical firmware failure on the target computer's `FlightDaemon` and
 - `FallDuration` (optional): specifies the total crash duration in seconds; **overrides** the daemon's own `FallDuration`.  
   Special values:  
   - `-1`: use the daemon's own `FallDuration`  
-  - **omitted**: keeps the action default of **135**, i.e. it *overrides* the daemon's own `FallDuration` — write `FallDuration="-1"` explicitly if you want to inherit the daemon's setting  
+  - **omitted**: keeps the action default of **135 seconds** (**not** the daemon's value — write `FallDuration="-1"` explicitly to inherit from the daemon)  
   - `0`: crash instantly (skip the descent, directly trigger `OnFailed` and node removal)  
   - positive number: override the daemon's `FallDuration`.
 
@@ -136,7 +138,7 @@ After connecting to a computer with `FlightDaemon`, the flight instrument panel 
 
 - **Non‑immediate fall mode** (`AircraftFallStartsImmediately = false`): the first 15 seconds accelerate to maximum rate via a quadratic ease‑out, then the fall continues at constant speed. In this mode `FallDuration` does not control the total time.
 
-> Typically, only the immediate fall mode needs attention; its crash duration is completely determined by `FallDuration` or the value specified by the action. The non‑immediate fall mode is not currently in use.
+> ⚠️ **This mode cannot currently be enabled**: `AircraftFallStartsImmediately` is a field inherited verbatim from vanilla (spelling included) and has **no `[XMLStorage]`**, so it is permanently `true`. The `false` branch has **never been executed** (it is dead code in vanilla too). The description above is kept for reference only — **the behaviour is always immediate fall mode**.
 
 ---
 

@@ -31,9 +31,11 @@
 
 ### FlightDaemon 可配置属性
 
+!!! warning "`FallDuration` 不在下表 —— 它是动作的属性，不是这里的配置项"
+    `FlightDaemon` 类里确实有这个字段，但**它是全表唯一没有 `[XMLStorage]` 的**，所以写进 `<FlightDaemon>` 的 XML **不会生效**。坠落时长请用动作的 `FallDuration`（见[相关动作](#相关动作)）。
+
 | 属性 | 默认值 | 描述 |
 |------|--------|------|
-| `FallDuration` | `135` | 从 38000 英尺坠毁至地面的总秒数（立即坠落模式下）。 |
 | `OnFailed` | `null` | 飞机坠毁（高度降至 0）时执行的动作文件。 |
 | `OnSaved` | `null` | 飞机被修复（固件重载成功且 DLL 恢复）时执行的动作文件。 |
 | `CrashIPPrefix` | `DCLOC:` | 坠机后加在节点 IP 前的前缀，使旧 IP 不可达；空 / `NONE` = 不修改 IP（节点仍可访问）。 |
@@ -45,7 +47,7 @@
     因此与贴图尺寸无关；但换贴图、或想让起终点落在别的位置时就需要改这四项。
     取值会被 clamp 到 `[0, 1]`（超出只会画出图外，没有创作用途）。
 
-> 注意：`FallDuration` 只在立即坠落模式（`AircraftFallStartsImmediately = true`）下生效，该模式默认开启。守护进程初始化时会用 `FallDuration` 设置运行时变量 `H`。
+> 注意：`FallDuration` **不是能在这个配置文件里改的东西** —— 它是下面动作的属性（见[相关动作](#相关动作)）。`FlightDaemon` 自身确实有这个字段，但**本类没有为它加 `[XMLStorage]`**，所以 XML 里写它不会生效；坠落时长请用动作的 `FallDuration`。
 
 ---
 
@@ -63,7 +65,7 @@
 - `FallDuration`（可选）：指定坠落总秒数，**优先级高于** Daemon 配置中的 `FallDuration`。  
   特殊值：  
   - `-1`：使用 Daemon 自身配置的 `FallDuration`  
-  - **省略**：保持 Action 默认值 **135**，即覆盖 Daemon 自身的 `FallDuration`——想沿用 Daemon 配置请显式写 `FallDuration="-1"`  
+  - **省略**：保持动作默认值 **135 秒**（**不是**沿用 Daemon 配置 —— 想沿用请显式写 `FallDuration="-1"`）  
   - `0`：立即坠毁（跳过下降过程，直接触发 `OnFailed` 和节点移除）  
   - 正数：覆盖 Daemon 的 `FallDuration`。
 
@@ -135,7 +137,7 @@
 
 - **非立即坠落模式**（`AircraftFallStartsImmediately = false`）：前 15 秒通过二次缓出加速至最大速率，之后匀速下降。此模式下 `FallDuration` 不控制总时间。
 
-> 通常只需关注立即坠落模式，其坠毁时长完全由 `FallDuration` 或动作指定的值决定。非立即坠落模式暂未投入使用。
+> ⚠️ **本模式目前无法启用**：`AircraftFallStartsImmediately` 是从原版逐字继承的字段（连拼写都一致），**没有 `[XMLStorage]`**，恒为 `true`；`false` 那条分支**从未被执行过**（原版里它就是死代码）。上一条描述保留作参考，**实际行为永远是立即坠落模式**。
 
 ---
 

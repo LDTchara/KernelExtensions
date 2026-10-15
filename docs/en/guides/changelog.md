@@ -66,7 +66,7 @@ Implemented but not yet verified in-game; details will be filled in before relea
 - Fixed a `KeyNotFoundException` crash in `AttackAircraft` when the target computer lacks a `FlightDaemon`.
 - Fixed a potential division‑by‑zero when `CrashDelay == 0`; the logic now triggers an instant crash.
 - Fixed an Access Violation in `CustomTrialExe.OnComplete` caused by calling `MusicManager.stop()` during certain audio states.
-- Fixed a typo: `AircraftFallStartsImmediatley` → `AircraftFallStartsImmediately`.
+- **Kept** the field name and spelling of `AircraftFallStartsImmediately` in `FlightDaemon` (vanilla `AircraftDaemon` spells it `AircraftFallStartsImmediatley` too) — it is a spare interface inherited verbatim from vanilla, and matching the name makes cross-referencing the original source easier. It is always `true` and **cannot be set through XML**.
 - Fixed static dictionary not being cleaned up after aircraft crash, which could lead to a memory leak.
 - Fixed the `FlightDaemon` continuing to update altitude data after disconnecting from the target; updates are now automatically unsubscribed.
 
