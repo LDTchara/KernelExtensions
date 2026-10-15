@@ -30,6 +30,34 @@ Every class lives in the namespace **`KernelExtensions.Utilities`**.
 
 ---
 
+### KEPath
+
+The single entry point for resolving author-written paths (`HelpFile` / `SystemLogFiles` /
+`FakeFiles[].Source` / `CheckFilePath` / `CheckFilePattern` / `ConfigPath`, …). **All such
+paths are relative to the extension root** and **must not escape it**.
+
+| Method | Description |
+|--------|-------------|
+| `ResolveInsideExtension(rel)` | Resolves to an absolute path under the extension root; **returns `null` if out of bounds or invalid** |
+| `ResolveInsideSaveBase(rel)` | Same, but based at the **save directory** (for `FakeFiles[].Path` / `CheckFilePath`) |
+| `ResolveInside(rel, root)` | Any base directory |
+| `NormalizeRelative(rel)` | Normalisation only, no validation |
+
+- Rejects: absolute paths, Windows drive letters, and paths that escape the root with `..`
+- ⚠️ **Case must match the actual file on disk** — Linux filesystems are case-sensitive, so a
+  path that works on Windows can fail on Linux
+- Known blind spot: a **symlink** inside the root pointing outside is not detected
+
+### XmlConfigLoader
+
+A **configuration diagnostics** tool for tracking down misspelled element/attribute names:
+
+- Enabled by `<Debug>true</Debug>` in `KE-Config.xml`; it logs elements and attributes that
+  do **not** match any declaration to `KELog`
+- Turn it on first when "I wrote it but nothing happened" — most cases are a wrong name or
+  syntax borrowed from a different system
+
+
 ## 2. Colour
 
 ### ColorHelper

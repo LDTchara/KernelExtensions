@@ -75,12 +75,21 @@ default rather than showing up blank.
 KE's keys use **ALL_CAPS_WITH_UNDERSCORES**, grouped by system. When overriding, **just copy these keys** —
 you don't need to understand the convention:
 
-| Prefix | Purpose |
-|--------|---------|
-| `FAKE_RECOVERY_*` | VM attack recovery screen (buttons, password prompts, …) |
-| `PORT_CRACKER_*` | Port cracker |
-| `USERNAME_*` | Username management (ban reasons, …) |
-| `FLIGHT_ALTITUDE_*` | Aircraft altimeter |
+| Prefix | Count | Purpose |
+|--------|:-----:|---------|
+| `FLIGHT_*` | 18 | All aircraft-daemon UI text (`FLIGHT_ALTITUDE_*` altimeter ×9, `FLIGHT_PILOT_*` alerts, `FLIGHT_DISCONNECT`, `FLIGHT_IN_PROGRESS`, …) |
+| `PORT_HACK_V2_*` | 11 | The PortHackV2 cracker (prerequisite rows, countdown, `LOCKED_TITLE`, …) |
+| `PROXY_KILLER_*` | 7 | ProxyKiller |
+| `CUSTOM_TRIAL_*` | 6 | Custom Trial |
+| `FAKE_RECOVERY_*` | 5 | VM-attack recovery screen (buttons, password prompts, …) |
+| `PHASE_SWIFT_*` | 2 | PhaseSwift (`LOCKED` / `COMPLETE`) |
+| `EXECUTABLE_ALREADY_RUNNING` | 1 | Shared by the three executables' mutex message |
+| `USERNAME_DEFAULT_REASON` | 1 | Default reason for username management |
+
+!!! warning "`PORT_CRACKER_*` is the old prefix"
+    From 0.7 the port cracker is called **PortHackV2** and its locale keys became
+    `PORT_HACK_V2_*`. **`PORT_CRACKER_*` no longer exists in the locale table** — overriding
+    through it has no effect.
 
 > To find the key behind a specific string, search `KE-Locales.xml` in your extension root for that text.
 

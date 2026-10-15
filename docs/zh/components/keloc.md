@@ -71,12 +71,22 @@ KernelExtensions 内置的**文本本地化**：扩展根目录下的 `KE-Locale
 KE 自身的 key 用**全大写下划线**、按系统分组。**扩展作者覆盖时只需照抄这些 key**，
 不需要理解命名规则：
 
-| 前缀 | 用途 |
-|------|------|
-| `FAKE_RECOVERY_*` | VM 攻击恢复界面（按钮、密码提示等） |
-| `PORT_CRACKER_*` | 端口破解器 |
-| `USERNAME_*` | 用户名管理（禁用原因等） |
-| `FLIGHT_ALTITUDE_*` | 飞机高度计 |
+下表是**当前实际存在的全部前缀**（从内嵌语言表逐条统计）：
+
+| 前缀 | 条数 | 用途 |
+|------|:----:|------|
+| `FLIGHT_*` | 18 | 飞机 Daemon 全部界面文案（`FLIGHT_ALTITUDE_*` 高度计 9 条、`FLIGHT_PILOT_*` 警报、`FLIGHT_DISCONNECT`、`FLIGHT_IN_PROGRESS` 等） |
+| `PORT_HACK_V2_*` | 11 | 端口破解器 PortHackV2（前置行、倒计时、`LOCKED_TITLE` 等） |
+| `PROXY_KILLER_*` | 7 | 代理瘫痪加速器 ProxyKiller |
+| `CUSTOM_TRIAL_*` | 6 | 自定义试炼 |
+| `FAKE_RECOVERY_*` | 5 | VM 攻击恢复界面（按钮、密码提示等） |
+| `PHASE_SWIFT_*` | 2 | 相位穿梭（`LOCKED` / `COMPLETE`） |
+| `EXECUTABLE_ALREADY_RUNNING` | 1 | 三个 exe 的互斥提示共用 |
+| `USERNAME_DEFAULT_REASON` | 1 | 用户名管理的默认原因 |
+
+!!! warning "`PORT_CRACKER_*` 是旧前缀"
+    0.7 起端口破解器更名为 **PortHackV2**，语言 key 也随之改为 `PORT_HACK_V2_*`。
+    **`PORT_CRACKER_*` 在当前语言表里已不存在** —— 按它覆盖不会生效。
 
 > 想找某个界面文案对应的 key：搜索扩展根目录下 `KE-Locales.xml` 里的中文/英文文案即可。
 

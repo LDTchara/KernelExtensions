@@ -27,6 +27,32 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 
 ---
 
+### KEPath
+
+作者书写的路径（`HelpFile` / `SystemLogFiles` / `FakeFiles[].Source` / `CheckFilePath` /
+`CheckFilePattern` / `ConfigPath` 等）的统一解析入口。**所有这类路径都相对扩展根目录**，
+且**不得逃出扩展目录**。
+
+| 方法 | 说明 |
+|------|------|
+| `ResolveInsideExtension(rel)` | 解析为扩展根下的绝对路径；**越界或无效返回 `null`** |
+| `ResolveInsideSaveBase(rel)` | 同上，但基准是**存档目录**（用于 `FakeFiles[].Path` / `CheckFilePath` 这类） |
+| `ResolveInside(rel, root)` | 指定任意基准目录 |
+| `NormalizeRelative(rel)` | 只做规范化，不校验 |
+
+- 拒绝：绝对路径、Windows 盘符、用 `..` 逃出根目录的路径
+- ⚠️ **大小写必须与磁盘上的实际文件名一致** —— Linux 文件系统区分大小写，
+  Windows 上写错也能跑，但同一份内容到 Linux 就会找不到文件
+- 已知盲区：根目录内的**符号链接**指向外部时无法察觉
+
+### XmlConfigLoader
+
+**配置诊断工具**，帮助定位"配置里的元素/属性名写错了"：
+
+- 在 `<Debug>true</Debug>` 时启用（`KE-Config.xml`），会把配置里**对不上声明**的元素名
+  与属性名打进 `KELog`
+- 排查"我写了但没生效"时先开它 —— 多数情况是名字拼错或用了别的系统的写法
+
 ## 二、颜色
 
 ### ColorHelper

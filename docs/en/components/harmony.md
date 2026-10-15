@@ -5,7 +5,7 @@ loads and removed automatically when it unloads.
 
 ## Patch List
 
-There are currently **20** patch classes: 19 under `Patches/` (one file, `PhaseSwiftLayoutPatch.cs`, holds
+There are currently **21** patch classes: **20 under `Patches/`** (one file, `PhaseSwiftLayoutPatch.cs`, holds
 two classes) and 1 under `Compat/Stuxnet/`.
 
 The table below is organised by **target method** — when coexisting with other mods, use it to judge whether
@@ -29,7 +29,8 @@ both sides might touch the same method.
 | `PhaseSwiftLayoutResetPatch` | `OS.Update` | Prefix | Tracks layout-reset timing |
 | `PhaseSwiftVisualizationInjector` | `MediaPlayer.GetVisualizationData` | Prefix | Injects PS visualisation data |
 | `PorthackAutoPatch` | `Hacknet.PortHackExe.Update` | Postfix (**reflective install**) | Triggers the heartbreak sequence for `AutoOnPorthack` |
-| `PorthackHeartDisplayPatch` | `DisplayModule.doCommandModule` | Prefix | Heart-node display enhancement |
+| `CustomHeartDisplayPatch` | `DisplayModule.doCommandModule` | Prefix | Heart-node display enhancement |
+| `RamDisplayPatch` | text drawing in `RamModule` | Postfix (**reflection-installed**) | RAM display enhancement |
 | `IRCLogInjector` | `FileEntry.init` | Prefix | Injects custom IRC logs (`<SkipVanillaIRCLogs>` can skip the vanilla ones) |
 | `PatchAccountName` | `SavefileLoginScreen.Advance` | Prefix | Account-name handling on the login screen |
 | `PatchStuxnetDrawFGamemodeMenu` | `SavefileLoginScreen.ResetForNewAccount`<br>`SavefileLoginScreen.Draw` | Postfix<br>Prefix (**conditional install**) | Stuxnet compatibility: gamemode-menu drawing; installed only when Stuxnet is present |
