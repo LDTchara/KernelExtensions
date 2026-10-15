@@ -75,7 +75,7 @@ body...
 ---
 xt`) |
 | `<CustomImages>` | — | Custom icon registration (`<Image>` children, paths relative to the extension root, auto-registered as `@filename`) used by `SetNodeIcon` — see [Custom Node Icon System](./../systems/node-icon.md) |
-| `<BannedUsernames>` | — | Username blocking when creating new accounts (`<Ban Name="admin" Reason="Reserved" />`; `ReasonBlock` picks a random reason from a `<Reasons>` block) |
+| `<BannedUsernames>` | — | Username blocking when creating new accounts (direct reasons and random reason blocks) — see [Banned Usernames](#banned-usernames) |
 
 ### What the main-menu watermark looks like
 
@@ -89,6 +89,37 @@ title:
 - The watermark disappears when the extension unloads
 
 Set `<Watermark>` to `false` to turn it off.
+
+---
+
+### Banned Usernames
+
+Blocks the listed usernames when a new account is created, showing the player a reason.
+
+```xml
+<BannedUsernames>
+    <Reasons>
+        <Block Name="Test1">
+            <Reason>That name is taken - trying again will not help.</Reason>
+            <Reason>Pick another one.</Reason>
+        </Block>
+    </Reasons>
+    <Ban Name="admin" Reason="Reserved name" />
+    <Ban Name="root" ReasonBlock="Test1" />
+</BannedUsernames>
+```
+
+| Element / attribute | Description |
+|------|------|
+| `<Ban Name="…">` | The username to block. **Case-insensitive** |
+| `Reason="…"` | A direct reason (one fixed message) |
+| `ReasonBlock="…"` | References a `<Block Name>` inside `<Reasons>`; one of its `<Reason>` entries is picked **at random** |
+| `<Reasons><Block Name="…">` | Container for reason blocks; the block name is what `ReasonBlock` refers to |
+| multiple `<Reason>` in a block | The pool to pick from at random |
+| **multiple `<Ban>` with the same name** | Reasons are **appended to the same pool** (not overwritten) — combine with `ReasonBlock` for several sets of random text |
+
+- Write either `Reason` or `ReasonBlock`; if both are present the direct reason wins
+- The reason is **player-facing text** and is shown through the game's localisation
 
 ---
 

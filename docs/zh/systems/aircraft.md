@@ -111,7 +111,10 @@
 连接至搭载 `FlightDaemon` 的计算机后，会显示航班仪表界面：
 
 - **Disconnect** 按钮：断开与当前飞机的连接（不再显示仪表）。
-- **Pilot Alert** 按钮：向飞行员发送警报（设置 `PilotAlerted` 标记，改变界面颜色）。
+- **Pilot Alert** 按钮：向飞行员发送警报（界面颜色随之改变），并在**玩家账号**上写一个存档 flag：
+  **`PilotAlerted_<节点 idName>`**（点击后立即存档）。
+  ⚠️ **剧情条件里要用这个名字**：它是**带节点名后缀的**，不是裸的 `PilotAlerted`——写 `HasFlags` / `<HasFlag Name="...">` 时若漏掉 `_<idName>` 后缀**永远不成立**。
+  同一个节点只写一次（已存在则跳过，不重复写盘）。
 - **Reload Firmware** 按钮：启动固件重载过程。若 `FlightSystems` 中存在合法的 `747FlightOps.dll`，6 秒后故障解除并触发 `OnSaved`。
 
 ---

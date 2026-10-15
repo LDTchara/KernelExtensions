@@ -447,6 +447,26 @@ objects — this is the easiest thing to get wrong.
 
 ---
 
+## Forced Disconnect
+
+When a **scene switches** or **PhaseSwift exits**, if you are connected to a **managed node** you are disconnected:
+
+```
+Connection Lost: Network Changed
+```
+
+- **Criterion**: the node you are connected to is in PS's managed-node list — the *same* criterion used for
+  "managed node", so the behaviour is consistent
+- Connecting to your own machine, or being connected to nothing, is **unaffected**
+- **Why it has to happen**: after those two moments the visibility or topology of managed nodes changes, and
+  staying connected leaves a stale connection indicator on the map (clearly visible in practice when combined
+  with `eosDevice`)
+- ⚠️ **Story scripts must account for this disconnect** — if your flow relies on still being connected to a
+  machine across a scene switch, re-issue `ConnectControl` / `LinkControlAdd` afterwards rather than assuming
+  the connection survived
+
+---
+
 ## Known Limitations
 
 - **Single instance**: PS is a **global single instance** — only one config runs at a time. Running

@@ -73,7 +73,7 @@ IRC 日志会出现在**文件浏览器**里（也就是原版 `BashLogs.txt` �
 ---
 
 | `<CustomImages>` | — | 自定义图标注册（`<Image>` 子元素，路径相对扩展根，自动注册为 `@文件名`），供 `SetNodeIcon` 使用——见[自定义节点图标系统](./../systems/node-icon.md) |
-| `<BannedUsernames>` | — | 新账号创建时的用户名拦截（`<Ban Name="admin" Reason="保留用户名" />`；`ReasonBlock` 从 `<Reasons>` 块里随机取一条原因） |
+| `<BannedUsernames>` | — | 新账号创建时的用户名拦截（支持直接原因与随机原因块）——见[禁用用户名](#禁用用户名) |
 
 ### 主菜单水印长什么样
 
@@ -86,6 +86,37 @@ IRC 日志会出现在**文件浏览器**里（也就是原版 `BashLogs.txt` �
 - 扩展卸载时水印自动消失
 
 把 `<Watermark>` 设为 `false` 即可关闭。
+
+---
+
+### 禁用用户名
+
+创建新账号时拦截指定的用户名，并给玩家显示一条原因。
+
+```xml
+<BannedUsernames>
+    <Reasons>
+        <Block Name="Test1">
+            <Reason>该名称已被占用，再试一遍也没用。</Reason>
+            <Reason>换一个吧。</Reason>
+        </Block>
+    </Reasons>
+    <Ban Name="admin" Reason="保留用户名" />
+    <Ban Name="root" ReasonBlock="Test1" />
+</BannedUsernames>
+```
+
+| 元素 / 属性 | 说明 |
+|------|------|
+| `<Ban Name="…">` | 要拦截的用户名。**大小写不敏感** |
+| `Reason="…"` | 直接原因（一条固定文案） |
+| `ReasonBlock="…"` | 引用 `<Reasons>` 里某个 `<Block Name>`，从该块**随机**选一条 `<Reason>` |
+| `<Reasons><Block Name="…">` | 原因块容器；块名供 `ReasonBlock` 引用 |
+| 块内多条 `<Reason>` | 供随机挑选 |
+| **同名多条 `<Ban>`** | 原因**追加到同一个池**（不是覆盖）——配合 `ReasonBlock` 可做多套随机文案 |
+
+- `Reason` 与 `ReasonBlock` 可以只写一个；两个都写时优先用直接原因
+- 原因是**给玩家看的文案**，走游戏本地化显示
 
 ---
 

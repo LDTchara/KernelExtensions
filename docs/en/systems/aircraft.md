@@ -112,7 +112,9 @@ Allows the aircraft's altimeter to be permanently displayed on the right side of
 After connecting to a computer with `FlightDaemon`, the flight instrument panel is shown:
 
 - **Disconnect** button: disconnects from the current aircraft (hides the panel).
-- **Pilot Alert** button: sends an alert to the pilot (sets the `PilotAlerted` flag, changing the interface colors).
+- **Pilot Alert** button: sends an alert to the pilot (the interface recolours) and writes a save flag on the **player account**: **`PilotAlerted_<node idName>`** (the game is saved immediately on click).
+  ⚠️ **Use that exact name in story conditions** — it is **suffixed with the node name**, not a bare `PilotAlerted`. A `HasFlags` check that omits the `_<idName>` suffix **never matches**.
+  Written only once per node (skipped if already present, so no repeated disk writes).ace colors).
 - **Reload Firmware** button: starts the firmware reload process. If a valid `747FlightOps.dll` exists in `FlightSystems`, the fault is cleared after 6 seconds and `OnSaved` is triggered.
 
 ---
