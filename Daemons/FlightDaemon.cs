@@ -70,6 +70,10 @@ namespace KernelExtensions.Daemons
         internal float firmwareReloadProgress = 0f;
         internal float timeFallingFor = 0f;
         internal float timeSinceLastDataUpdate = 0f;
+        /// <summary>
+        /// 坠落总时长（秒）。<c>&lt;= 0</c> = **跳过下降过程**：坠落被触发时直接判定落地
+        /// （由 <see cref="ApplyFallDuration"/> 从 <see cref="FallDuration"/> 写入）。
+        /// </summary>
         public float H = 135f;
         internal bool IsSubscribedForUpdates = false;
         public bool IsInCriticalFirmwareFailure = false;
@@ -160,14 +164,15 @@ namespace KernelExtensions.Daemons
         /// </para>
         ///
         /// <para>
-        /// 三档处理：
+        /// 两档处理（<b>0 被刻意放行</b>）：
         /// <list type="bullet">
-        ///   <item>正值 → 直接用</item>
         ///   <item>负数 / NaN / Infinity → 用默认，**不警告**（AGENTS.md 9.55「负数 = 默认；
-        ///     NaN / Infinity 视同无效值」，作者是在明确表达"用默认"）</item>
-        ///   <item><b>0 → 用默认，且记 Warn</b> —— 0 不属"无效值回退"那一族，
-        ///     它多半是作者把 AttackAircraft 的 <c>FallDuration="0"</c>（立即坠毁）
-        ///     误当成了 daemon 侧的写法。见 Warn 文案。</item>
+        ///     NaN / Infinity 视同无效值」，作者是在明确表达"用默认"。
+        ///     注意 <c>&lt;AttackAircraft FallDuration="-1"&gt;</c> 也被文档写作"沿用 daemon 的值"，
+        ///     所以负数**不能**当作"立即坠毁"）。</item>
+        ///   <item><b>0 → 原样放行</b>（这里不替换），由坠落分支解释为
+        ///     「坠落被触发时跳过下降过程、直接坠毁」—— 见 <c>Update</c> 里对 <c>H &lt;= 0</c> 的处理。</item>
+        ///   <item>正值 → 直接用</item>
         /// </list>
         /// </para>
         /// </summary>
@@ -181,15 +186,7 @@ namespace KernelExtensions.Daemons
                 return;
             }
 
-            if (d == 0f)
-            {
-                H = DefaultFallDuration;
-                KELog.Warn("[FlightDaemon] <FallDuration>0</FallDuration> is not 'crash instantly' - it is how "
-                    + "long the fall takes, and 0 would divide by zero. Using " + DefaultFallDuration
-                    + "s instead. To crash immediately, put FallDuration=\"0\" on the AttackAircraft action.");
-                return;
-            }
-
+            // 0 原样保留 —— 它的含义在坠落分支里，不在这里
             H = d;
         }
 
@@ -313,7 +310,19 @@ namespace KernelExtensions.Daemons
                 {
                     timeFallingFor += t;
                     float maxRate = -876.9231f;
-                    if (AircraftFallStartsImmediatley)
+                    if (H <= 0f)
+                    {
+                        // H = 0（即作者把 FallDuration 写成 0）⇒ 跳过下降过程，直接判定落地。
+                        // 收尾由本段末尾已有的 `CurrentAltitude <= 0 → CrashAircraft()` 完成，
+                        // 与 AttackAircraft 的 FallDuration="0" 是同一条路。
+                        //
+                        // ⚠️ 必须显式置 0，不能指望除法：timeFallingFor / 0 会先得 NaN（0/0）、
+                        // 之后 +Inf，而 **NaN <= 0.0 是 false** ⇒ 那样永远不会坠毁，
+                        // 飞机会悬在半空且高度显示错乱。
+                        rateOfClimb = maxRate;
+                        CurrentAltitude = 0.0;
+                    }
+                    else if (AircraftFallStartsImmediatley)
                     {
                         rateOfClimb = maxRate;
                         float fallFraction = timeFallingFor / H;
