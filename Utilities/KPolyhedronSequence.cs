@@ -1,13 +1,18 @@
 using Hacknet;
-using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace KernelExtensions.Executables;
+namespace KernelExtensions.Utilities;
 
 /// <summary>
-/// 端口破解演出里的单个柏拉图立体线框动画：只绕「过顶点的 n 重对称轴」纯转，没有线框尾迹
-/// （原版靠 20 层螺旋尾迹堆体积感，这里是单立体，靠相位与角速度表达节奏）。
+/// **多边体演出序列**：单个柏拉图立体的线框/实心动画 —— 只绕「过顶点的 n 重对称轴」纯转，
+/// 没有线框尾迹（原版靠 20 层螺旋尾迹堆体积感，这里是单立体，靠相位与角速度表达节奏）。
+///
+/// <para>
+/// 几何来自 <see cref="KPolyhedron"/>、默认转速来自 <see cref="KPolyhedronAnimation"/>；
+/// 本类只负责**怎么动、怎么画**。目前有两个消费者：端口破解程序（PortHackV2）的破解演出，
+/// 以及效果播放器对 5 个立体的预览 —— 所以它虽然脱胎于前者，**并不专属**于它。
+/// </para>
 ///
 /// 节奏（三段之和恒等于调用方给的总时长）：
 ///   起转（浮现 + 加速，默认占总时长 <see cref="DEFAULT_SPINUP_RATIO"/>）→ 匀速 → 急刹
@@ -22,7 +27,7 @@ namespace KernelExtensions.Executables;
 /// 3D 部分自建 BasicEffect + VertexBuffer(LineList)：原版 Hacknet.Effects.Cube3D 是 internal
 /// 类型且只有立方体，既不能扩展，也不该去反射内部类型。
 /// </summary>
-public class PortHackV2Sequence : IDisposable
+public class KPolyhedronSequence : IDisposable
 {
     // ---- 时间轴（秒 / 弧度每秒） ----
     private const float STARTUP_RAMP = 0.4f;        // 浮现缩放窗口：并入起转，不再单独占一段时长
@@ -386,7 +391,7 @@ public class PortHackV2Sequence : IDisposable
         {
             // 只报一次并关闭渲染：驱动不支持时不该每帧刷日志，更不该把 exe 拖崩
             _renderFailed = true;
-            KELog.Error($"[PortHackV2Sequence] wireframe rendering disabled after failure: {ex.Message}");
+            KELog.Error($"[KPolyhedronSequence] wireframe rendering disabled after failure: {ex.Message}");
         }
     }
 

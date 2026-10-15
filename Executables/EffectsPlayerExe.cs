@@ -67,7 +67,7 @@ namespace KernelExtensions.Executables
         // ---- 3D：离屏渲染资源（懒建）----
         private RenderTarget2D _rt;
         private SpriteBatch _rtBatch;
-        private readonly PortHackV2Sequence _polySeq = new();
+        private readonly KPolyhedronSequence _polySeq = new();
 
         // ---- 新建的自绘效果 ----
         private FlowFieldEffect _flowField;
@@ -225,7 +225,7 @@ namespace KernelExtensions.Executables
         /// 多边体预览的时间线：跑一轮完整的"起转 → 匀速 → 收尾急刹 → 慢转"，然后重来。
         ///
         /// <para>
-        /// 为什么要自己驱动时间线：<see cref="PortHackV2Sequence.CrackingFinished"/> 置位前，
+        /// 为什么要自己驱动时间线：<see cref="KPolyhedronSequence.CrackingFinished"/> 置位前，
         /// 内部时钟被夹在总时长以内、永远停在匀速全速段（那是给 Cracking 用的：
         /// 破解途中不该自己慢下来）。预览要看的是**整个动画的性格**，
         /// 所以这里到点就置位让它进急刹窗口，循环展示。

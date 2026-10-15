@@ -87,7 +87,7 @@ namespace KernelExtensions.Utilities
         /// <c>CreateLookAt</c>）会把**手性翻过来**，于是同一个环投到屏幕上变成**顺时针**。
         /// 因此用硬件剔除时必须配 <c>CullMode.CullClockwiseFace</c>（而非默认的
         /// <c>CullCounterClockwiseFace</c>，那会"保留背面、剔掉正面"—— 实机踩过）。
-        /// 详见 <c>PortHackV2Sequence._faceRasterizer</c> 的注释。
+        /// 详见 <c>KPolyhedronSequence._faceRasterizer</c> 的注释。
         /// </para>
         /// </summary>
         /// <param name="s">立体种类；越界值退回立方体，不抛异常。</param>

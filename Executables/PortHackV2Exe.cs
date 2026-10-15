@@ -122,7 +122,7 @@ public class PortHackV2Exe : GameExecutable
     private static readonly Random _rng = new();    // 各协议启动时的成功率掷点
 
     // ---------- 动画 ----------
-    private readonly PortHackV2Sequence _sequence = new();
+    private readonly KPolyhedronSequence _sequence = new();
     private RenderTarget2D _rt;         // 3D 动画的离屏画布
     private SpriteBatch _rtBatch;       // 画进 _rt 用的专用批（主 spriteBatch 由 OS 持有，不能借用）
 
