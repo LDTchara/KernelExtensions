@@ -238,12 +238,13 @@ public class PortHackV2Config
     /// 立体**目标转速**的默认值（弧度/秒）。
     ///
     /// <para>
-    /// 3.2 rad/s ≈ 每 2 秒转一圈，60fps 下每帧约 3.1° —— 刻意压在"再快就开始看出跳帧"的边缘。
-    /// 定义在这里（而不是渲染类里）是因为它属于**面向作者的默认值**；
-    /// 渲染类反过来引用它。
+    /// ⚠️ 真值定义在 <see cref="Utilities.KPolyhedronAnimation.DefaultSpinSpeed"/> —— 那是**动画层的基准**：
+    /// 起转角速度与急刹后的慢转角速度按**固定比例**跟着它缩放（<c>0.3f / 该值</c> 与 <c>0.5f / 该值</c>），
+    /// 所以它不只是"一个配置项的默认值"，改它会连带改变整条转速曲线。
+    /// 放在动画层后，依赖方向是「本配置 → 动画层」，渲染方不再需要反过来依赖本配置。
     /// </para>
     /// </summary>
-    public const float DefaultSpinSpeed = 3.2f;
+    public const float DefaultSpinSpeed = Utilities.KPolyhedronAnimation.DefaultSpinSpeed;
 
     /// <summary>
     /// 起转（加速）时长**占总时长的比例**。留空 = 0.1（总时长的 10%）。

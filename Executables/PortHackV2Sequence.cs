@@ -28,11 +28,10 @@ public class PortHackV2Sequence : IDisposable
     private const float STARTUP_RAMP = 0.4f;        // 浮现缩放窗口：并入起转，不再单独占一段时长
 
     /// <summary>
-    /// 匀速（Cracking 期间）的默认目标角速度（弧度/秒）。
-    /// 默认值归配置域所有（<see cref="Configs.PortHackV2Config.DefaultSpinSpeed"/>）——
-    /// 那是面向作者的选项，不该由渲染类持有。
+    /// 匀速（Cracking 期间）的默认目标角速度（弧度/秒）。真值在
+    /// <see cref="Utilities.KPolyhedronAnimation.DefaultSpinSpeed"/>（动画层持有；配置层也引用它）。
     /// </summary>
-    public const float DEFAULT_SPIN_SPEED = Configs.PortHackV2Config.DefaultSpinSpeed;
+    public const float DEFAULT_SPIN_SPEED = Utilities.KPolyhedronAnimation.DefaultSpinSpeed;
 
     /// <summary>起转角速度相对目标转速的比例（3.2 时即 0.3）。</summary>
     private const float OMEGA0_RATIO = 0.3f / DEFAULT_SPIN_SPEED;
@@ -44,10 +43,10 @@ public class PortHackV2Sequence : IDisposable
     private const float IDLE_STOP_DECAY = 1.5f;     // IdleSpin=false 时从 ω_idle 停住的时间常数
 
     /// <summary>起转时长占总时长的比例；仅当 <see cref="SpinUpSeconds"/> &lt; 0 时生效。</summary>
-    public const float DEFAULT_SPINUP_RATIO = 0.1f;
+    public const float DEFAULT_SPINUP_RATIO = Utilities.KPolyhedronAnimation.DefaultSpinUpRatio;
 
     /// <summary>急刹默认时长（秒）。</summary>
-    public const float DEFAULT_SPINDOWN_SECONDS = 1.7f;
+    public const float DEFAULT_SPINDOWN_SECONDS = Utilities.KPolyhedronAnimation.DefaultSpinDownSeconds;
 
     /// <summary>
     /// 匀速（Cracking 期间）的**目标角速度**（弧度/秒）。默认 <see cref="DEFAULT_SPIN_SPEED"/>（3.2）。
@@ -75,7 +74,7 @@ public class PortHackV2Sequence : IDisposable
     /// 立体作为背景继续慢转；<c>IdleSpin</c> 为 false 时它平滑停住、用不到这个值。
     /// </para>
     /// </summary>
-    public float IdleSpinSpeed { get; set; } = -1f;
+    public float IdleSpinSpeed { get; set; } = Utilities.KPolyhedronAnimation.DefaultIdleSpinSpeed;
 
     /// <summary>起转角速度 = 目标转速 × 固定比例。</summary>
     private float OmegaStart => SpinSpeed * OMEGA0_RATIO;
