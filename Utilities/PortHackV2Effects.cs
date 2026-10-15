@@ -33,8 +33,6 @@ public class PortHackV2Effects
         }
         List<string> ptcls = H_ptcls.ToList();
         
-
-
         foreach(string p in ptcls)
         {
             // Pathfinder 下端口以 PortState 表为准（Computer.ports 不再承载端口）
@@ -90,8 +88,6 @@ public class PortHackV2Effects
         }
         List<string> ptcls = H_ptcls.ToList();
 
-
-
         foreach (string p in ptcls)
         {
             // Pathfinder 下端口以 PortState 表为准（Computer.ports 不再承载端口）
@@ -105,17 +101,13 @@ public class PortHackV2Effects
             }
         }
     }
-    public static string StringCut(string s, int length)
-    {
-        // 防御性检查：空字符串、长度无效、或截断长度大于等于原长度，直接返回原字符串
-        if (string.IsNullOrEmpty(s) || length <= 0 || length >= s.Length)
-        {
-            return s;
-        }
+    /// <summary>
+    /// 随机解的兜底长度 —— 调用方（三个 Action）都会把"Length 留空"先算成各自文档化的
+    /// 默认值再传进来，所以这里只兜"非正数"，不重复定义默认值。取原版
+    /// <c>Firewall</c> 的默认解长 6。
+    /// </summary>
+    private const int DefaultSolutionLength = 6;
 
-        // 截取前 length 个字符
-        return s.Substring(0, length);
-    }
     public static void addFirewall(OS os,string compid,int lenth,float addtime,string solve)
     {
         Computer c = Programs.getComputer(os, compid);
@@ -124,17 +116,20 @@ public class PortHackV2Effects
 
         f.additionalDelay = addtime;
         // ⚠️ 必须判**入参 solve**，不是 f.solution ——
-        // 
         // `new Firewall()` 的构造函数内部就调了 generateRandomSolution()，
         // 所以 f.solution 恒为随机串，永远不可能等于哨兵值 "@random"，
         // 判它会让这个分支**恒不可达**（实测确认：写 Solution="@random" Length="12"
         // 时防火墙的解真的变成字面量 "@random"，Length 也没生效）。
-        // 兄弟方法 ReRandomFirewallSolution 的写法才是对的：无条件随机 + 按长度截断。
+        // 「随机解 + 按 Length 截断」这套语义一直是设计意图（示例文件、Action 的 XML 注释、
+        // PortFirewallConfigure 的默认值三处都这么写），只是守卫条件判错了对象。
         if ((solve ?? "").ToLowerInvariant() == "@random")
         {
+            // ⚠️ 顺序很重要：generateRandomSolution() 生成的是**恰好 solutionLength 个**字符
+            // （原版 Firewall.generateRandomSolution 按该字段循环取随机字符），
+            // 而 StringCut 只能**截短**（length >= s.Length 时原样返回）。
+            // 所以"先生成默认 6 位、再截断"会让 Length > 6 完全失效 —— 必须先设长度再生成。
+            f.solutionLength = lenth > 0 ? lenth : DefaultSolutionLength;
             f.generateRandomSolution();
-            string s = StringCut(f.solution, lenth);
-            f.solution = s;
         }
         else f.solution = solve;
 
@@ -155,7 +150,6 @@ public class PortHackV2Effects
         Computer c = Programs.getComputer(os, compid);
         if(c == null) { Console.WriteLine($"Computer {compid} Not Found"); return; }
 
-        
         c.addProxy(t);
         c.proxyActive = true;
     }
@@ -175,11 +169,12 @@ public class PortHackV2Effects
         Computer c = Programs.getComputer(os, compid);
         if(c == null) { Console.WriteLine($"Computer {compid} Not Found"); return; }
         Firewall f = new();
+        // ⚠️ 同 addFirewall：先设长度再生成。
+        // 原先是"先生成默认 6 位、再 StringCut"，而 StringCut 只能截短
+        // （length >= s.Length 时原样返回）→ Length > 6 会被静默压回 6 位。
+        f.solutionLength = lenth > 0 ? lenth : DefaultSolutionLength;
         f.generateRandomSolution();
-        string s = StringCut(f.solution, lenth);
-        f.solution = s;
         f.additionalDelay = addTime;
-        f.solutionLength = s.Length;
 
         c.firewall = f;
         if(reset) c.firewall.solved=false;
@@ -254,9 +249,12 @@ public class PortHackV2Effects
         // ⚠️ 同 addFirewall：判入参 solution，不判 f.solution（理由见上）
         if ((solution ?? "").ToLowerInvariant() == "@random")
         {
+            // ⚠️ 顺序很重要：generateRandomSolution() 生成的是**恰好 solutionLength 个**字符
+            // （原版 Firewall.generateRandomSolution 按该字段循环取随机字符），
+            // 而 StringCut 只能**截短**（length >= s.Length 时原样返回）。
+            // 所以"先生成默认 6 位、再截断"会让 Length > 6 完全失效 —— 必须先设长度再生成。
+            f.solutionLength = lenth > 0 ? lenth : 6;
             f.generateRandomSolution();
-            string s = StringCut(f.solution, lenth);
-            f.solution = s;
         }
         else f.solution = solution;
         c.firewall = f;
@@ -264,6 +262,4 @@ public class PortHackV2Effects
         
     }
 
-
 }
-
