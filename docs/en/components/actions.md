@@ -1,10 +1,15 @@
 # Custom Actions
 
-KernelExtensions registers **31** custom Actions that can be invoked in any action file. This page has
-two parts:
+KernelExtensions registers **46** custom Actions that can be invoked in any action file. This page has
+three parts:
 
 - **1. System-related Actions** — a quick reference with pointers; full parameters live on each system page
 - **2. General Actions (not covered by a system)** — full parameters and examples
+- **3. Target-computer atomic Actions** — ports / firewall / proxy primitives, full parameters and examples
+
+!!! note "It is 44 when SROS is installed"
+    When the **SROS** plugin is detected, `ShowTitle` and `StartEnding` are **not registered**
+    (their features overlap, so KE steps aside to avoid a conflict) — such setups have 44 Actions.
 
 All paths are relative to the extension root.
 
@@ -22,6 +27,7 @@ All paths are relative to the extension root.
 | Timer | `ClockStart` · `ClockStop` | Start/stop a custom timer | [Custom Timer System (Clock)](./../systems/clock.md) |
 | Node Icons | `SetNodeIcon` | Set a node's icon | [Custom Node Icon System](./../systems/node-icon.md) |
 | Custom Ending | `StartEnding` · `BreakHeart` | Trigger an ending / the heartbreak sequence | [Custom Ending System](./../systems/custom-ending.md) |
+| Target-computer ops | `PortOpen` · `PortClose` · `PortControl` · `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure` · `PortProxyAdd` · `PortProxySolve` · `PortProxyReset` · `ListPorts` | Target-side port / firewall / proxy primitives · protocol-name lookup | [PortHackV2 Cracker](./../systems/port-hack-v2.md) · see part 3 |
 
 ### Node Link Control (attribute quick reference)
 
@@ -52,14 +58,24 @@ All three share the **org baseline**: a snapshot of the computer's links taken *
 | `TerminalFocus` | Plays a terminal focus effect (full-screen darken + expanding border). | `<TerminalFocus Duration="5.0" BorderDuration="2.0" FadeInDuration="0.5" />` |
 | `RenameNode` | Renames a node by its ID; takes effect immediately and persists in saves. | `<RenameNode NodeID="dhs" NewName="Secret Base" />` |
 
+- `TerminalFocus` parameters: `Duration` (how long the full-screen shade stays, seconds, default `2.0`),
+  `BorderDuration` (border-expansion animation length, default = `Duration`), `FadeInDuration` (how long the
+  shade takes to fade from transparent to fully black, default = `Duration`), `DarkenAlpha` (maximum shade
+  opacity `0~1`, default `0.8`) and `ExpandAmount` (maximum outward expansion in pixels, default `200`)
+- `BorderDuration` / `FadeInDuration` **negative / `NaN` / `Infinity` / omitted = use `Duration`**; when either
+  is shorter than `Duration` the border disappears after its animation while the shade stays until `Duration` ends
+
 ### Visuals and Sound
 
 | Action | Description | Example |
 |--------|-------------|---------|
-| `PlaySound` | Plays a WAV sound effect from the extension directory. | `<PlaySound Path="Sounds/beep.wav" Volume="1" Pitch="0" Delay="1.5" DelayHost="cheat"/>` |
+| `PlaySound` | Plays a WAV sound effect from the extension directory. | `<PlaySound Path="Sounds/beep.wav" Volume="1" Pitch="0" Pan="0" Delay="1.5" DelayHost="cheat"/>` |
 | `FlashScreen` | UI flash: pulses the interface with a colour and fades back to the current theme default. | `<FlashScreen Color="Red" Duration="2.0" />` |
 | `SwitchToThemeKeepLayout` | Switches theme while **keeping the panel layout** (colour only). | `<SwitchToThemeKeepLayout ThemePathOrName="HacknetMint" FlickerInDuration="1.5" />` |
 
+- `PlaySound` paths are **relative to the extension root** and **must end in `.wav`**; `Volume` and `Pitch`
+  both default to `0.5`, and `Pan` is the **stereo position** (`-1` hard left ~ `1` hard right, default `0`
+  centre). A missing file or a path that escapes the extension (`..`, absolute path) logs a `Warn` and skips
 - `FlashScreen` accepts dynamic colour keywords (e.g. `LDTchara`) in `Color`; `Duration` defaults to `2.0`
   (non-positive = restore defaults immediately); `PlaySound="true"` plays the warning beep alongside the
   flash. Re-triggering **refreshes** rather than stacking.
@@ -228,11 +244,325 @@ Colour values come in two kinds and **can be mixed inside one `Fields` list**:
 
 ---
 
+## 3. Target-Computer Atomic Actions (Ports / Firewall / Proxy)
+
+Every action in this group works on a **target computer** and **does exactly one thing** (open a port,
+close a port, add a firewall, reroll a solution…). Combine them freely into sequences — they work from
+a PortHackV2 action hook as well as from any other system's action file.
+
+- **Ports**: `PortOpen` · `PortClose` (open/close) · `PortControl` (add/remove)
+- **Firewall**: `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure`
+- **Proxy**: `PortProxyAdd` · `PortProxySolve` · `PortProxyReset`
+- **Diagnostics**: `ListPorts` (lists every registered port protocol — use it to look up protocol names)
+
+**Common conventions**
+
+| Item | Description |
+|------|-------------|
+| `TargetComp` | Target computer `idName`; **empty / `NONE` = the currently connected node** (the player's own machine when nothing is connected) |
+| `Delay` / `DelayHost` | Provided by the `KEAction` base class and available on every action in this group (see “Delayed Execution” at the end of this page) |
+| Target not found | Logs a `KELog.Warn` and **skips this action** — no crash, and never a silent “it looked like it ran” |
+| Port lists | Commas or semicolons both work (`ssh,ftp` / `ssh;ftp`); blanks are dropped and duplicates removed |
+| Permissions | **No permission checks**: they change the target directly, like a story script. To make something happen only after the player succeeds, hang it on an action hook |
+| Action file paths | Paths referenced from action hooks are **relative to the extension root** and **must match the on-disk file name case exactly** (Linux is case-sensitive) — see the [Extension Author Guide](./../guides/author-guide.md) |
+
+### Ports
+
+Under Pathfinder a port has two separate facts: **whether it exists on the machine** and **whether it is
+open**. Adding and removing belongs to `PortControl`; opening and closing belongs to
+`PortOpen` / `PortClose` — do not use one for the other.
+
+#### `PortOpen` — open ports
+
+Opens one or more ports that **already exist on the target**. Look the protocol names up with `ListPorts` first.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Ports` | ✅ | empty | Port protocol names, comma- or semicolon-separated; `NONE` / empty = logs a warning and skips |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<PortOpen Ports="ssh,ftp" />
+<PortOpen Ports="ssh" TargetComp="targetNode" />
+```
+
+- Under Pathfinder, “opening” a port means **marking it as cracked** (the vanilla `openPort` is rewritten
+  to set that flag, and vanilla `isPortOpen` reads it too) — the effect equals the player having cracked it
+- **A port that is not on the target** → logged and skipped **one by one**; the other ports in the same call still run
+- If the port does not exist yet, install it with `PortControl` first
+
+#### `PortClose` — close ports
+
+Closes one or more ports that **already exist on the target**.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Ports` | ✅ | empty | Port protocol names, comma- or semicolon-separated; `NONE` / empty = logs a warning and skips |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<PortClose Ports="ftp" TargetComp="targetNode" />
+```
+
+- It only **closes** the port, it **does not remove it** — for “this machine no longer has that port” use
+  `PortControl Switch="remove"`
+- A port that is not on the target is logged and skipped
+
+#### `PortControl` — add / remove ports
+
+**Registers and installs** a port on the target, or **removes** a port from it.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `TargetID` | ✅ | empty | Target computer `idName`. ⚠️ **This action uses `TargetID`**, unlike the `TargetComp` of the other target actions; an unknown machine prints to the terminal and skips |
+| `Protocol` | ✅ / ❌ | empty | Port protocol name. May be omitted for `Switch="remove"` — the protocol is then looked up from `PortNum` in the port registry |
+| `DisplayName` | ✅ when adding | empty | Port display name (what the terminal and UI show) |
+| `PortNum` | ❌ | `0` | Port number; `0` = no default port number. Used to look the protocol up when removing |
+| `Switch` | ❌ | `add` | `add` = add (default) / `remove` = remove; any other value prints to the terminal and skips |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<!-- Install an ssh port (default port number 22) on the target -->
+<PortControl TargetID="targetNode" Protocol="ssh" DisplayName="SSH" PortNum="22" />
+
+<!-- Remove it again; the following two are equivalent -->
+<PortControl TargetID="targetNode" Protocol="ssh" Switch="remove" />
+<PortControl TargetID="targetNode" PortNum="22" Switch="remove" />
+```
+
+- Adding **registers the protocol first** (protocol name + display name + default port number go into the
+  global port registry) and then installs the port on the target; once registered, **every machine** can use
+  that name
+- The installed port is **closed**: the player still has to crack / open it — nothing is handed over
+- **Adding twice is safe** (Pathfinder deduplicates by protocol and returns early if it is already there)
+- Removal works by **protocol name** and does not require the protocol to be in the registry; when `Protocol`
+  is omitted the port number is used instead (covering both vanilla and mod-registered ports)
+- Removing a port the machine does not have prints `not found` on the terminal — that is not an error
+
+### Firewall
+
+The solution lives on the **target computer**: `PortFirewallAdd` places one, `PortFirewallSolve` solves it,
+`PortFirewallReroll` replaces the answer and `PortFirewallConfigure` tunes its parameters.
+
+#### `PortFirewallAdd` — place a new firewall
+
+Places a **new firewall** on the target (replacing any existing one) and leaves it **unsolved**.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Solution` | ✅ | empty | The firewall **solution**: `@random` = **roll one**, any other string = use that literal solution; `NONE` / empty = logs a warning and skips |
+| `Length` | ❌ | length of `Solution` | Length of the **random** solution; only meaningful with `Solution="@random"`: omitted = use `Solution`'s own length (7 for `@random`), `0` = vanilla's default 6; with a literal `Solution` this attribute does nothing |
+| `AdditionalDelay` | ❌ | `0` | Extra pause **per line** while the player analyses the firewall (seconds) — higher is slower |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<!-- A 12-character random solution the player has to work out -->
+<PortFirewallAdd Solution="@random" Length="12" AdditionalDelay="0.3" />
+
+<!-- Solution fixed to ABCD: the player types ABCD to get through -->
+<PortFirewallAdd Solution="ABCD" TargetComp="targetNode" />
+```
+
+- It **replaces** the target's existing firewall rather than stacking, and always leaves it **unsolved**
+- The displayed length matches the solution: the write syncs `solutionLength` to the **final** solution, so
+  you never get “type N characters” with an M-character answer (an unsolvable firewall)
+- For “keep the firewall, only change the answer” use `PortFirewallReroll`; for “tune the existing firewall”
+  use `PortFirewallConfigure`; to solve it outright use `PortFirewallSolve`
+
+!!! tip "`Length` only affects random solutions"
+    With `Solution="@random"` the random solution is generated at `Length` characters; with a literal
+    `Solution` the answer is exactly the string you wrote and `Length` plays no part. Either way the displayed
+    length is synced to the real solution, so the firewall is always solvable.
+
+#### `PortFirewallSolve` — solve the firewall
+
+Marks the target's firewall as **solved**, optionally after a delay.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Seconds to wait **before** solving; empty = immediately |
+
+```xml
+<PortFirewallSolve />
+
+<!-- 12 seconds after the crack the opponent "notices" the firewall is broken -->
+<PortFirewallSolve Delay="12" />
+```
+
+- A target **without a firewall** → logs a warning and skips; it never invents one
+- It only marks the firewall **solved** and **does not clear analysis progress**; to reset that too use
+  `PortFirewallReroll` / `PortFirewallConfigure Reset="true"`
+- The delay comes from the base `Delay`; this action has **no** `AdditionalDelay` (that is “how much longer
+  each analysis line takes for the player”)
+
+#### `PortFirewallReroll` — replace the solution
+
+**The firewall stays, its answer changes** (typically the opponent countering).
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Length` | ❌ | `12` | Length of the new solution; `0` = vanilla's default 6; negative / non-numeric = logs a `Warn` and uses `12` |
+| `AdditionalDelay` | ❌ | `0` | Extra pause per analysis line (seconds) |
+| `Reset` | ❌ | `true` | Whether to clear the solved state and analysis progress |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<!-- Reroll to a new 12-character random solution and clear the "solved" state -->
+<PortFirewallReroll Length="12" AdditionalDelay="0.3" />
+```
+
+- Difference from `PortFirewallAdd`: that one **places a new firewall**; this one **replaces the answer of the
+  existing firewall**
+- A target **without a firewall** → logs a warning and skips
+- Rerolling **creates a fresh firewall**, so the result is always “unsolved + analysis progress back to zero”;
+  `Reset="false"` cannot bring the solved state back
+
+#### `PortFirewallConfigure` — tune the existing firewall
+
+Adjusts the **existing** firewall's solution length, analysis delay and solution content, optionally resetting
+the solved state and analysis progress.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Length` | ❌ | current solution length | Solution length; empty = keep the current value. ⚠️ With a **literal solution** it must match that solution, see below |
+| `AdditionalDelay` | ❌ | current value | Extra pause per analysis line (seconds); empty = keep the current value |
+| `Solution` | ❌ | current solution | Solution content: empty = **keep the current solution** (on a target without a firewall = roll a fresh random one, which is where empty and an explicit `@random` are equivalent); `@random` = **roll a new one of `Length` characters**; any other string = use that literal solution |
+| `Reset` | ❌ | `false` | `true` = clear the solved state and analysis progress |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<!-- Only make each analysis line slower, keep everything else as it is -->
+<PortFirewallConfigure AdditionalDelay="0.5" />
+
+<!-- Swap in a 12-character random solution and reset the progress -->
+<PortFirewallConfigure Length="12" Solution="@random" Reset="true" />
+```
+
+- Omitted attributes **keep their current value** and are never pushed back to a default — leave one out to
+  leave it alone
+- A target **without** a firewall is handled as “add one” (same rules as `PortFirewallAdd`)
+- ⚠️ `Length` versus a **literal solution**: only random solutions are generated at `Length` characters; when
+  `Solution` is a specific string, give a `Length` of the **same size** (leaving it out keeps the current
+  length, and a mismatch produces an **unsolvable** firewall: “type N characters” with an M-character answer).
+  If you only want to change the difficulty (analysis delay), do not write `Length`
+
+### Proxy
+
+While a proxy is active the player must **overload** it before continuing; `PortProxyAdd` adds one,
+`PortProxySolve` removes it, and `PortProxyReset` only pushes the overload progress back.
+
+#### `PortProxyAdd` — add a proxy
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Time` | ❌ | `10` | Overload / crack time for the proxy (vanilla `addProxy` ticks). ⚠️ **Must be > 0**: with `0` or a negative value vanilla does nothing (the machine is not flagged as having a proxy) and only the active flag is set |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<PortProxyAdd Time="10" />
+<PortProxyAdd Time="30" TargetComp="targetNode" />
+```
+
+- The proxy ends up **active** (`proxyActive = true`): the player has to overload it first
+- If the target already has a proxy, the time and state are overwritten — never stacked into two
+
+#### `PortProxySolve` — remove the proxy
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Seconds to wait **before** removing it; empty = immediately |
+
+```xml
+<PortProxySolve />
+<PortProxySolve Delay="11" />
+```
+
+- Removal also marks a running `PortHackExe` for termination (matching vanilla: the proxy is gone, so the
+  crack process ends with it)
+- A target **without a proxy** → logs a warning and skips
+- To only zero the overload progress while the proxy **stays active**, use `PortProxyReset`
+
+#### `PortProxyReset` — zero the overload progress
+
+Pushes the player's **overload progress** back to the start while the **proxy stays active** (in the story:
+“the opponent shoved your progress back”).
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<PortProxyReset />
+```
+
+- Difference from `PortProxySolve`: that one is “the proxy is removed” (`proxyActive = false`), while this
+  action **keeps the proxy**
+- A target **without a proxy** → logs a warning and skips
+
+### Diagnostics `ListPorts`
+
+An **author tool**: it prints every **registered port protocol** (mod-registered and vanilla) to the player's
+terminal, so you can look up which protocol name to write and what its default port number is. Pathfinder
+exposes no public way to enumerate ports; this action fills that gap.
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Filter` | ❌ | empty | Only list entries whose **protocol or display name contains** this substring (case-insensitive) |
+| `Max` | ❌ | `40` | Maximum rows per call; `0` / negative = unlimited |
+| `ToLog` | ❌ | `false` | `true` = also write one `KELog.Info` line (handy as a record in the log) |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<ListPorts />
+<ListPorts Filter="ssh" />
+```
+
+Output looks like this:
+
+```
+Registered ports: 12 (3 from mods, 9 built-in)
+[22] ssh - SSH (vanilla)
+[no default port] myport - My Protocol (mod)
+```
+
+- Each row is `[default port] protocol - display name (vanilla|mod)`; protocols without a default port are
+  marked `no default port` explicitly
+- Ordering: by display name, then by protocol — stable output that is easy to compare against
+- `Filter` matching nothing → the terminal prints `No port matches filter '...'`
+- Nothing listed at all (usually the Pathfinder port registry cannot be read) → logs a `KELog.Error` and asks
+  the user to report it
+- It is **read-only** and changes no state; running it once from a startup action is enough
+
+### Combining them
+
+“After the player cracks in, the target hits back”:
+
+```xml
+<PortClose Ports="ftp" />
+<PortFirewallReroll Length="12" AdditionalDelay="0.3" />
+<PortProxyReset />
+```
+
+These actions **perform no permission checks**, so *when* they take effect is entirely up to the hook you hang
+them on — on the crack-success hook it is “counter-attack after the crack”; inside `<OnStart>` the board is set
+up from the beginning.
+
+---
+
 ## Action Name Conflicts and Fallback
 
 Third-party mods may occupy Action names (real example: `Stuxnet.Audio` occupies `PlaySound`).
 Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole plugin load**, so
-**all 32 KE Actions** are registered under **two names**: the original, and `KE` + the original.
+**all 46 KE Actions** are registered under **two names**: the original, and `KE` + the original.
 
 | Original name | Alias registered alongside |
 |---------------|---------------------------|
@@ -251,6 +581,7 @@ Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole 
 | `TerminalType` | `KETerminalType` |
 | `RenameNode` | `KERenameNode` |
 | `SetNodeIcon` | `KESetNodeIcon` |
+| `ListPorts` | `KEListPorts` |
 | `SwitchToThemeKeepLayout` | `KESwitchToThemeKeepLayout` |
 | `PlaySound` | `KEPlaySound` |
 | `FlashScreen` | `KEFlashScreen` |
@@ -261,6 +592,8 @@ Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole 
 | `UploadAircraftSysFile` | `KEUploadAircraftSysFile` |
 | `ShowAircraftOverlay` | `KEShowAircraftOverlay` |
 | `HideAircraftOverlay` | `KEHideAircraftOverlay` |
+| `FlightDaemonStatus` | `KEFlightDaemonStatus` |
+| `FlightDaemonMap` | `KEFlightDaemonMap` |
 | `BreakHeart` | `KEBreakHeart` |
 | `LinkControlReset` | `KELinkControlReset` |
 | `LinkControlAdd` | `KELinkControlAdd` |
@@ -268,6 +601,17 @@ Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole 
 | `ShowTitle` | `KEShowTitle` |
 | `StartEnding` | `KEStartEnding` |
 | `RamDisplay` | `KERamDisplay` |
+| `ChangeThemeColor` | `KEChangeThemeColor` |
+| `PortControl` | `KEPortControl` |
+| `PortOpen` | `KEPortOpen` |
+| `PortClose` | `KEPortClose` |
+| `PortFirewallAdd` | `KEPortFirewallAdd` |
+| `PortFirewallSolve` | `KEPortFirewallSolve` |
+| `PortFirewallReroll` | `KEPortFirewallReroll` |
+| `PortFirewallConfigure` | `KEPortFirewallConfigure` |
+| `PortProxyAdd` | `KEPortProxyAdd` |
+| `PortProxySolve` | `KEPortProxySolve` |
+| `PortProxyReset` | `KEPortProxyReset` |
 
 **Rules**:
 
@@ -316,3 +660,4 @@ If `Delay` is 0 or negative, the action runs immediately.
 - [Custom Timer System (Clock)](./../systems/clock.md)
 - [Custom Node Icon System](./../systems/node-icon.md)
 - [Custom Ending System (StartEnding)](./../systems/custom-ending.md)
+- [PortHackV2 Cracker](./../systems/port-hack-v2.md) – the target-cracking flow and its action hooks
