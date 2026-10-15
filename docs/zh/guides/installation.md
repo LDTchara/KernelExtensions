@@ -29,15 +29,12 @@
 
 ## 许可证
 
-模组以 **MIT 许可证**发布，全文已内嵌在 `KernelExtensions.dll` 中（随 dll 一起分发）。
+模组以 **MIT-0（MIT No Attribution）**发布 —— 即去掉了署名条款的 MIT：使用、修改、再分发均**无需注明出处**。
 
-在游戏内终端输入：
+许可证全文见仓库根的 [`LICENSE`](https://github.com/LDTchara/KernelExtensions/blob/dev/LICENSE)，第三方组件声明见 [`NOTICE.md`](https://github.com/LDTchara/KernelExtensions/blob/dev/NOTICE.md)。
 
-```
-kelicense
-```
-
-即可查看完整许可证文本（该指令支持终端自动补全）。仓库根的 `LICENSE` 与 `NOTICE.md`（第三方组件声明）也可在线查阅。
+> 许可证**不**内嵌进 `KernelExtensions.dll` —— MIT-0 不要求二进制携带声明，所以没有往里面塞任何东西。
+> 想标明出处的话非常欢迎，但那是情分，不是义务。
 
 ## 常见问题
 

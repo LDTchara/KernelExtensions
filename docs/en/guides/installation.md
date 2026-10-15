@@ -29,15 +29,15 @@
 
 ## License
 
-The mod is released under the **MIT License**, and the full text is embedded in `KernelExtensions.dll` (it ships with the dll).
+The mod is released under the **MIT-0 (MIT No Attribution)** license — MIT with the attribution
+clause removed: you may use, modify and redistribute it **without crediting anyone**.
 
-In the in-game terminal, type:
+The full text is in the repository's [`LICENSE`](https://github.com/LDTchara/KernelExtensions/blob/dev/LICENSE);
+third-party component notices are in [`NOTICE.md`](https://github.com/LDTchara/KernelExtensions/blob/dev/NOTICE.md).
 
-```
-kelicense
-```
-
-to view the complete licence text (the command supports terminal autocomplete). The repository's `LICENSE` and `NOTICE.md` (third-party component notices) are also available online.
+> The licence is **not** embedded in `KernelExtensions.dll` — MIT-0 does not require a binary to carry
+> the notice, so nothing is bundled into it. Crediting the project is very welcome, but that is a
+> courtesy rather than a duty.
 
 ## FAQ
 
