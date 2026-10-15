@@ -260,7 +260,41 @@ public class PortHackV2Exe : GameExecutable
 
     // ======================= 前置条件 =======================
 
-    private Computer Target => os.connectedComp ?? os.thisComputer;
+    /// <summary>
+    /// 目标机：**按启动时捕获的 IP** 解析，而不是"当前所连的机器"。
+    ///
+    /// <para>
+    /// ⚠️ 这里以前写成 <c>os.connectedComp ?? os.thisComputer</c>，于是**玩家断连后
+    /// <c>Target</c> 会变成玩家自己的机器** —— 而那台上通常所有端口都开着、没防火墙、
+    /// 没代理、端口全破解过，于是 <see cref="AllPrerequisitesMet"/> 判为"全部满足"，
+    /// Listing 屏顶部那行就会翻成「没有前置要求，准备开始…」，而程序实际上正在退出、
+    /// 从没进过 Cracking。改成按 IP 解析后，断连时 <c>Target</c> 为 <c>null</c>，
+    /// 前置判断如实为"未满足"。
+    /// </para>
+    ///
+    /// <para>
+    /// <c>?? os.thisComputer</c> 那个回退只在**开机首帧 <c>_targetIp</c> 还没捕获**时
+    /// 还有意义（那时玩家必然刚连着目标机），所以保留它兜底。
+    /// </para>
+    /// </summary>
+    private Computer Target
+    {
+        get
+        {
+            if (_targetIp != null)
+            {
+                try
+                {
+                    Computer byIp = Pathfinder.Util.ComputerLookup.FindByIp(_targetIp, false);
+                    if (byIp != null) return byIp;
+                }
+                catch { }
+                // IP 已知但在网络里找不到 ⇒ 目标已不可达，**不**回退到自己的机器
+                return null;
+            }
+            return os.connectedComp ?? os.thisComputer;
+        }
+    }
 
     /// <summary>目标机当前的连接是否仍是本程序启动时那台（断连即停，对齐原版语义）。</summary>
     private bool TargetStillReachable()
@@ -579,7 +613,9 @@ public class PortHackV2Exe : GameExecutable
         base.Update(t);
         if (isExiting) return;
 
-        if (_targetIp == null) _targetIp = Target?.ip;
+        // 目标机在程序启动那一刻就是"当前所连的机器"；此刻务必先捕获 IP，
+        // 之后 Target 一律按这个 IP 解析（见 Target 的注释）。
+        if (_targetIp == null) _targetIp = os.connectedComp?.ip ?? os.thisComputer?.ip;
 
         // 强调色逐帧刷新（动态色会随时间变化）；放在状态分支之前，所有状态都吃得到
         RefreshAccent();
@@ -900,20 +936,21 @@ public class PortHackV2Exe : GameExecutable
     }
 
     /// <summary>
-    /// 预计破解时长：只显示**成功分支**的时长，避免从时长上剧透失败分支。
-    /// 多协议并行时取最长的那个（最后一个跑完的）。
+    /// 预计破解时长 = **根级 <c>&lt;Time&gt;</c>**。
+    ///
+    /// <para>
+    /// ⚠️ 以前这里算的是协议级的 <c>max(StartDelay + TimeIfSuccess)</c>，与真实时长**口径不一致**：
+    /// 整场 Cracking 的时长由根级 <c>&lt;Time&gt;</c> 决定，底部进度条（<c>_crackTime / Time</c>）
+    /// 与倒计时（<c>Time - _crackTime</c>）用的都是它。于是示例配置
+    /// （<c>&lt;Time&gt;30&lt;/Time&gt;</c> 配 <c>StartDelay=3 / TimeIfSuccess=12</c>）会显示
+    /// "预计 15 秒"，而进度条实际要跑 30 秒 —— 玩家看到的两个数对不上。
+    /// </para>
+    ///
+    /// <para>
+    /// 现在这个显示与进度条、倒计时用的是**同一个数**，不会再互相矛盾。
+    /// </para>
     /// </summary>
-    private float EstimatedDuration()
-    {
-        float max = 0f;
-        foreach (PortHackV2ProtocolConfig p in CurrentConfig.Protocols)
-        {
-            if (p == null) continue;
-            float total = p.StartDelay + p.TimeIfSuccess;
-            if (total > max) max = total;
-        }
-        return max;
-    }
+    private float EstimatedDuration() => Math.Max(0f, CurrentConfig.Time);
 
     private void DrawListing()
     {
@@ -929,7 +966,11 @@ public class PortHackV2Exe : GameExecutable
         // ⚠️ 用白色而**不是强调色**：这行是**状态说明**（"为什么还没开始"），不是内容标题。
         // 跟随 AccentColor 会让它在某些配色下与前缀行的语义色糊在一起，也把作者选的
         // 强调色误用到了一句提示语上 —— 强调色该只影响立体/进度条/背景这些"主体"。
-        bool blocked = !AllPrerequisitesMet();
+        // ⚠️ `isExiting` 也是"没在开始"：退出阶段这一屏还在淡出，
+        // 但程序已经不会再进 Cracking 了。若不把它算进来，断连（或玩家按了 Exit）之后
+        // 顶部仍会写着「没有前置要求，准备开始…」—— 而程序其实正在关闭，从没进过破解。
+        // 目标不可达（Target == null，例如已断连）同理。
+        bool blocked = isExiting || Target == null || !AllPrerequisitesMet();
         string headline = blocked
             ? KELoc.Loc("PORT_HACK_V2_PREREQ_UNMET", "Prerequisites not met")
             : KELoc.Loc("PORT_HACK_V2_NO_PREREQ", "No prerequisites - starting...");
@@ -964,9 +1005,15 @@ public class PortHackV2Exe : GameExecutable
             y += rowH;
         }
 
-        // 左下角：预计破解时长（成功分支）
-        string est = KELoc.Format("PORT_HACK_V2_ESTIMATE", "Estimated time: {0}s", (int)Math.Ceiling(EstimatedDuration()));
-        TextItem.doFontLabel(new Vector2(x, ContentBottom - 18), est, GuiData.detailfont, Color.White * (0.6f * fade));
+        // 左下角：预计破解时长（= 根级 <Time>，与进度条/倒计时同一个数）
+        // <ShowEstimate>false</ShowEstimate> 可隐藏 —— 时长本身就是剧透信息。
+        if (CurrentConfig.ShowEstimate)
+        {
+            string est = KELoc.Format("PORT_HACK_V2_ESTIMATE", "Estimated time: {0}s",
+                (int)Math.Ceiling(EstimatedDuration()));
+            TextItem.doFontLabel(new Vector2(x, ContentBottom - 18), est, GuiData.detailfont,
+                Color.White * (0.6f * fade));
+        }
     }
 
     // ---- Cracking ----

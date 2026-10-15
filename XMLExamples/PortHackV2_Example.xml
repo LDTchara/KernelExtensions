@@ -43,6 +43,15 @@
        Protocols run in parallel, staggered by each one's own <StartDelay>. -->
   <Time>30</Time>
 
+  <!-- ── 是否显示预计破解时长 / Show the estimated crack time ──
+       Listing 屏左下角那行「预计 30s」。显示的**就是上面的 <Time>**，
+       与底部进度条、倒计时是同一个数。留空 = true。写 false 可隐藏 ——
+       时长本身就是剧透信息（玩家能从"多久"推出一部分剧情节奏）。
+       The "Estimated time" line in the bottom-left of the Listing screen. It shows the
+       <Time> above - the same number the progress bar and countdown use. Empty = true.
+       Set false to hide it: the duration itself is a spoiler. -->
+  <ShowEstimate>true</ShowEstimate>
+
   <!-- ── 颜色 / Colours ──
        AccentColor：**立体（多边体）线框**的颜色。留空 / NONE = 白色。
                     The colour of the wireframe solid. Empty or NONE = white.

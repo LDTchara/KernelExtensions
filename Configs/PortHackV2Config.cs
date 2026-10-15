@@ -141,6 +141,15 @@ public class PortHackV2Config
     /// 根级时长（秒），**不参与 RNG 判定**。
     /// ⚠️ 具体语义（整体基准时长 / 未指定分支时的兜底）**待批 2 定**。
     /// </summary>
+    /// <summary>
+    /// Listing 屏左下角是否显示「预计破解时长」。默认 <c>true</c>。
+    /// 留空 / 非布尔 = 用默认；写 <c>false</c> 可隐藏 —— 时长本身就是剧透信息。
+    /// </summary>
+    [XmlElement("ShowEstimate")] public string ShowEstimateRaw { get; set; }
+
+    /// <summary>解析后的开关；默认 true。</summary>
+    [XmlIgnore] public bool ShowEstimate { get; private set; } = true;
+
     [XmlElement("Time")] public string TimeRaw { get; set; }
 
     /// <summary>根级时长的解析结果（秒）。</summary>
@@ -444,6 +453,10 @@ public class PortHackV2Config
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <CompleteDelay> '{CompleteDelayRaw}', expected 0~600; using 5.");
 
         Time = ConfigValue.ParseInRange(TimeRaw, 10f, 0f, float.MaxValue, out bool tOk);
+
+        // 预计时长是否显示：留空 / 非布尔 = 默认 true
+        string showEst = ShowEstimateRaw?.Trim();
+        ShowEstimate = string.IsNullOrEmpty(showEst) || !bool.TryParse(showEst, out bool se) || se;
         if (!tOk)
             KELog.Warn($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 
