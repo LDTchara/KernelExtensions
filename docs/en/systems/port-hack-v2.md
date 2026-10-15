@@ -50,6 +50,8 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 - Each protocol rolls its outcome once **at its own start moment** (seeded by `<Rng>`), and the branch never changes afterwards — but **both branches look identical**; only the duration differs (`<TimeIfSuccess>` / `<TimeIfFail>`), so the player cannot tell which one was rolled.
 - A protocol's start time comes from its own `<StartDelay>` (relative to the start of Cracking).
 - The root `<Time>` is the total length of the whole Cracking phase; the bottom progress bar follows it.
+  The "Estimated Ns" line in the bottom-left of the Listing screen shows **the same number**
+  (progress bar, countdown and estimate all agree).
 - A protocol that reaches its end settles its own result **immediately** and does not wait for the others.
 
 ---
@@ -60,7 +62,8 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 |---------|-------------|
 | `<ProgramName>` | Name shown in the terminal. Empty = `PortHackV2`. Does **not** affect the registration name `#PORTHACKV2#` |
 | `<RamCost>` | RAM cost in MB. Empty = 246 (same as vanilla) |
-| `<Time>` | Total length of the Cracking phase in seconds. Empty = 10 |
+| `<Time>` | Total length of the Cracking phase in seconds. Empty = 10. Also what the Listing screen's "Estimated Ns" shows |
+| `<ShowEstimate>` | Whether the Listing screen shows the estimated crack time. Empty / non-boolean = `true`. Set `false` to hide it — the duration itself is a spoiler |
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) |
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |

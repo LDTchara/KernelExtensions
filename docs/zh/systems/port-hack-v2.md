@@ -50,6 +50,7 @@ flag 就是"入口牌"：
 - 每个协议在**自己启动的那一刻**掷一次随机数决定成败（由 `<Rng>` 播种），分支一旦定下就不再变化——但**两条分支的演出完全一样**，只有时长不同（`<TimeIfSuccess>` / `<TimeIfFail>`），所以玩家看不出来。
 - 协议的启动时间由它自己的 `<StartDelay>` 决定（相对 Cracking 开始）。
 - 根级 `<Time>` 是整个 Cracking 阶段的总时长，底部进度条走的就是它。
+  Listing 屏左下角那行「预计 Ns」显示的也是**同一个数**（进度条、倒计时、预计时长三者一致）。
 - 到点的协议**立刻结算自己的结果**，不等其它协议。
 
 ---
@@ -60,7 +61,8 @@ flag 就是"入口牌"：
 |------|------|
 | `<ProgramName>` | 终端里显示的程序名。留空 = `PortHackV2`。**不影响**注册名 `#PORTHACKV2#` |
 | `<RamCost>` | 程序占用内存（MB）。留空 = 246（与原版一致） |
-| `<Time>` | Cracking 阶段总时长（秒）。留空 = 10 |
+| `<Time>` | Cracking 阶段总时长（秒）。留空 = 10。也是 Listing 屏「预计 Ns」显示的值 |
+| `<ShowEstimate>` | Listing 屏是否显示「预计破解时长」。留空 / 非布尔 = `true`。写 `false` 隐藏 —— 时长本身是剧透信息 |
 | `<Polyhedron>` | 动画用的柏拉图立体：`Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | 立体怎么画：`Wireframe`（线框，**默认**）/ `Solid`（实心面）/ `SolidWire`（实心 + 线框） |
 | `<SpinSpeed>` | 立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒一圈） |
