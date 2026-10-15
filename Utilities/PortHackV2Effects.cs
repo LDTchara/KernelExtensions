@@ -123,7 +123,14 @@ public class PortHackV2Effects
         Firewall f = new();
 
         f.additionalDelay = addtime;
-        if (f.solution.ToLower() == "@random")
+        // ⚠️ 必须判**入参 solve**，不是 f.solution ——
+        // 
+        // `new Firewall()` 的构造函数内部就调了 generateRandomSolution()，
+        // 所以 f.solution 恒为随机串，永远不可能等于哨兵值 "@random"，
+        // 判它会让这个分支**恒不可达**（实测确认：写 Solution="@random" Length="12"
+        // 时防火墙的解真的变成字面量 "@random"，Length 也没生效）。
+        // 兄弟方法 ReRandomFirewallSolution 的写法才是对的：无条件随机 + 按长度截断。
+        if ((solve ?? "").ToLowerInvariant() == "@random")
         {
             f.generateRandomSolution();
             string s = StringCut(f.solution, lenth);
@@ -244,7 +251,8 @@ public class PortHackV2Effects
         Firewall f = c.firewall;
         f.solutionLength = lenth;
         f.additionalDelay = additiontime;
-        if (f.solution.ToLower() == "@random")
+        // ⚠️ 同 addFirewall：判入参 solution，不判 f.solution（理由见上）
+        if ((solution ?? "").ToLowerInvariant() == "@random")
         {
             f.generateRandomSolution();
             string s = StringCut(f.solution, lenth);
