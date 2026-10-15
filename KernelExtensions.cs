@@ -24,7 +24,6 @@ using KernelExtensions.Saving;
 using KernelExtensions.Storage;
 using KernelExtensions.Utilities;
 using Pathfinder.Action;
-using Pathfinder.Command;            // 提供 CommandManager（kelicense 指令注册）
 using Pathfinder.Daemon;
 using Pathfinder.Event;
 using Pathfinder.Event.Gameplay;
@@ -67,7 +66,6 @@ namespace KernelExtensions
 |⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                       LDTchara (C) 2026      Version-0.7.0                        |
 #===============================================================================================================#
 ";
-
 
         /// <summary>Extra Pack 可用性：SROS 插件存在时不注册本包功能（dev1 三合一防冲突）。</summary>
         internal static bool CanExtraPackUse =>
@@ -262,16 +260,7 @@ namespace KernelExtensions
             KELog.Info("CustomHeartDaemon registered.");
 
             // ============================================================
-            //  6. 终端指令
-            // ============================================================
-            // ⚠️ RegisterCommand 带 [MethodImpl(NoInlining)]，内部用 Assembly.GetCallingAssembly()
-            //    判定插件来源（卸载时据此清理）——必须**直接在此调用**，不得抽成辅助方法包装，
-            //    否则程序集归属错、卸载清理失效。重名会抛 ArgumentException，故名字取足够独特。
-            CommandManager.RegisterCommand("kelicense", OnKelicenseCommand);
-            KELog.Info("kelicense command registered.");
-
-            // ============================================================
-            //  7. Harmony 补丁（PatchAll 之后才能装需要实例的补丁）
+            //  6. Harmony 补丁（PatchAll 之后才能装需要实例的补丁）
             // ============================================================
             Console.WriteLine("[KernelExtensions] Applying Harmony patches...");
             _harmony = new Harmony("com.LDTchara.KernelExtensions");
@@ -291,7 +280,7 @@ namespace KernelExtensions
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("[KernelExtensions] Testing & feedback: ZQG, HN Extension Hub (QQ Group: 940056115) ");
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine("[KernelExtensions] MIT-0 License - run `kelicense` in the in-game terminal to view it.");
+            Console.WriteLine("[KernelExtensions] MIT-0 License - see LICENSE for the full text.");
             Console.ResetColor();
             PrintGradientAscii(KEArt);
             return true;
@@ -381,40 +370,6 @@ namespace KernelExtensions
         private static void OnOSLoaded_LoadLoc(OSLoadedEvent e)
         {
             try { KELoc.Load(); } catch { }
-        }
-
-        /// <summary>
-        /// `kelicense` 终端指令：输出 KE 的 **MIT-0** 许可证全文（内嵌资源，随 dll 分发）。
-        /// 法律文本不翻译；引导行用英文与其它终端输出保持一致。
-        /// </summary>
-        private static void OnKelicenseCommand(OS os, string[] args)
-        {
-            string[] lines = ReadEmbeddedLicense();
-            if (lines == null)
-            {
-                os.write("[KernelExtensions] embedded LICENSE not found - please report this.");
-                KELog.Error("[kelicense] embedded LICENSE resource is missing");
-                return;
-            }
-
-            os.write("[KernelExtensions] MIT-0 License (no attribution required)");
-            foreach (string line in lines)
-                os.write(line);
-            os.write("The same text ships as LICENSE with the mod and is listed in NOTICE.md.");
-        }
-
-        /// <summary>读取内嵌 LICENSE（LogicalName 固定为 KernelExtensions.LICENSE.txt）。</summary>
-        private static string[] ReadEmbeddedLicense()
-        {
-            var stream = Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("KernelExtensions.LICENSE.txt");
-            if (stream == null) return null;
-
-            using (stream)
-            using (var reader = new StreamReader(stream, Encoding.UTF8))
-            {
-                return reader.ReadToEnd().Replace("\r\n", "\n").Split('\n');
-            }
         }
 
         /// <summary>

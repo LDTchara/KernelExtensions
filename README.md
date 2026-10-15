@@ -125,12 +125,12 @@ Workarounds:
 **MIT-0（MIT No Attribution）** —— 见 [LICENSE](LICENSE)。
 
 这是**去掉了署名条款**的 MIT：你可以自由使用、修改、再分发本模组或其中的代码，
-**不需要注明出处**。在游戏内终端执行 `kelicense` 也能看到全文。
+**不需要注明出处**。
 
 **MIT-0 (MIT No Attribution)** — see [LICENSE](LICENSE).
 
 MIT with the attribution clause removed: you may use, modify and redistribute this mod, or
-code taken from it, **without crediting anyone**. Run `kelicense` in-game to read the full text.
+code taken from it, **without crediting anyone**.
 
 > ### 一个请求（不是条件）/ A request (not a condition)
 >

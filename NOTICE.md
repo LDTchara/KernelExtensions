@@ -99,11 +99,7 @@ redistribution are unrestricted and **no credit is required**. `LICENSE` additio
 **non-binding request** to mention the origin if the mod or its code is reused — a courtesy, not
 a term of the license.
 
-The full licence text is also **embedded in `KernelExtensions.dll`**, so it ships with the binary
-as well, and can be viewed in-game with the terminal command:
-
-```
-kelicense
-```
+The full licence text is **not** embedded in `KernelExtensions.dll` — MIT-0 does not require the
+binary to carry the notice, so nothing is bundled into it.
 
 Copyright (c) 2026 LDTchara and KernelExtensions Contributors — see `CONTRIBUTORS.md`.
