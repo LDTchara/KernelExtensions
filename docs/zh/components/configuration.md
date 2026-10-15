@@ -19,7 +19,59 @@ KernelExtensions 的配置分**两层**：
 |--------|------|------|
 | `<Debug>` | `false` | 输出 KE 调试级日志（发布版请保持 `false`） |
 | `<Watermark>` | `true` | 主菜单水印是否显示（外观见下） |
-| `<SkipVanillaIRCLogs>` | `false` | 跳过原版 `BashLogs.txt` IRC 日志（只加载 `CustomIRCLogs.txt`） |
+| `<SkipVanillaIRCLogs>` | `false` | 跳过原版 `BashLogs.txt` IRC 日志（只加载自定义日志，见下节） |
+| `<CustomIRCLogs>` | — | 额外加载的 IRC 日志文件列表（`<File>` 子元素，路径相对扩展根）；一个都不写时回退到 `CustomIRCLogs.txt`——见下节 |
+
+### 自定义 IRC 日志
+
+IRC 日志会出现在**文件浏览器**里（也就是原版 `BashLogs.txt` 那一栏）。KE 可以在原版之外再塞若干个自己的日志文件。
+
+#### 怎么配
+
+在扩展根目录的 `KE-Config.xml` 里列出要加载的文件（可多个、路径自定义）：
+
+```xml
+<SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>
+
+<CustomIRCLogs>
+    <File>News/Archive1.txt</File>
+    <File>News/Archive2.txt</File>
+</CustomIRCLogs>
+```
+
+| 写法 | 行为 |
+|------|------|
+| 列了 `<File>` | 逐个加载这些文件 |
+| 一个 `<File>` 都不写 | 回退到扩展根下的 **`CustomIRCLogs.txt`**（旧写法照旧可用） |
+| `<SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>`（默认） | 原版文件 + 原版 `BashLogs.txt` + 你的日志**都加载** |
+| `<SkipVanillaIRCLogs>true</SkipVanillaIRCLogs>` | **只加载**你的日志 |
+
+- 路径**相对扩展根目录**，不得用 `..` 逃出扩展目录（越界条目会被跳过并记一条 Warn，其余照常）
+- 文件不存在时跳过并记 Warn，**不影响其余日志**
+- 改完重启游戏生效
+
+#### 文件格式
+
+每条日志以**行首 `#`** 开始：
+
+```
+# 话题标题
+第 1 行正文
+第 2 行正文
+# 另一个话题
+正文……
+```
+
+- 话题标题里可以写 **`标题|来源`** —— 竖线右边会成为条目末尾的 `Archived Via : 来源`；不写竖线时来源取**扩展名**
+- 标题里的 `- [X]` 与**所有空格**会被去掉，然后前加 `IRC_Log:` 作为文件浏览器里显示的文件名
+- 没有任何 `|` 与标记时，条目就是"`IRC_Log:标题` + 正文 + `Archived Via : 扩展名`"
+
+!!! tip "顺带一提"
+    这份格式说明也会写进自动生成的 `KE-Config.xml` 模板里 —— 删掉 `KE-Config.xml` 再跑一次游戏，
+    就能拿到带完整注释的模板。
+
+---
+
 | `<CustomImages>` | — | 自定义图标注册（`<Image>` 子元素，路径相对扩展根，自动注册为 `@文件名`），供 `SetNodeIcon` 使用——见[自定义节点图标系统](./../systems/node-icon.md) |
 | `<BannedUsernames>` | — | 新账号创建时的用户名拦截（`<Ban Name="admin" Reason="保留用户名" />`；`ReasonBlock` 从 `<Reasons>` 块里随机取一条原因） |
 

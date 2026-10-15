@@ -21,7 +21,59 @@ All paths are relative to the extension root.
 |--------|---------|-------------|
 | `<Debug>` | `false` | Emit KE debug-level logs (keep `false` for releases) |
 | `<Watermark>` | `true` | Whether the main-menu watermark is drawn (appearance below) |
-| `<SkipVanillaIRCLogs>` | `false` | Skip the vanilla `BashLogs.txt` IRC log (load only `CustomIRCLogs.txt`) |
+| `<SkipVanillaIRCLogs>` | `false` | Skip the vanilla `BashLogs.txt` IRC log (load only your own logs — see below) |
+| `<CustomIRCLogs>` | — | Extra IRC log files to load (`<File>` children, paths relative to the extension root); with none listed it falls back to `CustomIRCLogs.txt` — see below |
+
+### Custom IRC Logs
+
+IRC logs show up in the **file browser** (the list the vanilla `BashLogs.txt` appears in). KE can add several logs of its own on top of the vanilla ones.
+
+#### Configuration
+
+List the files to load in `KE-Config.xml` at the extension root (any number, any paths):
+
+```xml
+<SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>
+
+<CustomIRCLogs>
+    <File>News/Archive1.txt</File>
+    <File>News/Archive2.txt</File>
+</CustomIRCLogs>
+```
+
+| Form | Behaviour |
+|------|-----------|
+| `<File>` entries listed | each of those files is loaded |
+| no `<File>` at all | falls back to **`CustomIRCLogs.txt`** at the extension root (the old form keeps working) |
+| `<SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>` (default) | vanilla files + vanilla `BashLogs.txt` + your logs **all load** |
+| `<SkipVanillaIRCLogs>true</SkipVanillaIRCLogs>` | **only** your logs load |
+
+- Paths are **relative to the extension root** and must not escape it with `..` (an out-of-bounds entry is skipped with a warning; the rest still load)
+- A missing file is skipped with a warning and **does not affect the other logs**
+- Restart the game after changing the config
+
+#### File Format
+
+Each entry starts with a **`#` at the beginning of a line**:
+
+```
+# Topic title
+body line 1
+body line 2
+# Another topic
+body...
+```
+
+- The topic may be written as **`title|source`** — the right-hand side becomes the entry's trailing `Archived Via : source`; without a `|` the source is the **extension name**
+- Any `- [X]` marker and **all spaces** in the title are stripped, then `IRC_Log:` is prepended to form the filename shown in the file browser
+- With no `|` and no marker, the entry is simply "`IRC_Log:title` + body + `Archived Via : extension name`"
+
+!!! tip "Also in the template"
+    This format description is also written into the auto-generated `KE-Config.xml` template — delete
+    `KE-Config.xml` and run the game once to get a fully commented template.
+
+---
+xt`) |
 | `<CustomImages>` | — | Custom icon registration (`<Image>` children, paths relative to the extension root, auto-registered as `@filename`) used by `SetNodeIcon` — see [Custom Node Icon System](./../systems/node-icon.md) |
 | `<BannedUsernames>` | — | Username blocking when creating new accounts (`<Ban Name="admin" Reason="Reserved" />`; `ReasonBlock` picks a random reason from a `<Reasons>` block) |
 
