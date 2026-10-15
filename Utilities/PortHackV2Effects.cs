@@ -244,7 +244,7 @@ public class PortHackV2Effects
             return;
         }
         Firewall f = c.firewall;
-        f.solutionLength = lenth;
+        f.solutionLength = lenth;   // 仅作为 @random 的**生成长度**；最终长度在方法末尾统一回写
         f.additionalDelay = additiontime;
         // ⚠️ 同 addFirewall：判入参 solution，不判 f.solution（理由见上）
         if ((solution ?? "").ToLowerInvariant() == "@random")
@@ -257,6 +257,14 @@ public class PortHackV2Effects
             f.generateRandomSolution();
         }
         else f.solution = solution;
+
+        // ⚠️ 必须放在两条分支**之后**统一回写 —— 与 addFirewall 同一套。
+        // 原先这个位置是 `f.solutionLength = lenth`（在分支之前），于是字面量解那一支会长短不一：
+        //   Solution="NEWSOLUTION"（11 位）而 Length 留空（= 现有解长，比如 22）
+        //   → 玩家要输 22 位、解只有 11 位 → **防火墙无解**。
+        // 与 6341619 修掉的是同一类问题，那次只修了 addFirewall 一侧。
+        f.solutionLength = f.solution.Length;
+
         c.firewall = f;
         if (reset){ c.firewall.solved = false; c.firewall.analysisPasses = 0; }
         
