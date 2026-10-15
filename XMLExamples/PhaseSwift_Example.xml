@@ -146,14 +146,44 @@
     -->
     <MusicPhases>
         <Phase id="0">
+            <!-- <Track> 的属性全是可选的，不写 = 整曲循环、原速、原音量。
+                 All <Track> attributes are optional; omitted = loop the whole file, normal speed, normal volume.
+
+                 · LoopStart / LoopEnd：循环区间，单位**秒**。
+                     先从头播到 LoopEnd，之后只在 [LoopStart, LoopEnd] 里循环
+                     （即开头那段会完整播一次）。
+                     只写 LoopEnd → 从 0 播到该处后回 0；都不写 → 整曲循环。
+                     写反（LoopEnd <= LoopStart）→ 记一条警告并回退整曲循环，音乐照常。
+                   Loop region in seconds; plays from the start through LoopEnd, then loops
+                   inside [LoopStart, LoopEnd]. Inverted values fall back to whole-file looping
+                   with a warning; playback is never interrupted.
+
+                 · Pitch：范围 -1 ~ 1，0 = 原速。底层 AL_PITCH = 2^pitch，所以 0.5 ≈ 1.41 倍速。
+                     ⚠️ 变速必然变调（音频底层机制，不是缺陷）；超出范围会被夹到 ±1。
+                   Pitch in -1..1, 0 = normal. Backed by AL_PITCH = 2^pitch, so 0.5 ~ 1.41x.
+                   Changing speed always changes pitch; out-of-range values are clamped.
+
+                 · Volume：单曲音量倍率，1 = 不变、0.5 = 减半、0 = 静音，
+                     与场景音量、玩家音量相乘，交叉淡化期间也生效。
+                   Per-track volume multiplier: 1 = unchanged, 0.5 = half, 0 = silent.
+                   Multiplied with the scene and player volumes; stays active during crossfades.
+
+                 ⚠️ 同一 Phase 内各轨长度必须一致 —— 音乐按下标与场景绑定，切换场景是
+                    淡入淡出而非重新计时，长度不同会让进度逐次错位。
+                   Tracks within one Phase must be the same length: music is bound to scenes by
+                   index and crossfades rather than restarting, so differing lengths drift. -->
             <Tracks>
                 <Track>Music/Rock1.ogg</Track>
                 <Track>Music/EDM1.ogg</Track>
             </Tracks>
         </Phase>
         <Phase id="1">
+            <!-- 用上四个属性的例子：第 1 轨只循环 12~45 秒这段、稍微放慢并压低音量；
+                 第 2 轨仍走整曲循环，便于对比。
+                 An example using all four: track 1 loops only 12-45s, a little slower and quieter;
+                 track 2 keeps whole-file looping for comparison. -->
             <Tracks>
-                <Track>Music/Rock2.ogg</Track>
+                <Track LoopStart="12" LoopEnd="45" Pitch="-0.2" Volume="0.8">Music/Rock2.ogg</Track>
                 <Track>Music/EDM2.ogg</Track>
             </Tracks>
         </Phase>
