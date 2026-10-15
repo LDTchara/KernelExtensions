@@ -64,8 +64,18 @@ All detailed documentation, configuration guides, and action references live on 
   A 10-language KE-Locales system with external-file overrides and automatic missing-key completion.
 - **用户名管理 (Username Management)** – 通过 KE-Config.xml 的 `BannedUsernames` 段阻止禁用用户名创建账号，禁用原因可配（直接/随机块）。  
   Block account creation with banned usernames via the `BannedUsernames` section of KE-Config.xml, with configurable (direct/random-pool) rejection reasons.
-- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – 终端交互、音效、标题横幅、自定义结局等 30 余种能力。  
-  30+ capabilities including terminal interaction, sound effects, title banners, and custom endings.
+- **自定义破解与代理工具 (Crackers & Proxy Tools)** – `PortHackV2` 端口破解程序（多协议并行、5 种柏拉图立体动画演出、可选实心/线框呈现）与 `ProxyKiller` 常驻代理加速器（分档内存占用、可主动过载）。  
+  `PortHackV2`, a port cracker (parallel protocols, five Platonic-solid animations, wireframe/solid rendering) and `ProxyKiller`, a resident proxy accelerator (tiered RAM use, optional self-overload).
+- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – **46 个 Action** + 3 个可执行程序 + 2 个守护进程：终端交互、音效、标题横幅、自定义结局、目标机端口/防火墙/代理的原子操作等。  
+  **46 Actions** plus 3 executables and 2 daemons: terminal interaction, sound effects, title banners, custom endings, and atomic port/firewall/proxy operations on target machines.
+- **主菜单水印与 RAM 显示 (Watermark & RAM Display)** – 彩虹流动 + 逐字晃动的水印（`<Watermark>` 可关），以及 RAM 显示增强。  
+  A rainbow, per-character-wobbling watermark (`<Watermark>` can disable it) and an enhanced RAM display.
+- **屏幕特效与节点外观 (Screen Effects & Node Look)** – `FlashScreen` 闪屏、`StartScreenBleedEffectWCC` 画面渗色、节点自定义图标、节点 self-replacement 占位符。  
+  `FlashScreen`, `StartScreenBleedEffectWCC` screen bleed, custom node icons, and node self-replacement placeholders.
+- **扩展内 IRC 日志 (Custom IRC Logs)** – 在文件浏览器里追加自定义 IRC 日志（多文件、路径可配），格式简单到直接用文本写。  
+  Add your own IRC logs to the file browser (multiple files, configurable paths) in a plain-text format.
+- **扩展内路径校验与配置诊断 (Path Validation & Config Diagnostics)** – 作者书写的路径统一走 `KEPath`（越界即拒绝），配置里写错的元素/属性名可在 `<Debug>` 下报进日志。  
+  Author-written paths go through `KEPath` (out-of-bounds rejected); misspelled element/attribute names are logged under `<Debug>`.
 
 → 完整介绍请参阅[文档站](https://ldtchara.github.io/KernelExtensions/)。  
 → See the [documentation site](https://ldtchara.github.io/KernelExtensions/) for full details.
@@ -74,24 +84,28 @@ All detailed documentation, configuration guides, and action references live on 
 
 ## 兼容性 / Compatibility
 
-**与 Stuxnet.Audio（SASS）不兼容 —— 冲突点在 PhaseSwift 的多轨音乐系统（每场景一轨同时播放）。**  
-**Incompatible with Stuxnet.Audio (SASS) — the conflict is with PhaseSwift's multi-track music (one track per scene, played simultaneously).**
+**与 Stuxnet.Audio（SASS）可共存** —— 曾经的冲突点（PhaseSwift 多轨音乐 × SASS 的 `MusicManager` 替换）已实测压制。  
+**Coexists with Stuxnet.Audio (SASS)** — the former conflict (PhaseSwift multi-track music × SASS's `MusicManager` replacement) is suppressed in practice.
 
-Stuxnet.Audio 默认开启“替换 MusicManager”（`ReplaceMusicManager = true`），会劫持对**扩展内音乐**的播放、停止、音量与切歌调用；而 KernelExtensions 的 PhaseSwift 多轨模式（每场景一轨同时播放）自行流式播放扩展音乐，以 `MusicManager.getVolume()` 作为音量基准，启动时会调用 `MusicManager.stop()` 防止叠播。两者争夺同一条播放链，可能造成：双份播放（叠播）、音量/静音调节失效、交叉淡化错乱或切歌失效。
+曾经的三个冲突面，现状：
 
-规避方式：
-- 不同时安装两者；或
-- 关闭 Stuxnet.Audio 的 *Replace Music Manager* 选项后可与 PhaseSwift 共存（SASS 其余音效功能不受影响）。
+| 冲突面 | 现状 |
+|--------|------|
+| **Action 注册名**（装 SASS 后 KE 曾**完全加载失败**）| ✅ **已修** —— KE 的 46 个 Action 一律**双名注册**（原名 + `KE` + 原名），重名只记日志、不再中断加载 |
+| **多轨音乐争播放链** | ✅ **压制基本完整** —— SASS 的播放入口全在 `MusicManager` 下游，PS 拦得住；原版两处 `MediaPlayer.Play` 也都在 `MusicManager` 内部 |
+| **`getVolume` 条件性接管** | ⚠️ **唯一剩余裂缝**：SASS 在 `IsBaseGameSong == false` 时接管，PS 的音量联动可能读到 SASS 的浓入淡出中间值。**未实施加固**（加固方案见仓库内分析档） |
 
-> 注：本声明针对 Stuxnet.Audio（`autumnrivers.stuxnet.audio`）。KernelExtensions 对 Stuxnet 本体（`autumnrivers.stuxnet`）的主菜单有主动适配（PatchStuxnetDrawFGamemodeMenu），不受此冲突影响。
+> 注：本声明针对 Stuxnet.Audio（`autumnrivers.stuxnet.audio`）。KernelExtensions 对 Stuxnet 本体（`autumnrivers.stuxnet`）的主菜单有主动适配，不受影响。
 
-Stuxnet.Audio replaces MusicManager by default (`ReplaceMusicManager = true`), hijacking play/stop/volume/song-transition calls for **extension music**; PhaseSwift's multi-track mode (one track per scene) streams extension music on its own, uses `MusicManager.getVolume()` as its volume reference, and calls `MusicManager.stop()` on start to prevent overlap. Both fight over the same playback chain, which may cause double playback (overlap), broken volume/mute control, corrupted crossfades, or failed song transitions.
+The three former conflict surfaces, as they stand now:
 
-Workarounds:
-- Do not install both at the same time; or
-- Turn off Stuxnet.Audio's *Replace Music Manager* option — SASS can then coexist with PhaseSwift (its other SFX features are unaffected).
+| Surface | Status |
+|---------|--------|
+| **Action registration names** (KE used to **fail to load entirely** with SASS installed) | ✅ **Fixed** — all 46 KE Actions register **two names** (original + `KE` + original); a collision is logged instead of aborting the load |
+| **Multi-track music fighting over the playback chain** | ✅ **Suppression is essentially complete** — SASS's playback entry points all sit downstream of `MusicManager`, which PS intercepts; both vanilla `MediaPlayer.Play` calls are inside `MusicManager` too |
+| **Conditional `getVolume` takeover** | ⚠️ **The one remaining crack**: SASS takes over when `IsBaseGameSong == false`, so PS's volume linkage may read SASS's crossfade mid-values. **Not hardened yet** (the hardening plan is in the repository's analysis doc) |
 
-> Note: this statement targets Stuxnet.Audio (`autumnrivers.stuxnet.audio`). KernelExtensions actively adapts Stuxnet itself (`autumnrivers.stuxnet`) for the main menu (PatchStuxnetDrawFGamemodeMenu), which is not affected by this conflict.
+> Note: this statement targets Stuxnet.Audio (`autumnrivers.stuxnet.audio`). KernelExtensions actively adapts Stuxnet itself (`autumnrivers.stuxnet`) for the main menu, which is not affected.
 
 ---
 
