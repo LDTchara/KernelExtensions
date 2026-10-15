@@ -9,17 +9,25 @@ namespace KernelExtensions.Patches;
 /// <summary>
 /// 完全替换 FileEntry.init()：OverrrideOriginal=true 时只用自定义，
 /// false 时原版 + 自定义。
+///
+/// <para>
+/// 自定义日志的**入口可配** —— 列表来自 KE-Config.xml 的
+/// <c>&lt;CustomIRCLogs&gt;&lt;File&gt;…&lt;/File&gt;&lt;/CustomIRCLogs&gt;</c>（可多文件、路径自定义）；
+/// 一个都没配时回退到扩展根下的 <c>CustomIRCLogs.txt</c>。
+/// </para>
 /// </summary>
 [HarmonyPatch(typeof(FileEntry), nameof(FileEntry.init))]
 internal static class IRCLogInjector
 {
+    /// <summary>未配置 &lt;CustomIRCLogs&gt; 时回退使用的默认文件名（相对扩展根）。</summary>
+    private const string DefaultLogFileName = "CustomIRCLogs.txt";
+
     private static bool OverrideOriginal => ConfigLoader.SkipVanillaIRCLogs;
 
     static bool Prefix(ContentManager content)
     {
         // 确保配置在 FileEntry.init 处理前已加载
         ConfigLoader.Load();
-        string extRoot = "";  // 稍后填
 
         // 1. 创建列表
         FileEntry.filenames = new List<string>(128);
@@ -55,13 +63,31 @@ internal static class IRCLogInjector
             var extInfo = Hacknet.Extensions.ExtensionLoader.ActiveExtensionInfo;
             if (extInfo != null)
             {
-                extRoot = extInfo.FolderPath.Replace('\\', '/');
-                string path = Path.Combine(extRoot, "CustomIRCLogs.txt");
-                if (File.Exists(path))
+                // 入口可配：KE-Config.xml 的 <CustomIRCLogs><File>…</File></CustomIRCLogs>
+                // （路径相对扩展根，解析与越界校验已在 ConfigLoader 里做过）。
+                // 一个都没配时回退到默认文件名 CustomIRCLogs.txt —— 未写 KE-Config.xml
+                // 的扩展与旧版写法因此照旧可用。
+                List<string> files = ConfigLoader.CustomIRCLogFiles.Count > 0
+                    ? new List<string>(ConfigLoader.CustomIRCLogFiles)
+                    : new List<string> { DefaultLogFileName };
+
+                foreach (string rel in files)
                 {
-                    string customText = File.ReadAllText(path);
-                    ParseAndAdd(customText, extInfo.Name, false);
-                    KELog.Info($"[IRCLogsPatch] Prefix injected from {path}");
+                    string path = KEPath.ResolveInsideExtension(rel);
+                    if (path == null)
+                    {
+                        KELog.Warn($"[IRCLogsPatch] log path escapes the extension folder, skipped: '{rel}'");
+                        continue;
+                    }
+                    if (!File.Exists(path))
+                    {
+                        KELog.Warn($"[IRCLogsPatch] log file not found, skipped: {path}");
+                        continue;
+                    }
+
+                    // ⚠️ 内部解析逻辑不动 —— 它已通过实测（见 TestSuite IRC 段）。
+                    ParseAndAdd(File.ReadAllText(path), extInfo.Name, false);
+                    KELog.Info($"[IRCLogsPatch] injected from {path}");
                 }
             }
         }
