@@ -128,6 +128,76 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 
 ---
 
+### KPolyhedron
+
+- 路径：`KernelExtensions.Utilities.KPolyhedron`（枚举 `KPlatonicShape`、`KPolyhedronStyle` 同目录）
+- 作用：**五种柏拉图立体的几何数据** —— 顶点、棱、面、旋转对称轴、姿态矩阵。
+  **纯数学**（只用 `Vector3` / `Matrix`，不碰渲染管线），所以可以脱离 `GraphicsDevice` 使用。
+
+```csharp
+using KernelExtensions.Utilities;
+
+Vector3[] verts = KPolyhedron.Vertices(KPlatonicShape.Icosahedron);   // 12 个顶点
+(int A, int B)[] edges = KPolyhedron.Edges(KPlatonicShape.Icosahedron); // 30 条棱
+int[][] faces = KPolyhedron.Faces(KPlatonicShape.Cube);                 // 6 个四边形面
+Vector3 axis = KPolyhedron.SpinAxis(KPlatonicShape.Cube);               // 旋转对称轴
+Matrix orient = KPolyhedron.OrientationMatrix(axis);                    // 把该轴摆竖直的固定姿态
+```
+
+| 方法 | 返回 |
+|------|------|
+| `Vertices(shape)` | 顶点坐标（**返回副本**，随便改） |
+| `Edges(shape)` | 棱表，每项是一对顶点下标 |
+| `Faces(shape)` | 面表，每项是**顶点下标的闭合环**（3~5 个） |
+| `SpinAxis(shape)` | 该立体的旋转对称轴（单位向量） |
+| `OrientationMatrix(axis)` | 把 `axis` 摆到竖直方向的固定姿态矩阵 |
+| `ValidateSelfTest()` | 自检，返回问题描述（正常为空串） |
+
+`KPlatonicShape` 的五个值：`Tetrahedron`（4 顶点 / 6 棱 / 4 面）、`Cube`（8 / 12 / 6）、
+`Octahedron`（6 / 12 / 8）、`Dodecahedron`（20 / 30 / 12）、`Icosahedron`（12 / 30 / 20）。
+
+!!! warning "面环的绕序：模型空间逆时针，**投到屏幕上会翻成顺时针**"
+    `Faces()` 返回的每个环在**模型空间**都是"从外面看逆时针"（`BuildFaces` 统一外法线 +
+    `OrderRing` 按绕法线角度升序）。但透视投影会把**手性翻过来**，所以拿去做硬件剔除时
+    必须配 **`CullMode.CullClockwiseFace`**；用 FNA 默认的 `CullCounterClockwiseFace`
+    会**保留背面、剔掉正面**（实机踩过）。
+    而**明暗**计算不受影响 —— 它在模型空间用叉积求外法线。
+
+### KPolyhedronAnimation
+
+- 路径：`KernelExtensions.Utilities.KPolyhedronAnimation`
+- 作用：多边体**动画层的默认值**。渲染与配置两边都向下引用这里，避免任何一方持有对方的默认值。
+
+| 常量 | 值 | 说明 |
+|------|-----|------|
+| `DefaultSpinSpeed` | `3.2f` | 匀速段默认角速度（弧度/秒）。**起转与急刹后的慢转按固定比例跟着它缩放**，所以它不只是"某个配置项的默认值" |
+| `DefaultIdleSpinSpeed` | `-1f` | 急刹后慢转的默认值；`< 0` = 按 `DefaultSpinSpeed` 等比缩放 |
+| `DefaultSpinUpRatio` | `0.1f` | 起转时长占总时长的比例 |
+| `DefaultSpinDownSeconds` | `1.7f` | 急刹默认时长（秒） |
+
+### KPolyhedronSequence
+
+- 路径：`KernelExtensions.Utilities.KPolyhedronSequence`
+- 作用：**多边体演出序列** —— 单个立体的线框/实心动画（起转 → 匀速 → 急刹 → 慢转）。
+  几何取自 `KPolyhedron`、默认转速取自 `KPolyhedronAnimation`；本类只管"怎么动、怎么画"。
+- 目前有两个消费者：端口破解程序（PortHackV2）的破解演出、效果播放器对 5 个立体的预览。
+- ⚠️ **绘制分工**（与调用方约定，双方都不要越界）：调用方管理 `RenderTarget` 与主
+  `SpriteBatch` 的 `Begin`/`End`；`RenderFrame` 只把立体画进内部 `RenderTarget`，
+  再用调用方传入的 batch 贴到当前绑定的目标上。
+
+```csharp
+var seq = new KPolyhedronSequence();
+seq.Shape = KPlatonicShape.Icosahedron;
+seq.Mode = KPolyhedronStyle.SolidWire;   // Wireframe / Solid / SolidWire
+seq.SpinSpeed = 6.4f;                    // 整条转速曲线按固定比例缩放
+seq.Update(dt, elapsed, totalSeconds);
+```
+
+`KPolyhedronStyle`：`Wireframe`（线框，默认）/ `Solid`（实心面 + 逐面明暗 + 背面剔除）/
+`SolidWire`（实心 + 线框，线也参与剔除）。
+
+---
+
 ## 六、日志
 
 ### KELog

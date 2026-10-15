@@ -140,6 +140,80 @@ A **configuration diagnostics** tool for tracking down misspelled element/attrib
 
 ---
 
+### KPolyhedron
+
+- Path: `KernelExtensions.Utilities.KPolyhedron` (the `KPlatonicShape` / `KPolyhedronStyle` enums live alongside)
+- Purpose: **geometry for the five Platonic solids** — vertices, edges, faces, spin axis, orientation
+  matrix. **Pure maths** (only `Vector3` / `Matrix`, no rendering pipeline), so it works without a
+  `GraphicsDevice`.
+
+```csharp
+using KernelExtensions.Utilities;
+
+Vector3[] verts = KPolyhedron.Vertices(KPlatonicShape.Icosahedron);      // 12 vertices
+(int A, int B)[] edges = KPolyhedron.Edges(KPlatonicShape.Icosahedron);   // 30 edges
+int[][] faces = KPolyhedron.Faces(KPlatonicShape.Cube);                   // 6 quad faces
+Vector3 axis = KPolyhedron.SpinAxis(KPlatonicShape.Cube);                 // spin axis
+Matrix orient = KPolyhedron.OrientationMatrix(axis);                      // pose that stands that axis up
+```
+
+| Method | Returns |
+|--------|---------|
+| `Vertices(shape)` | vertex positions (**a copy** — modify freely) |
+| `Edges(shape)` | edge list; each entry is a pair of vertex indices |
+| `Faces(shape)` | face list; each entry is a **closed ring of vertex indices** (3–5 of them) |
+| `SpinAxis(shape)` | the shape's rotational symmetry axis (unit vector) |
+| `OrientationMatrix(axis)` | a fixed pose matrix that stands `axis` up vertically |
+| `ValidateSelfTest()` | self-check; returns a description of problems (empty when fine) |
+
+`KPlatonicShape` has five values: `Tetrahedron` (4 vertices / 6 edges / 4 faces), `Cube` (8 / 12 / 6),
+`Octahedron` (6 / 12 / 8), `Dodecahedron` (20 / 30 / 12), `Icosahedron` (12 / 30 / 20).
+
+!!! warning "Face winding: counter-clockwise in model space, **clockwise once projected**"
+    Every ring from `Faces()` is counter-clockwise **seen from outside, in model space**
+    (`BuildFaces` normalises to outward normals, `OrderRing` sorts by angle around them). But a
+    perspective projection **flips handedness**, so for hardware culling you must use
+    **`CullMode.CullClockwiseFace`** — FNA's default `CullCounterClockwiseFace` **keeps back faces and
+    discards front faces** (hit in practice). **Shading is unaffected**: it computes the outward
+    normal with a cross product in model space.
+
+### KPolyhedronAnimation
+
+- Path: `KernelExtensions.Utilities.KPolyhedronAnimation`
+- Purpose: the **animation layer's default values**. Both the rendering side and the config side
+  reference this, so neither holds the other's defaults.
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DefaultSpinSpeed` | `3.2f` | Default angular speed of the steady phase (rad/s). The spin-up speed and the post-brake idle speed **scale with it at fixed ratios**, so it is more than "one config option's default" |
+| `DefaultIdleSpinSpeed` | `-1f` | Default idle speed after the brake; `< 0` = scale proportionally from `DefaultSpinSpeed` |
+| `DefaultSpinUpRatio` | `0.1f` | Spin-up length as a fraction of the total |
+| `DefaultSpinDownSeconds` | `1.7f` | Default brake length in seconds |
+
+### KPolyhedronSequence
+
+- Path: `KernelExtensions.Utilities.KPolyhedronSequence`
+- Purpose: the **polyhedron show sequence** — wireframe/solid animation of a single solid
+  (spin up → steady → brake → idle). Geometry comes from `KPolyhedron`, default speeds from
+  `KPolyhedronAnimation`; this class only decides *how it moves and draws*.
+- Two consumers today: the port cracker (PortHackV2) show, and the effects player's preview of all five solids.
+- ⚠️ **Drawing contract** (neither side should overstep): the caller owns the `RenderTarget` and the
+  main `SpriteBatch` `Begin`/`End`; `RenderFrame` only draws the solid into its internal
+  `RenderTarget` and blits it with the caller's batch to whatever target is currently bound.
+
+```csharp
+var seq = new KPolyhedronSequence();
+seq.Shape = KPlatonicShape.Icosahedron;
+seq.Mode = KPolyhedronStyle.SolidWire;   // Wireframe / Solid / SolidWire
+seq.SpinSpeed = 6.4f;                    // scales the whole speed curve by a fixed ratio
+seq.Update(dt, elapsed, totalSeconds);
+```
+
+`KPolyhedronStyle`: `Wireframe` (lines, default) / `Solid` (filled faces + per-face shading + back-face
+culling) / `SolidWire` (solid plus wireframe, with the lines also culled).
+
+---
+
 ## 6. Logging
 
 ### KELog
