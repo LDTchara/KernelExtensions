@@ -222,3 +222,24 @@ Language‑file‑based localisation is planned for a future release, which will
 ---
 
 > Good luck with your extension! If you have any questions, feel free to start a Discussion.
+
+---
+
+## 11. Distributing This Mod With Your Extension
+
+**KE is licensed under [MIT-0](https://spdx.org/licenses/MIT-0.html), which allows it to be redistributed together with your extension** — no attribution and no license file required.
+
+To bundle it, drop `KernelExtensions.dll` into a `Plugins/` folder at the root of your extension; Pathfinder loads it when the extension is entered and unloads it on exit:
+
+```
+YourExtension/
+├── ExtensionInfo.xml
+└── Plugins/
+    └── KernelExtensions.dll
+```
+
+Crediting the project is very welcome if you feel like it (e.g. "Uses KernelExtensions by LDTchara" in your extension's description) — but that is a courtesy, not a duty.
+
+⚠️ One suggestion: if your users may already have KE installed globally, **asking them to install it themselves is simpler** than bundling an older copy — when two assemblies with the same name are present, which one gets loaded is not deterministic.
+
+---

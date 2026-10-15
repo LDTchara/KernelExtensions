@@ -216,3 +216,24 @@ KernelExtensions 目前对按钮和提示文字做了硬编码多语言（中文
 ---
 
 > 祝你的扩展制作顺利！如果还有疑问，欢迎到 Discussions 讨论。
+
+---
+
+## 十一、随扩展分发本模组
+
+**KE 采用 [MIT-0](https://spdx.org/licenses/MIT-0.html) 许可，允许随扩展一起分发** —— 不需要署名，也不需要附上许可证文件。
+
+如果要捆进扩展，把 `KernelExtensions.dll` 放进扩展根目录下的 `Plugins/` 文件夹即可，Pathfinder 会在进入该扩展时自动加载、退出时卸载：
+
+```
+你的扩展/
+├── ExtensionInfo.xml
+└── Plugins/
+    └── KernelExtensions.dll
+```
+
+想标明出处的话很欢迎（比如在扩展的说明里写一句「使用 KernelExtensions by LDTchara」），但这是情分，不是义务。
+
+⚠️ 一点建议：如果用户可能已经全局装过 KE，**优先直接要求用户自行安装**，比捆一份旧版更省事 —— 两份同名程序集同时存在时，加载哪一份并不确定。
+
+---
