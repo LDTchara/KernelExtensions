@@ -74,6 +74,34 @@ namespace KernelExtensions.Daemons
         internal bool IsSubscribedForUpdates = false;
         public bool IsInCriticalFirmwareFailure = false;
         internal bool IsCrashed = false; // 坠毁终结标志：坠机后物理彻底停止，防止重访节点时"复活"
+        /// <summary>
+        /// 【原版遗留字段，保留作备用接口】**从未被验证过**。
+        ///
+        /// <para>
+        /// 字段名与拼写都**逐字来自原版** <c>AircraftDaemon</c>（原版第 65 行同样是
+        /// <c>AircraftFallStartsImmediatley</c>，含这个拼写错误）—— 故意不改名、不改拼写，
+        /// 以便与本项目参考的原版源码对照，也避免与"是否该开放给作者"这件事纠缠。
+        /// </para>
+        ///
+        /// <para>
+        /// 语义：机载固件进入致命故障后，坠落是**立刻以最大速率**开始（<c>true</c>，
+        /// 高度按 <c>timeFallingFor / H</c> 线性算），还是先用 15 秒二次缓出加速到最大速率
+        /// （<c>false</c>）。
+        /// </para>
+        ///
+        /// <para>
+        /// ⚠️ <b>它目前恒为 <c>true</c>，而且没有任何途径改成 <c>false</c>：</b>
+        /// 本类**没有给它加 <c>[XMLStorage]</c>**（原版也没有任何序列化机制，原版里它同样
+        /// 只在声明与使用两处出现、无人赋值 → 原版的 <c>false</c> 分支是**死代码**）。
+        /// 也就是说 **<c>false</c>（15 秒缓出）这条路从来没有被跑过**，故不开放给作者：
+        /// 开放等于把一条未经验证的路径变成对外承诺。
+        /// </para>
+        ///
+        /// <para>
+        /// 需要"更快/更慢掉下去"时改 <see cref="FallDuration"/>（即 <c>H</c>），
+        /// 需要"跳过坠落直接判定坠毁"时用 AttackAircraft 动作的 <c>FallDuration="0"</c>。
+        /// </para>
+        /// </summary>
         public bool AircraftFallStartsImmediatley = true;
         public Action CrashAction;
         private Texture2D WorldMap = OS.currentInstance.content.Load<Texture2D>("DLC/Sprites/SmallWorldMap");
@@ -117,12 +145,60 @@ namespace KernelExtensions.Daemons
         [XMLStorage] public float MapDestX = 0.6672f;
         [XMLStorage] public float MapDestY = 0.4264f;
 
+
+        /// <summary>坠落时长不可用时的兜底值（= XML 字段的默认值，对齐原版 RoughTotalFallTimeSeconds）。</summary>
+        private const float DefaultFallDuration = 135f;
+
+        /// <summary>
+        /// 把作者配置的 <c>FallDuration</c> 应用到运行时高度 <c>H</c>。
+        ///
+        /// <para>
+        /// ⚠️ <c>H</c> 会**作为除数**（Update 里 <c>fallFraction = timeFallingFor / H</c>），
+        /// 所以必须 &gt; 0 —— 0 会让 <c>fallFraction</c> 先变 NaN（0/0）再变 +Inf，
+        /// <c>CurrentAltitude</c> 随之变 NaN / -Inf，而坠落终结判定是
+        /// <c>CurrentAltitude &lt;= 0</c>（NaN 下**不成立**），于是**坠落流程永久卡死**。
+        /// </para>
+        ///
+        /// <para>
+        /// 三档处理：
+        /// <list type="bullet">
+        ///   <item>正值 → 直接用</item>
+        ///   <item>负数 / NaN / Infinity → 用默认，**不警告**（AGENTS.md 9.55「负数 = 默认；
+        ///     NaN / Infinity 视同无效值」，作者是在明确表达"用默认"）</item>
+        ///   <item><b>0 → 用默认，且记 Warn</b> —— 0 不属"无效值回退"那一族，
+        ///     它多半是作者把 AttackAircraft 的 <c>FallDuration="0"</c>（立即坠毁）
+        ///     误当成了 daemon 侧的写法。见 Warn 文案。</item>
+        /// </list>
+        /// </para>
+        /// </summary>
+        private void ApplyFallDuration()
+        {
+            float d = FallDuration;
+
+            if (float.IsNaN(d) || float.IsInfinity(d) || d < 0f)
+            {
+                H = DefaultFallDuration;
+                return;
+            }
+
+            if (d == 0f)
+            {
+                H = DefaultFallDuration;
+                KELog.Warn("[FlightDaemon] <FallDuration>0</FallDuration> is not 'crash instantly' - it is how "
+                    + "long the fall takes, and 0 would divide by zero. Using " + DefaultFallDuration
+                    + "s instead. To crash immediately, put FallDuration=\"0\" on the AttackAircraft action.");
+                return;
+            }
+
+            H = d;
+        }
+
         // ====== 文件系统初始化 ======
         public override void initFiles()
         {
             base.initFiles();
 
-            H = FallDuration; // 将 XML 配置的坠落时长应用到运行时变量 H（此前未生效）
+            ApplyFallDuration(); // 将 XML 配置的坠落时长应用到运行时变量 H（三档处理见方法注释）
             ApplyMapPoints();
 
             MainFolder = comp.files.root.searchForFolder("FlightSystems");
@@ -170,7 +246,7 @@ namespace KernelExtensions.Daemons
 
             ThemeColor = os.highlightColor;
             MainFolder = comp.files.root.searchForFolder("FlightSystems");
-            H = FallDuration; // 读档后同步 H（XMLStorage 反序列化在 loadInit 前完成）
+            ApplyFallDuration(); // 读档后同步 H（XMLStorage 反序列化在 loadInit 前完成）
             ApplyMapPoints(); // 同上：读档后同步航线起终点
             if (!CompToDaemons.ContainsKey(comp))
                 CompToDaemons[comp] = this;
