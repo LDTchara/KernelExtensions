@@ -2,6 +2,11 @@
 
 **KernelExtensions** is a Hacknet mod using the **Pathfinder API**, providing highly configurable trials, VM attacks, an aircraft daemon, and a collection of custom actions for extension authors.
 
+!!! warning "Partly AI-assisted content"
+    Parts of this project's **documentation and code are AI-assisted**, and may be inaccurate or
+    incomplete — configuration references and examples especially. Please evaluate before use,
+    and report any issue via [Issue](https://github.com/LDTchara/KernelExtensions/issues) or a PR.
+
 > This documentation corresponds to **KernelExtensions 0.6**.
 
 ## 📖 System Navigation

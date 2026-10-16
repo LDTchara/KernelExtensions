@@ -2,6 +2,11 @@
 
 **KernelExtensions** 是一个基于 **Pathfinder API** 的 Hacknet 模组，为扩展作者提供高度可配置的试炼、虚拟机攻击、飞机守护进程以及一系列自定义动作。
 
+!!! warning "部分内容由 AI 辅助生成"
+    本项目的部分文档与代码由 **AI 辅助生成**，可能存在不准确或不完整之处 ——
+    尤其是配置项说明与示例。请在使用前自行评估；发现问题欢迎通过
+    [Issue](https://github.com/LDTchara/KernelExtensions/issues) 或 PR 指出，会及时修正。
+
 > 本文档对应 **KernelExtensions 0.6**。
 
 ## 📖 系统导航
