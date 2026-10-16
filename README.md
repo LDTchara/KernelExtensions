@@ -23,8 +23,13 @@ All detailed documentation, configuration guides, and action references live on 
 
 👉 **[前往文档站 / Go to Docs](https://ldtchara.github.io/KernelExtensions/)** 👈
 
-> GitHub Wiki（`KernelExtensions.wiki`）自 0.7 起**已退役**，内容迁入主仓库 `docs/`。  
-> The GitHub Wiki has been **retired** as of 0.7; its content moved into `docs/` in the main repository.
+> GitHub Wiki（`KernelExtensions.wiki`）自 0.7 起**已退役**，内容迁入仓库的 `docs/`。  
+> **贡献者注意**：0.7 的文档在 **`docs-0.7` 分支**上开发（与 `dev` 并行的 worktree），
+> 发布后合回 `dev` —— 要改文档请改 `docs-0.7` 那份，`dev` 上的 `docs/` 是已发布的 0.6 版内容。  
+> The GitHub Wiki has been **retired** as of 0.7; its content moved into the repository's `docs/`.  
+> **For contributors**: 0.7 documentation is developed on the **`docs-0.7` branch** (a worktree
+> alongside `dev`) and merges back into `dev` at release — edit the `docs-0.7` copy; `docs/` on
+> `dev` still holds the published 0.6 content.
 
 ---
 
@@ -66,8 +71,8 @@ All detailed documentation, configuration guides, and action references live on 
   Block account creation with banned usernames via the `BannedUsernames` section of KE-Config.xml, with configurable (direct/random-pool) rejection reasons.
 - **自定义破解与代理工具 (Crackers & Proxy Tools)** – `PortHackV2` 端口破解程序（多协议并行、5 种柏拉图立体动画演出、可选实心/线框呈现）与 `ProxyKiller` 常驻代理加速器（分档内存占用、可主动过载）。  
   `PortHackV2`, a port cracker (parallel protocols, five Platonic-solid animations, wireframe/solid rendering) and `ProxyKiller`, a resident proxy accelerator (tiered RAM use, optional self-overload).
-- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – **46 个 Action** + 3 个可执行程序 + 2 个守护进程：终端交互、音效、标题横幅、自定义结局、目标机端口/防火墙/代理的原子操作等。  
-  **46 Actions** plus 3 executables and 2 daemons: terminal interaction, sound effects, title banners, custom endings, and atomic port/firewall/proxy operations on target machines.
+- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – **46 个 Action** + **6 个可执行程序** + **2 个守护进程**：终端交互、音效、标题横幅、自定义结局、目标机端口/防火墙/代理的原子操作等。  
+  **46 Actions** plus **6 executables** and **2 daemons**: terminal interaction, sound effects, title banners, custom endings, and atomic port/firewall/proxy operations on target machines.
 - **主菜单水印与 RAM 显示 (Watermark & RAM Display)** – 彩虹流动 + 逐字晃动的水印（`<Watermark>` 可关），以及 RAM 显示增强。  
   A rainbow, per-character-wobbling watermark (`<Watermark>` can disable it) and an enhanced RAM display.
 - **屏幕特效与节点外观 (Screen Effects & Node Look)** – `FlashScreen` 闪屏、`StartScreenBleedEffectWCC` 画面渗色、节点自定义图标、节点 self-replacement 占位符。  
