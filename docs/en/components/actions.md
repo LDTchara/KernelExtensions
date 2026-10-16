@@ -221,7 +221,7 @@ Colour values come in two kinds and **can be mixed inside one `Fields` list**:
 | Kind | Syntax | Behaviour |
 |------|--------|-----------|
 | **Static** | XNA named colours (e.g. `Red`, case-insensitive), `#RGB`, `#RRGGBB`, `#AARRGGBB`, `R,G,B[,A]` | Written **once** at trigger time; then kept until the player switches theme |
-| **Dynamic** | `LDTchara[:speed[:opacity[:saturation[:brightness]]]]`, `Rainbow` (alias of `LDTchara`), `Gradient:#from:#to:seconds`, CC preset name`[:speedMultiplier[:opacity]]` | Recomputed **every frame**; needs `Duration` to wrap up |
+| **Dynamic** | `LDTchara[:speed[:opacity[:saturation[:brightness]]]]`, `RGB` (alias of `LDTchara`), `Gradient:#from:#to:seconds`, CC preset name`[:speedMultiplier[:opacity]]` | Recomputed **every frame**; needs `Duration` to wrap up |
 
 `NONE` / empty = leave that field unchanged. Field names must be theme colour fields such as
 `defaultHighlightColor`, `warningColor`, `moduleColorSolidDefault`, `terminalTextColor`.
@@ -230,7 +230,7 @@ Colour values come in two kinds and **can be mixed inside one `Fields` list**:
 <ChangeThemeColor Fields="defaultHighlightColor:Red,warningColor:#FF0000" />
 <!-- only the highlight and warning colours change; the rest keep the current theme -->
 
-<ChangeThemeColor Fields="defaultHighlightColor:Rainbow,warningColor:#FF0000" Duration="10" />
+<ChangeThemeColor Fields="defaultHighlightColor:RGB,warningColor:#FF0000" Duration="10" />
 <!-- the highlight goes rainbow and is recomputed every frame, reverting after 10s;
      the warning colour stays a static red -->
 ```

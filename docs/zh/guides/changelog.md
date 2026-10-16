@@ -23,7 +23,7 @@
 
 ### 改进与优化
 
-- **颜色字符串解析统一**：命名色、`#RGB` / `#RRGGBB` / `#AARRGGBB`（Alpha 在首位）、`R,G,B[,A]` 与 CustomColor 预设名、动态色（`LDTchara` / `Rainbow` / `Gradient:…`）走同一条解析链；此前散落各处、在 FNA 下静默失效的 `ColorConverter` 兜底已移除。详见[自定义动态色系统](./../systems/custom-color.md)。
+- **颜色字符串解析统一**：命名色、`#RGB` / `#RRGGBB` / `#AARRGGBB`（Alpha 在首位）、`R,G,B[,A]` 与 CustomColor 预设名、动态色（`LDTchara` / `RGB` / `Gradient:…`）走同一条解析链；此前散落各处、在 FNA 下静默失效的 `ColorConverter` 兜底已移除。详见[自定义动态色系统](./../systems/custom-color.md)。
 - **配置约定统一**：字符串配置项用 `NONE`（大小写不敏感）或留空表示禁用；数值配置项**负数 = 使用默认 / 继承 / 无限**（`NaN` / `Infinity` 同样回退默认）。
 - **日志分级统一**：Debug（源码排错，默认关）/ Info（动作级结果）/ Warn（可恢复）/ Error（不该发生）；日志文本一律英文半角，玩家终端输出走本地化。
 

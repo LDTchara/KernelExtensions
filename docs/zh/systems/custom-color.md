@@ -13,13 +13,13 @@
 
 | 写法 | 例子 | 说明 |
 |------|------|------|
-| 彩虹色 | `LDTchara` / `Rainbow` | 内置，**不需要预设文件** |
+| 彩虹色 | `LDTchara` / `RGB` | 内置，**不需要预设文件** |
 | 预设引用 | `Riptide` | 引用 `CustomColor/Riptide.xml`（推荐） |
 | 旧式双色渐变 | `Gradient:#FF0000:#00FF00:2.0` | 为兼容旧配置保留 |
 
 ### 彩虹色参数
 
-语法：`LDTchara:速度:透明度:饱和度:明度`（`Rainbow` 是别名，语法完全相同）
+语法：`LDTchara:速度:透明度:饱和度:明度`（`RGB` 是别名，语法完全相同）
 
 | 写法 | 含义 |
 |------|------|
@@ -103,7 +103,7 @@
 
 | 位置 | 典型字段 |
 |------|----------|
-| 自定义主题的 XML | `<defaultHighlightColor>Rainbow</defaultHighlightColor>` |
+| 自定义主题的 XML | `<defaultHighlightColor>RGB</defaultHighlightColor>` |
 | [相位穿梭系统](./phase-swift.md) | 程序窗口 `BackgroundColor` |
 | [自定义试炼系统](./custom-trial.md) | `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` |
 | [自定义标题横幅（ShowTitle）](./../components/actions.md) | `AccentColor` |
@@ -147,7 +147,7 @@
 | 十六进制 ARGB | `#80FF0000` | Alpha 在首位 |
 | 数值 RGB | `255,0,0` | 0~255 |
 | 数值 RGBA | `255,0,0,128` | 0~255 |
-| 动态色关键字 | `Rainbow` / 预设名 / `Gradient:#f00:#00f:2` | 见前三节 |
+| 动态色关键字 | `RGB` / 预设名 / `Gradient:#f00:#00f:2` | 见前三节 |
 
 解析失败时回退到该字段各自的**默认色**（例如横幅的 `AccentColor` 回退到 `Preset` 主题色）。
 

@@ -150,7 +150,7 @@ flag 就是"入口牌"：
 
 ### 颜色
 
-`AccentColor` / `ProgressColor` / `BackgroundColor` 都支持 CustomColor 预设名、动态色（`LDTchara` / `Rainbow` / `Gradient:…`），以及静态格式（`#RGB` / `#RRGGBB` / `#AARRGGBB` / `R,G,B[,A]` / XNA 命名色）——详见[自定义动态色系统](./custom-color.md)。
+`AccentColor` / `ProgressColor` / `BackgroundColor` 都支持 CustomColor 预设名、动态色（`LDTchara` / `RGB` / `Gradient:…`），以及静态格式（`#RGB` / `#RRGGBB` / `#AARRGGBB` / `R,G,B[,A]` / XNA 命名色）——详见[自定义动态色系统](./custom-color.md)。
 
 留空或写 `NONE` = 用默认（`ProgressColor` / `BackgroundColor` 会跟随 `AccentColor`）。目标机状态的语义色（满足 / 未满足）仍走主题色，不归这几项管。
 

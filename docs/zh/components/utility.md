@@ -70,7 +70,7 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 ### FlowColorHelper
 
 - 路径：`KernelExtensions.Utilities.FlowColorHelper`
-- 方法：`GetFlowingRainbowColor(float position, float baseTime)`、`HslToRgbSimple(double h, double s, double l)`
+- 方法：`GetFlowingRGBColor(float position, float baseTime)`、`HslToRgbSimple(double h, double s, double l)`
 - 作用：基于时间流动的彩虹色计算，用于主菜单水印及其他需要动态彩虹色的场景。
 
 ---

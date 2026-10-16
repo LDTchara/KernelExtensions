@@ -152,7 +152,7 @@ One-shot effects (anything beyond playing a sound or opening a port) belong in a
 
 ### Colours
 
-`AccentColor` / `ProgressColor` / `BackgroundColor` all accept CustomColor preset names and dynamic colours (`LDTchara` / `Rainbow` / `Gradient:…`), as well as the static formats (`#RGB` / `#RRGGBB` / `#AARRGGBB` / `R,G,B[,A]` / XNA names) — see the [Custom Color System](./custom-color.md).
+`AccentColor` / `ProgressColor` / `BackgroundColor` all accept CustomColor preset names and dynamic colours (`LDTchara` / `RGB` / `Gradient:…`), as well as the static formats (`#RGB` / `#RRGGBB` / `#AARRGGBB` / `R,G,B[,A]` / XNA names) — see the [Custom Color System](./custom-color.md).
 
 Empty or `NONE` means "use the default" (`ProgressColor` / `BackgroundColor` then follow `AccentColor`). The semantic state colours (met / unmet) still come from the theme and are not affected by these options.
 

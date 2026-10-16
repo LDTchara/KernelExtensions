@@ -75,7 +75,7 @@ A **configuration diagnostics** tool for tracking down misspelled element/attrib
 ### FlowColorHelper
 
 - Path: `KernelExtensions.Utilities.FlowColorHelper`
-- Methods: `GetFlowingRainbowColor(float position, float baseTime)`, `HslToRgbSimple(double h, double s, double l)`
+- Methods: `GetFlowingRGBColor(float position, float baseTime)`, `HslToRgbSimple(double h, double s, double l)`
 - Purpose: time-based flowing rainbow colour, used by the main-menu watermark and other places that want
   a dynamic rainbow.
 

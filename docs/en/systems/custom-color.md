@@ -14,13 +14,13 @@ player can all reference it directly.
 
 | Form | Example | Notes |
 |------|---------|-------|
-| Rainbow | `LDTchara` / `Rainbow` | Built in — **needs no preset file** |
+| Rainbow | `LDTchara` / `RGB` | Built in — **needs no preset file** |
 | Preset reference | `Riptide` | References `CustomColor/Riptide.xml` (recommended) |
 | Legacy two-colour gradient | `Gradient:#FF0000:#00FF00:2.0` | Kept for backwards compatibility |
 
 ### Rainbow parameters
 
-Syntax: `LDTchara:speed:opacity:saturation:brightness` (`Rainbow` is an alias with identical syntax)
+Syntax: `LDTchara:speed:opacity:saturation:brightness` (`RGB` is an alias with identical syntax)
 
 | Form | Meaning |
 |------|---------|
@@ -105,7 +105,7 @@ File format:
 
 | Location | Typical field |
 |----------|---------------|
-| Custom theme XML | `<defaultHighlightColor>Rainbow</defaultHighlightColor>` |
+| Custom theme XML | `<defaultHighlightColor>RGB</defaultHighlightColor>` |
 | [Phase Swift System](./phase-swift.md) | Program window `BackgroundColor` |
 | [Custom Trial System](./custom-trial.md) | `BackgroundColor` / `GlobalTimerColor` / `PhaseTimerColor` / `SpinUpColor` |
 | [Title banner (ShowTitle)](./../components/actions.md) | `AccentColor` |
@@ -151,7 +151,7 @@ colour fields:
 | Hex ARGB | `#80FF0000` | alpha first |
 | Numeric RGB | `255,0,0` | 0–255 |
 | Numeric RGBA | `255,0,0,128` | 0–255 |
-| Dynamic keyword | `Rainbow` / preset name / `Gradient:#f00:#00f:2` | see sections 1–3 |
+| Dynamic keyword | `RGB` / preset name / `Gradient:#f00:#00f:2` | see sections 1–3 |
 
 On failure the parser falls back to each field's own **default colour** (e.g. the banner's `AccentColor`
 falls back to the `Preset` theme colour).

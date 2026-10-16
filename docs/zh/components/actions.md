@@ -208,7 +208,7 @@ RAM 条的长度仍按真实占用比例绘制。
 | 类别 | 写法 | 行为 |
 |------|------|------|
 | **静态** | XNA 命名色（如 `Red`，大小写不敏感）、`#RGB`、`#RRGGBB`、`#AARRGGBB`、`R,G,B[,A]` | 只**在触发时写一次**，之后按"切主题才失效"的既有语义保持 |
-| **动态** | `LDTchara[:速度[:透明度[:饱和度[:明度]]]]`、`Rainbow`（`LDTchara` 的别名）、`Gradient:#起始色:#结束色:秒数`、CC 预设名`[:速度倍率[:透明度]]` | **逐帧重算**；需靠 `Duration` 收尾 |
+| **动态** | `LDTchara[:速度[:透明度[:饱和度[:明度]]]]`、`RGB`（`LDTchara` 的别名）、`Gradient:#起始色:#结束色:秒数`、CC 预设名`[:速度倍率[:透明度]]` | **逐帧重算**；需靠 `Duration` 收尾 |
 
 写 `NONE` / 空 = 该字段保持不变。字段名须是主题的颜色字段，例如 `defaultHighlightColor`、
 `warningColor`、`moduleColorSolidDefault`、`terminalTextColor` 等。
@@ -217,7 +217,7 @@ RAM 条的长度仍按真实占用比例绘制。
 <ChangeThemeColor Fields="defaultHighlightColor:Red,warningColor:#FF0000" />
 <!-- 只改高亮色与警告色，其余颜色保持当前主题 -->
 
-<ChangeThemeColor Fields="defaultHighlightColor:Rainbow,warningColor:#FF0000" Duration="10" />
+<ChangeThemeColor Fields="defaultHighlightColor:RGB,warningColor:#FF0000" Duration="10" />
 <!-- 高亮色走彩虹、逐帧重算，10 秒后还原；警告色仍是静态的红色 -->
 ```
 

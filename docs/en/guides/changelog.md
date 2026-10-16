@@ -23,7 +23,7 @@
 
 ### Improvements & Optimisations
 
-- **Unified colour string parsing**: named colours, `#RGB` / `#RRGGBB` / `#AARRGGBB` (alpha first), `R,G,B[,A]`, CustomColor preset names and dynamic colours (`LDTchara` / `Rainbow` / `Gradient:…`) all go through one parsing chain; the scattered `ColorConverter` fallbacks that silently failed under FNA have been removed. See the [Custom Color System](./../systems/custom-color.md).
+- **Unified colour string parsing**: named colours, `#RGB` / `#RRGGBB` / `#AARRGGBB` (alpha first), `R,G,B[,A]`, CustomColor preset names and dynamic colours (`LDTchara` / `RGB` / `Gradient:…`) all go through one parsing chain; the scattered `ColorConverter` fallbacks that silently failed under FNA have been removed. See the [Custom Color System](./../systems/custom-color.md).
 - **Unified configuration conventions**: string options use `NONE` (case-insensitive) or empty for "disabled"; numeric options treat **negative as "use the default / inherit / unlimited"** (`NaN` / `Infinity` likewise fall back to the default).
 - **Unified log levels**: Debug (source-level troubleshooting, off by default) / Info (action-level results) / Warn (recoverable) / Error (should not happen); log text is plain ASCII English while player-facing terminal output is localised.
 
@@ -49,7 +49,7 @@ Implemented but not yet verified in-game; details will be filled in before relea
   - Provides a global altimeter overlay; activate with `ShowAircraftOverlay` / `HideAircraftOverlay` to see the aircraft’s altitude in real time without being connected. The overlay auto‑hides on crash.
   - Added the `AttackAircraft` action (with optional `FallDuration`, overriding the daemon’s setting) and the `UploadAircraftSysFile` repair action.
   - Core implementation contributed by **April_Crystal** — special thanks!
-- **Main Menu Rainbow Watermark**
+- **Main Menu RGB Watermark**
   - Displays `+ KernelExtensions <version>` in the top‑left of the main menu, with colours flowing smoothly over time — no jitter or looping.
   - Positioned to the right of the ZeroDayToolKit watermark to avoid overlap.
   - The watermark disappears automatically when the extension is unloaded, and Harmony patches are cleaned up uniformly.
