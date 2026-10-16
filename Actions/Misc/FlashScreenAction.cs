@@ -18,7 +18,7 @@ namespace KernelExtensions.Actions.Misc
     /// 用法：
     /// <FlashScreen Color="Red" Duration="2.0" />
     /// <FlashScreen Color="#FF2020" Duration="1.5" />
-    /// <FlashScreen Color="LDTchara:0.1" Duration="2.0" />   <!-- 动态色（彩虹循环）-->
+    /// <FlashScreen Color="LDTchara:0.1" Duration="2.0" />   <!-- 动态色（色相循环）-->
     ///
     /// 属性：
     ///   Color    — 必要。Hex (#RGB/#RRGGBB/#AARRGGBB)、数值 RGB (R,G,B[,A])、XNA 命名色、

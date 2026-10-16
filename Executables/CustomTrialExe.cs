@@ -333,7 +333,7 @@ namespace KernelExtensions.Executables
         {
             if (string.IsNullOrEmpty(colorStr)) return Color.Transparent;
 
-            // 彩蛋：LDTchara → 动态彩虹色
+            // 彩蛋：LDTchara → 动态色相循环
             if (colorStr.Equals("LDTchara", StringComparison.OrdinalIgnoreCase))
             {
                 float hue = (float)(OS.currentElapsedTime * 0.1) % 1.0f;

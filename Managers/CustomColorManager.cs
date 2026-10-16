@@ -16,7 +16,7 @@ namespace KernelExtensions.Managers
     ///
     /// ── 支持的关键字 ──
     ///   1. 彩虹色系列
-    ///      LDTchara                    默认彩虹（速度 0.1）
+    ///      LDTchara                    默认色相循环（速度 0.1）
     ///      LDTchara:0.05               自定义速度
     ///      LDTchara:0.1:0.8            速度:透明度
     ///      LDTchara:0.1:1.0:0.8:1.0   速度:透明度:饱和度:明度
