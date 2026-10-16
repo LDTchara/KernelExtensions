@@ -15,8 +15,8 @@
     <defaultHighlightColor>Monochrome:0.5</defaultHighlightColor>       ← 速度 x0.5 / speed x0.5
     <defaultHighlightColor>Monochrome:0.5:0.8</defaultHighlightColor>  ← 速度 x0.5 + 透明度 80%
 
-  模组内置了彩虹色作为一种预设 / The mod includes Rainbow as a built-in preset:
-    <defaultHighlightColor>Rainbow:0.1:0.8:1.0:1.0</defaultHighlightColor>
+  模组内置了彩虹效果（关键字 `RGB`，别名 `LDTchara`）/ A rainbow effect is built in (keyword `RGB`, alias `LDTchara`):
+    <defaultHighlightColor>RGB:0.1:0.8:1.0:1.0</defaultHighlightColor>
   你也可以填我的名字 / You can also use my name:
     <defaultHighlightColor>LDTchara</defaultHighlightColor>
     参数顺序 / Parameter order: 速度:透明度:饱和度:明度/speed:opacity:saturation:brightness

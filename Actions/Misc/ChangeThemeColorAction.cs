@@ -14,14 +14,14 @@ namespace KernelExtensions.Actions.Misc
     ///
     /// XML 用法：
     ///   &lt;ChangeThemeColor Fields="defaultHighlightColor:Red,warningColor:#FF0000" /&gt;
-    ///   &lt;ChangeThemeColor Fields="defaultHighlightColor:Rainbow,warningColor:#FF0000" Duration="10" /&gt;
+    ///   &lt;ChangeThemeColor Fields="defaultHighlightColor:RGB,warningColor:#FF0000" Duration="10" /&gt;
     ///
     /// · Fields 为逗号分隔的「字段名:颜色值」列表；字段名须是主题的颜色字段
     ///   （如 defaultHighlightColor / warningColor / moduleColorSolidDefault / terminalTextColor 等）。
     /// · 颜色值分静态与动态两类，同一条 Fields 里可混用：
     ///     静态 —— XNA 命名色（如 Red，大小写不敏感）、#RGB、#RRGGBB、#AARRGGBB、R,G,B[,A]，
     ///             走 <see cref="ColorHelper.ParseStaticColor"/>，只在触发时写一次；
-    ///     动态 —— LDTchara[:速度[:透明度[:饱和度[:明度]]]]、Rainbow（LDTchara 的别名）、
+    ///     动态 —— LDTchara[:速度[:透明度[:饱和度[:明度]]]]、RGB（LDTchara 的别名）、
     ///             Gradient:#起始色:#结束色:秒数、CustomColor 预设名[:速度倍率[:透明度]]，
     ///             走 <see cref="CustomColorManager.ParseColorString"/>，逐帧重算。
     /// · Duration：动态色的持续秒数；不写 / ≤ 0 / NaN / Infinity = 不限期（到玩家切主题为止）。

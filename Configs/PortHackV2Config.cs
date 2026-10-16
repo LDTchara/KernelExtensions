@@ -194,7 +194,7 @@ public class PortHackV2Config
     /// 强调色：**动画立体（多边体线框）**专用。
     ///
     /// 留空 / <c>NONE</c> = <see cref="DefaultAccentColor"/>（**白色**）。
-    /// 支持全部写法 —— CustomColor 预设名、动态色（<c>LDTchara</c> / <c>Rainbow</c> / <c>Gradient:…</c>）、
+    /// 支持全部写法 —— CustomColor 预设名、动态色（<c>LDTchara</c> / <c>RGB</c> / <c>Gradient:…</c>）、
     /// <c>#RGB</c> / <c>#RRGGBB</c> / <c>#AARRGGBB</c>、<c>R,G,B[,A]</c>、XNA 命名色；
     /// 由 CustomColorManager 统一解析，动态色逐帧刷新。
     /// 进度条另用 <see cref="ProgressColorRaw"/>；目标机状态的语义色（locked / unlocked）仍走主题色。

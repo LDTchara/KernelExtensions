@@ -12,7 +12,7 @@
     How to enable: set the save flag PortHackV2_<fileName> (without .xml) on the player.
     The flag is the entry token: none means locked; more than one is an authoring error.
 
-    颜色：支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
+    颜色：支持 CustomColor 预设名与动态色（LDTchara / RGB / Gradient:…），
     以及 #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色。
     Colors accept CustomColor preset names, dynamic colors, hex, numeric RGB(A) and XNA names.
 
@@ -59,7 +59,7 @@
                       The colour of the bottom progress bar. Empty or NONE = follow AccentColor.
        BackgroundColor：面板背景色。留空 / NONE = 跟随 AccentColor。
                         The panel background colour. Empty or NONE = follow AccentColor.
-       三者都支持 CustomColor 预设名与动态色（LDTchara / Rainbow / Gradient:…），
+       三者都支持 CustomColor 预设名与动态色（LDTchara / RGB / Gradient:…），
        以及 #RGB / #RRGGBB / #AARRGGBB / R,G,B[,A] / XNA 命名色。
        All three accept CustomColor preset names and dynamic colours, hex, numeric RGB(A) and
        XNA names.
@@ -380,7 +380,7 @@
       <AccentColor>Riptide</AccentColor>
 
     [换强调色 —— 动态彩虹 / Another accent colour, dynamic rainbow]
-      <AccentColor>Rainbow</AccentColor>
+      <AccentColor>RGB</AccentColor>
 
     [强调色留空 = 白色 / Empty accent = white]
       省略 <AccentColor> / Omit <AccentColor>

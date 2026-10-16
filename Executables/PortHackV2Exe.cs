@@ -1208,7 +1208,7 @@ public class PortHackV2Exe : GameExecutable
 
     /// <summary>
     /// 强调色（标题 / 底部总进度条 / 动画立体线框）。
-    /// 动态色（CC 预设、Rainbow、Gradient）必须**逐帧重算**，所以在 Update 里刷新而不是 Draw 里现算 ——
+    /// 动态色（CC 预设、RGB、Gradient）必须**逐帧重算**，所以在 Update 里刷新而不是 Draw 里现算 ——
     /// Draw 一帧要画十几处，每处都走一遍解析既浪费又可能在同一帧里拿到不同相位。
     /// </summary>
     private Color _accent = Color.White;
@@ -1224,7 +1224,7 @@ public class PortHackV2Exe : GameExecutable
 
     /// <summary>
     /// 刷新三处颜色（强调色 / 进度条 / 背景）。
-    /// 动态色（CC 预设、Rainbow、Gradient）必须**逐帧重算**，所以在 Update 里刷新而不是 Draw 里现算 ——
+    /// 动态色（CC 预设、RGB、Gradient）必须**逐帧重算**，所以在 Update 里刷新而不是 Draw 里现算 ——
     /// Draw 一帧要画十几处，每处都走一遍解析既浪费又可能在同一帧里拿到不同相位。
     /// </summary>
     private void RefreshAccent()

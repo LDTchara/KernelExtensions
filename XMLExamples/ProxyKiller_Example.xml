@@ -178,7 +178,7 @@
 
        BackgroundColor          粒子与拖尾的颜色。**auto / 留空 / NONE = 主题高亮色**
                                 （跟着主题走，不写死白色）；也可写 CustomColor 预设名与动态色
-                                （LDTchara / Rainbow / Gradient:…）以及 hex / 数值 / XNA 命名色。
+                                （LDTchara / RGB / Gradient:…）以及 hex / 数值 / XNA 命名色。
                                 Colour of the particles and trails. **auto / empty / NONE = the
                                 theme highlight colour**; also accepts CustomColor presets and
                                 dynamic colours, hex, numeric RGB(A) and XNA names.
@@ -270,5 +270,5 @@
       <BackgroundColor>auto</BackgroundColor>
 
     [换个颜色 / Another colour]
-      <BackgroundColor>Rainbow</BackgroundColor>
+      <BackgroundColor>RGB</BackgroundColor>
 -->

@@ -29,7 +29,7 @@ namespace KernelExtensions.Actions.Misc
     /// 早期开发版本曾在此处额外做 Alpha 乘性调制（new Color(r,g,b) * (a/255)），使 RGB 随 Alpha 变暗；
     /// 已并入统一解析链 —— 该写法从未随任何发行版发布，且与"各模块共用同一套颜色解析"相矛盾。
     /// 影响面仅 8 位 Hex（如 #80FF0000 由暗红变亮红）；3/6 位 Hex、命名色、数值式逐字节不变。
-    /// 支持动态颜色 (Rainbow, Rainbow:0.5:0.3) 等。
+    /// 支持动态颜色 (RGB, RGB:0.5:0.3) 等。
     /// </summary>
     public class StartScreenBleedEffectWCCAction : KEAction
     {

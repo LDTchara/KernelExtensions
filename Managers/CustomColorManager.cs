@@ -20,7 +20,7 @@ namespace KernelExtensions.Managers
     ///      LDTchara:0.05               自定义速度
     ///      LDTchara:0.1:0.8            速度:透明度
     ///      LDTchara:0.1:1.0:0.8:1.0   速度:透明度:饱和度:明度
-    ///      Rainbow 是 LDTchara 的别名，语法相同。
+    ///      RGB 是 LDTchara 的别名，语法相同。
     ///
     ///   2. 双色渐变（旧语法，兼容）
     ///      Gradient:#FF0000:#00FF00:2.0  红→蓝渐变，2 秒循环
@@ -29,7 +29,7 @@ namespace KernelExtensions.Managers
     ///      Riptide                     引用 CustomColor/Riptide.xml
     ///      Riptide:0.5                 速度 x0.5
     ///      Riptide:0.5:0.8            速度 x0.5 + 透明度 80%
-    ///      **预设优先于内置关键字**：扩展若自建了名为 Rainbow / LDTchara 的预设，
+    ///      **预设优先于内置关键字**：扩展若自建了名为 RGB / LDTchara 的预设，
     ///      同名关键字就用扩展自己的预设（未建才回退内置彩虹）；
     ///      完整 Gradient:#起始:#结束:秒数 语法不受影响（它是语法，不是预设名）。
     ///
@@ -87,8 +87,15 @@ namespace KernelExtensions.Managers
         private static string _lastScannedPath = null;
         private static bool _presetsLoaded = false;
 
+        /// <summary>
+        /// 静态解析的"没认出来"哨兵色。取 <c>Alpha = 0</c>：<see cref="ColorHelper.ParseStaticColor"/>
+        /// 的所有成功路径都会把 alpha 置为 255（<c>R,G,B</c> 路径默认 255，各 hex 路径显式 255），
+        /// 所以**任何合法写法都不可能解析出这个值**，用它比对即等价于"原样返回了 fallback"。
+        /// </summary>
+        private static readonly Color SentinelColor = new Color(0, 0, 0, 0);
+
         private static readonly Regex _fieldRegex = new(
-            @"<(\w+)>\s*((?:LDTchara|Rainbow)" +
+            @"<(\w+)>\s*((?:LDTchara|RGB)" +
             @"(?::[\d.]+(?::[\d.]+)?(?::[\d.]+)?(?::[\d.]+)?)?" +
             @"|Gradient:(#[0-9A-Fa-f]+):(#[0-9A-Fa-f]+):([\d.]+)" +
             @"|(\w+)(?::([\d.]+))?(?::([\d.]+))?" +
@@ -214,7 +221,7 @@ namespace KernelExtensions.Managers
                 }
 
                 // 2) 预设优先：预设是扩展作者自己的资产，未中才回退内置关键字，
-                //    否则名为 Rainbow / LDTchara 的预设永远轮不到内置分支。
+                //    否则名为 RGB / LDTchara 的预设永远轮不到内置分支。
                 //    参数从值本身 Split（group7/8 只在内置关键字候选分支下才有值）。
                 string[] parts2 = matched.Split(':');
                 if (_presetCache.TryGetValue(parts2[0], out var presetSegments))
@@ -241,7 +248,7 @@ namespace KernelExtensions.Managers
 
                 // 3) 内置彩虹关键字
                 if (matched.StartsWith("LDTchara", StringComparison.OrdinalIgnoreCase) ||
-                    matched.StartsWith("Rainbow", StringComparison.OrdinalIgnoreCase))
+                    matched.StartsWith("RGB", StringComparison.OrdinalIgnoreCase))
                 {
                     var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Rainbow };
                     string[] parts = matched.Split(':');
@@ -251,6 +258,21 @@ namespace KernelExtensions.Managers
                     if (parts.Length > 4) float.TryParse(parts[4], out cfg.Value);
                     _dynamicFields[fieldName] = cfg;
                     continue;
+                }
+
+                // 4) 既不是预设、也不是内置关键字 —— 只在这个值**静态链也认不出**时才报。
+                //    理由：XNA 命名色（Red）与 6 位 hex（FF0000）虽然也会落进本分支，
+                //    但它们由静态链合法处理，报出来就是误报。用哨兵色判定：
+                //    静态解析结果等于哨兵值 ⇒ 说明原样返回了 fallback ⇒ 三种写法全没认出来。
+                //    这类静默跳过最难排查（颜色就是不变，且没有任何日志）。
+                if (ColorHelper.ParseStaticColor(matched, SentinelColor) == SentinelColor)
+                {
+                    KELog.Warn($"[CustomColor] '{fullPath}': field '{fieldName}' value '{matched}' "
+                        + "matched no preset and is not a built-in dynamic keyword "
+                        + "(LDTchara / RGB / Gradient) - no colour applied."
+                        + (matched.StartsWith("Rainbow", StringComparison.OrdinalIgnoreCase)
+                           ? " Note: the built-in rainbow keyword was renamed 'Rainbow' -> 'RGB'."
+                           : string.Empty));
                 }
             }
         }
@@ -339,11 +361,11 @@ namespace KernelExtensions.Managers
         /// 解析颜色字符串为 DynColorConfig，供外部（CustomTrialExe）判断是否为动态色。
         /// 返回 null 表示纯静态色。
         ///
-        /// 入口先 Trim：动态关键字是**前缀/整串匹配**，不 Trim 的话 " Rainbow " 会一路落到静态链
+        /// 入口先 Trim：动态关键字是**前缀/整串匹配**，不 Trim 的话 " RGB " 会一路落到静态链
         /// 解析失败（<see cref="ColorHelper.ParseStaticColor"/> 与命名色表都会 Trim，只有这里不会）。
         ///
         /// 分支顺序（预设优先）：完整 Gradient 语法 → 自定义预设 → 内置彩虹关键字。
-        /// 预设是扩展作者自己的资产，未中才回退内置关键字（否则名为 Rainbow / LDTchara 的预设永远轮不到）；
+        /// 预设是扩展作者自己的资产，未中才回退内置关键字（否则名为 RGB / LDTchara 的预设永远轮不到）；
         /// 完整 Gradient 语法排在最前是因为它是**语法**而非预设名（预设名不可能含 '#'），
         /// 先判它可保证扩展即使建了名为 Gradient 的预设也不会打断该语法。
         /// </summary>
@@ -382,7 +404,7 @@ namespace KernelExtensions.Managers
 
             // 3. 内置彩虹关键字
             if (input.StartsWith("LDTchara", StringComparison.OrdinalIgnoreCase) ||
-                input.StartsWith("Rainbow", StringComparison.OrdinalIgnoreCase))
+                input.StartsWith("RGB", StringComparison.OrdinalIgnoreCase))
             {
                 var cfg = new DynColorConfig { ColorType = DynColorConfig.Type.Rainbow };
                 string[] parts = input.Split(':');

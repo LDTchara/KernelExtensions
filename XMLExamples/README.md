@@ -121,8 +121,8 @@
 > ⚠️ **CustomColor 预设文件内的 `<Color>` 格式更窄**：不支持 XNA 命名色，只接受十六进制与数值
 > （详见 `CustomColor_Example.xml` 内的注释）。
 
-另支持 **CustomColor 预设名**（含内置 `Rainbow` / `LDTchara`），带参格式：`<字段>预设名:速度:透明度:饱和度:明度</字段>`（如 `Rainbow:0.1:0.8:1.0:1.0`；参数可省略到只用 `速度`）。自定义预设文件放 `CustomColor/` 自动加载。
-CustomColor preset names (including built-in `Rainbow` / `LDTchara`) are also accepted, with parameters: `preset:speed:opacity:saturation:brightness` (optional params may be omitted).
+另支持 **CustomColor 预设名**（含内置 `RGB` / `LDTchara`），带参格式：`<字段>预设名:速度:透明度:饱和度:明度</字段>`（如 `RGB:0.1:0.8:1.0:1.0`；参数可省略到只用 `速度`）。自定义预设文件放 `CustomColor/` 自动加载。
+CustomColor preset names (including built-in `RGB` / `LDTchara`) are also accepted, with parameters: `preset:speed:opacity:saturation:brightness` (optional params may be omitted).
 
 ### 8. 文本与停顿标记（各模块不同！）/ Text & Pause Markers (per-module!)
 

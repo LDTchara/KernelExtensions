@@ -1363,7 +1363,7 @@ namespace KernelExtensions.Managers
         private static Color ParseColor(string colorStr)
         {
             if (string.IsNullOrEmpty(colorStr)) return Color.Transparent;
-            // 优先用 CustomColorPatch 解析动态色（LDTchara/Rainbow/预设名）
+            // 优先用 CustomColorPatch 解析动态色（LDTchara/RGB/预设名）
             var dynConfig = CustomColorManager.ParseColorString(colorStr);
             if (dynConfig != null)
                 return CustomColorManager.CalcColor(dynConfig, OS.currentElapsedTime);

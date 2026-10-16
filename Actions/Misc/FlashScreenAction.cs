@@ -22,7 +22,7 @@ namespace KernelExtensions.Actions.Misc
     ///
     /// 属性：
     ///   Color    — 必要。Hex (#RGB/#RRGGBB/#AARRGGBB)、数值 RGB (R,G,B[,A])、XNA 命名色、
-    ///              CustomColor 动态色（LDTchara/Rainbow/Gradient/预设）
+    ///              CustomColor 动态色（LDTchara/RGB/Gradient/预设）
     ///   Duration — 渐变时长（秒），默认 2.0。触发瞬间最亮，线性渐隐回默认色。
     ///   PlaySound — 可选，默认 false。true 时闪烁同时播放警告音效
     ///              （os.beepSound = SFX/beep，原版警告提示音）。
@@ -82,7 +82,7 @@ namespace KernelExtensions.Actions.Misc
             if (string.IsNullOrWhiteSpace(raw))
                 return (os.defaultHighlightColor, null);
 
-            // 动态色：LDTchara/Rainbow/Gradient/预设
+            // 动态色：LDTchara/RGB/Gradient/预设
             var dyn = CustomColorManager.ParseColorString(raw);
             if (dyn != null)
                 return (XColor.White, dyn);
