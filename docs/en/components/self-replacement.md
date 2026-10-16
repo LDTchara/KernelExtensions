@@ -20,6 +20,8 @@ contents** and they are replaced with the actual program data when the save is g
 | `PhaseSwift` | `#PHASESWIFT#` | Phase Swift system |
 | `EffectsPlayer` | `#EFFECTS#` | Effect playback (the basis for wallpaper / video) |
 | `WPTEST` | `#WPTEST#` | Dynamic wallpaper (test program) |
+| `PortHackV2` | `#PORTHACKV2#` | Port cracker |
+| `ProxyKiller` | `#PROXYKILLER#` | Resident proxy accelerator |
 
 Typical use (put the program into the player node's `bin/`):
 
