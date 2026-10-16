@@ -4,6 +4,11 @@
 相位穿梭、自定义试炼、PortHackV2 破解程序、VM 攻击、飞机守护进程、自定义定时器、节点图标、自定义结局、动态色引擎，
 以及一系列可拼装的自定义 Action / Executable / Daemon。
 
+!!! warning "部分内容由 AI 辅助生成"
+    本项目的部分文档与代码由 **AI 辅助生成**，可能存在不准确或不完整之处 ——
+    尤其是配置项说明与示例。请在使用前自行评估；发现问题欢迎通过
+    [Issue](https://github.com/LDTchara/KernelExtensions/issues) 或 PR 指出，会及时修正。
+
 > 本文档对应 **KernelExtensions 0.7**。
 
 ## 📖 系统导航

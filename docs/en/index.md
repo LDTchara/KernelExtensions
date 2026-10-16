@@ -2,6 +2,11 @@
 
 **KernelExtensions** is a Hacknet mod built on the **Pathfinder API**. It gives extension authors a full set of reusable systems and components: Phase Swift, Custom Trial, PortHackV2, VM Attack, the aircraft daemon, custom timers, node icons, custom endings, the dynamic colour engine, and a collection of composable custom Actions / Executables / Daemons.
 
+!!! warning "Partly AI-assisted content"
+    Parts of this project's **documentation and code are AI-assisted**, and may be inaccurate or
+    incomplete — configuration references and examples especially. Please evaluate before use,
+    and report any issue via [Issue](https://github.com/LDTchara/KernelExtensions/issues) or a PR.
+
 > This documentation corresponds to **KernelExtensions 0.7**.
 
 ## 📖 System Navigation
