@@ -14,17 +14,17 @@ player can all reference it directly.
 
 | Form | Example | Notes |
 |------|---------|-------|
-| Rainbow | `LDTchara` / `RGB` | Built in — **needs no preset file** |
+| Hue cycle | `LDTchara` / `RGB` | Built in — **needs no preset file** |
 | Preset reference | `Riptide` | References `CustomColor/Riptide.xml` (recommended) |
 | Legacy two-colour gradient | `Gradient:#FF0000:#00FF00:2.0` | Kept for backwards compatibility |
 
-### Rainbow parameters
+### Hue cycle parameters
 
 Syntax: `LDTchara:speed:opacity:saturation:brightness` (`RGB` is an alias with identical syntax)
 
 | Form | Meaning |
 |------|---------|
-| `LDTchara` | Default rainbow (speed `0.1`) |
+| `LDTchara` | Default hue cycle (speed `0.1`) |
 | `LDTchara:0.05` | Custom speed |
 | `LDTchara:0.1:0.8` | Speed + 80% opacity |
 | `LDTchara:0.1:1.0:0.8:1.0` | Speed + opacity + saturation + brightness |
