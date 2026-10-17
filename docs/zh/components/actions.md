@@ -1,6 +1,6 @@
 # 自定义 Action
 
-KernelExtensions 共注册 **46 个**自定义 Action，可在任何动作文件中调用。本页分三部分：
+KernelExtensions 共注册 **47 个**自定义 Action，可在任何动作文件中调用。本页分三部分：
 
 - **一、与各系统相关的动作** —— 只给速查与去向，完整参数在各自的系统页
 - **二、通用动作（系统未涵盖）** —— 完整参数与示例
@@ -26,7 +26,7 @@ KernelExtensions 共注册 **46 个**自定义 Action，可在任何动作文件
 | 定时器 | `ClockStart` · `ClockStop` | 启停自定义定时器 | [自定义定时器系统](./../systems/clock.md) |
 | 节点图标 | `SetNodeIcon` | 设置节点图标 | [自定义节点图标系统](./../systems/node-icon.md) |
 | 自定义结局 | `StartEnding` · `BreakHeart` | 触发结局 / 心碎序列 | [自定义结局系统](./../systems/custom-ending.md) |
-| 目标机操作 | `PortOpen` · `PortClose` · `PortControl` · `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure` · `PortProxyAdd` · `PortProxySolve` · `PortProxyReset` · `ListPorts` | 目标机端口 / 防火墙 / 代理的原子操作 · 端口协议名诊断 | [PortHackV2 破解程序](./../systems/port-hack-v2.md) · 见第三部分 |
+| 目标机操作 | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure` · `PortProxyAdd` · `PortProxySolve` · `PortProxyReset` · `ListPorts` | 目标机端口 / 防火墙 / 代理的原子操作 · 端口协议名诊断 | [PortHackV2 破解程序](./../systems/port-hack-v2.md) · 见第三部分 |
 
 ### 节点连接控制（属性速查）
 
@@ -234,7 +234,7 @@ RAM 条的长度仍按真实占用比例绘制。
 这一组动作都作用在**目标机**上，**每个只做一件事**（开端口、关端口、加防火墙、换解……），
 由作者自由组合成动作序列——既能在 PortHackV2 的动作点里用，也能在任何其它系统的动作文件里用。
 
-- **端口**：`PortOpen` · `PortClose`（开关端口）· `PortControl`（增删端口）
+- **端口**：`PortOpen` · `PortClose`（开关端口）· `PortAdd` / `PortRemove`（增删端口）
 - **防火墙**：`PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure`
 - **代理**：`PortProxyAdd` · `PortProxySolve` · `PortProxyReset`
 - **诊断**：`ListPorts`（列出全部已注册的端口协议，写配置时用来查协议名）
@@ -252,7 +252,7 @@ RAM 条的长度仍按真实占用比例绘制。
 
 ### 端口
 
-Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**。增删端口归 `PortControl`，
+Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**。增删端口归 `PortAdd` / `PortRemove`，
 开关端口归 `PortOpen` / `PortClose`——**不要拿开关端口去当增删用**。
 
 #### `PortOpen` —— 打开端口
@@ -273,7 +273,7 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 - 「打开」在 Pathfinder 下就是**把该端口标记为已破解**（原版 `openPort` 被改写为设置这个标志，
   原版 `isPortOpen` 读的也是它）——效果等价于玩家已经把这个端口打下来了
 - **端口不在目标机上** → **逐个** Warn 跳过，同一次调用里的其它端口照常处理
-- 端口本身不存在时请先用 `PortControl` 装上
+- 端口本身不存在时请先用 `PortAdd` 装上
 
 #### `PortClose` —— 关闭端口
 
@@ -289,37 +289,55 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 <PortClose Ports="ftp" TargetComp="targetNode" />
 ```
 
-- 只是把端口**关掉**，**不删端口**——要「这台机器上不再有这个端口」用 `PortControl Switch="remove"`
+- 只是把端口**关掉**，**不删端口**——要「这台机器上不再有这个端口」用 `PortRemove`
 - 端口不在目标机上 → 逐个 Warn 跳过
 
-#### `PortControl` —— 增删端口
+#### `PortAdd` —— 添加端口（必要时注册协议）
 
-给目标机**注册并装上**一个端口，或从目标机上**移除**一个端口。
+给目标机**装上**一个端口；协议尚未注册时顺带**注册协议**（全局：协议名 + 显示名 + 默认端口号）。
 
 | 属性 | 必填 | 默认值 | 说明 |
 |------|:----:|--------|------|
-| `TargetID` | ✅ | 空 | 目标机 `idName`。⚠️ **本动作的属性名是 `TargetID`**，与其它目标机动作的 `TargetComp` 不同；取不到机器 → 终端提示并跳过 |
-| `Protocol` | ✅ / ❌ | 空 | 端口协议名。`Switch="remove"` 时可省略——此时按 `PortNum` 从端口注册表反查 |
-| `DisplayName` | 添加时 ✅ | 空 | 端口显示名（终端与界面上显示的名字） |
-| `PortNum` | ❌ | `0` | 端口号；`0` = 不给默认端口号。移除时用于反查协议 |
-| `Switch` | ❌ | `add` | `add` = 添加（默认）/ `remove` = 移除；其它值 → 终端提示并跳过 |
+| `Protocol` | ✅ | 空 | 端口协议名 |
+| `DisplayName` | ✅ | 空 | 端口显示名（终端与界面上显示的名字） |
+| `PortNum` | 新协议 ✅ | `0` | 端口号。**新协议必填（> 0）**；协议已注册时可省略 = 用该协议的默认端口号 |
+| `TargetComp` | ❌ | 空 | 目标机 `idName`；留空 / `NONE` = 当前连接的节点 |
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
 
 ```xml
-<!-- 给目标机加一个 ssh 端口（默认端口号 22） -->
-<PortControl TargetID="targetNode" Protocol="ssh" DisplayName="SSH" PortNum="22" />
+<!-- 装一个 ssh 端口（ssh 已注册，直接装） -->
+<PortAdd Protocol="ssh" DisplayName="SSH" PortNum="22" />
 
-<!-- 再把它移除；下面两条等价 -->
-<PortControl TargetID="targetNode" Protocol="ssh" Switch="remove" />
-<PortControl TargetID="targetNode" PortNum="22" Switch="remove" />
+<!-- 注册一个新协议并装到目标机 -->
+<PortAdd TargetComp="targetNode" Protocol="custom" DisplayName="Custom Service" PortNum="114514" />
 ```
 
-- 添加时**先注册协议**（写进全局端口注册表：协议名 + 显示名 + 默认端口号），再给目标机装上端口；
-  协议注册一次后**所有机器**都能用这个名字
+- 协议注册一次后**所有机器**都能用这个名字；**已注册则不会重复注册**（避免全局表里出现两条同协议记录）
 - 装完端口是**关闭**状态：玩家仍然要自己破解 / 打开，不会白送
-- **重复添加是安全的**（Pathfinder 按协议去重，已存在就直接返回）
-- 移除按**协议名**进行，不要求该协议在注册表里；省略 `Protocol` 时按端口号反查（原版内置与模组注册的端口都覆盖）
+- ⚠️ 全局注册表**不进存档**；但**每台机器的端口状态**会随存档保存
+  （`<ports>` 下每条端口含 `Original` / `Number` / `Display`）。读档时若全局表里没有该协议，
+  Pathfinder 会**按存档数据现场补注册**。若端口被移除 / 节点被删，协议本身不会自己回来 ——
+  需要再次 `PortAdd`，或在内容 XML 里用 `<PFPorts>` 静态声明
+
+#### `PortRemove` —— 移除端口
+
+从**目标机**上移除一个端口（只动这台机器，**不注销**全局协议）。
+
+| 属性 | 必填 | 默认值 | 说明 |
+|------|:----:|--------|------|
+| `Protocol` | ✅ / ❌ | 空 | 端口协议名；省略时按 `PortNum` 从端口注册表反查 |
+| `PortNum` | ❌ | `0` | 端口号，仅用于反查协议（不参与移除逻辑） |
+| `TargetComp` | ❌ | 空 | 目标机 `idName`；留空 / `NONE` = 当前连接的节点 |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
+
+```xml
+<PortRemove Protocol="ssh" TargetComp="targetNode" />
+<PortRemove PortNum="22" />
+```
+
 - 移除一台机器上不存在的端口 → 终端提示 `not found`，不算错误
+- 协议是全局共享的：**不要**用移除端口来「注销协议」——其它机器 / 存档还在用这个名字
+
 
 ### 防火墙
 
@@ -566,7 +584,8 @@ Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件�
 | `StartEnding` | `KEStartEnding` |
 | `RamDisplay` | `KERamDisplay` |
 | `ChangeThemeColor` | `KEChangeThemeColor` |
-| `PortControl` | `KEPortControl` |
+| `PortAdd` | `KEPortAdd` |
+| `PortRemove` | `KEPortRemove` |
 | `PortOpen` | `KEPortOpen` |
 | `PortClose` | `KEPortClose` |
 | `PortFirewallAdd` | `KEPortFirewallAdd` |

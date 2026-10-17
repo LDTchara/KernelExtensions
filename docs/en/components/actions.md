@@ -1,6 +1,6 @@
 # Custom Actions
 
-KernelExtensions registers **46** custom Actions that can be invoked in any action file. This page has
+KernelExtensions registers **47** custom Actions that can be invoked in any action file. This page has
 three parts:
 
 - **1. System-related Actions** — a quick reference with pointers; full parameters live on each system page
@@ -27,7 +27,7 @@ All paths are relative to the extension root.
 | Timer | `ClockStart` · `ClockStop` | Start/stop a custom timer | [Custom Timer System (Clock)](./../systems/clock.md) |
 | Node Icons | `SetNodeIcon` | Set a node's icon | [Custom Node Icon System](./../systems/node-icon.md) |
 | Custom Ending | `StartEnding` · `BreakHeart` | Trigger an ending / the heartbreak sequence | [Custom Ending System](./../systems/custom-ending.md) |
-| Target-computer ops | `PortOpen` · `PortClose` · `PortControl` · `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure` · `PortProxyAdd` · `PortProxySolve` · `PortProxyReset` · `ListPorts` | Target-side port / firewall / proxy primitives · protocol-name lookup | [PortHackV2 Cracker](./../systems/port-hack-v2.md) · see part 3 |
+| Target-computer ops | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure` · `PortProxyAdd` · `PortProxySolve` · `PortProxyReset` · `ListPorts` | Target-side port / firewall / proxy primitives · protocol-name lookup | [PortHackV2 Cracker](./../systems/port-hack-v2.md) · see part 3 |
 
 ### Node Link Control (attribute quick reference)
 
@@ -250,7 +250,7 @@ Every action in this group works on a **target computer** and **does exactly one
 close a port, add a firewall, reroll a solution…). Combine them freely into sequences — they work from
 a PortHackV2 action hook as well as from any other system's action file.
 
-- **Ports**: `PortOpen` · `PortClose` (open/close) · `PortControl` (add/remove)
+- **Ports**: `PortOpen` · `PortClose` (open/close) · `PortAdd` / `PortRemove` (add/remove)
 - **Firewall**: `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure`
 - **Proxy**: `PortProxyAdd` · `PortProxySolve` · `PortProxyReset`
 - **Diagnostics**: `ListPorts` (lists every registered port protocol — use it to look up protocol names)
@@ -269,7 +269,7 @@ a PortHackV2 action hook as well as from any other system's action file.
 ### Ports
 
 Under Pathfinder a port has two separate facts: **whether it exists on the machine** and **whether it is
-open**. Adding and removing belongs to `PortControl`; opening and closing belongs to
+open**. Adding and removing belongs to `PortAdd` / `PortRemove`; opening and closing belongs to
 `PortOpen` / `PortClose` — do not use one for the other.
 
 #### `PortOpen` — open ports
@@ -290,7 +290,7 @@ Opens one or more ports that **already exist on the target**. Look the protocol 
 - Under Pathfinder, “opening” a port means **marking it as cracked** (the vanilla `openPort` is rewritten
   to set that flag, and vanilla `isPortOpen` reads it too) — the effect equals the player having cracked it
 - **A port that is not on the target** → logged and skipped **one by one**; the other ports in the same call still run
-- If the port does not exist yet, install it with `PortControl` first
+- If the port does not exist yet, install it with `PortAdd` first
 
 #### `PortClose` — close ports
 
@@ -307,39 +307,57 @@ Closes one or more ports that **already exist on the target**.
 ```
 
 - It only **closes** the port, it **does not remove it** — for “this machine no longer has that port” use
-  `PortControl Switch="remove"`
+  `PortRemove`
 - A port that is not on the target is logged and skipped
 
-#### `PortControl` — add / remove ports
+#### `PortAdd` — add a port (registering the protocol if needed)
 
-**Registers and installs** a port on the target, or **removes** a port from it.
+Installs a port on the target; if the protocol is not registered yet it is **registered globally**
+(protocol name + display name + default port number) first.
 
 | Attribute | Required | Default | Description |
 |-----------|:--------:|---------|-------------|
-| `TargetID` | ✅ | empty | Target computer `idName`. ⚠️ **This action uses `TargetID`**, unlike the `TargetComp` of the other target actions; an unknown machine prints to the terminal and skips |
-| `Protocol` | ✅ / ❌ | empty | Port protocol name. May be omitted for `Switch="remove"` — the protocol is then looked up from `PortNum` in the port registry |
-| `DisplayName` | ✅ when adding | empty | Port display name (what the terminal and UI show) |
-| `PortNum` | ❌ | `0` | Port number; `0` = no default port number. Used to look the protocol up when removing |
-| `Switch` | ❌ | `add` | `add` = add (default) / `remove` = remove; any other value prints to the terminal and skips |
+| `Protocol` | ✅ | empty | Port protocol name |
+| `DisplayName` | ✅ | empty | Display name (what the terminal and UI show) |
+| `PortNum` | ✅ for new protocols | `0` | Port number. **Required (> 0) for a new protocol**; may be omitted for an already-registered protocol = its default port number |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
 
 ```xml
-<!-- Install an ssh port (default port number 22) on the target -->
-<PortControl TargetID="targetNode" Protocol="ssh" DisplayName="SSH" PortNum="22" />
+<!-- Install an ssh port (ssh is already registered) -->
+<PortAdd Protocol="ssh" DisplayName="SSH" PortNum="22" />
 
-<!-- Remove it again; the following two are equivalent -->
-<PortControl TargetID="targetNode" Protocol="ssh" Switch="remove" />
-<PortControl TargetID="targetNode" PortNum="22" Switch="remove" />
+<!-- Register a new protocol and install it -->
+<PortAdd TargetComp="targetNode" Protocol="custom" DisplayName="Custom Service" PortNum="114514" />
 ```
 
-- Adding **registers the protocol first** (protocol name + display name + default port number go into the
-  global port registry) and then installs the port on the target; once registered, **every machine** can use
-  that name
-- The installed port is **closed**: the player still has to crack / open it — nothing is handed over
-- **Adding twice is safe** (Pathfinder deduplicates by protocol and returns early if it is already there)
-- Removal works by **protocol name** and does not require the protocol to be in the registry; when `Protocol`
-  is omitted the port number is used instead (covering both vanilla and mod-registered ports)
-- Removing a port the machine does not have prints `not found` on the terminal — that is not an error
+- Once registered, the name is usable by **every machine**; registering an already-registered protocol
+  is a **no-op** here (avoids a duplicate record in the global table)
+- The installed port is **closed**: the player still has to crack / open it
+- ⚠️ The global registry is **not saved**, but **each machine's ports are** (`<ports>` with
+  `Original` / `Number` / `Display` per protocol). On load, Pathfinder **re-registers any protocol missing
+  from the global table using the save data**. If the port is removed or the node deleted, the protocol does
+  not come back by itself — call `PortAdd` again, or declare it statically with `<PFPorts>` in content XML
+
+#### `PortRemove` — remove a port
+
+Removes a port from the **target** machine only (it does **not** unregister the global protocol).
+
+| Attribute | Required | Default | Description |
+|-----------|:--------:|---------|-------------|
+| `Protocol` | ✅ / ❌ | empty | Port protocol name; may be omitted — the protocol is then looked up from `PortNum` |
+| `PortNum` | ❌ | `0` | Port number, used only for the lookup (not for removal) |
+| `TargetComp` | ❌ | empty | Target computer `idName`; empty / `NONE` = the currently connected node |
+| `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
+
+```xml
+<PortRemove Protocol="ssh" TargetComp="targetNode" />
+<PortRemove PortNum="22" />
+```
+
+- Removing a port the machine does not have prints `not found` in the terminal — not an error
+- Protocols are global/shared: do **not** use port removal to “unregister” a protocol
+
 
 ### Firewall
 
@@ -562,7 +580,7 @@ up from the beginning.
 
 Third-party mods may occupy Action names (real example: `Stuxnet.Audio` occupies `PlaySound`).
 Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole plugin load**, so
-**all 46 KE Actions** are registered under **two names**: the original, and `KE` + the original.
+**all 47 KE Actions** are registered under **two names**: the original, and `KE` + the original.
 
 | Original name | Alias registered alongside |
 |---------------|---------------------------|
@@ -602,7 +620,8 @@ Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole 
 | `StartEnding` | `KEStartEnding` |
 | `RamDisplay` | `KERamDisplay` |
 | `ChangeThemeColor` | `KEChangeThemeColor` |
-| `PortControl` | `KEPortControl` |
+| `PortAdd` | `KEPortAdd` |
+| `PortRemove` | `KEPortRemove` |
 | `PortOpen` | `KEPortOpen` |
 | `PortClose` | `KEPortClose` |
 | `PortFirewallAdd` | `KEPortFirewallAdd` |
