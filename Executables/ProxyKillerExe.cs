@@ -113,6 +113,9 @@ public class ProxyKillerExe : GameExecutable
 
     private static readonly List<ProxyKillerExe> activeInstances = new();
 
+    /// <summary>RAM 爬升被系统余量卡住时只记一次 Debug（每帧记会刷屏）。</summary>
+    private bool _ramCappedLogged;
+
     /// <summary>是否存在正在运行的实例（事件层无痕互斥检查用）。</summary>
     public static bool HasRunningInstance() => activeInstances.Any(inst => !inst.isExiting);
 
@@ -368,23 +371,54 @@ public class ProxyKillerExe : GameExecutable
 
         if (!isExiting)
         {
-            // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率可配）
+            // RAM 线性爬升到目标，之后一直占着（原版 SignalScramble 同款机制，速率可配）。
+            //
+            // ⚠️ 爬升**必须**受系统余量约束：原版 OS 每帧用 `totalRam - Σ exe.ramCost`
+            //    重算 `ramAvaliable`（OS.Update），而这里改的是 ramCost 本身 ——
+            //    只增不减、不看总量时，`ramAvaliable` 会被顶成负数，
+            //    表现为 RAM 面板 "USED RAM: 1006mb / 761mb"（实测）。
+            //    护栏照搬原版 DLCTraceSlower（SignalScramble）：**本帧增量放得下才涨**。
+            //    与它的唯一差别是速度可配（RampRate）；装不下就停在那儿等其它程序释放。
             if (_ram < _target)
             {
-                if (_cfg.RampRate > 0f)
+                // 目标步长（浮点）：RampRate>0 按速率爬；RampRate=0 = "不爬、直接到位"。
+                float stepF = _cfg.RampRate > 0f ? _cfg.RampRate * t : _target - _ram;
+                float wantRam = Math.Min(_target, _ram + stepF);
+
+                // 本帧真正要增加的**整数** MB 数：robust 地按 (int) 差值算，
+                // 而不是拿浮点增量去和余量比 —— (int) 截断的取整误差会让最后一帧多 1MB，
+                // 把 USED RAM 顶过 totalRam（实测 762/761）。
+                int whole = (int)wantRam - ramCost;
+
+                if (whole <= 0)
                 {
-                    _ram = Math.Min(_target, _ram + _cfg.RampRate * t);
+                    // 还没攒够 1MB：只推进浮点进度（ramCost 不动）。
+                    // ⚠️ 高刷新率下 (int)(t*rate) 会截断成 0（原版 DLCTraceSlower 的毛病，
+                    //    KernelFix/RamTruncationFix 专门修过它）——这里用 float `_ram` 跨帧累积，
+                    //    攒够 1MB 再落成 ramCost，天然没有那个问题。
+                    _ram = wantRam;
                 }
                 else
                 {
-                    // RampRate = 0 的语义是**不爬、直接到位**，不是"停在起步值"。
-                    // ⚠️ 这里曾经是"跳过整段"，于是 _ram 恒为起始 50MB：
-                    //    能力进度（AbilityProgress）会因 RampRate<=0 直接满值，
-                    //    而界面进度看的是 _ram，就一直是 0% + "Spinning up..." ——
-                    //    表现为"能力是满的、画面说在起步"，两边对不上。
-                    _ram = _target;
+                    // ⚠️ 余量约束：装不下就只装能装的部分，绝不把总占用顶过 totalRam。
+                    //    OS.Update 每帧用 `totalRam - Σ exe.ramCost` 重算 ramAvaliable，
+                    //    超了就是负数（RAM 面板显示 1006/761）。
+                    int grow = Math.Min(whole, Math.Max(0, os.ramAvaliable));
+                    if (grow > 0)
+                    {
+                        ramCost += grow;
+                        _ram = ramCost;
+                        // 同步扣减（KernelFix 同款做法）：本帧后面的其它程序读 os.ramAvaliable
+                        // 才是准的；下一帧 OS.Update 会按 Σ ramCost 重算，不会重复扣。
+                        os.ramAvaliable -= grow;
+                    }
+                    else if (!_ramCappedLogged)
+                    {
+                        _ramCappedLogged = true;
+                        KELog.Debug($"{LogTag} RAM ramp capped by available memory: "
+                            + $"ramCost={ramCost}MB available={os.ramAvaliable}MB target={_target}MB.");
+                    }
                 }
-                ramCost = (int)_ram;
             }
 
             // 倍速由 RAM 爬升线性驱动：倍速 1 → 目标值 对应 50MB → BurstTarget
