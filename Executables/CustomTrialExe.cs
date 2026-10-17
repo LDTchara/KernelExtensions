@@ -210,7 +210,7 @@ namespace KernelExtensions.Executables
             if (config == null)
             {
                 trialLocked = true;
-                KELog.Error("[CustomTrialExe] Failed to load trial config.");
+                KELog.ErrorT("[CustomTrialExe] Failed to load trial config.");
                 return;
             }
 
@@ -249,7 +249,7 @@ namespace KernelExtensions.Executables
             // 只接受扩展目录内的路径（绝对路径同样视为越界，避免内容引用到扩展之外）
             string resolved = KEPath.ResolveInside(relativePath, extensionRoot);
             if (resolved == null)
-                KELog.Warn($"[CustomTrialExe] path escapes the extension folder: {relativePath}");
+                KELog.WarnT($"[CustomTrialExe] path escapes the extension folder: {relativePath}");
             return resolved?.Replace('\\', '/');
         }
 
@@ -270,7 +270,7 @@ namespace KernelExtensions.Executables
             // 配置文件必须位于扩展根目录下的 Trial 文件夹中
             if (string.IsNullOrEmpty(extensionRoot))
             {
-                KELog.Error("[CustomTrialExe] Error: Cannot locate trial config because no extension root is available.");
+                KELog.ErrorT("[CustomTrialExe] Error: Cannot locate trial config because no extension root is available.");
                 isExiting = true;
                 return;
             }
@@ -278,14 +278,14 @@ namespace KernelExtensions.Executables
             string configPath = KEPath.ResolveInside("Trial/" + configName + ".xml", extensionRoot);
             if (configPath == null)
             {
-                KELog.Error($"[CustomTrialExe] Error: trial config name escapes the extension folder: '{configName}'.");
+                KELog.ErrorT($"[CustomTrialExe] Error: trial config name escapes the extension folder: '{configName}'.");
                 isExiting = true;
                 return;
             }
             configPath = configPath.Replace('\\', '/');
             if (!File.Exists(configPath))
             {
-                KELog.Error($"[CustomTrialExe] Error: Trial config '{configName}.xml' not found at '{configPath}'. Please ensure the file exists and the flag '{flag}' is correct.");
+                KELog.ErrorT($"[CustomTrialExe] Error: Trial config '{configName}.xml' not found at '{configPath}'. Please ensure the file exists and the flag '{flag}' is correct.");
                 isExiting = true;
                 return;
             }
@@ -297,7 +297,7 @@ namespace KernelExtensions.Executables
             }
             catch (Exception e)
             {
-                KELog.Error($"[CustomTrialExe] Error loading config: {e.Message}");
+                KELog.ErrorT($"[CustomTrialExe] Error loading config: {e.Message}");
                 isExiting = true;
             }
         }
@@ -539,7 +539,7 @@ namespace KernelExtensions.Executables
                                     }
                                     else
                                     {
-                                        KELog.Error($"[CustomTrialExe] ConnectTarget '{config.ConnectTarget}' not found.");
+                                        KELog.ErrorT($"[CustomTrialExe] ConnectTarget '{config.ConnectTarget}' not found.");
                                     }
                                 }
                                 ExecuteHook(config.OnComplete, "OnComplete");
@@ -771,7 +771,7 @@ namespace KernelExtensions.Executables
                 string missionPath = ResolvePath(CurrentPhase.MissionFile);
                 if (missionPath == null || !File.Exists(missionPath))
                 {
-                    KELog.Error($"[CustomTrialExe] Error: Mission file not found: {CurrentPhase.MissionFile}");
+                    KELog.ErrorT($"[CustomTrialExe] Error: Mission file not found: {CurrentPhase.MissionFile}");
                     currentMission = null;
                 }
                 else

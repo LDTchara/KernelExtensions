@@ -22,7 +22,7 @@ namespace KernelExtensions.Actions.Misc
         {
             if (string.IsNullOrEmpty(Path))
             {
-                KELog.Error("[PlaySound] Missing 'Path' attribute.");
+                KELog.ErrorT("[PlaySound] Missing 'Path' attribute.");
                 return;
             }
 

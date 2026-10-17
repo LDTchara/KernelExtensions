@@ -288,7 +288,7 @@ namespace KernelExtensions
             }   // try
             catch (Exception ex)
             {
-                KELog.Error($"[KernelExtensions] Load threw but was contained — partial initialisation possible: {ex}");
+                KELog.ErrorT($"[KernelExtensions] Load threw but was contained — partial initialisation possible: {ex}");
                 return true;
             }
         }
@@ -339,11 +339,11 @@ namespace KernelExtensions
             if (primaryOk && fallbackOk)
                 KELog.Info($"{xmlName} action registered (also as {fallbackName}).");
             else if (primaryOk)
-                KELog.Warn($"{xmlName} registered; {fallbackName} is taken by another mod.");
+                KELog.WarnT($"{xmlName} registered; {fallbackName} is taken by another mod.");
             else if (fallbackOk)
-                KELog.Warn($"{xmlName} is already taken by another mod - registered as {fallbackName} instead.");
+                KELog.WarnT($"{xmlName} is already taken by another mod - registered as {fallbackName} instead.");
             else
-                KELog.Error($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
+                KELog.ErrorT($"{xmlName} and {fallbackName} are both taken - this action was not registered.");
         }
 
         /// <summary>尝试注册一个 Action 名；重名（ArgumentException）时返回 false，不抛出。</summary>
@@ -363,6 +363,8 @@ namespace KernelExtensions
         /// <summary>OSLoaded 时重载 KE 配置（具名方法：Pathfinder 按 MethodInfo 去重与卸载清理，具名更确定）。</summary>
         private static void OnOSLoaded_LoadConfig(OSLoadedEvent e)
         {
+            // 新会话/读档：重置「作者诊断进终端」的计数与批次（9.72）
+            KELog.ResetTerminalMirror();
             try { ConfigLoader.Load(); } catch { }
         }
 
@@ -539,7 +541,7 @@ namespace KernelExtensions
                 if (checkPath == null)
                 {
                     // 越界无法判定——保守处理：不做恢复，保持感染状态
-                    KELog.Warn($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                    KELog.WarnT($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
                     return;
                 }
                 if (!File.Exists(checkPath))
@@ -569,7 +571,7 @@ namespace KernelExtensions
                 string checkPath = KEPath.ResolveInsideSaveBase(config.CheckFilePath);
                 if (checkPath == null)
                 {
-                    KELog.Warn($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                    KELog.WarnT($"[VM] CheckFilePath escapes the save directory: {config.CheckFilePath}");
                     return;
                 }
                 if (File.Exists(checkPath))

@@ -31,7 +31,7 @@ namespace KernelExtensions.Actions.Clock
             }
             catch (Exception ex)
             {
-                KELog.Error("[ClockStart] Trigger failed: " + ex.Message);
+                KELog.ErrorT("[ClockStart] Trigger failed: " + ex.Message);
             }
         }
     }

@@ -50,7 +50,7 @@ namespace KernelExtensions.Actions.Misc
             // preset 兜底：未知值按 info + Warn
             bool isWarning = Preset.Equals("warning", StringComparison.OrdinalIgnoreCase);
             if (!isWarning && !Preset.Equals("info", StringComparison.OrdinalIgnoreCase))
-                KELog.Warn($"[ShowTitle] unknown preset '{Preset}', using info");
+                KELog.WarnT($"[ShowTitle] unknown preset '{Preset}', using info");
 
             // 强调色跟随主题：info = defaultHighlightColor（基色，不被 warningFlash 插值污染）
             //                  warning = warningColor
@@ -58,7 +58,7 @@ namespace KernelExtensions.Actions.Misc
 
             // 标题仅 ASCII：titlefont(Kremlin) 无本地化版，含非 ASCII 会被清洗为 '?'——提前提示作者
             if (!IsAscii(Title))
-                KELog.Warn("[ShowTitle] title contains non-ASCII characters; the title font only supports ASCII, they will render as '?'. Put such text in the body instead.");
+                KELog.WarnT("[ShowTitle] title contains non-ASCII characters; the title font only supports ASCII, they will render as '?'. Put such text in the body instead.");
 
             // 图标：空/NONE = 不显示；"default" = 内置；其他 = 路径
             string iconArg;
@@ -73,7 +73,7 @@ namespace KernelExtensions.Actions.Misc
             {
                 if (tintStr.Equals("true", StringComparison.OrdinalIgnoreCase)) tintOverride = true;
                 else if (tintStr.Equals("false", StringComparison.OrdinalIgnoreCase)) tintOverride = false;
-                else KELog.Warn($"[ShowTitle] unknown icontint '{IconTint}'; falling back to auto");
+                else KELog.WarnT($"[ShowTitle] unknown icontint '{IconTint}'; falling back to auto");
             }
 
             TitleBannerPatches.Show(Title, NormalizeBody(Body), Duration, AccentColor, defaultColor, iconArg, tintOverride);

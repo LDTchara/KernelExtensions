@@ -50,7 +50,7 @@ namespace KernelExtensions.Actions.Misc
                 }
                 else
                 {
-                    KELog.Warn($"[RamDisplay] Multiplier '{Multiplier}' is not a number; ignored.");
+                    KELog.WarnT($"[RamDisplay] Multiplier '{Multiplier}' is not a number; ignored.");
                 }
             }
 
@@ -66,7 +66,7 @@ namespace KernelExtensions.Actions.Misc
                 // 两个属性都没写：不做事
                 // 你光写个壳不填参数那你干嘛用这个啊？直接不写这个 Action 就行了
                 // If you're not setting any attributes, why are you using this at all?
-                KELog.Warn("[RamDisplay] ...? no attributes set; nothing to do.");
+                KELog.WarnT("[RamDisplay] ...? no attributes set; nothing to do.");
                 return;
             }
 

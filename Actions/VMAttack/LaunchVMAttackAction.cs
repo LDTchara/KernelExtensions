@@ -23,7 +23,7 @@ namespace KernelExtensions.Actions.VMAttack
             string relativePath = VMInfectionManager.NormalizeRelativePath(ConfigPath);
             if (relativePath == null)
             {
-                KELog.Error("[LaunchVMAttack] ConfigPath required (relative to the extension folder, e.g. VMATK/MyAttack.xml).");
+                KELog.ErrorT("[LaunchVMAttack] ConfigPath required (relative to the extension folder, e.g. VMATK/MyAttack.xml).");
                 return;
             }
 
@@ -34,12 +34,12 @@ namespace KernelExtensions.Actions.VMAttack
             string configPath = KEPath.ResolveInsideExtension(relativePath);
             if (configPath == null)
             {
-                KELog.Error($"[LaunchVMAttack] ConfigPath escapes the extension folder: {relativePath}");
+                KELog.ErrorT($"[LaunchVMAttack] ConfigPath escapes the extension folder: {relativePath}");
                 return;
             }
             if (!File.Exists(configPath))
             {
-                KELog.Error($"[LaunchVMAttack] Config not found: {configPath}");
+                KELog.ErrorT($"[LaunchVMAttack] Config not found: {configPath}");
                 return;
             }
 
@@ -55,7 +55,7 @@ namespace KernelExtensions.Actions.VMAttack
             if (config.Mode != RecoveryMode.Password && !ConfigValue.IsNone(config.CheckFilePath)
                 && KEPath.ResolveInsideSaveBase(config.CheckFilePath) == null)
             {
-                KELog.Error($"[LaunchVMAttack] CheckFilePath escapes the save directory ({config.CheckFilePath}) "
+                KELog.ErrorT($"[LaunchVMAttack] CheckFilePath escapes the save directory ({config.CheckFilePath}) "
                     + $"while mode is {config.Mode} - this attack could never be recovered; aborting.");
                 return;
             }
@@ -79,7 +79,7 @@ namespace KernelExtensions.Actions.VMAttack
                 string filePath = KEPath.ResolveInsideSaveBase(f.Path);
                 if (filePath == null)
                 {
-                    KELog.Warn($"[LaunchVMAttack] FakeFiles Path escapes the save directory, skipped: {f.Path}");
+                    KELog.WarnT($"[LaunchVMAttack] FakeFiles Path escapes the save directory, skipped: {f.Path}");
                     continue;
                 }
 
@@ -99,19 +99,19 @@ namespace KernelExtensions.Actions.VMAttack
                     continue;
                 }
                 if (!string.IsNullOrEmpty(f.Source) && source == null)
-                    KELog.Warn($"[LaunchVMAttack] FakeFiles Source escapes the extension folder, writing an empty file instead: {f.Source}");
+                    KELog.WarnT($"[LaunchVMAttack] FakeFiles Source escapes the extension folder, writing an empty file instead: {f.Source}");
 
                 // 凭空生成（new byte[Size]）：**只有这条路**受大小限制 ——
                 //   写入同步阻塞主线程，且 new byte[] 是一次性分配（32 位进程下大块尤为危险）。
                 long size = f.Size < 0 ? 0 : f.Size;   // 负数按 0（对齐「负数 = 默认」约定）
                 if (size > MaxFakeFileSize)
                 {
-                    KELog.Warn($"[LaunchVMAttack] FakeFiles '{f.Path}' is {size} bytes, over the {MaxFakeFileSize}-byte per-file limit; skipped.");
+                    KELog.WarnT($"[LaunchVMAttack] FakeFiles '{f.Path}' is {size} bytes, over the {MaxFakeFileSize}-byte per-file limit; skipped.");
                     continue;
                 }
                 if (totalBytes + size > MaxFakeFilesTotalSize)
                 {
-                    KELog.Warn($"[LaunchVMAttack] FakeFiles total would exceed the {MaxFakeFilesTotalSize}-byte limit; skipped: {f.Path}");
+                    KELog.WarnT($"[LaunchVMAttack] FakeFiles total would exceed the {MaxFakeFilesTotalSize}-byte limit; skipped: {f.Path}");
                     continue;
                 }
 

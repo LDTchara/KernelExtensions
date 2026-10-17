@@ -25,7 +25,7 @@ namespace KernelExtensions.Actions.Misc
 
             if (target.firewall == null)
             {
-                KELog.Warn($"[{nameof(PortFirewallSolveAction)}] '{target.idName}' has no firewall; skipped.");
+                KELog.WarnT($"[{nameof(PortFirewallSolveAction)}] '{target.idName}' has no firewall; skipped.");
                 return;
             }
 

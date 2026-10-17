@@ -34,7 +34,7 @@ namespace KernelExtensions.Actions.Misc
                 target = os.connectedComp ?? os.thisComputer;
                 if (target == null)
                 {
-                    KELog.Warn($"[{actionName}] no connected computer and no TargetComp given; skipped.");
+                    KELog.WarnT($"[{actionName}] no connected computer and no TargetComp given; skipped.");
                     return false;
                 }
                 return true;
@@ -43,7 +43,7 @@ namespace KernelExtensions.Actions.Misc
             target = Programs.getComputer(os, explicitIdName);
             if (target == null)
             {
-                KELog.Warn($"[{actionName}] computer '{explicitIdName}' not found; skipped.");
+                KELog.WarnT($"[{actionName}] computer '{explicitIdName}' not found; skipped.");
                 return false;
             }
             return true;

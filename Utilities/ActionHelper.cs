@@ -62,7 +62,7 @@ namespace KernelExtensions.Utilities
             string root = extensionRoot ?? ExtensionRoot();
             if (string.IsNullOrEmpty(root))
             {
-                KELog.Warn($"[ActionHelper] '{where}': extension root unavailable; action skipped.");
+                KELog.WarnT($"[ActionHelper] '{where}': extension root unavailable; action skipped.");
                 return;
             }
 
@@ -70,14 +70,14 @@ namespace KernelExtensions.Utilities
             string fullPath = KEPath.ResolveInside(actionFilePath, root);
             if (fullPath == null)
             {
-                KELog.Warn($"[ActionHelper] '{where}': path '{actionFilePath}' escapes the extension folder; skipped.");
+                KELog.WarnT($"[ActionHelper] '{where}': path '{actionFilePath}' escapes the extension folder; skipped.");
                 return;
             }
             fullPath = fullPath.Replace('\\', '/');
 
             if (!File.Exists(fullPath))
             {
-                KELog.Warn($"[ActionHelper] '{where}': action file not found: {actionFilePath}");
+                KELog.WarnT($"[ActionHelper] '{where}': action file not found: {actionFilePath}");
                 return;
             }
 
@@ -89,7 +89,7 @@ namespace KernelExtensions.Utilities
             }
             catch (Exception e)
             {
-                KELog.Error($"[ActionHelper] '{where}': action file failed: {e.Message}");
+                KELog.ErrorT($"[ActionHelper] '{where}': action file failed: {e.Message}");
             }
         }
 
@@ -149,7 +149,7 @@ namespace KernelExtensions.Utilities
             }
             catch (Exception e)
             {
-                KELog.Error($"[ActionHelper] '{label}': inline action failed: {e.Message}");
+                KELog.ErrorT($"[ActionHelper] '{label}': inline action failed: {e.Message}");
             }
         }
 
@@ -187,14 +187,14 @@ namespace KernelExtensions.Utilities
             {
                 // Pathfinder 对"未注册的元素名"就是抛这个。最典型的是**拼写错误**，
                 // 也包含误用 Faction 的 <Action> 单数容器。把名字点出来，比让异常原文糊一整段更有用。
-                KELog.Warn($"[ActionHelper] '{label}': no action or container named <{node.Name}>; skipped."
+                KELog.WarnT($"[ActionHelper] '{label}': no action or container named <{node.Name}>; skipped."
                     + HintFor(node.Name));
                 return false;
             }
             catch (Exception e)
             {
                 // 名字存在但装载失败（缺必需属性、值非法等）
-                KELog.Warn($"[ActionHelper] '{label}': <{node.Name}> could not be loaded: {e.Message}");
+                KELog.WarnT($"[ActionHelper] '{label}': <{node.Name}> could not be loaded: {e.Message}");
                 return false;
             }
         }
@@ -223,7 +223,7 @@ namespace KernelExtensions.Utilities
             catch (FormatException e)
             {
                 string cond = ExtractConditionName(e.Message);
-                KELog.Warn($"[ActionHelper] '{label}': unknown condition <{cond}>; skipped."
+                KELog.WarnT($"[ActionHelper] '{label}': unknown condition <{cond}>; skipped."
                     + " Supported: Instantly / OnConnect / OnDisconnect / HasFlags / OnAdminGained"
                     + " / DoesNotHaveFlags, plus any registered custom condition.");
                 return false;
@@ -326,7 +326,7 @@ namespace KernelExtensions.Utilities
                 {
                     // 回退：我们自己注册的处理器没接住时，按 SerializableAction 逐个来
                     if (ex != null)
-                        KELog.Warn($"[ActionHelper] '{label}': primary parse reported: {ex.Message}");
+                        KELog.WarnT($"[ActionHelper] '{label}': primary parse reported: {ex.Message}");
                     ParseFallback(os, fallbackSource, label);
                     return;
                 }
@@ -335,7 +335,7 @@ namespace KernelExtensions.Utilities
             }
             catch (Exception e)
             {
-                KELog.Error($"[ActionHelper] '{label}': {e.Message}");
+                KELog.ErrorT($"[ActionHelper] '{label}': {e.Message}");
             }
         }
 
@@ -362,7 +362,7 @@ namespace KernelExtensions.Utilities
             }
             catch (Exception e)
             {
-                KELog.Error($"[ActionHelper] '{label}' fallback parse failed: {e.Message}");
+                KELog.ErrorT($"[ActionHelper] '{label}' fallback parse failed: {e.Message}");
             }
         }
 

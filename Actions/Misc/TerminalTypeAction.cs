@@ -42,12 +42,12 @@ namespace KernelExtensions.Actions.Misc
             {
                 if (os.terminal == null)
                 {
-                    KELog.Warn("[TerminalType] os.terminal is null, cannot print");
+                    KELog.WarnT("[TerminalType] os.terminal is null, cannot print");
                     return;
                 }
                 if (string.IsNullOrEmpty(Text))
                 {
-                    KELog.Warn("[TerminalType] Text is empty (use attribute Text= or legacy text=)");
+                    KELog.WarnT("[TerminalType] Text is empty (use attribute Text= or legacy text=)");
                     return;
                 }
 
@@ -59,7 +59,7 @@ namespace KernelExtensions.Actions.Misc
             }
             catch (Exception ex)
             {
-                KELog.Error("[TerminalType] Trigger failed: " + ex.Message);
+                KELog.ErrorT("[TerminalType] Trigger failed: " + ex.Message);
             }
         }
 

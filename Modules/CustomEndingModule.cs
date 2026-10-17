@@ -779,7 +779,7 @@ public class CustomEndingModule : EndingSequenceModule
         try { os.threadedSaveExecute(); } catch { }
 
         try { OnCompleteCallback?.Invoke(); }
-        catch (Exception ex) { KELog.Warn($"[CustomEndingModule] OnCompleteCallback error: {ex.Message}"); }
+        catch (Exception ex) { KELog.WarnT($"[CustomEndingModule] OnCompleteCallback error: {ex.Message}"); }
 
         KELog.Info("[CustomEndingModule] Complete.");
     }

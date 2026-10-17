@@ -71,12 +71,12 @@ namespace KernelExtensions.Configs
             string full = KEPath.ResolveInsideExtension(filePath);
             if (full == null)
             {
-                KELog.Error($"[Ending] config path escapes the extension folder: {filePath}");
+                KELog.ErrorT($"[Ending] config path escapes the extension folder: {filePath}");
                 return null;
             }
             if (!File.Exists(full))
             {
-                KELog.Error($"[Ending] config file not found: {full}");
+                KELog.ErrorT($"[Ending] config file not found: {full}");
                 return null;
             }
 
@@ -86,7 +86,7 @@ namespace KernelExtensions.Configs
                 var root = doc.Root;
                 if (root == null || root.Name.LocalName != "EndingConfig")
                 {
-                    KELog.Error($"[Ending] '{full}' has no <EndingConfig> root element");
+                    KELog.ErrorT($"[Ending] '{full}' has no <EndingConfig> root element");
                     return null;
                 }
 
@@ -109,7 +109,7 @@ namespace KernelExtensions.Configs
             }
             catch (Exception ex)
             {
-                KELog.Error($"[Ending] config parse failed ({full}): {ex.Message}");
+                KELog.ErrorT($"[Ending] config parse failed ({full}): {ex.Message}");
                 return null;
             }
         }

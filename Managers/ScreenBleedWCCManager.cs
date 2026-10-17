@@ -78,7 +78,7 @@ namespace KernelExtensions.Managers
                 if (!ConfigValue.IsNone(state.CompleteAction))
                 {
                     try { RunnableConditionalActions.LoadIntoOS(state.CompleteAction, os); }
-                    catch (Exception ex) { KELog.Warn("[WCC] CompleteAction: " + ex.Message); }
+                    catch (Exception ex) { KELog.WarnT("[WCC] CompleteAction: " + ex.Message); }
                 }
                 return;
             }

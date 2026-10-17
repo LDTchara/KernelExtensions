@@ -34,12 +34,12 @@ namespace KernelExtensions.Actions.Misc
             float fallbackLen = target.firewall?.solutionLength ?? 0;
             float len = ConfigValue.ParseInRange(Length, fallbackLen, 0f, float.MaxValue, out bool lenOk);
             if (!lenOk)
-                KELog.Warn($"[{nameof(PortFirewallConfigureAction)}] invalid <Length> '{Length}'; keeping the current length.");
+                KELog.WarnT($"[{nameof(PortFirewallConfigureAction)}] invalid <Length> '{Length}'; keeping the current length.");
 
             float fallbackDelay = target.firewall?.additionalDelay ?? 0f;
             float delay = ConfigValue.ParseInRange(AdditionalDelay, fallbackDelay, 0f, float.MaxValue, out bool dOk);
             if (!dOk)
-                KELog.Warn($"[{nameof(PortFirewallConfigureAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; keeping the current delay.");
+                KELog.WarnT($"[{nameof(PortFirewallConfigureAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; keeping the current delay.");
 
             // Solution 留空 = 保持原值
             string solution = ConfigValue.IsNone(Solution) ? (target.firewall?.solution ?? "@random") : Solution.Trim();

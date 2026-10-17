@@ -106,7 +106,7 @@ namespace KernelExtensions.Configs
             }
             catch (Exception ex)
             {
-                KELog.Warn($"[UsernameProfiles] OnBeforeShowReason error: {ex.Message}");
+                KELog.WarnT($"[UsernameProfiles] OnBeforeShowReason error: {ex.Message}");
             }
         }
 
@@ -117,7 +117,7 @@ namespace KernelExtensions.Configs
             try { OnAfterShowReason?.Invoke(username, reason); }
             catch (Exception ex)
             {
-                KELog.Warn($"[UsernameProfiles] OnAfterShowReason error: {ex.Message}");
+                KELog.WarnT($"[UsernameProfiles] OnAfterShowReason error: {ex.Message}");
             }
         }
     }

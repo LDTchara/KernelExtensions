@@ -76,7 +76,7 @@ namespace KernelExtensions.Utilities
 
             // 去重后输出，避免同一处写法在多行重复刷屏
             var distinct = unknown.Distinct().Take(12).ToList();
-            KELog.Warn($"[XmlConfig] '{label}': {unknown.Count} unrecognised name(s) — "
+            KELog.WarnT($"[XmlConfig] '{label}': {unknown.Count} unrecognised name(s) — "
                 + "these are SILENTLY IGNORED by the parser, so a typo here means the setting never applies: "
                 + string.Join("; ", distinct)
                 + (unknown.Count > distinct.Count ? $" (+{unknown.Count - distinct.Count} more)" : "")

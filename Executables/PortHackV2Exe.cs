@@ -161,7 +161,7 @@ public class PortHackV2Exe : GameExecutable
             }
             else
             {
-                KELog.Error($"[PortHackV2] {flags.Count} config flags present, expected exactly one: "
+                KELog.ErrorT($"[PortHackV2] {flags.Count} config flags present, expected exactly one: "
                     + string.Join(", ", flags));
                 os.write("PortHackV2: multiple configurations are armed (authoring error).");
             }
@@ -440,7 +440,7 @@ public class PortHackV2Exe : GameExecutable
         }
         catch (Exception ex)
         {
-            KELog.Error($"[PortHackV2] '{source}': <{point}> threw but was contained: {ex}");
+            KELog.ErrorT($"[PortHackV2] '{source}': <{point}> threw but was contained: {ex}");
         }
     }
 
@@ -559,7 +559,7 @@ public class PortHackV2Exe : GameExecutable
             }
             catch (Exception ex)
             {
-                KELog.Warn($"[PortHackV2] '{protoSource}': could not open port: {ex.Message}");
+                KELog.WarnT($"[PortHackV2] '{protoSource}': could not open port: {ex.Message}");
             }
             SafeHook(() => rt.Def.OnComplete?.Execute(os, protoSource, "OnComplete"), protoSource, "OnComplete");
         }
@@ -567,7 +567,7 @@ public class PortHackV2Exe : GameExecutable
         {
             SafeHook(() => rt.Def.OnFail?.Execute(os, protoSource, "OnFail"), protoSource, "OnFail");
             if (forced)
-                KELog.Warn($"[PortHackV2] '{protoSource}': did not finish within the root <Time>; "
+                KELog.WarnT($"[PortHackV2] '{protoSource}': did not finish within the root <Time>; "
                     + "recorded as failed - check the timing in this configuration.");
         }
 
@@ -594,7 +594,7 @@ public class PortHackV2Exe : GameExecutable
         if (_successCount > 0 && CurrentConfig.TakeAdmin)
         {
             try { os.takeAdmin(_targetIp); }
-            catch (Exception ex) { KELog.Warn($"[PortHackV2] '{source}': takeAdmin failed: {ex.Message}"); }
+            catch (Exception ex) { KELog.WarnT($"[PortHackV2] '{source}': takeAdmin failed: {ex.Message}"); }
         }
 
         CurrentState = PortHackV2State.Complete;

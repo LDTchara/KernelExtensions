@@ -41,7 +41,7 @@ namespace KernelExtensions.Actions.Clock
             }
             catch (Exception ex)
             {
-                KELog.Error("[ClockStop] Trigger failed: " + ex.Message);
+                KELog.ErrorT("[ClockStop] Trigger failed: " + ex.Message);
             }
         }
     }

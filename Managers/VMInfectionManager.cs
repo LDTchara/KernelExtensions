@@ -126,7 +126,7 @@ namespace KernelExtensions.Managers
             if (fullPath == null)
             {
                 if (_warnedEscapePaths.Add(config.CheckFilePath))
-                    KELog.Warn($"[VMInfection] CheckFilePath escapes the save directory: {config.CheckFilePath}");
+                    KELog.WarnT($"[VMInfection] CheckFilePath escapes the save directory: {config.CheckFilePath}");
                 return false;
             }
             if (config.Mode == RecoveryMode.FileDeletion) return File.Exists(fullPath);
@@ -224,7 +224,7 @@ namespace KernelExtensions.Managers
                     string filePath = KEPath.ResolveInsideSaveBase(f.Path);
                     if (filePath == null)
                     {
-                        KELog.Warn($"[VMInfection] FakeFiles Path escapes the save directory, not deleting: {f.Path}");
+                        KELog.WarnT($"[VMInfection] FakeFiles Path escapes the save directory, not deleting: {f.Path}");
                         continue;
                     }
                     if (File.Exists(filePath))

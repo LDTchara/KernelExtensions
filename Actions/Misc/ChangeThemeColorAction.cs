@@ -80,7 +80,7 @@ namespace KernelExtensions.Actions.Misc
                 string[] kv = pair.Split(new[] { ':' }, 2);
                 if (kv.Length != 2)
                 {
-                    KELog.Warn($"[ChangeThemeColor] malformed pair '{pair}', expected 'field:colour'");
+                    KELog.WarnT($"[ChangeThemeColor] malformed pair '{pair}', expected 'field:colour'");
                     continue;
                 }
 
@@ -92,7 +92,7 @@ namespace KernelExtensions.Actions.Misc
                 var themeField = themeType.GetField(key);
                 if (themeField == null || themeField.FieldType != typeof(Color))
                 {
-                    KELog.Warn($"[ChangeThemeColor] unknown colour field '{key}'");
+                    KELog.WarnT($"[ChangeThemeColor] unknown colour field '{key}'");
                     continue;
                 }
 
@@ -103,7 +103,7 @@ namespace KernelExtensions.Actions.Misc
                     var osField = osType.GetField(key);
                     if (osField == null || osField.FieldType != typeof(Color))
                     {
-                        KELog.Warn($"[ChangeThemeColor] '{key}' has no matching OS colour field, dynamic value skipped");
+                        KELog.WarnT($"[ChangeThemeColor] '{key}' has no matching OS colour field, dynamic value skipped");
                         continue;
                     }
                     dynamics.Add(new DynamicTarget(key, osField, dyn));
@@ -112,7 +112,7 @@ namespace KernelExtensions.Actions.Misc
 
                 if (!LooksLikeColour(value))
                 {
-                    KELog.Warn($"[ChangeThemeColor] cannot parse colour '{value}' for '{key}', field left unchanged");
+                    KELog.WarnT($"[ChangeThemeColor] cannot parse colour '{value}' for '{key}', field left unchanged");
                     continue;
                 }
 
@@ -271,7 +271,7 @@ namespace KernelExtensions.Actions.Misc
                 {
                     // 每帧钩子抛异常会一路冒到 OS.Update → Game1.Update（直接崩帧），
                     // 所以这里兜底：记 Error 并停手，OS 上保持当前颜色不改。
-                    KELog.Error("[ChangeThemeColor] dynamic update failed: " + ex.Message);
+                    KELog.ErrorT("[ChangeThemeColor] dynamic update failed: " + ex.Message);
                     Finish();
                 }
             }

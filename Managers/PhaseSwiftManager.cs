@@ -130,7 +130,7 @@ namespace KernelExtensions.Managers
             string configPath = KEPath.ResolveInside("PhaseSwift/" + configName + ".xml", ExtensionRoot);
             if (configPath == null)
             {
-                KELog.Warn($"[PhaseSwift] config name escapes the extension folder: {configName}");
+                KELog.WarnT($"[PhaseSwift] config name escapes the extension folder: {configName}");
                 return;
             }
             _activeConfigName = configName;
@@ -1067,7 +1067,7 @@ namespace KernelExtensions.Managers
                 }
                 else
                 {
-                    KELog.Warn($"[PhaseSwift] TopologyMode scene index out of range: {mode} (valid 0~{Config.Scenes.Count - 1}) - falling back to restore");
+                    KELog.WarnT($"[PhaseSwift] TopologyMode scene index out of range: {mode} (valid 0~{Config.Scenes.Count - 1}) - falling back to restore");
                     RestoreOriginalLinks();
                 }
                 return;
@@ -1079,7 +1079,7 @@ namespace KernelExtensions.Managers
                 return;
             }
 
-            KELog.Warn($"[PhaseSwift] unknown TopologyMode: {mode} - falling back to restore");
+            KELog.WarnT($"[PhaseSwift] unknown TopologyMode: {mode} - falling back to restore");
             RestoreOriginalLinks();
         }
 

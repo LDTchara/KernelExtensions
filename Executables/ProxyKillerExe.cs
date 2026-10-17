@@ -163,7 +163,7 @@ public class ProxyKillerExe : GameExecutable
                 Lock(KELoc.Loc("PROXY_KILLER_MULTI_FLAG",
                     "ProxyKiller: multiple configurations are armed (authoring error)."),
                     tellPlayer: true);
-                KELog.Error($"{LogTag} {flags.Count} config flags present, expected exactly one: "
+                KELog.ErrorT($"{LogTag} {flags.Count} config flags present, expected exactly one: "
                     + string.Join(", ", flags));
             }
             return;

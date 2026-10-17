@@ -156,7 +156,7 @@ namespace KernelExtensions.Managers
             var def = LoadDefinition(state.SourcePath, state.ExtensionRoot);
             if (def == null)
             {
-                KELog.Warn($"[Clock] restore skipped '{state.Id}': reload failed (file missing or parse error)");
+                KELog.WarnT($"[Clock] restore skipped '{state.Id}': reload failed (file missing or parse error)");
                 return;
             }
 
@@ -265,7 +265,7 @@ namespace KernelExtensions.Managers
 
                 if (interval <= 0f)
                 {
-                    KELog.Warn($"[Clock] '{id}' invalid Interval={interval} (must be > 0), start refused");
+                    KELog.WarnT($"[Clock] '{id}' invalid Interval={interval} (must be > 0), start refused");
                     return null;
                 }
                 if (times < 0) times = 0;      // 负数归一为无限
@@ -283,7 +283,7 @@ namespace KernelExtensions.Managers
                         }
                         catch (Exception ex)
                         {
-                            KELog.Warn($"[Clock] '{id}' action '{child.Name}' load failed: {ex.Message}");
+                            KELog.WarnT($"[Clock] '{id}' action '{child.Name}' load failed: {ex.Message}");
                         }
                     }
                 }
@@ -316,7 +316,7 @@ namespace KernelExtensions.Managers
             }
             catch (Exception ex)
             {
-                KELog.Error("[Clock] LoadDefinition failed: " + ex.Message);
+                KELog.ErrorT("[Clock] LoadDefinition failed: " + ex.Message);
                 return null;
             }
         }

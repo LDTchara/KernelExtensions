@@ -47,7 +47,7 @@ namespace KernelExtensions.Actions.Misc
                 var comp = ComputerLookup.FindById(NodeID);
                 if (comp == null)
                 {
-                    KELog.Warn($"[BreakHeart] node not found: {NodeID}");
+                    KELog.WarnT($"[BreakHeart] node not found: {NodeID}");
                     return;
                 }
 
@@ -57,7 +57,7 @@ namespace KernelExtensions.Actions.Misc
 
                 if (daemon == null)
                 {
-                    KELog.Warn($"[BreakHeart] node '{NodeID}' has no CustomHeartDaemon");
+                    KELog.WarnT($"[BreakHeart] node '{NodeID}' has no CustomHeartDaemon");
                     return;
                 }
 
@@ -66,7 +66,7 @@ namespace KernelExtensions.Actions.Misc
             }
             catch (Exception ex)
             {
-                KELog.Error("[BreakHeart] Trigger failed: " + ex.Message);
+                KELog.ErrorT("[BreakHeart] Trigger failed: " + ex.Message);
             }
         }
 

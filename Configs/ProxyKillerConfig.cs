@@ -358,19 +358,45 @@ public class ProxyKillerConfig
     /// 从存档 flag 反查并加载配置。
     /// 失败（越界 / 文件缺失 / 解析异常）返回 null，并记 Error（不静默）。
     /// </summary>
+    /// <summary>
+    /// 从存档 flag 反查并加载配置（带**终端聚合**）。
+    ///
+    /// <para>
+    /// 配置里可能有十几处值非法，逐条刷进游戏内终端会淹没玩家。
+    /// 这里把整个加载期包成一个批次，结束时由 <see cref="Utilities.KELog.EndBatch"/>
+    /// 汇总成一段（最多列 5 条，其余折叠）。
+    /// </para>
+    /// </summary>
     public static ProxyKillerConfig LoadByFlag(string flag)
+    {
+        Utilities.KELog.BeginBatch();
+        try
+        {
+            return LoadByFlagCore(flag);
+        }
+        finally
+        {
+            string name = string.IsNullOrEmpty(flag) || !flag.StartsWith(FlagPrefix, System.StringComparison.Ordinal)
+                ? "(unknown)"
+                : flag.Substring(FlagPrefix.Length);
+            Utilities.KELog.EndBatch("ProxyKiller/" + name);
+        }
+    }
+
+    /// <summary>真正的加载实现（<see cref="LoadByFlag"/> 的聚合包装见上）。</summary>
+    private static ProxyKillerConfig LoadByFlagCore(string flag)
     {
         if (string.IsNullOrEmpty(flag)) return null;
         if (!flag.StartsWith(FlagPrefix, StringComparison.Ordinal))
         {
-            KELog.Error($"[ProxyKiller] flag '{flag}' does not start with '{FlagPrefix}'.");
+            KELog.ErrorT($"[ProxyKiller] flag '{flag}' does not start with '{FlagPrefix}'.");
             return null;
         }
 
         string name = flag.Substring(FlagPrefix.Length);
         if (string.IsNullOrWhiteSpace(name))
         {
-            KELog.Error($"[ProxyKiller] flag '{flag}' has an empty config name.");
+            KELog.ErrorT($"[ProxyKiller] flag '{flag}' has an empty config name.");
             return null;
         }
 
@@ -379,7 +405,7 @@ public class ProxyKillerConfig
         string path = KEPath.ResolveInsideExtension(rel);
         if (path == null || !File.Exists(path))
         {
-            KELog.Error($"[ProxyKiller] config not found for flag '{flag}': {rel}");
+            KELog.ErrorT($"[ProxyKiller] config not found for flag '{flag}': {rel}");
             return null;
         }
 
@@ -388,7 +414,7 @@ public class ProxyKillerConfig
             var cfg = XmlConfigLoader.Load<ProxyKillerConfig>(path, rel);
             if (cfg == null)
             {
-                KELog.Error($"[ProxyKiller] config '{rel}' deserialized to null.");
+                KELog.ErrorT($"[ProxyKiller] config '{rel}' deserialized to null.");
                 return null;
             }
             cfg.SourceName = name;
@@ -397,7 +423,7 @@ public class ProxyKillerConfig
         }
         catch (Exception ex)
         {
-            KELog.Error($"[ProxyKiller] failed to load {rel}: {ex.Message}");
+            KELog.ErrorT($"[ProxyKiller] failed to load {rel}: {ex.Message}");
             return null;
         }
     }
@@ -413,7 +439,7 @@ public class ProxyKillerConfig
         BurstTarget = ToInt(ConfigValue.ParseInRange(BurstTargetRaw, DefaultBurstTarget,
             MinRam, MaxRam, out bool btOk));
         if (!btOk)
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <BurstTarget> '{BurstTargetRaw}', "
+            KELog.WarnT($"[ProxyKiller] '{SourceName}': invalid <BurstTarget> '{BurstTargetRaw}', "
                 + $"expected {MinRam}~{MaxRam}; using {DefaultBurstTarget}.");
 
         RampRate = ParseNum(RampRateRaw, DefaultRampRate, 0f, "RampRate");
@@ -421,7 +447,7 @@ public class ProxyKillerConfig
         ShellOverloadTarget = ConfigValue.ParseInRange(ShellOverloadTargetRaw, DefaultShellOverloadTarget,
             MinShellOverloadTarget, float.MaxValue, out bool soOk);
         if (!soOk)
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <ShellOverloadTarget> '{ShellOverloadTargetRaw}', "
+            KELog.WarnT($"[ProxyKiller] '{SourceName}': invalid <ShellOverloadTarget> '{ShellOverloadTargetRaw}', "
                 + $"expected a number >= {MinShellOverloadTarget}; using {DefaultShellOverloadTarget}.");
 
         // 自己过载：**开关**与**速率**分开两个字段 —— 一个字段同时表达"开不开"与"多快"
@@ -433,13 +459,13 @@ public class ProxyKillerConfig
             0f, float.MaxValue, out bool selfRateOk);
         if (!selfRateOk)
         {
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <SelfOverloadRate> '{SelfOverloadRateRaw}', "
+            KELog.WarnT($"[ProxyKiller] '{SourceName}': invalid <SelfOverloadRate> '{SelfOverloadRateRaw}', "
                 + $"expected a finite number >= 0; using {DefaultSelfOverloadRate}.");
         }
         if (SelfOverload && SelfOverloadRate <= 0f)
         {
             // 开了但速率为 0 = 什么都不做的哑配置，多半是笔误
-            KELog.Warn($"[ProxyKiller] '{SourceName}': <SelfOverload> is on but <SelfOverloadRate> is 0, "
+            KELog.WarnT($"[ProxyKiller] '{SourceName}': <SelfOverload> is on but <SelfOverloadRate> is 0, "
                 + "so self-overload will never advance (did you mean to turn <SelfOverload> off?).");
         }
 
@@ -448,7 +474,7 @@ public class ProxyKillerConfig
         if (SelfOverload && !wantFollow && !string.IsNullOrWhiteSpace(FollowConnectionRaw))
         {
             // 作者显式写了 false，但主动过载要求跟随 —— 说清楚为什么被覆盖
-            KELog.Warn($"[ProxyKiller] '{SourceName}': <FollowConnection>false</FollowConnection> is ignored "
+            KELog.WarnT($"[ProxyKiller] '{SourceName}': <FollowConnection>false</FollowConnection> is ignored "
                 + "because <SelfOverload> is active (self-overload always follows the connection).");
         }
 
@@ -493,7 +519,7 @@ public class ProxyKillerConfig
         if (!ok)
         {
             string range = max >= float.MaxValue ? $">= {min}" : $"{min}~{max}";
-            KELog.Warn($"[ProxyKiller] '{SourceName}': invalid <{name}> '{raw}', expected {range}; using {fallback}.");
+            KELog.WarnT($"[ProxyKiller] '{SourceName}': invalid <{name}> '{raw}', expected {range}; using {fallback}.");
         }
         return v;
     }
@@ -507,7 +533,7 @@ public class ProxyKillerConfig
         if (string.IsNullOrWhiteSpace(raw)) return fallback;
         string v = raw.Trim();
         if (bool.TryParse(v, out bool b)) return b;
-        KELog.Warn($"[ProxyKiller] '{SourceName}': invalid boolean '{raw}', expected true/false; using {fallback}.");
+        KELog.WarnT($"[ProxyKiller] '{SourceName}': invalid boolean '{raw}', expected true/false; using {fallback}.");
         return fallback;
     }
 

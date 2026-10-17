@@ -29,7 +29,7 @@ namespace KernelExtensions.Actions.Misc
             List<string> protocols = TargetActionHelper.ParseProtocolList(Ports);
             if (protocols.Count == 0)
             {
-                KELog.Warn($"[{nameof(PortOpenAction)}] no <Ports> given; skipped.");
+                KELog.WarnT($"[{nameof(PortOpenAction)}] no <Ports> given; skipped.");
                 return;
             }
 
@@ -37,7 +37,7 @@ namespace KernelExtensions.Actions.Misc
             {
                 if (target.GetPortState(p) == null)
                 {
-                    KELog.Warn($"[{nameof(PortOpenAction)}] port '{p}' is not present on '{target.idName}'; skipped.");
+                    KELog.WarnT($"[{nameof(PortOpenAction)}] port '{p}' is not present on '{target.idName}'; skipped.");
                     continue;
                 }
                 target.openPort(p, os.thisComputer.ip);

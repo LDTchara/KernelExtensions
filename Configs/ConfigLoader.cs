@@ -62,7 +62,7 @@ namespace KernelExtensions.Configs
                 {
                     Debug = db;
                     if (Debug)
-                        KELog.Warn("Debug mode enabled - disable before release!");
+                        KELog.WarnT("Debug mode enabled - disable before release!");
                 }
                 if (skip != null && bool.TryParse(skip.Value, out bool sv))
                     SkipVanillaIRCLogs = sv;
@@ -77,7 +77,7 @@ namespace KernelExtensions.Configs
                         .Where(v =>
                         {
                             if (KEPath.ResolveInsideExtension(v) != null) return true;
-                            KELog.Warn($"[IRC] CustomIRCLogs entry escapes the extension folder, skipped: '{v}'");
+                            KELog.WarnT($"[IRC] CustomIRCLogs entry escapes the extension folder, skipped: '{v}'");
                             return false;
                         })
                         .ToList();
@@ -106,7 +106,7 @@ namespace KernelExtensions.Configs
             }
             catch (Exception ex)
             {
-                KELog.Warn($"KE-Config.xml parse failed, using defaults: {ex.Message}");
+                KELog.WarnT($"KE-Config.xml parse failed, using defaults: {ex.Message}");
             }
         }
         private static string GetDefaultTemplate()

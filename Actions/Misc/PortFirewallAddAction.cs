@@ -31,18 +31,18 @@ namespace KernelExtensions.Actions.Misc
 
             if (ConfigValue.IsNone(Solution))
             {
-                KELog.Warn($"[{nameof(PortFirewallAddAction)}] no <Solution> given; skipped.");
+                KELog.WarnT($"[{nameof(PortFirewallAddAction)}] no <Solution> given; skipped.");
                 return;
             }
 
             // 长度：留空 = 用解本身的长度（对齐效果实现的语义）
             float rawLen = ConfigValue.ParseInRange(Length, Solution.Length, 0f, float.MaxValue, out bool lenOk);
             if (!lenOk)
-                KELog.Warn($"[{nameof(PortFirewallAddAction)}] invalid <Length> '{Length}'; using the solution length.");
+                KELog.WarnT($"[{nameof(PortFirewallAddAction)}] invalid <Length> '{Length}'; using the solution length.");
 
             float delay = ConfigValue.ParseInRange(AdditionalDelay, 0f, 0f, float.MaxValue, out bool dOk);
             if (!dOk)
-                KELog.Warn($"[{nameof(PortFirewallAddAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; using 0.");
+                KELog.WarnT($"[{nameof(PortFirewallAddAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; using 0.");
 
             PortHackV2Effects.addFirewall(os, target.idName, (int)rawLen, delay, Solution.Trim());
             TargetActionHelper.LogDone(nameof(PortFirewallAddAction), $"firewall set (solution length {(int)rawLen})", target);

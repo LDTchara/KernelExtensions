@@ -88,19 +88,19 @@ public class PortHackV2ProtocolConfig
 
         SuccessChance = ConfigValue.ParseInRange(RngRaw, 100f, 0f, 100f, out bool rngOk) / 100f;
         if (!rngOk)
-            KELog.Warn($"[PortHackV2] '{tag}': invalid <Rng> '{RngRaw}', expected 0~100; using 100 (always succeeds).");
+            KELog.WarnT($"[PortHackV2] '{tag}': invalid <Rng> '{RngRaw}', expected 0~100; using 100 (always succeeds).");
 
         TimeIfSuccess = ConfigValue.ParseInRange(TimeIfSuccessRaw, 10f, 0f, float.MaxValue, out bool tsOk);
         if (!tsOk)
-            KELog.Warn($"[PortHackV2] '{tag}': invalid <TimeIfSuccess> '{TimeIfSuccessRaw}', expected 0~3600; using 10.");
+            KELog.WarnT($"[PortHackV2] '{tag}': invalid <TimeIfSuccess> '{TimeIfSuccessRaw}', expected 0~3600; using 10.");
 
         TimeIfFail = ConfigValue.ParseInRange(TimeIfFailRaw, 3f, 0f, float.MaxValue, out bool tfOk);
         if (!tfOk)
-            KELog.Warn($"[PortHackV2] '{tag}': invalid <TimeIfFail> '{TimeIfFailRaw}', expected 0~3600; using 3.");
+            KELog.WarnT($"[PortHackV2] '{tag}': invalid <TimeIfFail> '{TimeIfFailRaw}', expected 0~3600; using 3.");
 
         StartDelay = ConfigValue.ParseInRange(StartDelayRaw, 0f, 0f, float.MaxValue, out bool sdOk);
         if (!sdOk)
-            KELog.Warn($"[PortHackV2] '{tag}': invalid <StartDelay> '{StartDelayRaw}', expected 0~36000; using 0.");
+            KELog.WarnT($"[PortHackV2] '{tag}': invalid <StartDelay> '{StartDelayRaw}', expected 0~36000; using 0.");
     }
 }
 
@@ -398,19 +398,45 @@ public class PortHackV2Config
     /// 从存档 flag 反查并加载配置。
     /// 失败（越界 / 文件缺失 / 解析异常 / 缺 &lt;Protocol&gt;）返回 null，并在日志里记 Error。
     /// </summary>
+    /// <summary>
+    /// 从存档 flag 反查并加载配置（带**终端聚合**）。
+    ///
+    /// <para>
+    /// 配置里可能有十几处值非法，逐条刷进游戏内终端会淹没玩家。
+    /// 这里把整个加载期包成一个批次，结束时由 <see cref="Utilities.KELog.EndBatch"/>
+    /// 汇总成一段（最多列 5 条，其余折叠）。
+    /// </para>
+    /// </summary>
     public static PortHackV2Config LoadByFlag(string flag)
+    {
+        Utilities.KELog.BeginBatch();
+        try
+        {
+            return LoadByFlagCore(flag);
+        }
+        finally
+        {
+            string name = string.IsNullOrEmpty(flag) || !flag.StartsWith(FlagPrefix, System.StringComparison.Ordinal)
+                ? "(unknown)"
+                : flag.Substring(FlagPrefix.Length);
+            Utilities.KELog.EndBatch("PortHackV2/" + name);
+        }
+    }
+
+    /// <summary>真正的加载实现（<see cref="LoadByFlag"/> 的聚合包装见上）。</summary>
+    private static PortHackV2Config LoadByFlagCore(string flag)
     {
         if (string.IsNullOrEmpty(flag)) return null;
         if (!flag.StartsWith(FlagPrefix, StringComparison.Ordinal))
         {
-            KELog.Error($"[PortHackV2] flag '{flag}' does not start with '{FlagPrefix}'.");
+            KELog.ErrorT($"[PortHackV2] flag '{flag}' does not start with '{FlagPrefix}'.");
             return null;
         }
 
         string name = flag.Substring(FlagPrefix.Length);
         if (string.IsNullOrWhiteSpace(name))
         {
-            KELog.Error($"[PortHackV2] flag '{flag}' has an empty config name.");
+            KELog.ErrorT($"[PortHackV2] flag '{flag}' has an empty config name.");
             return null;
         }
 
@@ -419,7 +445,7 @@ public class PortHackV2Config
         string path = KEPath.ResolveInsideExtension(rel);
         if (path == null || !File.Exists(path))
         {
-            KELog.Error($"[PortHackV2] config not found for flag '{flag}': {rel}");
+            KELog.ErrorT($"[PortHackV2] config not found for flag '{flag}': {rel}");
             return null;
         }
 
@@ -428,7 +454,7 @@ public class PortHackV2Config
             var cfg = XmlConfigLoader.Load<PortHackV2Config>(path, rel);
             if (cfg == null || cfg.ProtocolNames.Count == 0)
             {
-                KELog.Error($"[PortHackV2] config '{rel}' needs at least one <Protocol> with a non-empty <Name>.");
+                KELog.ErrorT($"[PortHackV2] config '{rel}' needs at least one <Protocol> with a non-empty <Name>.");
                 return null;
             }
             cfg.SourceName = name;
@@ -437,7 +463,7 @@ public class PortHackV2Config
         }
         catch (Exception ex)
         {
-            KELog.Error($"[PortHackV2] failed to load {rel}: {ex.Message}");
+            KELog.ErrorT($"[PortHackV2] failed to load {rel}: {ex.Message}");
             return null;
         }
     }
@@ -450,7 +476,7 @@ public class PortHackV2Config
     {
         CompleteDelay = ConfigValue.ParseInRange(CompleteDelayRaw, 5f, 0f, float.MaxValue, out bool cdOk);
         if (!cdOk)
-            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <CompleteDelay> '{CompleteDelayRaw}', expected 0~600; using 5.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <CompleteDelay> '{CompleteDelayRaw}', expected 0~600; using 5.");
 
         Time = ConfigValue.ParseInRange(TimeRaw, 10f, 0f, float.MaxValue, out bool tOk);
 
@@ -458,7 +484,7 @@ public class PortHackV2Config
         string showEst = ShowEstimateRaw?.Trim();
         ShowEstimate = string.IsNullOrEmpty(showEst) || !bool.TryParse(showEst, out bool se) || se;
         if (!tOk)
-            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 
         PolyhedronShape = ParsePolyhedron(PolyhedronRaw);
         PolyhedronStyle = ParsePolyhedronStyle(PolyhedronStyleRaw);
@@ -492,7 +518,7 @@ public class PortHackV2Config
             // 上限只为挡住"转 int 溢出"（下面有 (int)n），不是平衡考虑
             float n = ConfigValue.ParseInRange(reqPorts, 0f, -1f, 1e18f, out bool rpOk);
             if (!rpOk)
-                KELog.Warn($"[PortHackV2] '{SourceName}': invalid <RequireCrackedPorts> '{RequireCrackedPortsRaw}'; "
+                KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <RequireCrackedPorts> '{RequireCrackedPortsRaw}'; "
                     + "expected 'auto' or a non-negative number. Not checked.");
             RequireCrackedPortsAutoMode = false;
             RequireCrackedPorts = n > 0f ? (int)n : 0;
@@ -502,29 +528,29 @@ public class PortHackV2Config
 
         SpinUpRatio = ConfigValue.ParseInRange(SpinUpRatioRaw, 0.1f, 0f, 1f, out bool surOk);
         if (!surOk)
-            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinUpRatio> '{SpinUpRatioRaw}', expected 0~1; using 0.1.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <SpinUpRatio> '{SpinUpRatioRaw}', expected 0~1; using 0.1.");
 
         // 负数 = 走比例（对齐本项目的「负数 = 用默认/继承」约定）
         SpinUpSeconds = ConfigValue.ParseInRange(SpinUpSecondsRaw, -1f, -1f, float.MaxValue, out bool susOk);
         if (!susOk)
-            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinUpTime> '{SpinUpSecondsRaw}', expected -1~3600; using the ratio.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <SpinUpTime> '{SpinUpSecondsRaw}', expected -1~3600; using the ratio.");
 
         SpinDownSeconds = ConfigValue.ParseInRange(SpinDownSecondsRaw, 1.7f, 0f, float.MaxValue, out bool sdsOk);
         if (!sdsOk)
-            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinDownTime> '{SpinDownSecondsRaw}', expected 0~600; using 1.7.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <SpinDownTime> '{SpinDownSecondsRaw}', expected 0~600; using 1.7.");
 
         // 目标转速：允许 0（立体不转 —— 那是个合法设计选择），上限不限
         // （平衡是作者的事；过高只会"跳帧"，不会出错）。
         SpinSpeed = ConfigValue.ParseInRange(SpinSpeedRaw, DefaultSpinSpeed,
             0f, float.MaxValue, out bool ssOk);
         if (!ssOk)
-            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <SpinSpeed> '{SpinSpeedRaw}', "
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <SpinSpeed> '{SpinSpeedRaw}', "
                 + $"expected a finite number >= 0; using {DefaultSpinSpeed}.");
 
         // 慢转速度：负数 = 按目标转速等比缩放（「负数 = 用默认/继承」约定）
         IdleSpinSpeed = ConfigValue.ParseInRange(IdleSpinSpeedRaw, -1f, -1f, float.MaxValue, out bool issOk);
         if (!issOk)
-            KELog.Warn($"[PortHackV2] '{SourceName}': invalid <IdleSpinSpeed> '{IdleSpinSpeedRaw}', "
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <IdleSpinSpeed> '{IdleSpinSpeedRaw}', "
                 + "expected a finite number >= 0 (or negative for auto); scaling with <SpinSpeed>.");
 
         foreach (var p in Protocols) p?.ResolveValues(SourceName);
@@ -541,7 +567,7 @@ public class PortHackV2Config
         if (Enum.TryParse(raw.Trim(), ignoreCase: true, out PortHackV2BackgroundEffect effect))
             return effect;
 
-        KELog.Warn($"[PortHackV2] '{SourceName}': unknown <BackgroundEffect> '{raw}'; "
+        KELog.WarnT($"[PortHackV2] '{SourceName}': unknown <BackgroundEffect> '{raw}'; "
             + "expected NONE / ZoomingDotGrid / HexGrid / Grid / DepthDotGrid. Using ZoomingDotGrid.");
         return PortHackV2BackgroundEffect.ZoomingDotGrid;
     }
@@ -557,7 +583,7 @@ public class PortHackV2Config
         if (Enum.TryParse(raw.Trim(), ignoreCase: true, out KPlatonicShape shape))
             return shape;
 
-        KELog.Warn($"[PortHackV2] '{SourceName}': unknown <Polyhedron> '{raw}'; "
+        KELog.WarnT($"[PortHackV2] '{SourceName}': unknown <Polyhedron> '{raw}'; "
             + "expected Tetrahedron / Cube / Octahedron / Dodecahedron / Icosahedron. Using Cube.");
         return KPlatonicShape.Cube;
     }
@@ -591,7 +617,7 @@ public class PortHackV2Config
             || v.Equals("both", StringComparison.OrdinalIgnoreCase))
             return KPolyhedronStyle.SolidWire;
 
-        KELog.Warn($"[PortHackV2] '{SourceName}': unknown <PolyhedronStyle> '{raw}'; "
+        KELog.WarnT($"[PortHackV2] '{SourceName}': unknown <PolyhedronStyle> '{raw}'; "
             + "expected Wireframe / Solid / SolidWire. Using Wireframe.");
         return KPolyhedronStyle.Wireframe;
     }

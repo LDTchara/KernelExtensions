@@ -266,7 +266,7 @@ namespace KernelExtensions.Daemons
             }
             catch (Exception ex)
             {
-                KELog.Error($"[CustomHeart] action failed: {ex.Message}");
+                KELog.ErrorT($"[CustomHeart] action failed: {ex.Message}");
             }
         }
 

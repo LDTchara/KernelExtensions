@@ -73,7 +73,7 @@ namespace KernelExtensions.Actions.Misc
             }
             catch (Exception ex)
             {
-                KELog.Error("[FlashScreen] Trigger failed: " + ex.Message);
+                KELog.ErrorT("[FlashScreen] Trigger failed: " + ex.Message);
             }
         }
 

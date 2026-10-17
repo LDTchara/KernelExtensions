@@ -93,7 +93,7 @@ namespace KernelExtensions.Configs
                     if (!string.IsNullOrEmpty(text))
                     {
                         // 两种写法同时给了路径 —— 说清哪个生效，否则作者无从判断
-                        KELog.Warn("[ActionHook] both `file` attribute and text content give a path; "
+                        KELog.WarnT("[ActionHook] both `file` attribute and text content give a path; "
                             + $"using the attribute ('{attr}'), ignoring the text ('{text}').");
                     }
                     return attr;
@@ -164,7 +164,7 @@ namespace KernelExtensions.Configs
             }
             catch (Exception e)
             {
-                KELog.Error($"[ActionHook] '{source}:<{point}>' aborted: {e}");
+                KELog.ErrorT($"[ActionHook] '{source}:<{point}>' aborted: {e}");
             }
         }
     }

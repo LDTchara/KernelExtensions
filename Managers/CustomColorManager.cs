@@ -267,7 +267,7 @@ namespace KernelExtensions.Managers
                 //    这类静默跳过最难排查（颜色就是不变，且没有任何日志）。
                 if (ColorHelper.ParseStaticColor(matched, SentinelColor) == SentinelColor)
                 {
-                    KELog.Warn($"[CustomColor] '{fullPath}': field '{fieldName}' value '{matched}' "
+                    KELog.WarnT($"[CustomColor] '{fullPath}': field '{fieldName}' value '{matched}' "
                         + "matched no preset and is not a built-in dynamic keyword "
                         + "(LDTchara / RGB / Gradient) - no colour applied."
                         + (matched.StartsWith("Rainbow", StringComparison.OrdinalIgnoreCase)

@@ -20,14 +20,14 @@ namespace KernelExtensions.Actions.CustomTrial
         {
             if (string.IsNullOrEmpty(ConfigName))
             {
-                KELog.Error("[RestoreCustomTrialNodes] ConfigName attribute is missing.");
+                KELog.ErrorT("[RestoreCustomTrialNodes] ConfigName attribute is missing.");
                 return;
             }
 
             var nodesToRestore = CustomTrialNodeStorage.GetDeletedNodes(ConfigName);
             if (nodesToRestore.Count == 0)
             {
-                KELog.Warn($"[RestoreCustomTrialNodes] No deleted nodes found for config '{ConfigName}'.");
+                KELog.WarnT($"[RestoreCustomTrialNodes] No deleted nodes found for config '{ConfigName}'.");
                 return;
             }
 

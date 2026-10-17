@@ -24,7 +24,7 @@ namespace KernelExtensions.Actions.Misc
 
             float t = ConfigValue.ParseInRange(Time, 10f, 0f, float.MaxValue, out bool ok);
             if (!ok)
-                KELog.Warn($"[{nameof(PortProxyAddAction)}] invalid <Time> '{Time}'; using 10.");
+                KELog.WarnT($"[{nameof(PortProxyAddAction)}] invalid <Time> '{Time}'; using 10.");
 
             PortHackV2Effects.addProxy(os, target.idName, (int)t);
             TargetActionHelper.LogDone(nameof(PortProxyAddAction), $"proxy added (time {(int)t})", target);

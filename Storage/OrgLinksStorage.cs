@@ -37,20 +37,20 @@ namespace KernelExtensions.Storage
         {
             if (string.IsNullOrWhiteSpace(sourceComp))
             {
-                KELog.Error("[LinkControl] SourceComp is required.");
+                KELog.ErrorT("[LinkControl] SourceComp is required.");
                 return false;
             }
 
             Computer src = Programs.getComputer(os, sourceComp);
             if (src == null)
             {
-                KELog.Error($"[LinkControl] reset: SourceComp unknown: {sourceComp}");
+                KELog.ErrorT($"[LinkControl] reset: SourceComp unknown: {sourceComp}");
                 return false;
             }
 
             if (!_orgBaseline.TryGetValue(src.idName ?? sourceComp, out var baseline) || baseline.Count == 0)
             {
-                KELog.Warn($"[LinkControl] reset: no OrgLinks recorded for {sourceComp}");
+                KELog.WarnT($"[LinkControl] reset: no OrgLinks recorded for {sourceComp}");
                 return false;
             }
 
@@ -74,12 +74,12 @@ namespace KernelExtensions.Storage
 
             if (string.IsNullOrWhiteSpace(sourceComp))
             {
-                KELog.Error("[LinkControl] SourceComp is required.");
+                KELog.ErrorT("[LinkControl] SourceComp is required.");
                 return false;
             }
             if (string.IsNullOrWhiteSpace(targetComp))
             {
-                KELog.Error($"[LinkControl] {op} requires TargetComp.");
+                KELog.ErrorT($"[LinkControl] {op} requires TargetComp.");
                 return false;
             }
 
@@ -87,7 +87,7 @@ namespace KernelExtensions.Storage
             Computer tc = Programs.getComputer(os, targetComp);
             if (sc == null || tc == null)
             {
-                KELog.Error($"[LinkControl] {op}: SourceComp or TargetComp unknown: {sourceComp} / {targetComp}");
+                KELog.ErrorT($"[LinkControl] {op}: SourceComp or TargetComp unknown: {sourceComp} / {targetComp}");
                 return false;
             }
 
@@ -145,7 +145,7 @@ namespace KernelExtensions.Storage
             // 读档但存档里没有任何 &lt;OrgLinks&gt;（旧存档 / 非 KE 存档）：基线退化为“当前 links 快照”，
             // 其中可能含玩家当时的临时增删，不再是 OriginalLinks —— 仅提示，不阻断。
             if (_saveLoadSeen && _pendingOrgLinkIds.Count == 0)
-                KELog.Warn("[LinkControl] save carries no <OrgLinks> records; org baseline falls back to the current links.");
+                KELog.WarnT("[LinkControl] save carries no <OrgLinks> records; org baseline falls back to the current links.");
             _saveLoadSeen = false;
 
             // 读档场景：所有电脑已加载，暂存 → 基线（无顺序依赖）

@@ -32,17 +32,17 @@ namespace KernelExtensions.Actions.Misc
 
             if (target.firewall == null)
             {
-                KELog.Warn($"[{nameof(PortFirewallRerollAction)}] '{target.idName}' has no firewall; skipped.");
+                KELog.WarnT($"[{nameof(PortFirewallRerollAction)}] '{target.idName}' has no firewall; skipped.");
                 return;
             }
 
             float len = ConfigValue.ParseInRange(Length, 12f, 0f, float.MaxValue, out bool lenOk);
             if (!lenOk)
-                KELog.Warn($"[{nameof(PortFirewallRerollAction)}] invalid <Length> '{Length}'; using 12.");
+                KELog.WarnT($"[{nameof(PortFirewallRerollAction)}] invalid <Length> '{Length}'; using 12.");
 
             float delay = ConfigValue.ParseInRange(AdditionalDelay, 0f, 0f, float.MaxValue, out bool dOk);
             if (!dOk)
-                KELog.Warn($"[{nameof(PortFirewallRerollAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; using 0.");
+                KELog.WarnT($"[{nameof(PortFirewallRerollAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; using 0.");
 
             bool reset = TargetActionHelper.ParseBool(Reset, true);
 

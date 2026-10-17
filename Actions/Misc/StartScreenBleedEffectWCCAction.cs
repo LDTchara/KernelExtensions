@@ -64,7 +64,7 @@ namespace KernelExtensions.Actions.Misc
             }
             catch (Exception ex)
             {
-                KELog.Error("[WCC] Trigger failed: " + ex.Message);
+                KELog.ErrorT("[WCC] Trigger failed: " + ex.Message);
             }
         }
 

@@ -27,7 +27,7 @@ namespace KernelExtensions.Actions.Misc
 
             if (!target.hasProxy)
             {
-                KELog.Warn($"[{nameof(PortProxySolveAction)}] '{target.idName}' has no proxy; skipped.");
+                KELog.WarnT($"[{nameof(PortProxySolveAction)}] '{target.idName}' has no proxy; skipped.");
                 return;
             }
 

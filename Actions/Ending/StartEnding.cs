@@ -34,14 +34,14 @@ namespace KernelExtensions.Actions.Ending
         {
             if (ConfigValue.IsNone(File))
             {
-                KELog.Error("[StartEnding] File attribute is required (path to an <Ending> config XML, relative to the extension root).");
+                KELog.ErrorT("[StartEnding] File attribute is required (path to an <Ending> config XML, relative to the extension root).");
                 return;
             }
 
             EndingConfig cfg = EndingConfig.Load(File);
             if (cfg == null)
             {
-                KELog.Error($"[StartEnding] failed to load ending config: {File}");
+                KELog.ErrorT($"[StartEnding] failed to load ending config: {File}");
                 return;
             }
 
@@ -55,7 +55,7 @@ namespace KernelExtensions.Actions.Ending
                     return;
                 }
                 try { RunnableConditionalActions.LoadIntoOS(afterActionPath, os); }
-                catch (Exception ex) { KELog.Warn($"[StartEnding] LoadIntoOS failed: {ex.Message}"); }
+                catch (Exception ex) { KELog.WarnT($"[StartEnding] LoadIntoOS failed: {ex.Message}"); }
             };
 
             // ---- 创建并挂载结局 Module —— 直接设置 os.endingSequence ----
