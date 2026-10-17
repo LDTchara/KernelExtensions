@@ -69,6 +69,12 @@ no shell needed at all.
     in a means vanilla never provided.
 
 - The speed multiplier is driven **linearly by the RAM ramp** (starting at 50MB, ramping towards `<BurstTarget>`).
+- ⚠️ **The RAM ramp is capped by available system memory**: the program never pushes "used RAM"
+  past the total. If other programs already fill memory it stops at what fits (the speed multiplier
+  then cannot reach its target either — that is a physical limit, not a bug).
+  Implementation compares the **integer MB the frame would add** against `os.ramAvaliable` and
+  deducts it synchronously (matching KernelFix's fix for the vanilla `DLCTraceSlower`
+  high-refresh-rate `(int)` truncation issue).
 - With N shells overloading at once, the total rate is N × the multiplier.
 - It re-scans every frame, so shells **started after it** are accelerated just the same.
 - It only touches shells that are **currently overloading** — otherwise an idle shell would start its
