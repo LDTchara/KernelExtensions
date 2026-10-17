@@ -253,23 +253,19 @@ public class ProxyKillerExe : GameExecutable
         // ProgressionFlags 只有 HasFlag / GetFlagStartingWith（后者只给第一个），
         // 要检出多 flag 只能反射读内部 List；反射失败则退化为"取第一个匹配"。
         bool enumerated = false;
-        try
+        List<string> all = TryReadProgressionFlags(pf);
+        if (all != null)
         {
-            if (_progressionFlagsField?.GetValue(pf) is List<string> all)
-            {
-                enumerated = true;
-                foreach (string f in all)
-                    if (f != null && f.StartsWith(ProxyKillerConfig.FlagPrefix, StringComparison.Ordinal))
-                        found.Add(f);
-            }
-        }
-        catch (Exception ex)
-        {
-            KELog.Warn($"{LogTag} could not enumerate flags ({ex.Message}); falling back to first match.");
+            enumerated = true;
+            foreach (string f in all)
+                if (f != null && f.StartsWith(ProxyKillerConfig.FlagPrefix, StringComparison.Ordinal))
+                    found.Add(f);
         }
 
         if (!enumerated)
         {
+            KELog.Warn($"{LogTag} could not enumerate flags (ProgressionFlags.Flags not readable); "
+                + "falling back to first match - multiple config flags will NOT be detected.");
             string one = pf.GetFlagStartingWith(ProxyKillerConfig.FlagPrefix);
             if (!string.IsNullOrEmpty(one)) found.Add(one);
         }
@@ -280,9 +276,36 @@ public class ProxyKillerExe : GameExecutable
         return found;
     }
 
+    // Pathfinder 的 ProgressionFlags.Flags 是**公开成员**（属性或字段皆有可能）。
+    // ⚠️ 旧实现只找 NonPublic **字段**，两种都对不上 → 取不到 → enumerated=False
+    //    → 退化成"只取第一个"，**多 flag 永远检不出来**。属性/字段、公开/非公开都试。
+    private static readonly System.Reflection.PropertyInfo _progressionFlagsProp =
+        typeof(ProgressionFlags).GetProperty("Flags",
+            System.Reflection.BindingFlags.Instance
+            | System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.NonPublic);
+
     private static readonly System.Reflection.FieldInfo _progressionFlagsField =
         typeof(ProgressionFlags).GetField("Flags",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            System.Reflection.BindingFlags.Instance
+            | System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.NonPublic);
+
+    /// <summary>读出全部 flag；两种反射都失败返回 null（调用方退化为"取第一个"）。</summary>
+    private static List<string> TryReadProgressionFlags(ProgressionFlags pf)
+    {
+        try
+        {
+            if (_progressionFlagsProp?.GetValue(pf) is List<string> viaProp) return viaProp;
+        }
+        catch { /* 属性读取异常 → 试字段 */ }
+        try
+        {
+            if (_progressionFlagsField?.GetValue(pf) is List<string> viaField) return viaField;
+        }
+        catch { /* 字段读取异常 → 放弃 */ }
+        return null;
+    }
 
     /// <summary>
     /// 进入锁定态。
