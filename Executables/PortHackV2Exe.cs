@@ -170,6 +170,7 @@ public class PortHackV2Exe : GameExecutable
         }
 
         CurrentConfig = PortHackV2Config.LoadByFlag(flags[0]);
+        WarnUnregisteredProtocols(CurrentConfig);
         if (CurrentConfig == null)
         {
             // 具体原因 LoadByFlag 内部已经记进日志（含文件路径与异常）；这里只给玩家一句
@@ -902,7 +903,20 @@ public class PortHackV2Exe : GameExecutable
         public string Label;
         public bool Met;
         public string Detail;
+
+        /// <summary>汇总行（「N satisfied」/「+M more unmet」）：不画状态点、用暗底。</summary>
+        public bool Summary;
     }
+
+    /// <summary>前置行固定行高（像素）。
+    ///
+    /// <para>
+    /// 固定 = 不随行数压缩。此前用 <c>avail / rows.Count</c> 自适应，行多时会压到 16px，
+    /// 文字挤成一团看不清；改成固定 30（条高 26，与正常观感一致），
+    /// 行数超出容量时改为**折叠已满足项 + 溢出汇总行**，而不是压行高。
+    /// </para>
+    /// </summary>
+    private const int LISTING_ROW_HEIGHT = 30;
 
     /// <summary>
     /// 组装 Listing 行：先前置（防火墙 / 代理），再各协议前置端口。
@@ -939,17 +953,31 @@ public class PortHackV2Exe : GameExecutable
             });
 
         foreach (string p in CurrentConfig.RequireOpenPortsBefore)
+        {
+            // 标签分三种：
+            //  · 正常显示名（协议已注册 + 目标机有）
+            //  · `xxx (unknown protocol)` —— 协议压根没注册（拼错，或稍后由 <PFPorts>/PortAdd 注册）
+            //  · `xxx (not on target)`   —— 协议存在但**这台机器**没有该端口（可能漏了注册步骤，或靠 Action 后加）
+            bool registered = IsProtocolRegistered(p);
+            bool present = TargetHasPort(p);
+            string label = ProtocolDisplayName(p);
+            if (!registered)
+                label += " " + KELoc.Loc("PORT_HACK_V2_TAG_UNKNOWN_PROTOCOL", "(unknown protocol)");
+            else if (!present)
+                label += " " + KELoc.Loc("PORT_HACK_V2_TAG_NOT_ON_TARGET", "(not on target)");
+
             rows.Add(new ListingRow
             {
-                Label = ProtocolDisplayName(p),
+                Label = label,
                 Met = PortRequirementMet(p),
-                Detail = ""            // 同上：不再逐行写 "open this port first"
+                Detail = ""
             });
+        }
 
         return rows;
     }
 
-    /// <summary>协议名 → 显示名；未注册的协议保留原文并标注，便于排查拼写错误。</summary>
+    /// <summary>协议名 → 显示名；未注册的协议原样返回（标注由调用方加，避免重复）。</summary>
     private static string ProtocolDisplayName(string protocol)
     {
         try
@@ -958,7 +986,46 @@ public class PortHackV2Exe : GameExecutable
                 return PortManager.GetPortRecordFromProtocol(protocol).DefaultDisplayName;
         }
         catch { }
-        return $"{protocol} <unknown>";
+        return protocol;
+    }
+
+    /// <summary>协议是否已在 Pathfinder 全局注册表里（原版内置 / 模组注册 / 读档补注册都算）。</summary>
+    private static bool IsProtocolRegistered(string protocol)
+    {
+        if (string.IsNullOrEmpty(protocol)) return false;
+        try { return PortManager.IsPortRegistered(protocol); }
+        catch { return false; }
+    }
+
+    /// <summary>目标机上是否存在该协议的端口（与「是否已注册」是两件事）。</summary>
+    private bool TargetHasPort(string protocol)
+    {
+        try { return Target?.GetPortState(protocol) != null; }
+        catch { return false; }
+    }
+
+    /// <summary>
+    /// 配置加载后做一次「协议名是否存在」的体检：未注册的协议大概率是拼错，
+    /// 但也可能是**计划稍后由 `&lt;PFPorts&gt;` / `PortAdd` 注册**（合法用法），
+    /// 所以只 **Warn（进终端）**、不锁死 —— Locked 会误伤动态注册场景。
+    /// 该配置会在 Listing 一直阻塞到协议被注册且端口打开为止。
+    /// </summary>
+    private static void WarnUnregisteredProtocols(PortHackV2Config cfg)
+    {
+        if (cfg == null) return;
+        List<string> unknown = new();
+        try
+        {
+            foreach (string p in cfg.RequireOpenPortsBefore)
+                if (!IsProtocolRegistered(p)) unknown.Add(p);
+        }
+        catch { }
+        if (unknown.Count == 0) return;
+
+        KELog.WarnT($"[PortHackV2] '{cfg.SourceName}': <RequireOpenPortsBefore> contains unregistered protocol(s): "
+            + string.Join(", ", unknown)
+            + " — likely a typo; if intentional, register them first (<PFPorts> or PortAdd). "
+            + "The crack stays blocked until they are registered and opened.");
     }
 
     /// <summary>
@@ -1004,29 +1071,83 @@ public class PortHackV2Exe : GameExecutable
 
         List<ListingRow> rows = BuildListingRows();
 
-        // 行高按可用高度自适应（行多时压缩，行少时保持原高）——避免小面板下越界
+        // ── 行布局：**固定行高**，行数超出容量时折叠/汇总，绝不压缩行高、也绝不静默丢弃 ──
+        // 容量 = 可用高度 / 固定行高；底部 22px 留给「预计用时」那行。
         int top = ContentTop + 20;
         int avail = Math.Max(0, ContentBottom - 22 - top);
-        int rowH = rows.Count > 0 ? Math.Min(30, Math.Max(16, avail / rows.Count)) : 30;
-        int y = top;
+        int capacity = Math.Max(1, avail / LISTING_ROW_HEIGHT);
 
-        foreach (ListingRow row in rows)
+        List<ListingRow> drawRows = new();
+        if (rows.Count <= capacity)
         {
-            if (y + rowH > ContentBottom - 22) break;    // 行数超出可视区就不画了（不裁切半行）
+            // 放得下：保持原顺序，全部显示（行位置稳定，不因满足状态跳来跳去）
+            drawRows.AddRange(rows);
+        }
+        else
+        {
+            // 放不下：**未满足优先**（玩家只关心还差什么），满足项折叠成一行
+            List<ListingRow> unmet = rows.Where(r => !r.Met).ToList();
+            List<ListingRow> met = rows.Where(r => r.Met).ToList();
+            // ⚠️ 溢出时**必须**给汇总行留 1 行 —— 之前的写法在 met==0 时把整容量都给了
+            //    未满足行，汇总行被挤到边界外（实测：第 7 行压到「预计用时」上）。
+            int roomForUnmet = Math.Max(0, capacity - 1);
 
+            if (unmet.Count <= roomForUnmet)
+            {
+                drawRows.AddRange(unmet);
+                if (met.Count > 0)
+                    drawRows.Add(new ListingRow
+                    {
+                        Label = KELoc.Format("PORT_HACK_V2_ROW_SATISFIED", "{0} satisfied", met.Count),
+                        Met = true,
+                        Summary = true
+                    });
+            }
+            else
+            {
+                drawRows.AddRange(unmet.Take(roomForUnmet));
+                int hidden = unmet.Count - roomForUnmet;
+                drawRows.Add(new ListingRow
+                {
+                    Label = met.Count > 0
+                        ? KELoc.Format("PORT_HACK_V2_ROW_MORE_UNMET_OK", "+{0} more unmet \u00b7 {1} satisfied", hidden, met.Count)
+                        : KELoc.Format("PORT_HACK_V2_ROW_MORE_UNMET", "+{0} more unmet", hidden),
+                    Met = false,
+                    Summary = true
+                });
+            }
+        }
+
+        int y = top;
+        foreach (ListingRow row in drawRows)
+        {
+            // 硬边界：绝不让行画进底部「预计用时」区（宁可少画一行）
+            if (y + LISTING_ROW_HEIGHT > ContentBottom - 22) break;
+
+            int rowH = LISTING_ROW_HEIGHT;
             Rectangle bar = new Rectangle(x, y, w, rowH - 4);
-            Color bg = row.Met ? os.unlockedColor : os.lockedColor;
-            RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, bg * (0.85f * fade));
 
-            // 左侧状态点：满足 = 高亮，未满足 = 暗
-            RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, Math.Max(2, bar.Height - 8),
-                row.Met ? _accent * fade : os.darkBackgroundColor * fade);
+            if (row.Summary)
+            {
+                // 汇总行：暗底 + 无状态点（它不是一条具体前置）
+                RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height,
+                    os.darkBackgroundColor * (0.85f * fade));
+            }
+            else
+            {
+                Color bg = row.Met ? os.unlockedColor : os.lockedColor;
+                RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, bg * (0.85f * fade));
 
-            // 一行只写名字（"open this port first" 这类说明已移除 —— 每行都重复同一句话没有信息量，
-            // 顶部那行固定文案已经把"为什么停着"讲清楚了）
+                // 左侧状态点：**满足 = 白色**（不跟 AccentColor，避免与动态色混在一起），未满足 = 暗
+                RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, Math.Max(2, bar.Height - 8),
+                    row.Met ? Color.White * fade : os.darkBackgroundColor * fade);
+            }
+
+            // 一行只写名字（长名字由 doFontLabelToSize 等比缩小，不截断）
             TextItem.doFontLabelToSize(
                 new Rectangle(bar.X + 16, bar.Y + 1, bar.Width - 22, Math.Max(9, bar.Height - 2)),
-                row.Label, GuiData.smallfont, Color.White * (0.95f * fade));
+                row.Label, GuiData.smallfont,
+                (row.Summary ? Color.White * 0.72f : Color.White * 0.95f) * fade);
 
             y += rowH;
         }

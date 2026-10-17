@@ -193,8 +193,9 @@ namespace KernelExtensions
             RegisterActionWithFallback<ChangeThemeColorAction>("ChangeThemeColor");
 
             // 2.10 端口 / PortHackV2
-            // PortControl：端口注册 / 移除（随端口破解工具箱一并从 AC 分支迁入）
-            RegisterActionWithFallback<PortControlAction>("PortControl");
+            // 端口增删（原 PortControl 拆分：一个 Action 干一件事）
+            RegisterActionWithFallback<PortAddAction>("PortAdd");
+            RegisterActionWithFallback<PortRemoveAction>("PortRemove");
 
             // 目标机原子动作：一个动作干一件事（端口 / 防火墙 / 代理分别独立），
             // 供 PortHackV2 的动作点或任何其它系统复用。
@@ -299,9 +300,22 @@ namespace KernelExtensions
         // ============================================================
 
         /// <summary>添加公共静态方法用于注册端口</summary>
-        public static void LoadActionPorts(string protocol, string displayName, int portNum)
+        /// <summary>
+        /// 确保协议在 Pathfinder 全局注册表里（已注册则**不重复注册** —— 重复会往
+        /// <c>PortManager.CustomPorts</c> 塞第二条同协议记录，污染全局表）。
+        /// 供 <see cref="Actions.Misc.PortAddAction"/> 使用。
+        /// </summary>
+        public static void EnsurePortProtocolRegistered(string protocol, string displayName, int portNum)
         {
-            Pathfinder.Port.PortManager.RegisterPort(protocol, displayName, portNum);
+            try
+            {
+                if (Pathfinder.Port.PortManager.IsPortRegistered(protocol)) return;
+                Pathfinder.Port.PortManager.RegisterPort(protocol, displayName, portNum);
+            }
+            catch (Exception ex)
+            {
+                KELog.WarnT($"[KernelExtensions] failed to register port protocol '{protocol}': {ex.Message}");
+            }
         }
 
         public override bool Unload()

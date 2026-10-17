@@ -71,8 +71,8 @@ All detailed documentation, configuration guides, and action references live on 
   Block account creation with banned usernames via the `BannedUsernames` section of KE-Config.xml, with configurable (direct/random-pool) rejection reasons.
 - **自定义破解与代理工具 (Crackers & Proxy Tools)** – `PortHackV2` 端口破解程序（多协议并行、5 种柏拉图立体动画演出、可选实心/线框呈现）与 `ProxyKiller` 常驻代理加速器（分档内存占用、可主动过载）。  
   `PortHackV2`, a port cracker (parallel protocols, five Platonic-solid animations, wireframe/solid rendering) and `ProxyKiller`, a resident proxy accelerator (tiered RAM use, optional self-overload).
-- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – **46 个 Action** + **6 个可执行程序** + **2 个守护进程**：终端交互、音效、标题横幅、自定义结局、目标机端口/防火墙/代理的原子操作等。  
-  **46 Actions** plus **6 executables** and **2 daemons**: terminal interaction, sound effects, title banners, custom endings, and atomic port/firewall/proxy operations on target machines.
+- **自定义 Action 与可执行程序 (Custom Actions & Executables)** – **47 个 Action** + **6 个可执行程序** + **2 个守护进程**：终端交互、音效、标题横幅、自定义结局、目标机端口/防火墙/代理的原子操作等。  
+  **47 Actions** plus **6 executables** and **2 daemons**: terminal interaction, sound effects, title banners, custom endings, and atomic port/firewall/proxy operations on target machines.
 - **主菜单水印与 RAM 显示 (Watermark & RAM Display)** – 彩虹流动 + 逐字晃动的水印（`<Watermark>` 可关），以及 RAM 显示增强。  
   A rainbow, per-character-wobbling watermark (`<Watermark>` can disable it) and an enhanced RAM display.
 - **屏幕特效与节点外观 (Screen Effects & Node Look)** – `FlashScreen` 闪屏、`StartScreenBleedEffectWCC` 画面渗色、节点自定义图标、节点 self-replacement 占位符。  
@@ -96,7 +96,7 @@ All detailed documentation, configuration guides, and action references live on 
 
 | 冲突面 | 现状 |
 |--------|------|
-| **Action 注册名**（装 SASS 后 KE 曾**完全加载失败**）| ✅ **已修** —— KE 的 46 个 Action 一律**双名注册**（原名 + `KE` + 原名），重名只记日志、不再中断加载 |
+| **Action 注册名**（装 SASS 后 KE 曾**完全加载失败**）| ✅ **已修** —— KE 的 47 个 Action 一律**双名注册**（原名 + `KE` + 原名），重名只记日志、不再中断加载 |
 | **多轨音乐争播放链** | ✅ **压制基本完整** —— SASS 的播放入口全在 `MusicManager` 下游，PS 拦得住；原版两处 `MediaPlayer.Play` 也都在 `MusicManager` 内部 |
 | **`getVolume` 条件性接管** | ⚠️ **唯一剩余裂缝**：SASS 在 `IsBaseGameSong == false` 时接管，PS 的音量联动可能读到 SASS 的浓入淡出中间值。**未实施加固**（加固方案见仓库内分析档） |
 
@@ -106,7 +106,7 @@ The three former conflict surfaces, as they stand now:
 
 | Surface | Status |
 |---------|--------|
-| **Action registration names** (KE used to **fail to load entirely** with SASS installed) | ✅ **Fixed** — all 46 KE Actions register **two names** (original + `KE` + original); a collision is logged instead of aborting the load |
+| **Action registration names** (KE used to **fail to load entirely** with SASS installed) | ✅ **Fixed** — all 47 KE Actions register **two names** (original + `KE` + original); a collision is logged instead of aborting the load |
 | **Multi-track music fighting over the playback chain** | ✅ **Suppression is essentially complete** — SASS's playback entry points all sit downstream of `MusicManager`, which PS intercepts; both vanilla `MediaPlayer.Play` calls are inside `MusicManager` too |
 | **Conditional `getVolume` takeover** | ⚠️ **The one remaining crack**: SASS takes over when `IsBaseGameSong == false`, so PS's volume linkage may read SASS's crossfade mid-values. **Not hardened yet** (the hardening plan is in the repository's analysis doc) |
 
