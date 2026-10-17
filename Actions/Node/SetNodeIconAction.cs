@@ -66,7 +66,7 @@ namespace KernelExtensions.Actions.Node
                     return;
                 }
                 comp.icon = iconKey;
-                KELog.Warn($"[SetNodeIcon] custom texture not found: {iconKey}");
+                KELog.WarnT($"[SetNodeIcon] custom texture not found: {iconKey}");
                 return;
             }
 

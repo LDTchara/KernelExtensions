@@ -30,13 +30,13 @@ namespace KernelExtensions.Utilities
             string fullPath = KEPath.ResolveInside(cleanPath, extensionRoot);
             if (fullPath == null)
             {
-                KELog.Warn($"[SoundHelper] path escapes the extension folder: {soundPath}");
+                KELog.WarnT($"[SoundHelper] path escapes the extension folder: {soundPath}");
                 return;
             }
 
             if (!File.Exists(fullPath))
             {
-                KELog.Warn($"[SoundHelper] File not found: {fullPath}");
+                KELog.WarnT($"[SoundHelper] File not found: {fullPath}");
                 return;
             }
 

@@ -80,7 +80,7 @@ namespace KernelExtensions.Managers
             }
             else if (!TryLoadFromExtension(iconArg))
             {
-                KELog.Warn($"[TitleBanner] icon load failed ({iconArg}); falling back to built-in default icon");
+                KELog.WarnT($"[TitleBanner] icon load failed ({iconArg}); falling back to built-in default icon");
                 infoIcon = LoadEmbeddedIcon();
                 usedEmbedded = true;
             }
@@ -99,7 +99,7 @@ namespace KernelExtensions.Managers
                 string iconFull = KEPath.ResolveInside(iconPath, folder);
                 if (iconFull == null)
                 {
-                    KELog.Warn($"[TitleBanner] icon path escapes the extension folder: {iconPath}");
+                    KELog.WarnT($"[TitleBanner] icon path escapes the extension folder: {iconPath}");
                     return false;
                 }
                 using (var s = File.OpenRead(iconFull))
@@ -108,7 +108,7 @@ namespace KernelExtensions.Managers
             }
             catch (Exception ex)
             {
-                KELog.Warn($"[TitleBanner] icon load failed ({iconPath}): {ex.Message}");
+                KELog.WarnT($"[TitleBanner] icon load failed ({iconPath}): {ex.Message}");
                 return false;
             }
         }

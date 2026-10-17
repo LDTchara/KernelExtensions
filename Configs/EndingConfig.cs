@@ -60,9 +60,22 @@ namespace KernelExtensions.Configs
         public float ScrollAccelTime = 8f;    // 加速斜坡时长（秒；0 = 立即满速）
 
         // ===== 默认资源路径（NONE/空回退目标）=====
-        private const string DefaultSpeechFile = "Docs/EndingSpeech.wav";
-        private const string DefaultSpeechTextFile = "Docs/Speech.txt";
-        private const string DefaultCreditsFile = "Docs/CreditsData.txt";
+        internal const string DefaultSpeechFile = "Docs/EndingSpeech.wav";
+        internal const string DefaultSpeechTextFile = "Docs/Speech.txt";
+        internal const string DefaultCreditsFile = "Docs/CreditsData.txt";
+
+        /// <summary>
+        /// 作者是否**显式**写了路径（写 NONE/空/省略 = false，视为「用默认」）。
+        ///
+        /// <para>
+        /// 用途：默认路径下的文件不存在时，多半是**作者本来就不想要**这一阶段
+        /// （没放 `Docs/Speech.txt` 之类），不该按错误上报终端；只有作者**明确写了**
+        /// 一个路径却找不到，才是真错。
+        /// </para>
+        /// </summary>
+        public bool SpeechFileExplicit;
+        public bool SpeechTextFileExplicit;
+        public bool CreditsFileExplicit;
 
         /// <summary>从独立结局 XML（&lt;EndingConfig&gt; 根）加载。缺失/解析失败返回 null（调用方报错）。</summary>
         public static EndingConfig Load(string filePath)
@@ -99,6 +112,9 @@ namespace KernelExtensions.Configs
                 cfg.SpeechFile = ResolvePath(root, "SpeechFile", DefaultSpeechFile);
                 cfg.SpeechTextFile = ResolvePath(root, "SpeechTextFile", DefaultSpeechTextFile);
                 cfg.CreditsFile = ResolvePath(root, "CreditsFile", DefaultCreditsFile);
+                cfg.SpeechFileExplicit = !ConfigValue.IsNone(root.Element("SpeechFile")?.Value);
+                cfg.SpeechTextFileExplicit = !ConfigValue.IsNone(root.Element("SpeechTextFile")?.Value);
+                cfg.CreditsFileExplicit = !ConfigValue.IsNone(root.Element("CreditsFile")?.Value);
                 cfg.SpeechTime = GetFloat(root, "SpeechTime", -1f);
                 cfg.TitleFreezeTime = GetFloat(root, "TitleFreezeTime", 10f);
                 cfg.EndingPauseTime = GetFloat(root, "EndingPauseTime", 5f);

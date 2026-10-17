@@ -712,7 +712,7 @@ namespace KernelExtensions.Managers
                             filePath = altPath;
                         else
                         {
-                            KELog.Warn($"[PhaseSwift] track {i} not found: {relPath} (also tried Music/{fileName})");
+                            KELog.WarnT($"[PhaseSwift] track {i} not found: {relPath} (also tried Music/{fileName})");
                             continue;
                         }
                     }
@@ -733,7 +733,7 @@ namespace KernelExtensions.Managers
                     if (loopEnd > totalFrames) loopEnd = totalFrames;
                     if (loopEnd <= loopStart)
                     {
-                        KELog.Warn($"[PhaseSwift] track {i} has an invalid loop range (LoopStart={meta.LoopStart}, LoopEnd={meta.LoopEnd}, "
+                        KELog.WarnT($"[PhaseSwift] track {i} has an invalid loop range (LoopStart={meta.LoopStart}, LoopEnd={meta.LoopEnd}, "
                             + $"total {totalFrames / (double)sr:F2}s) - falling back to whole-file loop");
                         loopStart = 0L;
                         loopEnd = totalFrames;
@@ -742,7 +742,7 @@ namespace KernelExtensions.Managers
                     //    装载时就拦掉，比等到播完回跳时才降级更早、提示也更明确。
                     else if (loopStart > 0L && totalFrames - loopStart < sr)
                     {
-                        KELog.Warn($"[PhaseSwift] track {i} LoopStart is within the last second of the file "
+                        KELog.WarnT($"[PhaseSwift] track {i} LoopStart is within the last second of the file "
                             + $"(total {totalFrames / (double)sr:F2}s) - seeking would fail; falling back to whole-file loop");
                         loopStart = 0L;
                         loopEnd = totalFrames;

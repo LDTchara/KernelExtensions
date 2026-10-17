@@ -297,7 +297,7 @@ namespace KernelExtensions.Modules
             string helpSrc = KEPath.ResolveInsideExtension(config.HelpFile);
             if (helpSrc == null)
             {
-                KELog.Warn($"[FakeRecovery] HelpFile escapes the extension folder: {config.HelpFile}");
+                KELog.WarnT($"[FakeRecovery] HelpFile escapes the extension folder: {config.HelpFile}");
                 return;
             }
             if (!File.Exists(helpSrc)) return;
@@ -328,7 +328,7 @@ namespace KernelExtensions.Modules
                     string path = KEPath.ResolveInsideExtension(config.SystemLogFiles[i]);
                     if (path == null)
                     {
-                        KELog.Warn($"[FakeRecovery] SystemLogFiles entry escapes the extension folder, skipped: {config.SystemLogFiles[i]}");
+                        KELog.WarnT($"[FakeRecovery] SystemLogFiles entry escapes the extension folder, skipped: {config.SystemLogFiles[i]}");
                         continue;
                     }
                     if (File.Exists(path))

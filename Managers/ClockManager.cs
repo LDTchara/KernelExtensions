@@ -296,7 +296,7 @@ namespace KernelExtensions.Managers
                     string ocFull = KEPath.ResolveInside(onCompletePath, extensionRoot);
                     if (ocFull == null || !File.Exists(ocFull))
                     {
-                        KELog.Warn($"[Clock] '{id}' OnComplete file missing or out of bounds: {onCompletePath}");
+                        KELog.WarnT($"[Clock] '{id}' OnComplete file missing or out of bounds: {onCompletePath}");
                         onCompletePath = null;
                     }
                     else ocFull = NormalizePath(ocFull);

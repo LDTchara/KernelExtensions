@@ -56,10 +56,10 @@ namespace KernelExtensions.Storage
                 string fullPath = KEPath.ResolveInsideExtension(path);
                 if (fullPath == null)
                 {
-                    KELog.Error($"[SetNodeIcon] path escapes the extension folder: {path}");
+                    KELog.ErrorT($"[SetNodeIcon] path escapes the extension folder: {path}");
                     return null;
                 }
-                if (!File.Exists(fullPath)) { KELog.Error($"[SetNodeIcon] file not found: {fullPath}"); return null; }
+                if (!File.Exists(fullPath)) { KELog.ErrorT($"[SetNodeIcon] file not found: {fullPath}"); return null; }
                 var gd = GuiData.spriteBatch?.GraphicsDevice ?? Game1.getSingleton()?.GraphicsDevice;
                 if (gd == null) { KELog.Error("[SetNodeIcon] GraphicsDevice unavailable"); return null; }
                 using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);

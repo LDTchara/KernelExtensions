@@ -67,21 +67,30 @@ internal static class IRCLogInjector
                 // （路径相对扩展根，解析与越界校验已在 ConfigLoader 里做过）。
                 // 一个都没配时回退到默认文件名 CustomIRCLogs.txt —— 未写 KE-Config.xml
                 // 的扩展与旧版写法因此照旧可用。
-                List<string> files = ConfigLoader.CustomIRCLogFiles.Count > 0
-                    ? new List<string>(ConfigLoader.CustomIRCLogFiles)
-                    : new List<string> { DefaultLogFileName };
+                // 一个都没配 = 用默认文件名回退。这种「回退」失败**不是作者的错**
+                // （绝大多数扩展根本没有 CustomIRCLogs.txt，也不需要有），
+                // 所以只记 Debug；只有作者**显式配了** <CustomIRCLogs> 却找不到文件才 Warn。
+                bool usingFallback = ConfigLoader.CustomIRCLogFiles.Count == 0;
+                List<string> files = usingFallback
+                    ? new List<string> { DefaultLogFileName }
+                    : new List<string>(ConfigLoader.CustomIRCLogFiles);
 
                 foreach (string rel in files)
                 {
                     string path = KEPath.ResolveInsideExtension(rel);
                     if (path == null)
                     {
-                        KELog.Warn($"[IRCLogsPatch] log path escapes the extension folder, skipped: '{rel}'");
+                        KELog.WarnT($"[IRCLogsPatch] log path escapes the extension folder, skipped: '{rel}'");
                         continue;
                     }
                     if (!File.Exists(path))
                     {
-                        KELog.Warn($"[IRCLogsPatch] log file not found, skipped: {path}");
+                        // 回退默认名缺失 = 绝大多数扩展的常态（它们根本不需要 IRC 日志）
+                        // → 只记 Debug，绝不能刷终端；显式配置的才 Warn。
+                        if (usingFallback)
+                            KELog.Debug($"[IRCLogsPatch] default IRC log absent, skipped: {path}");
+                        else
+                            KELog.WarnT($"[IRCLogsPatch] log file not found, skipped: {path}");
                         continue;
                     }
 

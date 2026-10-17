@@ -125,6 +125,9 @@ public class CustomEndingModule : EndingSequenceModule
         SpeechFile = config.SpeechFile;
         SpeechTextFile = config.SpeechTextFile;
         CreditsFile = config.CreditsFile;
+        _speechFileExplicit = config.SpeechFileExplicit;
+        _speechTextExplicit = config.SpeechTextFileExplicit;
+        _creditsFileExplicit = config.CreditsFileExplicit;
         ConfigureSpeechTiming(config.SpeechTime);
 
         // 报幕节奏（可选配置；不写时与旧硬编码一致）
@@ -139,6 +142,12 @@ public class CustomEndingModule : EndingSequenceModule
     public string SpeechFile = "Docs/EndingSpeech.wav";
     public string SpeechTextFile = "Docs/Speech.txt";
     public string CreditsFile = "Docs/CreditsData.txt";
+
+    // 作者是否**显式**写了这三个路径（见 EndingConfig 的同名说明）。
+    // 未显式写 = 用默认 Docs/ 路径；默认文件不存在属正常省略，只记 Debug 不打扰作者。
+    private readonly bool _speechFileExplicit;
+    private readonly bool _speechTextExplicit;
+    private readonly bool _creditsFileExplicit;
 
     // ========================================================================
     //  ██████  入口 — StartEnding  ██████
@@ -227,7 +236,16 @@ public class CustomEndingModule : EndingSequenceModule
             bitSpeechText = File.ReadAllText(speechPath);
             KELog.Info($"[CustomEndingModule] Speech.txt loaded ({bitSpeechText.Length} chars).");
         }
-        else { bitSpeechText = ""; KELog.Warn($"[CustomEndingModule] Speech text not found: {speechPath}"); }
+        else
+        {
+            bitSpeechText = "";
+            // 默认路径缺失 = 作者本来就没做演讲文本（正常省略）→ 只记 Debug；
+            // 只有作者**显式写了** <SpeechTextFile> 却找不到，才是真错 → 进终端。
+            if (_speechTextExplicit)
+                KELog.WarnT($"[CustomEndingModule] Speech text not found: {speechPath}");
+            else
+                KELog.Debug($"[CustomEndingModule] default speech text absent: {speechPath}");
+        }
 
         // ---- 报幕数据 ----
         string creditsPath = KEPath.ResolveInside(CreditsFile, ext);
@@ -237,7 +255,14 @@ public class CustomEndingModule : EndingSequenceModule
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             KELog.Info($"[CustomEndingModule] CreditsData.txt loaded ({creditsData.Length} lines).");
         }
-        else { creditsData = Array.Empty<string>(); KELog.Warn($"[CustomEndingModule] Credits data not found: {creditsPath} — credits stage will be empty."); }
+        else
+        {
+            creditsData = Array.Empty<string>();
+            if (_creditsFileExplicit)
+                KELog.WarnT($"[CustomEndingModule] Credits data not found: {creditsPath} — credits stage will be empty.");
+            else
+                KELog.Debug($"[CustomEndingModule] default credits data absent: {creditsPath}");
+        }
 
         // ---- 语音（.wav / .ogg 分流）----
         string voicePath = KEPath.ResolveInside(SpeechFile, ext);
@@ -258,7 +283,10 @@ public class CustomEndingModule : EndingSequenceModule
         }
         else
         {
-            KELog.Warn($"[CustomEndingModule] Voice not found: {SpeechFile} — speech stage will run silent.");
+            if (_speechFileExplicit)
+                KELog.WarnT($"[CustomEndingModule] Voice not found: {SpeechFile} — speech stage will run silent.");
+            else
+                KELog.Debug($"[CustomEndingModule] default voice absent, speech stage silent: {SpeechFile}");
         }
 
         // ---- 演讲计时终值 ----
@@ -275,7 +303,11 @@ public class CustomEndingModule : EndingSequenceModule
             if (timingMode == SpeechTiming.FollowAudio && !noSpeechWarned)
             {
                 noSpeechWarned = true;
-                KELog.Warn($"[CustomEndingModule] no voice & SpeechTime<0 — falling back to 30s silent speech.");
+                // 默认语音本就不存在时这条是预期内的（作者没要语音）→ 只记 Debug
+                if (_speechFileExplicit)
+                    KELog.WarnT($"[CustomEndingModule] no voice & SpeechTime<0 — falling back to 30s silent speech.");
+                else
+                    KELog.Debug("[CustomEndingModule] no voice (default absent) & SpeechTime<0 — using 30s silent speech.");
             }
             // Skip 模式 limit=0；FixedLimit 用设定值；FollowAudio 用 30s 兜底
             if (timingMode == SpeechTiming.SkipSpeech) speechLimit = 0f;
