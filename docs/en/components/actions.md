@@ -236,6 +236,7 @@ Colour values come in two kinds and **can be mixed inside one `Fields` list**:
 ```
 
 - **Unknown field or unparsable colour** → that pair is skipped with a `KELog.Warn`; other fields still apply
+- ⚠️ `Fields` separates pairs with **commas**, so the numeric RGB form (`R,G,B`) **cannot be expressed here** — its commas would split the pairs. Use `#RRGGBB` / `#AARRGGBB` / named colours / preset names instead
 - **Revert**: only the in-memory OS values change — nothing is written to the save and the loaded theme
   object is untouched; after the player **switches theme** the OS fields are rewritten, so the change lapses
 - **Dynamic fields must be wrapped up explicitly** — they are rewritten every frame and only revert to
