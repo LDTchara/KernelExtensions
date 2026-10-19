@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace KernelExtensions.Patches
 {
     /// <summary>
-    /// 节点自替换符：<c>#IP_&lt;节点id&gt;#</c> / <c>#NAME_&lt;节点id&gt;#</c>。
+    /// 节点自替换符：<c>#IP_&lt;节点id&gt;#</c> / <c>#NAME_&lt;节点id&gt;#</c> / <c>#PASS_&lt;节点id&gt;#</c>。
     /// <para>
     /// 挂 Pathfinder 的 <see cref="TextReplaceEvent"/>（它由 Pathfinder 在 <c>ComputerLoader.filter</c>
     /// 的 Postfix 上触发），对**原版替换链跑完的结果** <c>e.Replacement</c> 再做一轮参数化替换。
@@ -15,12 +15,12 @@ namespace KernelExtensions.Patches
     /// 抢执行顺序（事件链统一）。
     /// </para>
     /// <para>
-    /// 命名用**前缀式**：原版标识符空间里没有任何一条以 <c>IP_</c> / <c>NAME_</c> 开头，
+    /// 命名用**前缀式**：原版标识符空间里没有任何一条以 <c>IP_</c> / <c>NAME_</c> / <c>PASS_</c> 开头，
     /// 结构上不会撞车（后缀式 <c>#&lt;id&gt;_IP#</c> 会与原版 <c>#PLAYER_IP#</c> / <c>#RANDOM_IP#</c> /
     /// <c>#GIBSON_IP#</c> 形态重叠，安全性依赖「原版先执行」这一隐式契约）。
     /// </para>
     /// <para>
-    /// 行为约定：节点不存在 → **保留原文**（不记日志，作者看到没被替换即知写错）；大小写不敏感；
+    /// 行为约定：节点不存在 / <c>#PASS_</c> 对应节点的密码为空 → **保留原文**（不记日志，作者看到没被替换即知写错）；大小写不敏感；
     /// **单遍不递归**（替换出的文本里再出现占位符不会再展开，与原版 <c>Replace</c> 链一致）；
     /// 替换是**一次性固化**的 —— 节点 IP 之后变化（如飞机坠机改 <c>DCLOC:</c> 前缀）不会回溯更新已替换文本。
     /// </para>
@@ -29,13 +29,14 @@ namespace KernelExtensions.Patches
     {
         private static readonly Regex IpPattern = new("#IP_([^#]+)#", RegexOptions.Compiled);
         private static readonly Regex NamePattern = new("#NAME_([^#]+)#", RegexOptions.Compiled);
+        private static readonly Regex PassPattern = new("#PASS_([^#]+)#", RegexOptions.Compiled);
 
         /// <summary>订阅入口（主入口调用；handler 常驻整个插件生命周期）。</summary>
         public static void Initialize()
         {
             EventManager<TextReplaceEvent>.AddHandler(OnTextReplace);
             EventManager<OSLoadedEvent>.AddHandler(OnOSLoaded);
-            KELog.Info("[SelfReplace] #IP_<id># / #NAME_<id># handler registered.");
+            KELog.Info("[SelfReplace] #IP_<id># / #NAME_<id># / #PASS_<id># handler registered.");
         }
 
         /// <summary>取消订阅（卸载时调用，避免持有已卸载程序集的委托）。</summary>
@@ -97,7 +98,8 @@ namespace KernelExtensions.Patches
 
                 // 快速预判：绝大多数文件不含前缀，直接跳过
                 if (f.data.IndexOf("#IP_", StringComparison.Ordinal) < 0
-                    && f.data.IndexOf("#NAME_", StringComparison.Ordinal) < 0)
+                    && f.data.IndexOf("#NAME_", StringComparison.Ordinal) < 0
+                    && f.data.IndexOf("#PASS_", StringComparison.Ordinal) < 0)
                     continue;
 
                 string replaced = ReplaceAll(f.data, os);
@@ -120,19 +122,30 @@ namespace KernelExtensions.Patches
         {
             // 快速预判：不含 KE 前缀直接返回 —— filter() 调用极频繁，先把正则开销挡掉
             if (text.IndexOf("#IP_", StringComparison.Ordinal) < 0
-                && text.IndexOf("#NAME_", StringComparison.Ordinal) < 0)
+                && text.IndexOf("#NAME_", StringComparison.Ordinal) < 0
+                && text.IndexOf("#PASS_", StringComparison.Ordinal) < 0)
                 return text;
 
-            string result = IpPattern.Replace(text, m => Resolve(os, m, useIp: true));
-            return NamePattern.Replace(result, m => Resolve(os, m, useIp: false));
+            string result = IpPattern.Replace(text, m => Resolve(os, m, ReplaceKind.Ip));
+            result = NamePattern.Replace(result, m => Resolve(os, m, ReplaceKind.Name));
+            return PassPattern.Replace(result, m => Resolve(os, m, ReplaceKind.Pass));
         }
 
-        /// <summary>查到节点则替换；查不到保留原文（不记日志）。</summary>
-        private static string Resolve(OS os, Match m, bool useIp)
+        private enum ReplaceKind { Ip, Name, Pass }
+
+        /// <summary>查到节点则替换；查不到（或 #PASS_ 的密码为空）保留原文（不记日志）。</summary>
+        private static string Resolve(OS os, Match m, ReplaceKind kind)
         {
             Computer comp = FindNode(os, m.Groups[1].Value);
             if (comp == null) return m.Value;
-            return useIp ? comp.ip : comp.name;
+            switch (kind)
+            {
+                case ReplaceKind.Ip: return comp.ip;
+                case ReplaceKind.Name: return comp.name;
+                default:
+                    string pass = comp.adminPass;
+                    return string.IsNullOrEmpty(pass) ? m.Value : pass;
+            }
         }
 
         /// <summary>
