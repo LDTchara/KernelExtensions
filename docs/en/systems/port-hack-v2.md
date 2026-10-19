@@ -77,7 +77,7 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<SpinUpTime>` | Spin-up length in **absolute seconds** (overrides the ratio). **Negative = use the ratio** |
 | `<SpinDownTime>` | Brake length in seconds. Empty = 1.7 (same as vanilla) |
 | `<CompleteDelay>` | Pause before exiting after the success sequence, in seconds. Empty = 5 |
-| `<TakeAdmin>` | Whether to make the player the target's owner on success. Omitted = `false` (**only opens ports, never grants admin on its own**) |
+| `<TakeAdmin>` | Whether to make the player the target's owner. **The switch alone decides** — independent of per-protocol success/failure (even if all protocols fail); if the target is unreachable only a warning is logged. Omitted = `false` (**only opens ports, never grants admin on its own**) |
 | `<AutoExitOnLeave>` | Whether to close when the player leaves the node. Default `true` (vanilla behaviour) |
 | `<RequireCrackedPorts>` | Optional prerequisite: how many **already-cracked ports** the target needs — see below |
 | `<RequireOpenPortsBefore>` | Prerequisite: these ports must already be open. Written as multiple `<string>` children |
