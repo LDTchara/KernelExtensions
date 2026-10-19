@@ -26,6 +26,7 @@
 - If KernelExtensions is running as an **extension plugin** (the correct way), uninstalling the extension will automatically remove KernelExtensions. All Harmony patches will be revoked and the watermark will disappear.
 - If you need a complete manual removal, simply delete the `Plugins/KernelExtensions.dll` file and restart the game.
 - The mod **does not support global plugin mode** (i.e. it cannot be placed under `BepInEx/plugins/`). Please ensure it always stays inside an extension's `Plugins` directory.
+  When installed globally it detects "not in extension mode" at startup and **refuses to load** (a clear error is written to the BepInEx log, with no half-initialized state).
 
 ## License
 

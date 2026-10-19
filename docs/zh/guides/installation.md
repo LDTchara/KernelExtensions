@@ -26,6 +26,7 @@
 - 如果 KernelExtensions 是以**扩展插件**的形式运行的（正确方式），卸载该扩展时，KernelExtensions 会被自动移除。所有 Harmony 补丁会被自动撤销，水印也会消失。
 - 如果你需要完全手动移除，直接删除 `Plugins/KernelExtensions.dll` 文件，然后重启游戏即可。
 - 模组**不支持全局插件模式**（即不能放在 `BepInEx/plugins/` 下），请确保它始终位于扩展的 `Plugins` 目录内。
+  放进全局插件目录时，启动会检测到"非扩展模式"并**拒绝加载**（BepInEx 日志会给出明确错误，不会半初始化）。
 
 ## 许可证
 
