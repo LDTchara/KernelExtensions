@@ -21,7 +21,7 @@ All paths are relative to the extension root.
 |--------|---------|-------------|
 | `<Debug>` | `false` | Emit KE debug-level logs (keep `false` for releases) |
 | `<Watermark>` | `true` | Whether the main-menu watermark is drawn (appearance below) |
-| `<SkipVanillaIRCLogs>` | `false` | Skip the vanilla `BashLogs.txt` IRC log (load only your own logs — see below) |
+| `<SkipVanillaIRCLogs>` | `false` | Skip the vanilla `BashLogs.txt` IRC log (load only your own logs — see below); falls back to vanilla if you have none, to avoid a crash |
 | `<CustomIRCLogs>` | — | Extra IRC log files to load (`<File>` children, paths relative to the extension root); with none listed it falls back to `CustomIRCLogs.txt` — see below |
 
 ### Custom IRC Logs
@@ -46,7 +46,7 @@ List the files to load in `KE-Config.xml` at the extension root (any number, any
 | `<File>` entries listed | each of those files is loaded |
 | no `<File>` at all | falls back to **`CustomIRCLogs.txt`** at the extension root (the old form keeps working) |
 | `<SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>` (default) | vanilla files + vanilla `BashLogs.txt` + your logs **all load** |
-| `<SkipVanillaIRCLogs>true</SkipVanillaIRCLogs>` | **only** your logs load |
+| `<SkipVanillaIRCLogs>true</SkipVanillaIRCLogs>` | **only** your logs load; ⚠️ if no custom log is found (including `CustomIRCLogs.txt`), it **falls back to the vanilla logs with a warning** — an empty `FileEntry` list crashes the game when loading random-file nodes |
 
 - Paths are **relative to the extension root** and must not escape it with `..` (an out-of-bounds entry is skipped with a warning; the rest still load)
 - A missing file is skipped with a warning and **does not affect the other logs**

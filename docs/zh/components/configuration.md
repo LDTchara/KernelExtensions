@@ -19,7 +19,7 @@ KernelExtensions 的配置分**两层**：
 |--------|------|------|
 | `<Debug>` | `false` | 输出 KE 调试级日志（发布版请保持 `false`） |
 | `<Watermark>` | `true` | 主菜单水印是否显示（外观见下） |
-| `<SkipVanillaIRCLogs>` | `false` | 跳过原版 `BashLogs.txt` IRC 日志（只加载自定义日志，见下节） |
+| `<SkipVanillaIRCLogs>` | `false` | 跳过原版 `BashLogs.txt` IRC 日志（只加载自定义日志，见下节）；无自定义日志时自动回退原版避免崩 |
 | `<CustomIRCLogs>` | — | 额外加载的 IRC 日志文件列表（`<File>` 子元素，路径相对扩展根）；一个都不写时回退到 `CustomIRCLogs.txt`——见下节 |
 
 ### 自定义 IRC 日志
@@ -44,7 +44,7 @@ IRC 日志会出现在**文件浏览器**里（也就是原版 `BashLogs.txt` �
 | 列了 `<File>` | 逐个加载这些文件 |
 | 一个 `<File>` 都不写 | 回退到扩展根下的 **`CustomIRCLogs.txt`**（旧写法照旧可用） |
 | `<SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>`（默认） | 原版文件 + 原版 `BashLogs.txt` + 你的日志**都加载** |
-| `<SkipVanillaIRCLogs>true</SkipVanillaIRCLogs>` | **只加载**你的日志 |
+| `<SkipVanillaIRCLogs>true</SkipVanillaIRCLogs>` | **只加载**你的日志；⚠️ 若一个自定义日志都找不到（含 `CustomIRCLogs.txt`），会**强制回退原版日志并记 Warn** —— 空 `FileEntry` 列表会让游戏加载随机文件节点时崩溃 |
 
 - 路径**相对扩展根目录**，不得用 `..` 逃出扩展目录（越界条目会被跳过并记一条 Warn，其余照常）
 - 文件不存在时跳过并记 Warn，**不影响其余日志**
