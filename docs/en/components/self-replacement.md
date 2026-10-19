@@ -41,17 +41,19 @@ Typical use (put the program into the player node's `bin/`):
 
 ## 2. Added by KE: node placeholders
 
-Vanilla only has **player-side** placeholders — nothing to reference another node. KE adds two:
+Vanilla only has **player-side** placeholders — nothing to reference another node. KE adds three:
 
 | Placeholder | Replaced with |
 |-------------|---------------|
 | `#IP_<nodeId>#` | That node's `ip` |
 | `#NAME_<nodeId>#` | That node's display name (`name`, not the `idName` you write in XML) |
+| `#PASS_<nodeId>#` | That node's administrator password (`adminPass`) — kept as-is if the node is missing or has no password |
 
 ```xml
 <file path="bin" name="relay.cfg">#RELAY_IP#</file>
 <!-- becomes -->
 <file path="bin" name="relay.cfg">#IP_relayNode#</file>
+<file path="bin" name="relay_pass.txt">#PASS_relayNode#</file>
 ```
 
 A node matches by **`idName` only** (the id you write in the node XML's `<Computer id="...">`), and matching is
@@ -66,7 +68,7 @@ A node matches by **`idName` only** (the id you write in the node XML's `<Comput
     in `_IP`. Putting the node id first (`#<id>_IP#`) would overlap that shape, leaving safety
     resting on the implicit “vanilla runs first” contract — and without the DLC, `#GIBSON_IP#` is not
     replaced by vanilla at all, so it would fall into our matching range. The prefix form is
-    **structurally free of collisions** in the vanilla identifier space (nothing starts with `IP_` / `NAME_`).
+    **structurally free of collisions** in the vanilla identifier space (nothing starts with `IP_` / `NAME_` / `PASS_`).
 
 ---
 
@@ -114,7 +116,9 @@ Placeholders go through `ComputerLoader.filter()`, which is used widely:
   contents again on OSLoaded**, so content can freely reference other nodes without worrying about load order
 - **Computer `ip` / `name` properties also go through `filter()`**: those are fixed at load time; if they reference a
   not-yet-loaded node the original text is kept (**no post-load sweep** for properties — add later if needed)
-- **`#IP_` / `#NAME_` are KE's placeholder namespace** — don't use these prefixes for anything else
+- **`#IP_` / `#NAME_` / `#PASS_` are KE's placeholder namespace** — don't use these prefixes for anything else
+- `#PASS_<id>#` does **not** expand author permissions: authors could already write `adminPass` directly in
+  node XML; it only makes "reference another node's password from text" convenient
 
 ---
 
