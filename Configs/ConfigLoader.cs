@@ -122,7 +122,9 @@ namespace KernelExtensions.Configs
     <!-- 调试模式，true=开启，false=关闭（发布前关） -->
     <Debug>false</Debug>
 
-    <!-- 是否跳过原版 BashLogs.txt IRC 日志。false=原版 + 自定义都加载；true=只加载下面列出的自定义日志 -->
+    <!-- 是否跳过原版 BashLogs.txt IRC 日志。false=原版 + 自定义都加载；true=只加载下面列出的自定义日志。
+         注意：true 且一个自定义日志都没有（也没有 CustomIRCLogs.txt）时，会强制回退原版日志并告警——
+         空 FileEntry 列表会让游戏加载随机文件节点时崩溃。 -->
     <SkipVanillaIRCLogs>false</SkipVanillaIRCLogs>
 
     <!-- ============ 额外 IRC 日志文件（可选） ============ -->

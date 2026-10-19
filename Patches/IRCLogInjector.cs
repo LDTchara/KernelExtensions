@@ -33,28 +33,30 @@ internal static class IRCLogInjector
         FileEntry.filenames = new List<string>(128);
         FileEntry.fileData = new List<string>(128);
 
-        // 2. 原版文件（Content/files/）
-        if (!OverrideOriginal)
+        void LoadContentFiles()
         {
             DirectoryInfo dir = new DirectoryInfo(Path.Combine(content.RootDirectory, "files"));
-            if (dir.Exists)
+            if (!dir.Exists) return;
+            foreach (var f in dir.GetFiles("*.*"))
             {
-                foreach (var f in dir.GetFiles("*.*"))
-                {
-                    FileEntry.filenames.Add(Path.GetFileNameWithoutExtension(f.Name));
-                    FileEntry.fileData.Add(Utils.readEntireFile($"Content/files/{f.Name}"));
-                }
+                FileEntry.filenames.Add(Path.GetFileNameWithoutExtension(f.Name));
+                FileEntry.fileData.Add(Utils.readEntireFile($"Content/files/{f.Name}"));
             }
         }
 
-        // 3. 原版 BashLogs
-        if (!OverrideOriginal)
+        void LoadVanillaBashLogs()
         {
             string bashFile = Settings.EducationSafeBuild
                 ? "Content/BashLogs_StudentSafe.txt"
                 : "Content/BashLogs.txt";
-            string text = Utils.readEntireFile(bashFile);
-            ParseAndAdd(text, "http://Bash.org", true);
+            ParseAndAdd(Utils.readEntireFile(bashFile), "http://Bash.org", true);
+        }
+
+        // 2/3. 原版文件 + 原版 BashLogs（SkipVanillaIRCLogs=true 时跳过）
+        if (!OverrideOriginal)
+        {
+            LoadContentFiles();
+            LoadVanillaBashLogs();
         }
 
         // 4. 自定义日志（ExtensionLoader 可能尚未就绪，用安全访问）
@@ -103,6 +105,33 @@ internal static class IRCLogInjector
         catch (Exception ex)
         {
             KELog.Warn($"[IRCLogsPatch] Prefix error: {ex.Message}");
+        }
+
+        // ⚠️ 兜底：列表为空时原版 FileEntry() 会 Random.Next(0, Count-1) 直接崩
+        // （典型：SkipVanillaIRCLogs=true 且既没配 <CustomIRCLogs>、也没有 CustomIRCLogs.txt）。
+        // 此时强制回退原版日志并告警——空列表是"扩展起不来"，比"没有 IRC 日志"严重得多。
+        if (FileEntry.filenames.Count == 0)
+        {
+            KELog.WarnT("[IRCLogsPatch] no IRC logs available (vanilla skipped and no custom logs found); "
+                + "falling back to vanilla logs to avoid an empty FileEntry list crash.");
+            try
+            {
+                LoadContentFiles();
+                LoadVanillaBashLogs();
+            }
+            catch (Exception ex)
+            {
+                KELog.Warn($"[IRCLogsPatch] vanilla fallback failed: {ex.Message}");
+            }
+
+            // 最后一道保险：连原版日志都读不到时，塞一个占位条目，绝不让列表为空。
+            if (FileEntry.filenames.Count == 0)
+            {
+                KELog.ErrorT("[IRCLogsPatch] still no IRC logs after vanilla fallback; adding a placeholder entry "
+                    + "to avoid a crash in FileEntry().");
+                FileEntry.filenames.Add("SYSLOG");
+                FileEntry.fileData.Add("System log entry placeholder (no IRC logs were available).");
+            }
         }
 
         // 跳过原版 init()
