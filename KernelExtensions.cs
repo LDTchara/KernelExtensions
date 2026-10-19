@@ -78,6 +78,20 @@ namespace KernelExtensions
             // ============================================================
             KELog.Init();
 
+            // ⚠️ 扩展模式硬检测（2026-10-19，对齐 Stuxnet）：
+            //    KE 是扩展组件库，所有 Action/Executable/Daemon/存档段都依赖扩展环境
+            //    （ExtensionRoot、扩展可用路径、扩展内容加载顺序等）。放进 BepInEx/plugins/
+            //    全局安装时，ActiveExtensionInfo 为 null —— 继续注册只会留下半初始化副作用
+            //    （且没有任何功能能正常工作），所以这里直接拒绝加载并抛错。
+            //    位置必须在任何注册/补丁之前：此时尚无不可回滚的副作用，抛错是安全的。
+            if (Hacknet.Extensions.ExtensionLoader.ActiveExtensionInfo == null)
+            {
+                const string msg = "KernelExtensions is an EXTENSION-ONLY mod and will not load as a global plugin. "
+                    + "Move KernelExtensions.dll into <Extension>/Plugins/ (BepInEx/plugins is not supported).";
+                KELog.Error(msg);
+                throw new InvalidOperationException(msg);
+            }
+
             // ⚠️ 整体兜底（第二层）：Load 内任何异常都不允许逃出。
             //    原因：Pathfinder 的注册是**不可回滚的副作用**，而 BepInEx 的成败标记是全有或全无。
             //    异常逃出 → 插件被标记「加载失败」，但已注册的 Action / Executable / Daemon / Command

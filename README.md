@@ -42,8 +42,8 @@ All detailed documentation, configuration guides, and action references live on 
 3. 启动游戏并加载扩展，主菜单出现彩虹水印即表示安装成功。  
    Launch the game and load the extension; a rainbow watermark on the main menu indicates success.
 
-> ⚠️ 本模组必须作为扩展的一部分运行，不支持全局插件模式。  
-> ⚠️ This mod must run as part of an extension; global plugin mode is not supported.
+> ⚠️ 本模组必须作为扩展的一部分运行，不支持全局插件模式——**放进 `BepInEx/plugins/` 会检测到非扩展模式并拒绝加载（日志报错）**。  
+> ⚠️ This mod must run as part of an extension; global plugin mode is not supported — **it detects non-extension mode and refuses to load (error in the log)**.
 
 ---
 
