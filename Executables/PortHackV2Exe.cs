@@ -617,8 +617,9 @@ public class PortHackV2Exe : GameExecutable
         foreach (ProtocolRuntime rt in _runtimes)
             if (!rt.Finished) CompleteProtocol(rt, forced: true);
 
-        // 至少一个协议成功才夺 admin：全灭时不该白送管理员权限
-        if (_successCount > 0 && CurrentConfig.TakeAdmin)
+        // TakeAdmin 只看开关：根级没有整体失败，作者的开关语义就是"是否给管理员"；
+        // 与协议成败无关（全灭也夺）——否则作者写 true 却因 RNG 全失败而静默不夺，难以排查。
+        if (CurrentConfig.TakeAdmin)
         {
             try { os.takeAdmin(_targetIp); }
             catch (Exception ex) { KELog.WarnT($"[PortHackV2] '{source}': takeAdmin failed: {ex.Message}"); }

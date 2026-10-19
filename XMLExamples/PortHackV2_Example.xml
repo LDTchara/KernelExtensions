@@ -187,7 +187,8 @@
   <IdleSpinSpeed>-1</IdleSpinSpeed>
 
   <!-- ── 结束后行为 / On-finish behaviour ──
-       TakeAdmin：成功后是否像原版 PortHack 一样取得目标机管理员权限（把 owner 设为玩家）。
+       TakeAdmin：是否像原版 PortHack 一样取得目标机管理员权限（把 owner 设为玩家）。
+       **只看开关**，与协议成败无关（全部协议失败也夺；目标不可达时只记 Warn）。
                   留空 = false，即只开端口、不给 admin。
                   Grant admin on the target like vanilla PortHack does. Empty = false.
        AutoExitOnLeave：玩家离开本程序所在节点时是否自动关闭程序。
@@ -296,7 +297,8 @@
       <Protocols> 里只放一个 <Protocol> / Put a single <Protocol> inside <Protocols>
 
     [不给管理员权限 —— 只开端口 / No admin, just open the port]
-      省略 <TakeAdmin>（等价于 false）/ Omit <TakeAdmin> (same as false)
+      省略 <TakeAdmin>（等价于 false）；写 true 则**不论协议成败**都夺 admin
+      Omit <TakeAdmin> (same as false); true always grants admin regardless of protocol results
 
     [程序跨节点常驻 / Keep running across nodes]
       <AutoExitOnLeave>false</AutoExitOnLeave>
