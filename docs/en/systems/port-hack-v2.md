@@ -68,7 +68,7 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) |
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
 | `<TrailLayers>` | **Multi-layer trail count**: 1 (default) = single solid; 20 ≈ the vanilla 20-layer PortHack trail. All five solids share the same trail logic |
-| `<TrailSizeStep>` | Extra size per layer (relative to model radius). Empty = 0.03; 0 = all layers same size |
+| `<TrailSizeStep>` | Extra size per layer (relative to model radius). Empty = 0.10 (outermost of 20 layers ≈ 2.9×, close to the vanilla ratio); 0 = all layers same size |
 | `<TrailRotationStep>` | Per-layer rotation offset around the spin axis (radians). Empty = 0.10; 0 = all layers aligned |
 | `<TrailPulse>` | Per-layer spin-speed pulse. Empty = 0.05; 0 = same speed for all layers |
 | `<TrailContraction>` | Whether the trail contracts during spindown. Empty = true |
@@ -187,7 +187,8 @@ one solid before `IdleSpin`.
 
 - **All five solids share one set of parameters** — Cube / Tetrahedron / Octahedron / Dodecahedron / Icosahedron;
 - Solid modes (`Solid` / `SolidWire`) do not participate in the trail yet (drawn as one layer to avoid z-fighting);
-- More layers = more draw calls (20 layers ≈ 600 lines), still within budget; capped at 64.
+- More layers = more draw calls (20 layers ≈ 600 lines), still within budget; capped at 64;
+- Trail mode automatically adjusts the camera (pitch 30° / yaw 15°) and pulls back based on the outermost layer so the stack is not clipped; single-layer mode keeps the original camera.
 
 #### Presentation (`<PolyhedronStyle>`)
 
