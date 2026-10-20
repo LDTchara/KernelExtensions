@@ -57,6 +57,8 @@ dotnet build KernelExtensions.csproj --no-restore
 
 ## 配置约定
 
+- **配置项变动 → `XMLExamples/` 同批更新（硬约定）**：新增 / 改名 / 删除任何 XML 配置元素或属性时，必须同步更新对应的 `XMLExamples/*_Example.xml`（必要时连 `XMLExamples/README.md`）与文档站对应页面。示例是作者抄写的第一入口，不允许留到以后补。
+
 - **NONE 约定**：字符串配置项写 `NONE`（大小写不敏感）或留空 = 显式禁用；不写该属性 = 使用默认值。判断统一走 `Utilities/ConfigValue.IsNone()`
 - **数值约定**：数值配置项**负数 = 使用默认 / 继承 / 无限**（`NaN` / `Infinity` 同样回退默认）。判断写 `< 0` 加有限性检查，**不要写 `== -1`** —— 会漏掉 `-2` 与 `NaN`
 - **数值上限约定（不要随手加）**：数值配置项**默认不限上限**。`ConfigValue.ParseInRange` 的 `max` 只在两类情况下给真实值：① **语义有界**（如百分比 0~100、比例 0~1）；② **后续要转 `int`**（超大 `float` 转 `int` 会溢出成 `int.MinValue`）。其余一律传 `float.MaxValue`

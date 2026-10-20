@@ -124,6 +124,7 @@ refactor(config): Config renamed to Configs (plural)
 - User-facing features need Wiki pages (Chinese + English, see the `KEwiki/` side repo) and, where applicable, XML doc comments with usage examples in the code.
 - The wiki tracks the stable `main` branch; it is not pushed until `dev` is merged to `main`.
 - Keep private planning notes out of public commits and docs — for example, if you maintain an internal numbered plan, do not mention your internal IDs in commit messages or Wiki pages.
+- **Config/XML changes include their example update.** When adding, renaming or removing a config element/attribute, update the matching `XMLExamples/*_Example.xml` (and the docs page) in the same PR — examples are part of the author-facing contract.
 
 ## 8. Review Checklist
 
@@ -132,6 +133,7 @@ Before opening a PR, verify:
 - [ ] Builds with 0 errors / 0 warnings
 - [ ] New/modified code follows ImplicitUsings (no redundant `using`)
 - [ ] XML registration strings unchanged (unless intentional and documented)
+- [ ] **Any config XML change has its `XMLExamples/*_Example.xml` updated in the same PR** (examples are the author-facing contract)
 - [ ] String config options honor the NONE convention via `ConfigValue.IsNone()`
 - [ ] Logging uses the right KELog level; `os.write` only for player-facing feedback
 - [ ] New public API has XML doc comments with usage examples
@@ -244,6 +246,7 @@ refactor(config): Config→Configs 全复数
 - [ ] 编译 0 错 0 警
 - [ ] 新增/修改代码遵守 ImplicitUsings（无多余 using）
 - [ ] XML 注册字符串未变（有意变更需说明）
+- [ ] **任何 XML 配置项变动已在同一 PR 更新对应 `XMLExamples/*_Example.xml`**（示例是作者抄写的第一入口）
 - [ ] 字符串配置项经 `ConfigValue.IsNone()` 遵守 NONE 约定
 - [ ] 日志级别正确；`os.write` 仅玩家反馈
 - [ ] 新公开 API 有带用法示例的 XML 注释
