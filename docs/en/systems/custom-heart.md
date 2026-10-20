@@ -122,7 +122,7 @@ Two different things, easily confused:
   that is useless to extensions. What happens after the heartbreak is entirely up to `OnComplete`.
 - **Sounds are not configurable**: the startup and glow sounds use vanilla Content paths
   (`SFX/TraceKill`, `SFX/Ending/PorthackSpindown`) and are skipped silently when missing.
-- **The heartbreak visuals are driven by the target daemon's `draw()`**, which only runs in the DisplayModule of the currently connected machine; `BreakHeart` force-connects to the target and switches Display, and on the `AutoOnPorthack` (PortHackExe) path the daemon switches Display to itself (the vanilla special-case only covers the vanilla `PorthackHeartDaemon`)
+- **The heartbreak visuals are driven by the target daemon's `draw()`**, which only runs in the DisplayModule of the currently connected machine; `BreakHeart` force-connects to the target and switches Display, and on the `AutoOnPorthack` (PortHackExe) path the daemon switches Display to itself. Mechanically, KE's `CustomHeartDisplayPatch` takes over `DisplayModule.doCommandModule` (forcing `doDaemonDisplay` while connected to a node with a CHD), and since `doDaemonDisplay` still matches `display.command == daemon.name`, the trigger also syncs that command
 - ⚠️ **`HeartDuration` is currently ineffective**: the heart sequence reuses the vanilla `PortHackCubeSequence` fixed pace (startup 3 s + spin 10 s + runtime 2 s + spindown 9 s + idle 2 s + fade 21 s ≈ 47 s); the field is reserved for a future custom-pacing version
 - ⚠️ **`ResetHeartbreak()` has no XML entry point**: it is a **public method** on `CustomHeartDaemon`,
   callable only from code (mod authors). Plain extension authors cannot trigger it from XML — ask if you
