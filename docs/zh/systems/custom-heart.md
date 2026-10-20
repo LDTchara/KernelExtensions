@@ -118,7 +118,7 @@ PHD 不替你做这些决定。
   心碎后的走向完全由 `OnComplete` 决定。
 - **音效不开放配置**：启动音效与 glow 音效直接使用原版 Content 路径（`SFX/TraceKill`、
   `SFX/Ending/PorthackSpindown`），资源缺失时静默跳过。
-- **心碎画面由目标 daemon 的 `draw()` 驱动**：只有"当前连接机器的 DisplayModule"会调用它；`BreakHeart` 会强制连接目标节点并切换 Display，`AutoOnPorthack` 本身也要求玩家在目标节点上运行 porthack
+- **心碎画面由目标 daemon 的 `draw()` 驱动**：只有"当前连接机器的 DisplayModule"会调用它；`BreakHeart` 会强制连接目标节点并切换 Display，`AutoOnPorthack`（PortHackExe 路径）触发时 daemon 也会把 Display 切到自身（原版对 vanilla 心脏有特判，自定义 daemon 需补这一步）
 - ⚠️ **`HeartDuration` 目前不生效**：心形序列直接复用原版 `PortHackCubeSequence` 的固定节奏（启动 3s + 旋转 10s + 运行 2s + 减速 9s + 待机 2s + 淡出 21s ≈ 47s）；字段已保留，待后续版本接入自定义节奏
 - ⚠️ **`ResetHeartbreak()` 复位重玩没有 XML 入口**：它是 `CustomHeartDaemon` 的 **public 方法**，
   目前只能由代码（模组作者）调用，纯扩展作者无法用 XML 触发。需要 XML 入口的话请提出需求。
