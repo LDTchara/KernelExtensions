@@ -162,7 +162,7 @@
                       Wireframe / Solid / SolidWire. Case-insensitive; wire / both also accepted.
        ── 多层尾迹（可选） ──
        TrailLayers  ：多层尾迹层数。留空 = 1（单立体，保持原观感）；20 ≈ 原版 PortHack 20 层尾迹。
-                      5 个立体共用同一套尾迹逻辑；spindown 时外层指数收缩、层间旋转偏移归零。
+                      5 个立体共用同一套尾迹逻辑；spindown 按原版程度收缩但**保留层间差异（不会合并成一个）**。
                       Multi-layer trail count. Empty = 1 (single solid); 20 ≈ vanilla 20-layer trail.
                       All five solids share the same trail logic; layers contract during spindown.
                       ⚠️ 实心模式（Solid / SolidWire）暂不参与尾迹，仍按 1 层绘制。

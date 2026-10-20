@@ -272,8 +272,8 @@ public class KEPolyhedronSequence : IDisposable
     public float TrailPulse { get; set; } = 0.05f;
 
     /// <summary>
-    /// spindown 是否收缩：true（默认）= 外层按 <c>pow(factor, i)</c> 指数收拢、层间旋转偏移归零；
-    /// false = 尾迹保持 runtime 的展开形态直到 idle。
+    /// spindown 是否收缩：true（默认）= 按原版 spindown 的有限程度收缩（scaleFactor 约 0.868、torsion 约 0.565，**不会合并成一个**）；
+    /// false = 尾迹保持 runtime 的展开形态。
     /// </summary>
     public bool TrailContraction { get; set; } = true;
 
@@ -389,10 +389,17 @@ public class KEPolyhedronSequence : IDisposable
             return;
         }
 
+        // ⚠️ 对齐原版 DrawSequence 的 spindown：原版 spindown 分支永远不会结束
+        // （num4 = float.MaxValue），num6 = min(1, spindown)/2.3 最多到 1/2.3 ≈ 0.435。
+        // 所以它只收缩到 scaleFactor ≈ 0.868 / torsion ≈ 0.565 就停住 —— 层不会完全合并。
+        // 这里用归一化 brake 映射到同样的终值，保留原版的"收缩但不合并"观感。
+        const float OriginalSpindownCap = 1f / 2.3f;
+
         float brake = Clamp01((clock - _totalSeconds) / _spinDownTime);
-        _layerScaleFactor = 0.3f + 0.7f * Utils.QuadraticOutCurve(1f - brake);
-        _layerTorsionFactor = 1f - brake;
-        _layerSpinFactor = 0.1f + 0.9f * (1f - brake);
+        float num6 = OriginalSpindownCap * brake;
+        _layerScaleFactor = 0.3f + 0.7f * Utils.QuadraticOutCurve(1f - num6);
+        _layerTorsionFactor = 1f - num6;
+        _layerSpinFactor = num6 >= 0.4f ? 0.2f : 0.1f + 0.9f * (1f - num6);
     }
 
     /// <summary>按内部时钟求角速度：起转线性加速 → 匀速 <see cref="SpinSpeed"/> → 急刹指数落到
