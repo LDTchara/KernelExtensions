@@ -108,6 +108,17 @@ namespace KernelExtensions.Daemons
             os.RequestRemovalOfAllPopups();
             PlayingHeartbreak = true;
 
+            // 原版 DisplayModule 对 PorthackHeartDaemon 有硬编码特判（连接后无条件走
+            // doDaemonDisplay）；自定义 daemon 没有这个特判，Display 还停在 "PortHack"
+            // 等命令时 draw() 不会被调用（AutoOnPorthack 路径尤其明显）。
+            // 因此触发时把 Display 切到本 daemon；显式 BreakHeart 的强制连接在调用前已完成。
+            if (os.connectedComp == comp && os.display.command != name)
+            {
+                os.display.command = name;
+                os.display.commandArgs = new[] { "connect", comp.ip };
+                os.display.typeChanged();
+            }
+
             if (LockInput)
             {
                 os.terminal.inputLocked = true;
