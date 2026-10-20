@@ -66,8 +66,8 @@ flag 就是"入口牌"：
 | `<Polyhedron>` | 动画用的柏拉图立体：`Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | 立体怎么画：`Wireframe`（线框，**默认**）/ `Solid`（实心面）/ `SolidWire`（实心 + 线框） |
 | `<SpinSpeed>` | 立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒一圈） |
-| `<TrailLayers>` | **多层尾迹层数**：1（默认）= 单立体；20 ≈ 原版 PortHack 20 层尾迹。5 个立体共用同一套尾迹逻辑 |
-| `<TrailSizeStep>` | 每层额外尺寸（相对模型半径）。留空 = 0.10（20 层最外层约 2.9×，接近原版比例）；0 = 所有层同尺寸 |
+| `<TrailLayers>` | **多层尾迹层数**：默认 20（当前效果）；1 = 单立体。入口保留，示例中以注释给出 |
+| `<TrailSizeStep>` | 每层额外尺寸（相对模型半径）。默认 0.20（20 层最外层约 4.8×，出框为预期构图）；0 = 所有层同尺寸 |
 | `<TrailPulse>` | 逐层转速脉冲强度。留空 = 0.05；0 = 所有层同角速度 |
 | `<TrailContraction>` | spindown 时是否收缩尾迹。留空 = true |
 | `<IdleSpinSpeed>` | 成功演出期间**背景慢转**的速度（弧度/秒）。留空 = 按 `SpinSpeed` 等比缩放 |

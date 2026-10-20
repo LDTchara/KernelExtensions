@@ -67,8 +67,8 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) |
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
-| `<TrailLayers>` | **Multi-layer trail count**: 1 (default) = single solid; 20 ≈ the vanilla 20-layer PortHack trail. All five solids share the same trail logic |
-| `<TrailSizeStep>` | Extra size per layer (relative to model radius). Empty = 0.10 (outermost of 20 layers ≈ 2.9×, close to the vanilla ratio); 0 = all layers same size |
+| `<TrailLayers>` | **Multi-layer trail count**: default 20 (current look); 1 = single solid. Entry kept for tuning and shown commented in the example |
+| `<TrailSizeStep>` | Extra size per layer (relative to model radius). Default 0.20 (outermost of 20 layers ≈ 4.8×; going off-frame is intentional); 0 = all layers same size |
 | `<TrailPulse>` | Per-layer spin-speed pulse. Empty = 0.05; 0 = same speed for all layers |
 | `<TrailContraction>` | Whether the trail contracts during spindown. Empty = true |
 | `<IdleSpinSpeed>` | Speed of the slow background spin during the success sequence. Empty = scaled from `SpinSpeed` |
