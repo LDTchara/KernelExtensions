@@ -99,6 +99,7 @@ public class KEPolyhedronSequence : IDisposable
 
     // ---- 相机与投影 ----
     private const float CAMERA_DISTANCE = 3f;       // 模型半径 1，这个距离下立体约占画面短边 85%
+    private const float TRAIL_CAMERA_DISTANCE = 7f; // 轨迹模式固定相机：不随层数/尺寸参数变化
     private const float CAMERA_PITCH_DEG = 15f;         // 轻俯角：相机略高于物体往下看（这个观感已确认合适）
     private const float CAMERA_YAW_DEG = 0f;            // 正对 Z 轴；水平自转的"从左向右"要正对着看才正
 
@@ -251,6 +252,12 @@ public class KEPolyhedronSequence : IDisposable
     /// 实心（<see cref="KEPolyhedronStyle.Solid"/>）模式暂不参与尾迹（强制按 1 层画，避免多层实心 z-fighting）。
     /// </summary>
     public int TrailLayers { get; set; } = 1;
+
+    /// <summary>
+    /// 是否为独立的"轨迹模式"。最终会作为作者唯一可见的开关（具体参数由内部预设控制）；
+    /// 当前调参期仍保留 Trail* 细项，TrailLayers &gt; 1 也会自动按轨迹模式渲染。
+    /// </summary>
+    public bool TrailMode { get; set; }
 
     /// <summary>每层额外尺寸（相对模型半径）。0 = 所有层同尺寸；默认 0.10（20 层最外层约 2.9×，接近原版 2.6→7.35 的比例）。</summary>
     public float TrailSizeStep { get; set; } = 0.10f;
@@ -739,7 +746,7 @@ public class KEPolyhedronSequence : IDisposable
             // 尺寸/旋转偏移/转速脉冲三组因子在 spindown 时按原版 num8/num9/num7 的曲线收缩：
             // 外层（i 大）按 pow(scaleFactor, i) 指数收拢，层间角偏移按 torsionFactor 归零。
             // 实心模式暂不参与尾迹（多层实心会有 z-fighting/overdraw），强制按 1 层画。
-            int layers = Math.Max(1, TrailLayers);
+            int layers = TrailMode ? Math.Max(2, TrailLayers) : Math.Max(1, TrailLayers);
             if (WantsFaces) layers = 1;
             if (layers > 64) layers = 64;
 
@@ -747,11 +754,11 @@ public class KEPolyhedronSequence : IDisposable
             float rotStep = SafeNonNegative(TrailRotationStep);
             float pulseStrength = SafeNonNegative(TrailPulse);
 
-            // 尾迹会把外层放大，必须把相机拉远，否则最外层会被视锥裁掉。
-            // 单层时 maxLayerScale == _scale，相机距离仍是原来的 CAMERA_DISTANCE（不变）。
-            float maxLayerScale = _scale * (1f + (layers - 1) * sizeStep);
-            float fitDistance = maxLayerScale / (float)Math.Tan(MathHelper.ToRadians(FOV_Y_DEG) * 0.5f * 0.9f);
-            float cameraDistance = Math.Max(CAMERA_DISTANCE, fitDistance);
+            // ⚠️ 尾迹相机必须**固定**，不能按 TrailSizeStep 自动拉远：
+            // 否则调大尺寸步长时相机同步后退，外层投影尺寸几乎不变（"怎么调都一样大"），
+            // 而 spindown 收缩到最后只剩基础层，固定层在不同相机距离下投影尺寸差异很大。
+            // 单层保持原 CAMERA_DISTANCE；轨迹模式用固定 TRAIL_CAMERA_DISTANCE。
+            float cameraDistance = layers > 1 ? TRAIL_CAMERA_DISTANCE : CAMERA_DISTANCE;
 
             // 投影每帧按 dest 宽高比重设（不像原版那样启动时固化一次）。
             // 竖长窗口要按宽高比放大纵向视场角，否则立体横向会被裁掉。
