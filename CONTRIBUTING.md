@@ -109,6 +109,7 @@ refactor(config): Config renamed to Configs (plural)
 - User-facing features need Wiki pages (Chinese + English, see the `KEwiki/` side repo) and, where applicable, XML doc comments with usage examples in the code.
 - The wiki tracks the stable `main` branch; it is not pushed until `dev` is merged to `main`.
 - Keep private planning notes out of public commits and docs — for example, if you maintain an internal numbered plan, do not mention your internal IDs in commit messages or Wiki pages.
+- **Config/XML changes include their example update.** When adding, renaming or removing a config element/attribute, update the matching `XMLExamples/*_Example.xml` (and the docs page) in the same PR — examples are part of the author-facing contract.
 
 ## 8. Review Checklist
 
