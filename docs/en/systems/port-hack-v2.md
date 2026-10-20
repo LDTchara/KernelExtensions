@@ -69,7 +69,6 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
 | `<TrailLayers>` | **Multi-layer trail count**: 1 (default) = single solid; 20 ≈ the vanilla 20-layer PortHack trail. All five solids share the same trail logic |
 | `<TrailSizeStep>` | Extra size per layer (relative to model radius). Empty = 0.10 (outermost of 20 layers ≈ 2.9×, close to the vanilla ratio); 0 = all layers same size |
-| `<TrailRotationStep>` | **Layer activation threshold** (radians): the next layer starts only after the previous solid has rotated this far. Kept for tuning; the automatic (normalized) mode derives it from the spin-up angle, and it is only used by the fixed-angle mode |
 | `<TrailPulse>` | Per-layer spin-speed pulse. Empty = 0.05; 0 = same speed for all layers |
 | `<TrailContraction>` | Whether the trail contracts during spindown. Empty = true |
 | `<IdleSpinSpeed>` | Speed of the slow background spin during the success sequence. Empty = scaled from `SpinSpeed` |
@@ -180,7 +179,7 @@ Every Platonic solid spins around **its own rotational symmetry axis**, and that
 #### Multi-layer trail (`<TrailLayers>`)
 
 `TrailLayers=1` (default) keeps the original single-solid look; set `20` to draw the same
-solid 20 times. All layers start at the **same angle**; during spin-up the base rotation grows, the inner layers start first and outer layers start after reaching their activation threshold. The automatic mode normalizes thresholds to the spin-up angle so the outermost layer starts near the end of spin-up; `TrailRotationStep` is the fixed-angle tuning parameter (ignored by Auto mode).
+solid 20 times. All layers start at the **same angle**; during spin-up the base rotation grows, the inner layers start first and outer layers start after reaching an automatically derived activation threshold. Thresholds are normalized to the spin-up angle so the outermost layer starts near the end of spin-up; no manual configuration is needed.
 forming a spiral trail. During spindown the layers contract to the same limited degree as vanilla
 (scaleFactor≈0.868 / torsion≈0.565); they **keep their size/angle differences and do not merge into one solid**, then enter `IdleSpin`.
 

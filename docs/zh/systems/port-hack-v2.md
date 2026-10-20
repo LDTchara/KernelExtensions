@@ -68,7 +68,6 @@ flag 就是"入口牌"：
 | `<SpinSpeed>` | 立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒一圈） |
 | `<TrailLayers>` | **多层尾迹层数**：1（默认）= 单立体；20 ≈ 原版 PortHack 20 层尾迹。5 个立体共用同一套尾迹逻辑 |
 | `<TrailSizeStep>` | 每层额外尺寸（相对模型半径）。留空 = 0.10（20 层最外层约 2.9×，接近原版比例）；0 = 所有层同尺寸 |
-| `<TrailRotationStep>` | **层启动阈值**（弧度）：前一立体转过该角度后下一层才开始转。调参期保留；当前自动（归一化）模式按 spinup 角位移计算，此值仅固定角度模式使用 |
 | `<TrailPulse>` | 逐层转速脉冲强度。留空 = 0.05；0 = 所有层同角速度 |
 | `<TrailContraction>` | spindown 时是否收缩尾迹。留空 = true |
 | `<IdleSpinSpeed>` | 成功演出期间**背景慢转**的速度（弧度/秒）。留空 = 按 `SpinSpeed` 等比缩放 |
@@ -178,7 +177,7 @@ flag 就是"入口牌"：
 #### 多层尾迹（`<TrailLayers>`）
 
 `TrailLayers=1`（默认）保持原来的单立体效果；写 `20` 时同一个立体画 20 遍：
-所有层**起始角度相同**；spinup 期间基础旋转增加，低层先转、高层达到启动阈值后才启动。自动模式用 spinup 期间的角位移归一化，保证最后一层在 spinup 末尾附近才开始；`TrailRotationStep` 是固定角度模式的参数（调参期保留，Auto 模式忽略）。
+所有层**起始角度相同**；spinup 期间基础旋转增加，低层先转、高层达到自动算出的启动阈值后才启动。阈值按 spinup 期间的角位移归一化，保证最后一层在 spinup 末尾附近才开始；无需手动配置。
 spindown 时收缩到原版同级别（scaleFactor≈0.868 / torsion≈0.565），**保留层间尺寸与角度差、不会合并成一个**，然后进入 `IdleSpin`。
 
 - **5 个立体共用一套参数**：Cube / Tetrahedron / Octahedron / Dodecahedron / Icosahedron 都能开尾迹；
