@@ -7,7 +7,7 @@ KernelExtensions 目前提供了一个自定义守护进程：**FlightDaemon**�
 
 详细的配置选项、攻击与修复流程，以及覆盖层的使用方法，请参阅 **[飞机Daemon系统](./../systems/aircraft.md)** 页面。
 
-未来计划添加 **Porthack 心脏 Daemon**，允许自定义 Porthack 完成后的动作。
+自定义心脏 Daemon（`CustomHeartDaemon`）已实现，允许自定义 Porthack 完成后的动作。
 
 ---
 

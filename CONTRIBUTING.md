@@ -37,7 +37,7 @@ Thanks for your interest in contributing to **KernelExtensions**! This guide col
 KernelExtensions/
 ├── Actions/          # Pathfinder Actions (subfolders like Title/)
 ├── Configs/          # Config parsing (UsernameProfiles, etc.)
-├── Daemons/          # Custom daemons (FlightDaemon, PorthackHeartDaemon)
+├── Daemons/          # Custom daemons (FlightDaemon, CustomHeartDaemon)
 ├── Executables/      # Custom executables (CustomTrialExe, PhaseSwiftExe)
 ├── Managers/         # Global services (ClockManager, PhaseSwiftManager, CustomColorManager)
 ├── Modules/          # UI / render modules (CustomEndingModule, etc.)
@@ -89,7 +89,7 @@ Must finish with **0 errors and 0 warnings**. `GenerateDocumentationFile` is on,
   - **Never hand-write `LoadFromXml` to read attributes** — always use an `[XMLStorage]` field. Hand-written loading has produced two bugs:
     ① forgetting `base.LoadFromXml(info)` → `Delay`/`DelayHost` silently stop working (`TerminalFocus`);
     ② hard-coding an attribute name (e.g. `GetString("text", …)`) → authors writing `Text=` get silent no-ops (`TerminalWrite`).
-  - **Multi-frame drawing must re-register `os.postFXDrawActions` every frame** — it is a **one-shot** delegate: the OS invokes it and immediately sets it to `null` (`OS.cs:1257`). Registering only once in `Start()` draws a single frame (effectively invisible). See `PorthackHeartDaemon` / `ScreenBleedWCCManager` for the correct pattern.
+  - **Multi-frame drawing must re-register `os.postFXDrawActions` every frame** — it is a **one-shot** delegate: the OS invokes it and immediately sets it to `null` (`OS.cs:1257`). Registering only once in `Start()` draws a single frame (effectively invisible). See `CustomHeartDaemon` / `ScreenBleedWCCManager` for the correct pattern.
 - **Action points** (the config fields that attach Actions, e.g. `OnStart` / `OnComplete` / `OnFail` / `OnSwitch`):
   - ⚠️ **The existing systems are inconsistent** (some use a `file` attribute, some use element text content, some `string` fields). **New action points must use the `Configs/ActionHook` type** — see the target shape below.
   - `ActionHook` accepts all three forms: **element text content** (a path), the legacy **`file` attribute**, and **inline elements** (`<Actions>` / `<ConditionalActions>`). When both a path and inline content are present, the **file runs first, then the inline part**.
@@ -149,7 +149,7 @@ Before opening a PR, verify:
 KernelExtensions/
 ├── Actions/          # Pathfinder Action（含 Title/ 等子目录）
 ├── Configs/          # 配置解析（UsernameProfiles 等）
-├── Daemons/          # 自定义 Daemon（FlightDaemon、PorthackHeartDaemon）
+├── Daemons/          # 自定义 Daemon（FlightDaemon、CustomHeartDaemon）
 ├── Executables/      # 自定义可执行程序（CustomTrialExe、PhaseSwiftExe）
 ├── Managers/         # 全局服务（ClockManager、PhaseSwiftManager、CustomColorManager）
 ├── Modules/          # 界面/渲染模块（CustomEndingModule 等）
@@ -201,7 +201,7 @@ dotnet build KernelExtensions.csproj --no-restore
   - **不要手写 `LoadFromXml` 去读属性**——一律用 `[XMLStorage]` 字段。手写会出现两类 bug：
     ① 忘记调 `base.LoadFromXml(info)` → `Delay`/`DelayHost` 静默失效（`TerminalFocus` 曾如此）；
     ② 硬编码属性名（如 `GetString("text", …)`）→ 作者写 `Text=` 时静默无输出（`TerminalWrite` 曾如此）。
-  - **持续多帧绘制必须每帧重挂 `os.postFXDrawActions`**——它是**一次性**委托：OS 调用后立即置 `null`（`OS.cs:1257`）。只在 `Start()` 挂一次只会绘制一帧（肉眼几乎不可见）。参考 `PorthackHeartDaemon` / `ScreenBleedWCCManager` 的写法。
+  - **持续多帧绘制必须每帧重挂 `os.postFXDrawActions`**——它是**一次性**委托：OS 调用后立即置 `null`（`OS.cs:1257`）。只在 `Start()` 挂一次只会绘制一帧（肉眼几乎不可见）。参考 `CustomHeartDaemon` / `ScreenBleedWCCManager` 的写法。
 - **动作点**（配置里挂 Action 的字段，如 `OnStart` / `OnComplete` / `OnFail` / `OnSwitch`）：
   - ⚠️ **存量各系统写法不一致**（有的用 `file` 属性、有的用元素文本内容、有的是 `string` 字段）。**新增动作点一律用 `Configs/ActionHook` 类型**，按下面的目标形态来。
   - `ActionHook` 同时支持三种写法：**元素文本内容**（路径）、兼容旧写法的 **`file` 属性**、**内联元素**（`<Actions>` / `<ConditionalActions>`）。同时给了路径与内联时，**先执行文件、再执行内联**。
