@@ -223,6 +223,9 @@ namespace KernelExtensions.Executables
             const float cycle = total + 3.5f; // 匀速 + 收尾窗口，之后重来
             _polySeq.Shape = shape;
             _polySeq.TrailLayers = _trailLayers;
+            _polySeq.Mode = _trailLayers > 1
+                ? KEPolyhedronStyle.WireframeTrail
+                : KEPolyhedronStyle.Wireframe;
 
             if (_timer >= cycle)
             {

@@ -151,9 +151,10 @@
                       Dodecahedron / Icosahedron（大小写不敏感）。留空 = Cube。
                       The solid that spins during the crack. Case-insensitive. Empty = Cube.
        PolyhedronStyle：立体怎么画。**留空 = Wireframe**（只画线框，与原版观感一致）。
-                      Wireframe  = 只画线框
+                      Wireframe  = 只画线框（单层）
                       Solid      = 只画实心面（带逐面明暗、背面剔除）
                       SolidWire  = 实心面 + 线框叠加（棱始终可见）
+                      WireframeTrail = 线框 + 多层尾迹（**唯一启用尾迹的预设**）
                       大小写不敏感；也接受 wire / solid / both 等简写。
                       ⚠️ 面数少的立体（四面体 4 / 立方体 6 / 八面体 8）实心后体积感最好；
                          面数多的（十二面体 12 / 二十面体 20）实心后可能发糊，那种情况下
@@ -192,7 +193,10 @@
   <PolyhedronStyle>Wireframe</PolyhedronStyle>
 
   <!-- ── 轨迹调参入口（默认值已内置，通常不需要写；调参时取消注释覆盖） ──
+       注意：只有 <PolyhedronStyle>WireframeTrail</PolyhedronStyle> 才启用尾迹；
+       普通 Wireframe 始终单层。
        当前默认：TrailLayers=20 / TrailSizeStep=0.20 / TrailPulse=0.05 / TrailContraction=true
+  <PolyhedronStyle>WireframeTrail</PolyhedronStyle>
   <TrailLayers>20</TrailLayers>
   <TrailSizeStep>0.20</TrailSizeStep>
   <TrailPulse>0.05</TrailPulse>

@@ -667,9 +667,14 @@ public class PortHackV2Config
             || v.Equals("solid+wire", StringComparison.OrdinalIgnoreCase)
             || v.Equals("both", StringComparison.OrdinalIgnoreCase))
             return KEPolyhedronStyle.SolidWire;
+        if (v.Equals("wireframetrail", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("wire+trail", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("wiretrail", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("trail", StringComparison.OrdinalIgnoreCase))
+            return KEPolyhedronStyle.WireframeTrail;
 
         KELog.WarnT($"[PortHackV2] '{SourceName}': unknown <PolyhedronStyle> '{raw}'; "
-            + "expected Wireframe / Solid / SolidWire. Using Wireframe.");
+            + "expected Wireframe / Solid / SolidWire / WireframeTrail. Using Wireframe.");
         return KEPolyhedronStyle.Wireframe;
     }
 }

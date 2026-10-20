@@ -10,13 +10,20 @@ namespace KernelExtensions.Utilities
     /// </summary>
     public enum KEPolyhedronStyle
     {
-        /// <summary>只画线框。**默认** —— 与原版 <c>PortHack</c> 观感一致，也是加入面渲染之前的行为。</summary>
+        /// <summary>只画线框，单层。**默认** —— 与原版 <c>PortHack</c> 观感一致。</summary>
         Wireframe = 0,
 
         /// <summary>只画实心面：逐面明暗（平面着色）+ 背面剔除。</summary>
         Solid = 1,
 
         /// <summary>实心面 + 线框叠加：低多边形观感，棱始终可见。</summary>
-        SolidWire = 2
+        SolidWire = 2,
+
+        /// <summary>
+        /// **线框 + 多层尾迹**：同一个立体画 N 遍（层数/尺寸由 Trail* 内部预设控制），
+        /// 起始全层同角，spinup 中依次启动，spindown 有限收缩、不合并。
+        /// 这是唯一会启用尾迹的呈现方式；普通 <see cref="Wireframe"/> 始终只画单层。
+        /// </summary>
+        WireframeTrail = 3
     }
 }

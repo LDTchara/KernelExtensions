@@ -166,11 +166,15 @@ public class KEPolyhedronSequence : IDisposable
         set => _presentation = value;
     }
 
-    /// <summary>是否需要实心面（<see cref="KEPolyhedronStyle.Wireframe"/> 之外都要）。</summary>
-    private bool WantsFaces => _presentation != KEPolyhedronStyle.Wireframe;
+    /// <summary>是否需要实心面（Solid / SolidWire 才要；Wireframe / WireframeTrail 不要）。</summary>
+    private bool WantsFaces => _presentation == KEPolyhedronStyle.Solid
+        || _presentation == KEPolyhedronStyle.SolidWire;
 
-    /// <summary>是否需要线框（<see cref="KEPolyhedronStyle.Solid"/> 不要）。</summary>
+    /// <summary>是否需要线框（只有 Solid 不要线框）。</summary>
     private bool WantsWire => _presentation != KEPolyhedronStyle.Solid;
+
+    /// <summary>是否为"线框 + 多层尾迹"专用呈现方式；只有它启用多层渲染。</summary>
+    private bool WantsTrail => _presentation == KEPolyhedronStyle.WireframeTrail;
 
     /// <summary>
     /// 线框是否**过深度测试**（即被实心面挡住的棱不可见）。
@@ -247,17 +251,10 @@ public class KEPolyhedronSequence : IDisposable
     public bool IdleSpin { get; set; }
 
     /// <summary>
-    /// 多层尾迹层数。默认 20（当前满意效果）；1 = 单立体；
-    /// &gt;1 时同一个立体画 N 遍，附加逐层的尺寸/旋转差，并在 spindown 时有限收缩。
-    /// 实心（<see cref="KEPolyhedronStyle.Solid"/>）模式暂不参与尾迹（强制按 1 层画，避免多层实心 z-fighting）。
+    /// 尾迹层数。默认 20（当前满意效果）；仅当呈现方式为
+    /// <see cref="KEPolyhedronStyle.WireframeTrail"/> 时生效；其他模式始终单层。
     /// </summary>
     public int TrailLayers { get; set; } = 20;
-
-    /// <summary>
-    /// 是否为独立的"轨迹模式"。最终会作为作者唯一可见的开关（具体参数由内部预设控制）；
-    /// 当前调参期仍保留 Trail* 细项，TrailLayers &gt; 1 也会自动按轨迹模式渲染。
-    /// </summary>
-    public bool TrailMode { get; set; }
 
     /// <summary>每层额外尺寸（相对模型半径）。0 = 所有层同尺寸；默认 0.20（20 层最外层约 4.8×，外层会越出视锥，属预期构图）。</summary>
     public float TrailSizeStep { get; set; } = 0.20f;
@@ -775,11 +772,9 @@ public class KEPolyhedronSequence : IDisposable
             gd.Clear(Color.Transparent);
 
             // 多层尾迹：同一个立体画 N 遍。
-            // 尺寸/旋转偏移/转速脉冲三组因子在 spindown 时按原版 num8/num9/num7 的曲线收缩：
-            // 外层（i 大）按 pow(scaleFactor, i) 指数收拢，层间角偏移按 torsionFactor 归零。
-            // 实心模式暂不参与尾迹（多层实心会有 z-fighting/overdraw），强制按 1 层画。
-            int layers = TrailMode ? Math.Max(2, TrailLayers) : Math.Max(1, TrailLayers);
-            if (WantsFaces) layers = 1;
+            // **只有 Mode == WireframeTrail 才启用**；Wireframe / Solid / SolidWire 始终单层。
+            // 尺寸/旋转偏移/转速脉冲三组因子在 spindown 时按原版 num8/num9/num7 的曲线收缩。
+            int layers = WantsTrail ? Math.Max(2, TrailLayers) : 1;
             if (layers > 64) layers = 64;
 
             float sizeStep = SafeNonNegative(TrailSizeStep);
