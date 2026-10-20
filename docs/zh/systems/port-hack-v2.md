@@ -179,8 +179,7 @@ flag 就是"入口牌"：
 
 `TrailLayers=1`（默认）保持原来的单立体效果；写 `20` 时同一个立体画 20 遍：
 每层按 `TrailSizeStep` 放大、按 `TrailRotationStep` 错开旋转角，形成螺旋尾迹；
-spindown 时外层按指数收缩、层间旋转偏移归零（对齐原版 20 层立方体），
-最终收成一个立体再进入 `IdleSpin` 慢转。
+spindown 时收缩到原版同级别（scaleFactor≈0.868 / torsion≈0.565），**保留层间尺寸与角度差、不会合并成一个**，然后进入 `IdleSpin`。
 
 - **5 个立体共用一套参数**：Cube / Tetrahedron / Octahedron / Dodecahedron / Icosahedron 都能开尾迹；
 - 实心模式（`Solid` / `SolidWire`）暂不参与尾迹，仍按 1 层绘制（避免多层实心 z-fighting）；

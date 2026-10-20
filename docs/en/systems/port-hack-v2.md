@@ -181,9 +181,8 @@ Every Platonic solid spins around **its own rotational symmetry axis**, and that
 
 `TrailLayers=1` (default) keeps the original single-solid look; set `20` to draw the same
 solid 20 times, each layer scaled by `TrailSizeStep` and rotated by `TrailRotationStep`,
-forming a spiral trail. During spindown the outer layers contract exponentially and the
-layer rotation offsets fade to zero (matching the vanilla 20-layer cube), collapsing into
-one solid before `IdleSpin`.
+forming a spiral trail. During spindown the layers contract to the same limited degree as vanilla
+(scaleFactor≈0.868 / torsion≈0.565); they **keep their size/angle differences and do not merge into one solid**, then enter `IdleSpin`.
 
 - **All five solids share one set of parameters** — Cube / Tetrahedron / Octahedron / Dodecahedron / Icosahedron;
 - Solid modes (`Solid` / `SolidWire`) do not participate in the trail yet (drawn as one layer to avoid z-fighting);
