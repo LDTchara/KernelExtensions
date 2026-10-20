@@ -266,6 +266,13 @@ public class KEPolyhedronSequence : IDisposable
     public float TrailRotationStep { get; set; } = 0.10f;
 
     /// <summary>
+    /// 层启动阈值的来源：true（默认，B 方案）= 按 spinup 结束时的总旋转角归一化，
+    /// 让最后一层恰好在 spinup 末尾开始转；false = 使用固定的 <see cref="TrailRotationStep"/>（PH 原版式）。
+    /// 轨迹预设最终会收成 PolyhedronStyle 的一个预设，这里仅调参期保留。
+    /// </summary>
+    public bool TrailActivationNormalized { get; set; } = true;
+
+    /// <summary>
     /// 逐层转速脉冲强度（对齐原版 num12）。0 = 所有层同角速度；默认 0.05。
     /// 只在 TrailLayers &gt; 1 时生效。
     /// </summary>
@@ -736,6 +743,24 @@ public class KEPolyhedronSequence : IDisposable
     private static float SafeFinite(float value, float fallback)
         => float.IsNaN(value) || float.IsInfinity(value) ? fallback : value;
 
+    /// <summary>
+    /// 层启动阈值（每层需要基础旋转多走多少弧度才开始转）。
+    /// B 方案：用 spinup 期间的角位移归一化，保证最后一层在 spinup 末尾附近启动；
+    /// 若 SpinUpTime/SpinSpeed 退化，则回退到固定 TrailRotationStep。
+    /// </summary>
+    private float ComputeActivationStep(int layers)
+    {
+        if (layers <= 1) return 0f;
+        if (!TrailActivationNormalized) return SafeNonNegative(TrailRotationStep);
+
+        float spinup = _spinUpTime > 0f ? _spinUpTime : 0f;
+        // EvaluateOmega 在 spinup 内从 OmegaStart 线性升到 SpinSpeed，角位移取积分
+        float spinupAngle = 0.5f * (OmegaStart + SpinSpeed) * spinup;
+        if (float.IsNaN(spinupAngle) || float.IsInfinity(spinupAngle) || spinupAngle <= 0.0001f)
+            return SafeNonNegative(TrailRotationStep);
+        return spinupAngle / (layers - 1);
+    }
+
     private void RenderToTexture(GraphicsDevice gd, Rectangle dest)
     {
         RenderTargetBinding[] previousTargets = gd.GetRenderTargets();
@@ -758,7 +783,6 @@ public class KEPolyhedronSequence : IDisposable
             if (layers > 64) layers = 64;
 
             float sizeStep = SafeNonNegative(TrailSizeStep);
-            float rotStep = SafeNonNegative(TrailRotationStep);
             float pulseStrength = SafeNonNegative(TrailPulse);
 
             // ⚠️ 尾迹相机必须**固定**，不能按 TrailSizeStep 自动拉远：
@@ -790,9 +814,13 @@ public class KEPolyhedronSequence : IDisposable
                     layerScale = _scale * (1f + i * sizeStep * sizeFactor);
 
                     float pulse = 1f + pulseStrength * _layerSpinFactor * ((n - i) / n);
-                    // 符号与原版一致：外层 i 越大，角度越"落后"（负偏移）→ 内层领先、外层拖尾。
-                    layerAngle = _angle * pulse * SPIN_DIRECTION_SIGN
-                        - i * rotStep * _layerTorsionFactor;
+                    // PH 的层角度 = max(0, 基础旋转*脉冲 - i*阈值*num9)：
+                    // 起始时所有层都是 0；随基础旋转增大，低层先启动、高层后启动。
+                    // 不能写成 "基础旋转 + i*固定偏移"，那会让起始状态就错开。
+                    float activationStep = ComputeActivationStep(layers);
+                    layerAngle = Math.Max(0f,
+                        _angle * pulse * SPIN_DIRECTION_SIGN
+                        - i * activationStep * _layerTorsionFactor);
                 }
 
                 _effect.World = Matrix.CreateScale(layerScale)

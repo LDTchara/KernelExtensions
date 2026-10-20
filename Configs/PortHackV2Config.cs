@@ -304,7 +304,7 @@ public class PortHackV2Config
     /// <summary>每层额外尺寸（相对模型半径）。留空 = 0.10；0 = 所有层同尺寸。</summary>
     [XmlElement("TrailSizeStep")] public string TrailSizeStepRaw { get; set; }
 
-    /// <summary>每层绕自转轴的额外旋转偏移（弧度）。留空 = 0.10；0 = 所有层同角度。</summary>
+    /// <summary>层启动阈值（弧度）。调参期保留；Auto 模式按 spinup 角位移归一化，此值仅固定角度模式使用。</summary>
     [XmlElement("TrailRotationStep")] public string TrailRotationStepRaw { get; set; }
 
     /// <summary>逐层转速脉冲强度（对齐原版 num12）。留空 = 0.05；0 = 所有层同角速度。</summary>
