@@ -304,9 +304,6 @@ public class PortHackV2Config
     /// <summary>每层额外尺寸（相对模型半径）。留空 = 0.10；0 = 所有层同尺寸。</summary>
     [XmlElement("TrailSizeStep")] public string TrailSizeStepRaw { get; set; }
 
-    /// <summary>层启动阈值（弧度）。调参期保留；Auto 模式按 spinup 角位移归一化，此值仅固定角度模式使用。</summary>
-    [XmlElement("TrailRotationStep")] public string TrailRotationStepRaw { get; set; }
-
     /// <summary>逐层转速脉冲强度（对齐原版 num12）。留空 = 0.05；0 = 所有层同角速度。</summary>
     [XmlElement("TrailPulse")] public string TrailPulseRaw { get; set; }
 
@@ -338,9 +335,6 @@ public class PortHackV2Config
 
     /// <summary>每层额外尺寸（解析结果）。</summary>
     [XmlIgnore] public float TrailSizeStep { get; private set; } = 0.10f;
-
-    /// <summary>每层旋转偏移（解析结果，弧度）。</summary>
-    [XmlIgnore] public float TrailRotationStep { get; private set; } = 0.10f;
 
     /// <summary>逐层转速脉冲（解析结果）。</summary>
     [XmlIgnore] public float TrailPulse { get; private set; } = 0.05f;
@@ -596,10 +590,6 @@ public class PortHackV2Config
         TrailSizeStep = ConfigValue.ParseInRange(TrailSizeStepRaw, 0.10f, 0f, 1f, out bool tssOk);
         if (!tssOk)
             KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailSizeStep> '{TrailSizeStepRaw}', expected 0~1; using 0.10.");
-
-        TrailRotationStep = ConfigValue.ParseInRange(TrailRotationStepRaw, 0.10f, 0f, 1f, out bool trsOk);
-        if (!trsOk)
-            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailRotationStep> '{TrailRotationStepRaw}', expected 0~1; using 0.10.");
 
         TrailPulse = ConfigValue.ParseInRange(TrailPulseRaw, 0.05f, 0f, 1f, out bool tpOk);
         if (!tpOk)

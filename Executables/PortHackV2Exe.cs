@@ -191,7 +191,6 @@ public class PortHackV2Exe : GameExecutable
         _sequence.SpinDownSeconds = CurrentConfig.SpinDownSeconds;
         _sequence.TrailLayers = CurrentConfig.TrailLayers;
         _sequence.TrailSizeStep = CurrentConfig.TrailSizeStep;
-        _sequence.TrailRotationStep = CurrentConfig.TrailRotationStep;
         _sequence.TrailPulse = CurrentConfig.TrailPulse;
         _sequence.TrailContraction = CurrentConfig.TrailContraction;
 
