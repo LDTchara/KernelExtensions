@@ -13,6 +13,7 @@
 - **声明**：在计算机 XML 里写 `<CustomHeartDaemon ... />`（全部参数可选，带默认值）
 - **默认态**：旋转的 3D 线框立方体 + 闪烁标题
 - **触发**：`<BreakHeart>` Action（剧情显式）或 `AutoOnPorthack`（porthack 破解进度 > 50% 自动，一次性标志防重复）
+- **显式触发会强制连接**：`BreakHeart` 会把玩家**强制切到目标节点**（不经过 connect 的端口/防火墙校验）并把 Display 切到心脏 daemon，保证心碎画面立即可见；玩家不需要事先连接
 - **结束**：**不触发原版结局**，而是进入终结态（暗屏）+ 通用清理，然后把控制权交给 `OnComplete`
 
 ---
@@ -117,6 +118,7 @@ PHD 不替你做这些决定。
   心碎后的走向完全由 `OnComplete` 决定。
 - **音效不开放配置**：启动音效与 glow 音效直接使用原版 Content 路径（`SFX/TraceKill`、
   `SFX/Ending/PorthackSpindown`），资源缺失时静默跳过。
+- **心碎画面由目标 daemon 的 `draw()` 驱动**：只有"当前连接机器的 DisplayModule"会调用它；`BreakHeart` 会强制连接目标节点并切换 Display，`AutoOnPorthack` 本身也要求玩家在目标节点上运行 porthack
 - ⚠️ **`ResetHeartbreak()` 复位重玩没有 XML 入口**：它是 `CustomHeartDaemon` 的 **public 方法**，
   目前只能由代码（模组作者）调用，纯扩展作者无法用 XML 触发。需要 XML 入口的话请提出需求。
 - 心碎序列期间会**锁定输入**（除非 `LockInput="false"`），`LockInput` 写其他值时按 `true` 处理。
@@ -127,7 +129,7 @@ PHD 不替你做这些决定。
 
 ### `BreakHeart`
 
-显式触发目标节点的 CustomHeartDaemon 心碎序列。
+显式触发目标节点的 CustomHeartDaemon 心碎序列。若玩家当前未连接目标节点，会强制连接到目标机并切换 Display 到心脏 daemon（不经过 connect 的端口/防火墙校验）。
 
 | 属性 | 必填 | 说明 |
 |------|:----:|------|

@@ -15,6 +15,7 @@ timing, callbacks and input locking.
 - **Declaration**: write `<CustomHeartDaemon ... />` inside a computer's XML (every parameter is optional with a default)
 - **Idle state**: a rotating 3D wireframe cube with a flickering title
 - **Trigger**: the `<BreakHeart>` Action (explicit, from story) or `AutoOnPorthack` (automatic when porthack progress exceeds 50%, guarded by a one-shot flag)
+- **Explicit triggers force-connect**: `BreakHeart` switches the player to the target node **forcibly** (bypassing the normal connect port/firewall checks) and switches Display to the heart daemon, so the sequence is immediately visible; no prior connection is required
 - **Ending**: it does **not** fire the vanilla ending — it enters a terminal state (dark screen) plus generic cleanup, then hands control to `OnComplete`
 
 ---
@@ -121,6 +122,7 @@ Two different things, easily confused:
   that is useless to extensions. What happens after the heartbreak is entirely up to `OnComplete`.
 - **Sounds are not configurable**: the startup and glow sounds use vanilla Content paths
   (`SFX/TraceKill`, `SFX/Ending/PorthackSpindown`) and are skipped silently when missing.
+- **The heartbreak visuals are driven by the target daemon's `draw()`**, which only runs in the DisplayModule of the currently connected machine; `BreakHeart` force-connects to the target and switches Display, while `AutoOnPorthack` inherently requires the player to be running porthack on that node
 - ⚠️ **`ResetHeartbreak()` has no XML entry point**: it is a **public method** on `CustomHeartDaemon`,
   callable only from code (mod authors). Plain extension authors cannot trigger it from XML — ask if you
   need that.
@@ -132,7 +134,7 @@ Two different things, easily confused:
 
 ### `BreakHeart`
 
-Explicitly triggers the CustomHeartDaemon heartbreak sequence on a node.
+Explicitly triggers the CustomHeartDaemon heartbreak sequence on a node. If the player is not connected to the target, it force-connects to the target and switches Display to the heart daemon (bypassing normal connect port/firewall checks).
 
 | Attribute | Required | Description |
 |-----------|:--------:|-------------|
