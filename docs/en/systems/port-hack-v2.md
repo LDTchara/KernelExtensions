@@ -65,7 +65,7 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<Time>` | Total length of the Cracking phase in seconds. Empty = 10. Also what the Listing screen's "Estimated Ns" shows |
 | `<ShowEstimate>` | Whether the Listing screen shows the estimated crack time. Empty / non-boolean = `true`. Set `false` to hide it — the duration itself is a spoiler |
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
-| `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) |
+| `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (single-layer lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) / **`WireframeTrail` (lines + multi-layer trail; the only preset that enables the trail)** |
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
 | `<TrailLayers>` | **Multi-layer trail count**: default 20 (current look); 1 = single solid. Entry kept for tuning and shown commented in the example |
 | `<TrailSizeStep>` | Extra size per layer (relative to model radius). Default 0.20 (outermost of 20 layers ≈ 4.8×; going off-frame is intentional); 0 = all layers same size |
@@ -178,7 +178,8 @@ Every Platonic solid spins around **its own rotational symmetry axis**, and that
 
 #### Multi-layer trail (`<TrailLayers>`)
 
-`TrailLayers=1` (default) keeps the original single-solid look; set `20` to draw the same
+Only `<PolyhedronStyle>WireframeTrail</PolyhedronStyle>` enables the trail; plain `Wireframe` is always single-layer.
+With `TrailLayers=20` (default) the same
 solid 20 times. All layers start at the **same angle**; during spin-up the base rotation grows, the inner layers start first and outer layers start after reaching an automatically derived activation threshold. Thresholds are normalized to the spin-up angle so the outermost layer starts near the end of spin-up; no manual configuration is needed.
 forming a spiral trail. During spindown the layers contract to the same limited degree as vanilla
 (scaleFactor≈0.868 / torsion≈0.565); they **keep their size/angle differences and do not merge into one solid**, then enter `IdleSpin`.

@@ -64,7 +64,7 @@ flag 就是"入口牌"：
 | `<Time>` | Cracking 阶段总时长（秒）。留空 = 10。也是 Listing 屏「预计 Ns」显示的值 |
 | `<ShowEstimate>` | Listing 屏是否显示「预计破解时长」。留空 / 非布尔 = `true`。写 `false` 隐藏 —— 时长本身是剧透信息 |
 | `<Polyhedron>` | 动画用的柏拉图立体：`Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
-| `<PolyhedronStyle>` | 立体怎么画：`Wireframe`（线框，**默认**）/ `Solid`（实心面）/ `SolidWire`（实心 + 线框） |
+| `<PolyhedronStyle>` | 立体怎么画：`Wireframe`（线框单层，**默认**）/ `Solid`（实心面）/ `SolidWire`（实心 + 线框）/ **`WireframeTrail`（线框 + 多层尾迹，唯一启用尾迹的预设）** |
 | `<SpinSpeed>` | 立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒一圈） |
 | `<TrailLayers>` | **多层尾迹层数**：默认 20（当前效果）；1 = 单立体。入口保留，示例中以注释给出 |
 | `<TrailSizeStep>` | 每层额外尺寸（相对模型半径）。默认 0.20（20 层最外层约 4.8×，出框为预期构图）；0 = 所有层同尺寸 |
@@ -176,7 +176,8 @@ flag 就是"入口牌"：
 
 #### 多层尾迹（`<TrailLayers>`）
 
-`TrailLayers=1`（默认）保持原来的单立体效果；写 `20` 时同一个立体画 20 遍：
+只有 `<PolyhedronStyle>WireframeTrail</PolyhedronStyle>` 才启用尾迹；普通 `Wireframe` 始终单层。
+`TrailLayers=20`（默认）时同一个立体画 20 遍：
 所有层**起始角度相同**；spinup 期间基础旋转增加，低层先转、高层达到自动算出的启动阈值后才启动。阈值按 spinup 期间的角位移归一化，保证最后一层在 spinup 末尾附近才开始；无需手动配置。
 spindown 时收缩到原版同级别（scaleFactor≈0.868 / torsion≈0.565），**保留层间尺寸与角度差、不会合并成一个**，然后进入 `IdleSpin`。
 
