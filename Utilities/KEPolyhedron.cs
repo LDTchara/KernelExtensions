@@ -132,6 +132,28 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>
+        /// 该立体在 OrientationMatrix 扶正之后，为了让**初始姿态相对相机左右对称**所需的
+        /// 绕 Y 初始偏航角（度）。
+        ///
+        /// <para>
+        /// OrientationMatrix 只保证"对称轴竖直"，它是最小旋转，因此还会残留一个绕该轴的
+        /// 任意滚转角。Cube / Octahedron 的原始坐标恰好轴对齐（0°）；Tetra / Dodeca / Icosa
+        /// 的原始坐标不是，扶正后看起来会"歪一点"。下面的值由"让顶点集合关于相机 YZ 平面
+        /// 镜像对称"数值搜索得到（每个立体取最小非负解）。
+        /// </para>
+        /// </summary>
+        public static float InitialYawDeg(KEPlatonicShape s)
+        {
+            switch (Index(s))
+            {
+                case (int)KEPlatonicShape.Tetrahedron: return 15f;
+                case (int)KEPlatonicShape.Dodecahedron: return 30f;
+                case (int)KEPlatonicShape.Icosahedron: return 18f;
+                default: return 0f; // Cube / Octahedron 原始坐标已轴对齐
+            }
+        }
+
+        /// <summary>
         /// 把 <paramref name="axis"/> 转到竖直的**最小旋转**矩阵（纯旋转，无缩放无镜像）。
         ///
         /// <para>

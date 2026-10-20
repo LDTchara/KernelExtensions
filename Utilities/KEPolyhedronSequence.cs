@@ -801,10 +801,15 @@ public class KEPolyhedronSequence : IDisposable
             float cameraYaw = layers > 1 ? SafeFinite(TrailCameraYawDeg, 15f) : CAMERA_YAW_DEG;
             _effect.View = Matrix.CreateLookAt(
                 BuildCameraDirection(cameraPitch, cameraYaw) * cameraDistance, Vector3.Zero, Vector3.Up);
+
+            // OrientationMatrix 只扶正对称轴，会残留绕 Y 的任意滚转；按立体补 canonical 初始偏航，
+            // 再叠加相机 yaw，保证 "0 角度" 的起始姿态相对相机左右对称。
+            float initialYaw = MathHelper.ToRadians(
+                KEPolyhedron.InitialYawDeg(Shape) + cameraYaw);
             for (int layer = 0; layer < layers; layer++)
             {
                 float layerScale = _scale;
-                float layerAngle = _angle * SPIN_DIRECTION_SIGN;
+                float layerAngle = initialYaw + _angle * SPIN_DIRECTION_SIGN;
 
                 if (layers > 1)
                 {
@@ -818,7 +823,7 @@ public class KEPolyhedronSequence : IDisposable
                     // 起始时所有层都是 0；随基础旋转增大，低层先启动、高层后启动。
                     // 不能写成 "基础旋转 + i*固定偏移"，那会让起始状态就错开。
                     float activationStep = ComputeActivationStep(layers);
-                    layerAngle = Math.Max(0f,
+                    layerAngle = initialYaw + Math.Max(0f,
                         _angle * pulse * SPIN_DIRECTION_SIGN
                         - i * activationStep * _layerTorsionFactor);
                 }
