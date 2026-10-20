@@ -27,7 +27,7 @@
 | `FadeoutDelay` | 数值 | `1` | 周围黑幕淡入的**延迟**（秒） |
 | `FadeoutDuration` | 数值 | `10` | 周围黑幕淡入的**时长**（秒） |
 | `AlignTime` | 数值 | `2.5` | 立方体旋转对齐到正位的时长（秒） |
-| `HeartDuration` | 数值 | `30` | 心形序列的总时长（秒） |
+| `HeartDuration` | 数值 | `30` | ⚠️ **保留参数**：当前播放原版固定节奏（约 47 秒），此值暂未生效 |
 | `FlashOutTime` | 数值 | `3.8` | 心形完成后白色淡出的时长（秒） |
 | `OnComplete` | 字符串 | 无 | 序列**结束后**加载的 Action 文件（相对扩展根）；`NONE` / 空 = 不执行 |
 | `OnHeartbreak` | 字符串 | 无 | **开始碎心时**加载的 Action 文件；`NONE` / 空 = 不执行 |
@@ -76,7 +76,7 @@
 ③ 切换音乐（Music）并播放启动音效（SFX/TraceKill）
 ④ 18 秒后播放 glow 音效（SFX/Ending/PorthackSpindown）
 ⑤ 立方体旋转对齐（AlignTime）
-⑥ 心形序列（HeartDuration）
+⑥ 心形序列（原版固定节奏约 47 秒；`HeartDuration` 暂未生效）
 ⑦ 白色淡出（FlashOutTime）；周围黑幕在此期间淡入（延迟 FadeoutDelay，时长 FadeoutDuration）
 ⑧ 进入终结态（暗屏）+ 通用清理
 ⑨ 执行 OnComplete 动作文件 → 控制权交给剧情
@@ -119,6 +119,7 @@ PHD 不替你做这些决定。
 - **音效不开放配置**：启动音效与 glow 音效直接使用原版 Content 路径（`SFX/TraceKill`、
   `SFX/Ending/PorthackSpindown`），资源缺失时静默跳过。
 - **心碎画面由目标 daemon 的 `draw()` 驱动**：只有"当前连接机器的 DisplayModule"会调用它；`BreakHeart` 会强制连接目标节点并切换 Display，`AutoOnPorthack` 本身也要求玩家在目标节点上运行 porthack
+- ⚠️ **`HeartDuration` 目前不生效**：心形序列直接复用原版 `PortHackCubeSequence` 的固定节奏（启动 3s + 旋转 10s + 运行 2s + 减速 9s + 待机 2s + 淡出 21s ≈ 47s）；字段已保留，待后续版本接入自定义节奏
 - ⚠️ **`ResetHeartbreak()` 复位重玩没有 XML 入口**：它是 `CustomHeartDaemon` 的 **public 方法**，
   目前只能由代码（模组作者）调用，纯扩展作者无法用 XML 触发。需要 XML 入口的话请提出需求。
 - 心碎序列期间会**锁定输入**（除非 `LockInput="false"`），`LockInput` 写其他值时按 `true` 处理。

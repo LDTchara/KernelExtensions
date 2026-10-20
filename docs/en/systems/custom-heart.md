@@ -29,7 +29,7 @@ timing, callbacks and input locking.
 | `FadeoutDelay` | number | `1` | **Delay** before the surrounding dark veil fades in (seconds) |
 | `FadeoutDuration` | number | `10` | **Duration** of that veil fade-in (seconds) |
 | `AlignTime` | number | `2.5` | Time for the cube to rotate into alignment (seconds) |
-| `HeartDuration` | number | `30` | Total length of the heart sequence (seconds) |
+| `HeartDuration` | number | `30` | ⚠️ **Reserved**: the vanilla sequence currently uses a fixed pace (~47 s); this value does not take effect yet |
 | `FlashOutTime` | number | `3.8` | White fade-out after the heart completes (seconds) |
 | `OnComplete` | string | none | Action file loaded **after** the sequence ends (relative to the extension root); `NONE` / empty = do not run |
 | `OnHeartbreak` | string | none | Action file loaded when the heartbreak **begins**; `NONE` / empty = do not run |
@@ -79,7 +79,7 @@ Idle: rotating 3D wireframe cube + flickering title (Title)
 (3) Switch music (Music) and play the startup sound (SFX/TraceKill)
 (4) 18 seconds later play the glow sound (SFX/Ending/PorthackSpindown)
 (5) Cube rotates into alignment (AlignTime)
-(6) Heart sequence (HeartDuration)
+(6) Heart sequence (vanilla fixed pace ~47 s; `HeartDuration` not effective yet)
 (7) White fade-out (FlashOutTime); the surrounding veil fades in during this phase
     (delayed by FadeoutDelay, lasting FadeoutDuration)
 (8) Terminal state (dark screen) + generic cleanup
@@ -123,6 +123,7 @@ Two different things, easily confused:
 - **Sounds are not configurable**: the startup and glow sounds use vanilla Content paths
   (`SFX/TraceKill`, `SFX/Ending/PorthackSpindown`) and are skipped silently when missing.
 - **The heartbreak visuals are driven by the target daemon's `draw()`**, which only runs in the DisplayModule of the currently connected machine; `BreakHeart` force-connects to the target and switches Display, while `AutoOnPorthack` inherently requires the player to be running porthack on that node
+- ⚠️ **`HeartDuration` is currently ineffective**: the heart sequence reuses the vanilla `PortHackCubeSequence` fixed pace (startup 3 s + spin 10 s + runtime 2 s + spindown 9 s + idle 2 s + fade 21 s ≈ 47 s); the field is reserved for a future custom-pacing version
 - ⚠️ **`ResetHeartbreak()` has no XML entry point**: it is a **public method** on `CustomHeartDaemon`,
   callable only from code (mod authors). Plain extension authors cannot trigger it from XML — ask if you
   need that.
