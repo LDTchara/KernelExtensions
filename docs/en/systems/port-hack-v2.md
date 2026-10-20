@@ -188,7 +188,7 @@ one solid before `IdleSpin`.
 - **All five solids share one set of parameters** — Cube / Tetrahedron / Octahedron / Dodecahedron / Icosahedron;
 - Solid modes (`Solid` / `SolidWire`) do not participate in the trail yet (drawn as one layer to avoid z-fighting);
 - More layers = more draw calls (20 layers ≈ 600 lines), still within budget; capped at 64;
-- Trail mode automatically adjusts the camera (pitch 30° / yaw 15°) and pulls back based on the outermost layer so the stack is not clipped; single-layer mode keeps the original camera.
+- Trail mode uses a fixed camera (pitch 30° / yaw 15°, fixed distance); **changing `TrailSizeStep` does not move the camera**, and the final contraction size is independent of it. Single-layer mode keeps the original camera.
 
 #### Presentation (`<PolyhedronStyle>`)
 
