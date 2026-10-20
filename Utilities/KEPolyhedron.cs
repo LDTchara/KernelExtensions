@@ -3,25 +3,6 @@ using System.Text;
 
 namespace KernelExtensions.Utilities
 {
-    /// <summary>柏拉图立体（五种凸正多面体）。</summary>
-    public enum KPlatonicShape
-    {
-        /// <summary>正四面体：4 顶点 / 6 棱 / 4 个三角形面。</summary>
-        Tetrahedron = 0,
-
-        /// <summary>正六面体（立方体）：8 顶点 / 12 棱 / 6 个正方形面。</summary>
-        Cube = 1,
-
-        /// <summary>正八面体：6 顶点 / 12 棱 / 8 个三角形面。</summary>
-        Octahedron = 2,
-
-        /// <summary>正十二面体：20 顶点 / 30 棱 / 12 个正五边形面。</summary>
-        Dodecahedron = 3,
-
-        /// <summary>正二十面体：12 顶点 / 30 棱 / 20 个三角形面。</summary>
-        Icosahedron = 4
-    }
-
     /// <summary>
     /// 五种柏拉图立体的顶点 / 棱 / 过顶点旋转对称轴表，供 3D 线框演出使用。
     ///
@@ -33,7 +14,7 @@ namespace KernelExtensions.Utilities
     ///     （棱变多）或漏棱（棱变少）—— 肉眼几乎看不出来；由几何推导 + <see cref="ValidateSelfTest"/>
     ///     自检更可靠。
     /// </summary>
-    public static class KPolyhedron
+    public static class KEPolyhedron
     {
         /// <summary>黄金比 φ = (1 + √5) / 2 —— 正十二 / 二十面体顶点坐标的基础常量。</summary>
         private const double Phi = 1.6180339887498949;
@@ -65,13 +46,13 @@ namespace KernelExtensions.Utilities
         /// 取该立体的顶点表（半径已归一：最远顶点距离 = 1）。返回副本，调用方随便改。
         /// </summary>
         /// <param name="s">立体种类；越界值退回立方体，不抛异常。</param>
-        public static Vector3[] Vertices(KPlatonicShape s) => (Vector3[])Get(s).Verts.Clone();
+        public static Vector3[] Vertices(KEPlatonicShape s) => (Vector3[])Get(s).Verts.Clone();
 
         /// <summary>
         /// 取该立体的棱表（由面表去重推导，按 A 再 B 排序，顺序稳定）。返回副本，调用方随便改。
         /// </summary>
         /// <param name="s">立体种类；越界值退回立方体，不抛异常。</param>
-        public static (int A, int B)[] Edges(KPlatonicShape s) => ((int A, int B)[])Get(s).Edges.Clone();
+        public static (int A, int B)[] Edges(KEPlatonicShape s) => ((int A, int B)[])Get(s).Edges.Clone();
 
         /// <summary>
         /// 取该立体的面表。返回副本，调用方随便改。
@@ -87,11 +68,11 @@ namespace KernelExtensions.Utilities
         /// <c>CreateLookAt</c>）会把**手性翻过来**，于是同一个环投到屏幕上变成**顺时针**。
         /// 因此用硬件剔除时必须配 <c>CullMode.CullClockwiseFace</c>（而非默认的
         /// <c>CullCounterClockwiseFace</c>，那会"保留背面、剔掉正面"—— 实机踩过）。
-        /// 详见 <c>KPolyhedronSequence._faceRasterizer</c> 的注释。
+        /// 详见 <c>KEPolyhedronSequence._faceRasterizer</c> 的注释。
         /// </para>
         /// </summary>
         /// <param name="s">立体种类；越界值退回立方体，不抛异常。</param>
-        public static int[][] Faces(KPlatonicShape s)
+        public static int[][] Faces(KEPlatonicShape s)
         {
             int[][] src = Get(s).Faces;
             var copy = new int[src.Length][];
@@ -129,18 +110,18 @@ namespace KernelExtensions.Utilities
         /// </para>
         /// </summary>
         /// <param name="s">立体种类；越界值退回立方体的对称轴。</param>
-        public static Vector3 SpinAxis(KPlatonicShape s)
+        public static Vector3 SpinAxis(KEPlatonicShape s)
         {
             switch (Index(s))
             {
-                case (int)KPlatonicShape.Tetrahedron:
+                case (int)KEPlatonicShape.Tetrahedron:
                     // 顶点向对底面中心作的垂线 = 体对角线方向（3 重轴）
                     return Vector3.Normalize(new Vector3(1f, 1f, 1f));
-                case (int)KPlatonicShape.Dodecahedron:
+                case (int)KEPlatonicShape.Dodecahedron:
                     // 最竖直的 3 重轴 —— 过两个相对顶点（(1/φ, φ, 0) 正是它的顶点向量之一）。
                     // 与竖直夹角 20.9°（比 (0,1,φ) 的 58.3° 正得多；Y 轴对它只是 2 重轴）
                     return Vector3.Normalize(new Vector3(1f / (float)Phi, (float)Phi, 0f));
-                case (int)KPlatonicShape.Icosahedron:
+                case (int)KEPlatonicShape.Icosahedron:
                     // 最竖直的 5 重轴 —— 上下两个相对顶点连成的线，两端在旋转中固定不动。
                     // 与竖直夹角 31.7°（另一根 5 重轴 (0,1,φ) 是 58.3°，歪近一倍）
                     return Vector3.Normalize(new Vector3(1f, (float)Phi, 0f));
@@ -219,11 +200,11 @@ namespace KernelExtensions.Utilities
         public static string ValidateSelfTest()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("KPolyhedron self-test (v = vertices, e = edges, f = faces)");
+            sb.AppendLine("KEPolyhedron self-test (v = vertices, e = edges, f = faces)");
 
             int passed = 0;
             int total = 0;
-            foreach (KPlatonicShape s in (KPlatonicShape[])Enum.GetValues(typeof(KPlatonicShape)))
+            foreach (KEPlatonicShape s in (KEPlatonicShape[])Enum.GetValues(typeof(KEPlatonicShape)))
             {
                 total++;
                 int[] want = Expected[Index(s)];
@@ -306,7 +287,7 @@ namespace KernelExtensions.Utilities
 
         // ======================= 内部：几何推导 =======================
 
-        private static ShapeData Get(KPlatonicShape s)
+        private static ShapeData Get(KEPlatonicShape s)
         {
             int i = Index(s);
             lock (CacheLock)
@@ -322,13 +303,13 @@ namespace KernelExtensions.Utilities
         }
 
         /// <summary>越界的枚举值（外部传进来的脏数据）退回立方体，避免抛异常。</summary>
-        private static int Index(KPlatonicShape s)
+        private static int Index(KEPlatonicShape s)
         {
             int i = (int)s;
-            return i >= 0 && i < Expected.Length ? i : (int)KPlatonicShape.Cube;
+            return i >= 0 && i < Expected.Length ? i : (int)KEPlatonicShape.Cube;
         }
 
-        private static ShapeData Build(KPlatonicShape s)
+        private static ShapeData Build(KEPlatonicShape s)
         {
             double[][] raw = RawVertices(s);
 
@@ -351,19 +332,19 @@ namespace KernelExtensions.Utilities
             int[] want = Expected[Index(s)];
             if (verts.Length != want[0] || data.Edges.Length != want[1] || faces.Length != want[2])
             {
-                KELog.Error($"[KPolyhedron] {s} geometry mismatch: v={verts.Length} e={data.Edges.Length}"
+                KELog.Error($"[KEPolyhedron] {s} geometry mismatch: v={verts.Length} e={data.Edges.Length}"
                     + $" f={faces.Length}, expected v={want[0]} e={want[1]} f={want[2]}.");
             }
             return data;
         }
 
         /// <summary>各立体的原始顶点坐标（未归一）。</summary>
-        private static double[][] RawVertices(KPlatonicShape s)
+        private static double[][] RawVertices(KEPlatonicShape s)
         {
             var list = new List<double[]>();
             switch (Index(s))
             {
-                case (int)KPlatonicShape.Tetrahedron:
+                case (int)KEPlatonicShape.Tetrahedron:
                     // 立方体 8 个顶点里「符号积为正」的 4 个，恰好构成一组正四面体
                     foreach (double[] p in SignVariants(1, 1, 1))
                     {
@@ -371,17 +352,17 @@ namespace KernelExtensions.Utilities
                     }
                     break;
 
-                case (int)KPlatonicShape.Cube:
+                case (int)KEPlatonicShape.Cube:
                     list.AddRange(SignVariants(1, 1, 1));
                     break;
 
-                case (int)KPlatonicShape.Octahedron:
+                case (int)KEPlatonicShape.Octahedron:
                     list.AddRange(SignVariants(1, 0, 0));
                     list.AddRange(SignVariants(0, 1, 0));
                     list.AddRange(SignVariants(0, 0, 1));
                     break;
 
-                case (int)KPlatonicShape.Dodecahedron:
+                case (int)KEPlatonicShape.Dodecahedron:
                     list.AddRange(SignVariants(1, 1, 1));
                     list.AddRange(SignVariants(0, 1 / Phi, Phi));
                     list.AddRange(SignVariants(1 / Phi, Phi, 0));

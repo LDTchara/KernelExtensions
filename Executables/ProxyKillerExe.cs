@@ -797,6 +797,13 @@ public class ProxyKillerExe : GameExecutable
         // Update 在 Draw 之前跑，背景的密度/速度幂律要用上一帧的高度
         _lastAreaHeight = content.Height;
 
+        // ★ PK 自己的不透明黑底：caller-side backdrop，盖住后面的游戏界面，
+        //   让 FlowFieldEffect 的粒子/线条在黑底上叠加。**不要**去改 effect 本体加背景。
+        spriteBatch.Draw(Utils.white,
+            new Rectangle(bounds.X, bounds.Y + Module.PANEL_HEIGHT,
+                bounds.Width, bounds.Height - Module.PANEL_HEIGHT),
+            Color.Black);
+
         if (_locked)
         {
             // 锁定屏是"要么全在、要么全无"：退出瞬间连背景一起停画（不参与淡出）

@@ -122,7 +122,7 @@ public class PortHackV2Exe : GameExecutable
     private static readonly Random _rng = new();    // 各协议启动时的成功率掷点
 
     // ---------- 动画 ----------
-    private readonly KPolyhedronSequence _sequence = new();
+    private readonly KEPolyhedronSequence _sequence = new();
     private RenderTarget2D _rt;         // 3D 动画的离屏画布
     private SpriteBatch _rtBatch;       // 画进 _rt 用的专用批（主 spriteBatch 由 OS 持有，不能借用）
 
@@ -189,6 +189,11 @@ public class PortHackV2Exe : GameExecutable
         _sequence.SpinUpSeconds = CurrentConfig.SpinUpSeconds;
         _sequence.SpinUpRatio = CurrentConfig.SpinUpRatio;
         _sequence.SpinDownSeconds = CurrentConfig.SpinDownSeconds;
+        _sequence.TrailLayers = CurrentConfig.TrailLayers;
+        _sequence.TrailSizeStep = CurrentConfig.TrailSizeStep;
+        _sequence.TrailRotationStep = CurrentConfig.TrailRotationStep;
+        _sequence.TrailPulse = CurrentConfig.TrailPulse;
+        _sequence.TrailContraction = CurrentConfig.TrailContraction;
 
         _accent = CurrentConfig.AccentColor;
         _accentStr = CurrentConfig.AccentColorRaw;

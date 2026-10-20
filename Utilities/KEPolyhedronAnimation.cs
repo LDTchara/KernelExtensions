@@ -5,7 +5,7 @@ namespace KernelExtensions.Utilities
     ///
     /// <para>
     /// 为什么要单独一个类：这些常量原先放在 <c>Configs.PortHackV2Config</c> 里，于是
-    /// <see cref="KPolyhedron"/> 的渲染/动画消费方（<c>KPolyhedronSequence</c>）**反过来依赖某个
+    /// <see cref="KEPolyhedron"/> 的渲染/动画消费方（<c>KEPolyhedronSequence</c>）**反过来依赖某个
     /// 可执行程序的配置类** —— 而那套渲染其实已经不只服务 PortHackV2（效果播放器也用它预览立体）。
     /// 挪到这里之后，依赖方向是：配置层 → 本类 ← 渲染层。
     /// </para>
@@ -13,11 +13,11 @@ namespace KernelExtensions.Utilities
     /// <para>
     /// ⚠️ 这些是**动画层的基准值**，不是"某个配置项的默认值"。尤其
     /// <see cref="DefaultSpinSpeed"/> —— 起转角速度与急刹后的慢转角速度按**固定比例**跟着它缩放
-    /// （见 <c>KPolyhedronSequence.OMEGA0_RATIO</c> / <c>OMEGA_IDLE_RATIO</c>，源码里写成
+    /// （见 <c>KEPolyhedronSequence.OMEGA0_RATIO</c> / <c>OMEGA_IDLE_RATIO</c>，源码里写成
     /// <c>0.3f / DefaultSpinSpeed</c>），所以改它会连带改变整条"起转慢 → 匀速快 → 急刹回慢"曲线。
     /// </para>
     /// </summary>
-    public static class KPolyhedronAnimation
+    public static class KEPolyhedronAnimation
     {
         /// <summary>
         /// 匀速（Cracking 期间）的默认目标角速度，单位**弧度/秒**。3.2 ≈ 183°/秒。

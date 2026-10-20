@@ -8,7 +8,7 @@ namespace KernelExtensions.Utilities
     /// 而序列类是实现细节。放在 <c>Utilities</c> 也让配置类不必反向依赖 <c>Executables</c>。
     /// </para>
     /// </summary>
-    public enum KPolyhedronStyle
+    public enum KEPolyhedronStyle
     {
         /// <summary>只画线框。**默认** —— 与原版 <c>PortHack</c> 观感一致，也是加入面渲染之前的行为。</summary>
         Wireframe = 0,

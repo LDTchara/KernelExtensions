@@ -167,7 +167,7 @@ public class PortHackV2Config
     [XmlElement("Polyhedron")] public string PolyhedronRaw { get; set; }
 
     /// <summary>动画立体的解析结果。</summary>
-    [XmlIgnore] public KPlatonicShape PolyhedronShape { get; private set; } = KPlatonicShape.Cube;
+    [XmlIgnore] public KEPlatonicShape PolyhedronShape { get; private set; } = KEPlatonicShape.Cube;
 
     /// <summary>
     /// 立体的**呈现方式**：<c>Wireframe</c>（默认）/ <c>Solid</c> / <c>SolidWire</c>（大小写不敏感）。
@@ -188,7 +188,7 @@ public class PortHackV2Config
     [XmlElement("PolyhedronStyle")] public string PolyhedronStyleRaw { get; set; }
 
     /// <summary>立体呈现方式的解析结果。</summary>
-    [XmlIgnore] public KPolyhedronStyle PolyhedronStyle { get; private set; } = KPolyhedronStyle.Wireframe;
+    [XmlIgnore] public KEPolyhedronStyle PolyhedronStyle { get; private set; } = KEPolyhedronStyle.Wireframe;
 
     /// <summary>
     /// 强调色：**动画立体（多边体线框）**专用。
@@ -247,13 +247,13 @@ public class PortHackV2Config
     /// 立体**目标转速**的默认值（弧度/秒）。
     ///
     /// <para>
-    /// ⚠️ 真值定义在 <see cref="Utilities.KPolyhedronAnimation.DefaultSpinSpeed"/> —— 那是**动画层的基准**：
+    /// ⚠️ 真值定义在 <see cref="Utilities.KEPolyhedronAnimation.DefaultSpinSpeed"/> —— 那是**动画层的基准**：
     /// 起转角速度与急刹后的慢转角速度按**固定比例**跟着它缩放（<c>0.3f / 该值</c> 与 <c>0.5f / 该值</c>），
     /// 所以它不只是"一个配置项的默认值"，改它会连带改变整条转速曲线。
     /// 放在动画层后，依赖方向是「本配置 → 动画层」，渲染方不再需要反过来依赖本配置。
     /// </para>
     /// </summary>
-    public const float DefaultSpinSpeed = Utilities.KPolyhedronAnimation.DefaultSpinSpeed;
+    public const float DefaultSpinSpeed = Utilities.KEPolyhedronAnimation.DefaultSpinSpeed;
 
     /// <summary>
     /// 起转（加速）时长**占总时长的比例**。留空 = 0.1（总时长的 10%）。
@@ -294,6 +294,25 @@ public class PortHackV2Config
     /// </summary>
     [XmlElement("IdleSpinSpeed")] public string IdleSpinSpeedRaw { get; set; }
 
+    /// <summary>
+    /// 多层尾迹层数：1（默认）= 单立体，保持既有观感；&gt;1 = 同一个立体画 N 遍，
+    /// 带层间尺寸/旋转差与 spindown 收缩（对齐原版 20 层立方体的结构，但适用于全部 5 个立体）。
+    /// 实心呈现方式（Solid/SolidWire）暂不参与尾迹，仍按单层绘制。
+    /// </summary>
+    [XmlElement("TrailLayers")] public string TrailLayersRaw { get; set; }
+
+    /// <summary>每层额外尺寸（相对模型半径）。留空 = 0.03；0 = 所有层同尺寸。</summary>
+    [XmlElement("TrailSizeStep")] public string TrailSizeStepRaw { get; set; }
+
+    /// <summary>每层绕自转轴的额外旋转偏移（弧度）。留空 = 0.10；0 = 所有层同角度。</summary>
+    [XmlElement("TrailRotationStep")] public string TrailRotationStepRaw { get; set; }
+
+    /// <summary>逐层转速脉冲强度（对齐原版 num12）。留空 = 0.05；0 = 所有层同角速度。</summary>
+    [XmlElement("TrailPulse")] public string TrailPulseRaw { get; set; }
+
+    /// <summary>spindown 是否收缩尾迹。留空 = true；false = 保持 runtime 的展开形态。</summary>
+    [XmlElement("TrailContraction")] public string TrailContractionRaw { get; set; }
+
     /// <summary>成功演出结束后、退出前的停留秒数。留空 = 5（对齐原版 TIME_ALIVE_AFTER_SUCSESS）。</summary>
     [XmlElement("CompleteDelay")] public string CompleteDelayRaw { get; set; }
 
@@ -313,6 +332,21 @@ public class PortHackV2Config
 
     /// <summary>成功演出期间慢转速度的解析结果（弧度/秒）；&lt; 0 = 按目标转速等比缩放。</summary>
     [XmlIgnore] public float IdleSpinSpeed { get; private set; } = -1f;
+
+    /// <summary>尾迹层数（解析结果）。默认 1 = 单立体。</summary>
+    [XmlIgnore] public int TrailLayers { get; private set; } = 1;
+
+    /// <summary>每层额外尺寸（解析结果）。</summary>
+    [XmlIgnore] public float TrailSizeStep { get; private set; } = 0.03f;
+
+    /// <summary>每层旋转偏移（解析结果，弧度）。</summary>
+    [XmlIgnore] public float TrailRotationStep { get; private set; } = 0.10f;
+
+    /// <summary>逐层转速脉冲（解析结果）。</summary>
+    [XmlIgnore] public float TrailPulse { get; private set; } = 0.05f;
+
+    /// <summary>spindown 是否收缩尾迹（解析结果）。</summary>
+    [XmlIgnore] public bool TrailContraction { get; private set; } = true;
 
     /// <summary>成功演出后退出前停留（秒）。</summary>
     [XmlIgnore] public float CompleteDelay { get; private set; } = 5f;
@@ -553,6 +587,33 @@ public class PortHackV2Config
             KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <IdleSpinSpeed> '{IdleSpinSpeedRaw}', "
                 + "expected a finite number >= 0 (or negative for auto); scaling with <SpinSpeed>.");
 
+        // 多层尾迹：默认 1 层 = 既有单立体观感；上限 64 防止配置过大拖慢渲染
+        float trailLayers = ConfigValue.ParseInRange(TrailLayersRaw, 1f, 1f, 64f, out bool tlOk);
+        if (!tlOk)
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailLayers> '{TrailLayersRaw}', expected 1~64; using 1.");
+        TrailLayers = (int)Math.Round(trailLayers);
+
+        TrailSizeStep = ConfigValue.ParseInRange(TrailSizeStepRaw, 0.03f, 0f, 1f, out bool tssOk);
+        if (!tssOk)
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailSizeStep> '{TrailSizeStepRaw}', expected 0~1; using 0.03.");
+
+        TrailRotationStep = ConfigValue.ParseInRange(TrailRotationStepRaw, 0.10f, 0f, 1f, out bool trsOk);
+        if (!trsOk)
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailRotationStep> '{TrailRotationStepRaw}', expected 0~1; using 0.10.");
+
+        TrailPulse = ConfigValue.ParseInRange(TrailPulseRaw, 0.05f, 0f, 1f, out bool tpOk);
+        if (!tpOk)
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailPulse> '{TrailPulseRaw}', expected 0~1; using 0.05.");
+
+        string trailContraction = TrailContractionRaw?.Trim();
+        if (string.IsNullOrEmpty(trailContraction)) TrailContraction = true;
+        else if (bool.TryParse(trailContraction, out bool tc)) TrailContraction = tc;
+        else
+        {
+            TrailContraction = true;
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailContraction> '{TrailContractionRaw}', expected true/false; using true.");
+        }
+
         foreach (var p in Protocols) p?.ResolveValues(SourceName);
     }
 
@@ -576,16 +637,16 @@ public class PortHackV2Config
     /// 解析动画立体名（大小写不敏感）；留空 = 默认立方（不记日志，那是正常省略）；
     /// 写了但无法识别 = 回退立方 + Warn（帮作者揪出拼写错误）。
     /// </summary>
-    private KPlatonicShape ParsePolyhedron(string raw)
+    private KEPlatonicShape ParsePolyhedron(string raw)
     {
-        if (ConfigValue.IsNone(raw)) return KPlatonicShape.Cube;
+        if (ConfigValue.IsNone(raw)) return KEPlatonicShape.Cube;
 
-        if (Enum.TryParse(raw.Trim(), ignoreCase: true, out KPlatonicShape shape))
+        if (Enum.TryParse(raw.Trim(), ignoreCase: true, out KEPlatonicShape shape))
             return shape;
 
         KELog.WarnT($"[PortHackV2] '{SourceName}': unknown <Polyhedron> '{raw}'; "
             + "expected Tetrahedron / Cube / Octahedron / Dodecahedron / Icosahedron. Using Cube.");
-        return KPlatonicShape.Cube;
+        return KEPlatonicShape.Cube;
     }
 
     /// <summary>
@@ -597,29 +658,29 @@ public class PortHackV2Config
     /// 否则已有扩展的观感会无声改变。
     /// </para>
     /// </summary>
-    private KPolyhedronStyle ParsePolyhedronStyle(string raw)
+    private KEPolyhedronStyle ParsePolyhedronStyle(string raw)
     {
-        if (ConfigValue.IsNone(raw)) return KPolyhedronStyle.Wireframe;
+        if (ConfigValue.IsNone(raw)) return KEPolyhedronStyle.Wireframe;
 
         // 顺带接受几个同义写法，省得作者去猜该用哪个词
         string v = raw.Trim();
         if (v.Equals("wire", StringComparison.OrdinalIgnoreCase)
             || v.Equals("wireframe", StringComparison.OrdinalIgnoreCase)
             || v.Equals("line", StringComparison.OrdinalIgnoreCase))
-            return KPolyhedronStyle.Wireframe;
+            return KEPolyhedronStyle.Wireframe;
         if (v.Equals("solid", StringComparison.OrdinalIgnoreCase)
             || v.Equals("filled", StringComparison.OrdinalIgnoreCase)
             || v.Equals("face", StringComparison.OrdinalIgnoreCase)
             || v.Equals("faces", StringComparison.OrdinalIgnoreCase))
-            return KPolyhedronStyle.Solid;
+            return KEPolyhedronStyle.Solid;
         if (v.Equals("solidwire", StringComparison.OrdinalIgnoreCase)
             || v.Equals("solid+wire", StringComparison.OrdinalIgnoreCase)
             || v.Equals("both", StringComparison.OrdinalIgnoreCase))
-            return KPolyhedronStyle.SolidWire;
+            return KEPolyhedronStyle.SolidWire;
 
         KELog.WarnT($"[PortHackV2] '{SourceName}': unknown <PolyhedronStyle> '{raw}'; "
             + "expected Wireframe / Solid / SolidWire. Using Wireframe.");
-        return KPolyhedronStyle.Wireframe;
+        return KEPolyhedronStyle.Wireframe;
     }
 }
 

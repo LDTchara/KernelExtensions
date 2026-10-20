@@ -9,7 +9,7 @@ namespace KernelExtensions.Utilities;
 /// 没有线框尾迹（原版靠 20 层螺旋尾迹堆体积感，这里是单立体，靠相位与角速度表达节奏）。
 ///
 /// <para>
-/// 几何来自 <see cref="KPolyhedron"/>、默认转速来自 <see cref="KPolyhedronAnimation"/>；
+/// 几何来自 <see cref="KEPolyhedron"/>、默认转速来自 <see cref="KEPolyhedronAnimation"/>；
 /// 本类只负责**怎么动、怎么画**。目前有两个消费者：端口破解程序（PortHackV2）的破解演出，
 /// 以及效果播放器对 5 个立体的预览 —— 所以它虽然脱胎于前者，**并不专属**于它。
 /// </para>
@@ -27,16 +27,16 @@ namespace KernelExtensions.Utilities;
 /// 3D 部分自建 BasicEffect + VertexBuffer(LineList)：原版 Hacknet.Effects.Cube3D 是 internal
 /// 类型且只有立方体，既不能扩展，也不该去反射内部类型。
 /// </summary>
-public class KPolyhedronSequence : IDisposable
+public class KEPolyhedronSequence : IDisposable
 {
     // ---- 时间轴（秒 / 弧度每秒） ----
     private const float STARTUP_RAMP = 0.4f;        // 浮现缩放窗口：并入起转，不再单独占一段时长
 
     /// <summary>
     /// 匀速（Cracking 期间）的默认目标角速度（弧度/秒）。真值在
-    /// <see cref="Utilities.KPolyhedronAnimation.DefaultSpinSpeed"/>（动画层持有；配置层也引用它）。
+    /// <see cref="Utilities.KEPolyhedronAnimation.DefaultSpinSpeed"/>（动画层持有；配置层也引用它）。
     /// </summary>
-    public const float DEFAULT_SPIN_SPEED = Utilities.KPolyhedronAnimation.DefaultSpinSpeed;
+    public const float DEFAULT_SPIN_SPEED = Utilities.KEPolyhedronAnimation.DefaultSpinSpeed;
 
     /// <summary>起转角速度相对目标转速的比例（3.2 时即 0.3）。</summary>
     private const float OMEGA0_RATIO = 0.3f / DEFAULT_SPIN_SPEED;
@@ -48,10 +48,10 @@ public class KPolyhedronSequence : IDisposable
     private const float IDLE_STOP_DECAY = 1.5f;     // IdleSpin=false 时从 ω_idle 停住的时间常数
 
     /// <summary>起转时长占总时长的比例；仅当 <see cref="SpinUpSeconds"/> &lt; 0 时生效。</summary>
-    public const float DEFAULT_SPINUP_RATIO = Utilities.KPolyhedronAnimation.DefaultSpinUpRatio;
+    public const float DEFAULT_SPINUP_RATIO = Utilities.KEPolyhedronAnimation.DefaultSpinUpRatio;
 
     /// <summary>急刹默认时长（秒）。</summary>
-    public const float DEFAULT_SPINDOWN_SECONDS = Utilities.KPolyhedronAnimation.DefaultSpinDownSeconds;
+    public const float DEFAULT_SPINDOWN_SECONDS = Utilities.KEPolyhedronAnimation.DefaultSpinDownSeconds;
 
     /// <summary>
     /// 匀速（Cracking 期间）的**目标角速度**（弧度/秒）。默认 <see cref="DEFAULT_SPIN_SPEED"/>（3.2）。
@@ -79,7 +79,7 @@ public class KPolyhedronSequence : IDisposable
     /// 立体作为背景继续慢转；<c>IdleSpin</c> 为 false 时它平滑停住、用不到这个值。
     /// </para>
     /// </summary>
-    public float IdleSpinSpeed { get; set; } = Utilities.KPolyhedronAnimation.DefaultIdleSpinSpeed;
+    public float IdleSpinSpeed { get; set; } = Utilities.KEPolyhedronAnimation.DefaultIdleSpinSpeed;
 
     /// <summary>起转角速度 = 目标转速 × 固定比例。</summary>
     private float OmegaStart => SpinSpeed * OMEGA0_RATIO;
@@ -119,6 +119,12 @@ public class KPolyhedronSequence : IDisposable
     private float _idleTime;        // 慢转区内的停留时长（IdleSpin=false 时用来慢慢停住）
     private float _postCrackTime;   // Cracking 结束后又过了多久（驱动急刹窗口）
 
+    // 多层尾迹的 spindown 因子（对应原版 DrawSequence 的 num8 / num9 / num7）：
+    // runtime 都是 1；急刹时分别收缩尺寸、收掉层间旋转偏移、降低转速；idle 保持末值。
+    private float _layerScaleFactor = 1f;
+    private float _layerTorsionFactor = 1f;
+    private float _layerSpinFactor = 1f;
+
     // ---- 时间轴（由 ApplyTimeline 按总时长结算） ----
     private float _totalSeconds = 10f;
     private float _spinUpTime;      // 起转（浮现 + 加速）实际时长
@@ -130,7 +136,7 @@ public class KPolyhedronSequence : IDisposable
     private BasicEffect _effect;
     private VertexBuffer _vertexBuffer;
 
-    /// <summary>实心面的顶点缓冲（三角形列表）。<see cref="KPolyhedronStyle.Wireframe"/> 时不建。</summary>
+    /// <summary>实心面的顶点缓冲（三角形列表）。<see cref="KEPolyhedronStyle.Wireframe"/> 时不建。</summary>
     private VertexBuffer _faceBuffer;
 
     private RasterizerState _rasterizer;
@@ -138,32 +144,32 @@ public class KPolyhedronSequence : IDisposable
     /// <summary>画实心面用的光栅状态：开启背面剔除 + 深度测试（线框那个是 <c>CullNone</c>）。</summary>
     private RasterizerState _faceRasterizer;
 
-    private KPlatonicShape _vertexBufferShape = (KPlatonicShape)(-1);
-    private KPlatonicShape _axisShape = (KPlatonicShape)(-1);
+    private KEPlatonicShape _vertexBufferShape = (KEPlatonicShape)(-1);
+    private KEPlatonicShape _axisShape = (KEPlatonicShape)(-1);
     private Vector3 _axis = Vector3.UnitY;
-    /// <summary>把自转轴摆到竖直的固定姿态矩阵（见 <see cref="KPolyhedron.OrientationMatrix"/>）。</summary>
+    /// <summary>把自转轴摆到竖直的固定姿态矩阵（见 <see cref="KEPolyhedron.OrientationMatrix"/>）。</summary>
     private Matrix _orientation = Matrix.Identity;
     private int _edgeCount;
     private Color _lastColor = Color.White;
     private bool _renderFailed;
     private bool _disposed;
 
-    private KPlatonicShape _shape = KPlatonicShape.Cube;
+    private KEPlatonicShape _shape = KEPlatonicShape.Cube;
 
-    private KPolyhedronStyle _presentation = KPolyhedronStyle.Wireframe;
+    private KEPolyhedronStyle _presentation = KEPolyhedronStyle.Wireframe;
 
-    /// <summary>呈现方式（见 <see cref="KPolyhedronStyle"/>）。改动在下一帧生效（面缓冲按需重建）。</summary>
-    public KPolyhedronStyle Mode
+    /// <summary>呈现方式（见 <see cref="KEPolyhedronStyle"/>）。改动在下一帧生效（面缓冲按需重建）。</summary>
+    public KEPolyhedronStyle Mode
     {
         get => _presentation;
         set => _presentation = value;
     }
 
-    /// <summary>是否需要实心面（<see cref="KPolyhedronStyle.Wireframe"/> 之外都要）。</summary>
-    private bool WantsFaces => _presentation != KPolyhedronStyle.Wireframe;
+    /// <summary>是否需要实心面（<see cref="KEPolyhedronStyle.Wireframe"/> 之外都要）。</summary>
+    private bool WantsFaces => _presentation != KEPolyhedronStyle.Wireframe;
 
-    /// <summary>是否需要线框（<see cref="KPolyhedronStyle.Solid"/> 不要）。</summary>
-    private bool WantsWire => _presentation != KPolyhedronStyle.Solid;
+    /// <summary>是否需要线框（<see cref="KEPolyhedronStyle.Solid"/> 不要）。</summary>
+    private bool WantsWire => _presentation != KEPolyhedronStyle.Solid;
 
     /// <summary>
     /// 线框是否**过深度测试**（即被实心面挡住的棱不可见）。
@@ -214,10 +220,10 @@ public class KPolyhedronSequence : IDisposable
     private int _faceTriangleCount;
 
     /// <summary>面缓冲所属的立体（换了要重建）。</summary>
-    private KPlatonicShape _faceBufferShape = (KPlatonicShape)(-1);
+    private KEPlatonicShape _faceBufferShape = (KEPlatonicShape)(-1);
 
     /// <summary>当前立体（默认立方体）。切换后下一帧重建顶点缓冲与旋转轴。</summary>
-    public KPlatonicShape Shape
+    public KEPlatonicShape Shape
     {
         get => _shape;
         set => _shape = value;
@@ -238,6 +244,31 @@ public class KPolyhedronSequence : IDisposable
     /// false = 从 ω_idle 平滑停住（中断 / 失败收尾时画面归于静止）。
     /// </summary>
     public bool IdleSpin { get; set; }
+
+    /// <summary>
+    /// 多层尾迹层数。1 = 当前单立体（默认，保持 PortHackV2 既有观感）；
+    /// &gt;1 时同一个立体画 N 遍，附加逐层的尺寸/旋转差，并在 spindown 时向内收缩。
+    /// 实心（<see cref="KEPolyhedronStyle.Solid"/>）模式暂不参与尾迹（强制按 1 层画，避免多层实心 z-fighting）。
+    /// </summary>
+    public int TrailLayers { get; set; } = 1;
+
+    /// <summary>每层额外尺寸（相对模型半径）。0 = 所有层同尺寸；默认 0.03。</summary>
+    public float TrailSizeStep { get; set; } = 0.03f;
+
+    /// <summary>每层绕自转轴的额外旋转偏移（弧度）。0 = 所有层同角度；默认 0.10。</summary>
+    public float TrailRotationStep { get; set; } = 0.10f;
+
+    /// <summary>
+    /// 逐层转速脉冲强度（对齐原版 num12）。0 = 所有层同角速度；默认 0.05。
+    /// 只在 TrailLayers &gt; 1 时生效。
+    /// </summary>
+    public float TrailPulse { get; set; } = 0.05f;
+
+    /// <summary>
+    /// spindown 是否收缩：true（默认）= 外层按 <c>pow(factor, i)</c> 指数收拢、层间旋转偏移归零；
+    /// false = 尾迹保持 runtime 的展开形态直到 idle。
+    /// </summary>
+    public bool TrailContraction { get; set; } = true;
 
     /// <summary>
     /// 起转（浮现 + 加速）时长（秒）。<c>&lt; 0</c> = 用 <see cref="SpinUpRatio"/> × 总时长。
@@ -323,6 +354,28 @@ public class KPolyhedronSequence : IDisposable
         _omega = EvaluateOmega(clock);
         _angle += _omega * t;
         _scale = EvaluateScale(clock);
+        UpdateTrailFactors(clock);
+    }
+
+    /// <summary>
+    /// 计算多层尾迹的 spindown 因子（对齐原版 DrawSequence）：
+    /// num8 = 0.3 + 0.7*QuadraticOutCurve(1-p)（尺寸），num9 = 1-p（旋转偏移），num7 = 0.1+0.9*(1-p)（转速）。
+    /// Cracking 期间/未开启收缩时全部为 1。
+    /// </summary>
+    private void UpdateTrailFactors(float clock)
+    {
+        if (!CrackingFinished || !TrailContraction || _spinDownTime <= 0f)
+        {
+            _layerScaleFactor = 1f;
+            _layerTorsionFactor = 1f;
+            _layerSpinFactor = 1f;
+            return;
+        }
+
+        float brake = Clamp01((clock - _totalSeconds) / _spinDownTime);
+        _layerScaleFactor = 0.3f + 0.7f * Utils.QuadraticOutCurve(1f - brake);
+        _layerTorsionFactor = 1f - brake;
+        _layerSpinFactor = 0.1f + 0.9f * (1f - brake);
     }
 
     /// <summary>按内部时钟求角速度：起转线性加速 → 匀速 <see cref="SpinSpeed"/> → 急刹指数落到
@@ -391,7 +444,7 @@ public class KPolyhedronSequence : IDisposable
         {
             // 只报一次并关闭渲染：驱动不支持时不该每帧刷日志，更不该把 exe 拖崩
             _renderFailed = true;
-            KELog.Error($"[KPolyhedronSequence] wireframe rendering disabled after failure: {ex.Message}");
+            KELog.Error($"[KEPolyhedronSequence] wireframe rendering disabled after failure: {ex.Message}");
         }
     }
 
@@ -457,7 +510,7 @@ public class KPolyhedronSequence : IDisposable
             // 画实心面：**开背面剔除**。
             //
             // ⚠️ 用 CullClockwiseFace 而不是默认的 CullCounterClockwiseFace —— 实测确认过。
-            // KPolyhedron 的面环在**模型空间**是"从外面看逆时针"（BuildFaces 统一外法线 +
+            // KEPolyhedron 的面环在**模型空间**是"从外面看逆时针"（BuildFaces 统一外法线 +
             // OrderRing 按绕法线角度升序），但 `CreatePerspectiveFieldOfView` / `CreateLookAt`
             // 会把**手性翻过来**，投影到屏幕后就变成**顺时针**了。
             // 用默认值的结果是"保留背面、剔掉正面"（就是看到内壁和地板、正对相机的面消失），
@@ -479,12 +532,12 @@ public class KPolyhedronSequence : IDisposable
         if (WantsFaces) EnsureFaceBuffer(gd);
         if (_axisShape != Shape)
         {
-            _axis = KPolyhedron.SpinAxis(Shape);
+            _axis = KEPolyhedron.SpinAxis(Shape);
             // 摆正姿态：把这根轴转到竖直，之后自转就绕世界 Y 轴 —— 正四面体于是绕
             // "顶点向底面作的垂线"转、二十面体绕"上下两个相对顶点连成的线"转，
             // 而不是绕一根歪轴晃。立方体/八面体/十二面体的轴本来就是竖直的，
             // 这个矩阵对它们是单位矩阵。
-            _orientation = KPolyhedron.OrientationMatrix(_axis);
+            _orientation = KEPolyhedron.OrientationMatrix(_axis);
             _axisShape = Shape;
         }
     }
@@ -519,8 +572,8 @@ public class KPolyhedronSequence : IDisposable
     {
         if (_vertexBuffer != null && _vertexBufferShape == Shape) return;
 
-        Vector3[] verts = KPolyhedron.Vertices(Shape);
-        (int A, int B)[] edges = KPolyhedron.Edges(Shape);
+        Vector3[] verts = KEPolyhedron.Vertices(Shape);
+        (int A, int B)[] edges = KEPolyhedron.Edges(Shape);
         var data = new VertexPositionColor[edges.Length * 2];
         for (int i = 0; i < edges.Length; i++)
         {
@@ -539,7 +592,7 @@ public class KPolyhedronSequence : IDisposable
     /// 建面顶点缓冲：把每个凸多边形面**扇化成三角形**。
     ///
     /// <para>
-    /// 绕序直接沿用 <see cref="KPolyhedron.Faces"/> 给的（从外面看逆时针），
+    /// 绕序直接沿用 <see cref="KEPolyhedron.Faces"/> 给的（从外面看逆时针），
     /// 所以硬件背面剔除与 FNA 默认的 <c>CullCounterClockwiseFace</c> 直接对得上 ——
     /// 不必自己判断朝向。
     /// </para>
@@ -553,8 +606,8 @@ public class KPolyhedronSequence : IDisposable
     {
         if (_faceBuffer != null && _faceBufferShape == Shape) return;
 
-        Vector3[] verts = KPolyhedron.Vertices(Shape);
-        int[][] faces = KPolyhedron.Faces(Shape);
+        Vector3[] verts = KEPolyhedron.Vertices(Shape);
+        int[][] faces = KEPolyhedron.Faces(Shape);
 
         // 先算总数（每个 n 边形扇化出 n-2 个三角形）
         int tris = 0;
@@ -598,8 +651,8 @@ public class KPolyhedronSequence : IDisposable
     {
         if (_faceBuffer == null || !WantsFaces) return;
 
-        Vector3[] verts = KPolyhedron.Vertices(Shape);
-        int[][] faces = KPolyhedron.Faces(Shape);
+        Vector3[] verts = KEPolyhedron.Vertices(Shape);
+        int[][] faces = KEPolyhedron.Faces(Shape);
 
         // 与 RenderToTexture 里的 World 保持一致（等比缩放不影响方向，故只取旋转两段）
         Matrix rot = _orientation * Matrix.CreateFromAxisAngle(Vector3.UnitY, _angle * SPIN_DIRECTION_SIGN);
@@ -653,6 +706,9 @@ public class KPolyhedronSequence : IDisposable
         if (w > 0) _faceBuffer.SetData(data);
     }
 
+    private static float SafeNonNegative(float value)
+        => float.IsNaN(value) || float.IsInfinity(value) ? 0f : Math.Max(0f, value);
+
     private void RenderToTexture(GraphicsDevice gd, Rectangle dest)
     {
         RenderTargetBinding[] previousTargets = gd.GetRenderTargets();
@@ -666,65 +722,96 @@ public class KPolyhedronSequence : IDisposable
             gd.SetRenderTarget(_wireframeTexture);
             gd.Clear(Color.Transparent);
 
+            // 多层尾迹：同一个立体画 N 遍。
+            // 尺寸/旋转偏移/转速脉冲三组因子在 spindown 时按原版 num8/num9/num7 的曲线收缩：
+            // 外层（i 大）按 pow(scaleFactor, i) 指数收拢，层间角偏移按 torsionFactor 归零。
+            // 实心模式暂不参与尾迹（多层实心会有 z-fighting/overdraw），强制按 1 层画。
+            int layers = Math.Max(1, TrailLayers);
+            if (WantsFaces) layers = 1;
+            if (layers > 64) layers = 64;
+
+            float sizeStep = SafeNonNegative(TrailSizeStep);
+            float rotStep = SafeNonNegative(TrailRotationStep);
+            float pulseStrength = SafeNonNegative(TrailPulse);
+
+            // 尾迹会把外层放大，必须把相机拉远，否则最外层会被视锥裁掉。
+            // 单层时 maxLayerScale == _scale，相机距离仍是原来的 CAMERA_DISTANCE（不变）。
+            float maxLayerScale = _scale * (1f + (layers - 1) * sizeStep);
+            float fitDistance = maxLayerScale / (float)Math.Tan(MathHelper.ToRadians(FOV_Y_DEG) * 0.5f * 0.9f);
+            float cameraDistance = Math.Max(CAMERA_DISTANCE, fitDistance);
+
             // 投影每帧按 dest 宽高比重设（不像原版那样启动时固化一次）。
             // 竖长窗口要按宽高比放大纵向视场角，否则立体横向会被裁掉。
             float aspect = dest.Width / (float)dest.Height;
             float halfFov = MathHelper.ToRadians(FOV_Y_DEG) * 0.5f;
             if (aspect < 1f) halfFov = (float)Math.Atan(Math.Tan(halfFov) / aspect);
-            _effect.Projection = Matrix.CreatePerspectiveFieldOfView(halfFov * 2f, aspect, 0.1f, CAMERA_DISTANCE * 2f);
-            _effect.View = Matrix.CreateLookAt(CameraDirection * CAMERA_DISTANCE, Vector3.Zero, Vector3.Up);
-            _effect.World = Matrix.CreateScale(_scale)
-                * _orientation                                          // 先把该立体的 n 重轴摆到竖直
-                * Matrix.CreateFromAxisAngle(Vector3.UnitY, _angle * SPIN_DIRECTION_SIGN);
-
-            gd.RasterizerState = _rasterizer;
-            gd.DepthStencilState = DepthStencilState.None; // 不挂深度缓冲：线框本来就该看见背面那几条棱
-            gd.BlendState = BlendState.Opaque;
-            gd.SetVertexBuffer(_vertexBuffer);
-
-            if (_scale > 0.001f)
+            _effect.Projection = Matrix.CreatePerspectiveFieldOfView(halfFov * 2f, aspect, 0.1f, cameraDistance * 2f);
+            _effect.View = Matrix.CreateLookAt(CameraDirection * cameraDistance, Vector3.Zero, Vector3.Up);
+            for (int layer = 0; layer < layers; layer++)
             {
-                // ── 实心面：先画（带深度，背面被硬件剔除），线框后画 ──
-                // 顺序不能反：线框用 DepthStencilState.None（要能看见背面那几条棱），
-                // 若先画线再画面，面会把线盖掉一部分，棱就断了。
-                if (WantsFaces && _faceBuffer != null && _faceTriangleCount > 0)
+                float layerScale = _scale;
+                float layerAngle = _angle * SPIN_DIRECTION_SIGN;
+
+                if (layers > 1)
                 {
-                    // 逐面明暗：按当前旋转重算顶点色（纹素空间，光固定）
-                    EnsureFaceShading();
+                    float i = layer;
+                    float n = layers;
+                    float sizeFactor = (float)Math.Pow(_layerScaleFactor, i);
+                    layerScale = _scale * (1f + i * sizeStep * sizeFactor);
 
-                    gd.RasterizerState = _faceRasterizer;             // 开背面剔除
-                    gd.DepthStencilState = DepthStencilState.Default; // 开深度测试 + 写入
-                    gd.SetVertexBuffer(_faceBuffer);
-
-                    foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        gd.DrawPrimitives(PrimitiveType.TriangleList, 0, _faceTriangleCount);
-                    }
+                    float pulse = 1f + pulseStrength * _layerSpinFactor * ((n - i) / n);
+                    layerAngle = _angle * pulse * SPIN_DIRECTION_SIGN
+                        + i * rotStep * _layerTorsionFactor;
                 }
 
-                if (WantsWire)
+                _effect.World = Matrix.CreateScale(layerScale)
+                    * _orientation                                          // 先把该立体的 n 重轴摆到竖直
+                    * Matrix.CreateFromAxisAngle(Vector3.UnitY, layerAngle);
+
+                if (_scale > 0.001f)
                 {
-                    gd.RasterizerState = _rasterizer;
-                    gd.SetVertexBuffer(_vertexBuffer);
+                    // ── 实心面：先画（带深度，背面被硬件剔除），线框后画 ──
+                    // 顺序不能反：线框用 DepthStencilState.None（要能看见背面那几条棱），
+                    // 若先画线再画面，面会把线盖掉一部分，棱就断了。
+                    if (WantsFaces && _faceBuffer != null && _faceTriangleCount > 0)
+                    {
+                        // 逐面明暗：按当前旋转重算顶点色（纹素空间，光固定）
+                        EnsureFaceShading();
 
-                    if (WireDepthTested)
-                    {
-                        // 实心 + 线框：**线也过深度测试** —— 被实心面挡住的棱不再透出来，
-                        // 于是"实心体 + 高亮棱边"（低多边形观感），而不是半个线框骨架。
-                        // ⚠️ 不写深度（只在面已写好的深度上比较），否则线自己会互相遮挡。
-                        gd.DepthStencilState = DepthStencilState.DepthRead;
-                    }
-                    else
-                    {
-                        // 纯线框：本来就该看见背面那几条棱
-                        gd.DepthStencilState = DepthStencilState.None;
+                        gd.RasterizerState = _faceRasterizer;             // 开背面剔除
+                        gd.DepthStencilState = DepthStencilState.Default; // 开深度测试 + 写入
+                        gd.SetVertexBuffer(_faceBuffer);
+
+                        foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+                        {
+                            pass.Apply();
+                            gd.DrawPrimitives(PrimitiveType.TriangleList, 0, _faceTriangleCount);
+                        }
                     }
 
-                    foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+                    if (WantsWire)
                     {
-                        pass.Apply();
-                        gd.DrawPrimitives(PrimitiveType.LineList, 0, _edgeCount);
+                        gd.RasterizerState = _rasterizer;
+                        gd.SetVertexBuffer(_vertexBuffer);
+
+                        if (WireDepthTested)
+                        {
+                            // 实心 + 线框：**线也过深度测试** —— 被实心面挡住的棱不再透出来，
+                            // 于是"实心体 + 高亮棱边"（低多边形观感），而不是半个线框骨架。
+                            // ⚠️ 不写深度（只在面已写好的深度上比较），否则线自己会互相遮挡。
+                            gd.DepthStencilState = DepthStencilState.DepthRead;
+                        }
+                        else
+                        {
+                            // 纯线框：本来就该看见背面那几条棱
+                            gd.DepthStencilState = DepthStencilState.None;
+                        }
+
+                        foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+                        {
+                            pass.Apply();
+                            gd.DrawPrimitives(PrimitiveType.LineList, 0, _edgeCount);
+                        }
                     }
                 }
             }
@@ -759,9 +846,9 @@ public class KPolyhedronSequence : IDisposable
         _faceRasterizer = null;
         _edgeCount = 0;
         _faceTriangleCount = 0;
-        _vertexBufferShape = (KPlatonicShape)(-1);
-        _faceBufferShape = (KPlatonicShape)(-1);
-        _axisShape = (KPlatonicShape)(-1);
+        _vertexBufferShape = (KEPlatonicShape)(-1);
+        _faceBufferShape = (KEPlatonicShape)(-1);
+        _axisShape = (KEPlatonicShape)(-1);
     }
 
     private static float Clamp01(float x) => x <= 0f ? 0f : (x >= 1f ? 1f : x);
