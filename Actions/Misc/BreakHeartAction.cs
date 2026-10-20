@@ -62,10 +62,10 @@ namespace KernelExtensions.Actions.Misc
                     return;
                 }
 
-                // 心碎序列由 daemon 的 draw 驱动 —— 只有"当前连接机器的 DisplayModule"才会调用它。
-                // 玩家在别的节点上触发时序列会后台空转、看不到效果；因此 BreakHeart 直接强制
-                // 把玩家切到目标节点（不经过 connect 的端口/防火墙校验），并把 Display 切到
-                // 目标 daemon，保证心碎画面立即可见。
+                // 心碎序列由 daemon 的 draw 驱动，而 DisplayModule 只会绘制"当前连接机器"的
+                // daemon。玩家在别的节点上触发时序列会后台空转、看不到效果；因此 BreakHeart
+                // 直接强制切到目标节点（不经过 connect 的端口/防火墙校验）。
+                // Display 的接管与 command 切换由 CustomHeartDisplayPatch / daemon.BreakHeart 完成。
                 if (os.connectedComp != comp)
                 {
                     try { os.connectedComp?.disconnecting(os.thisComputer.ip); } catch { }
@@ -77,14 +77,6 @@ namespace KernelExtensions.Actions.Misc
                     if (nodeIdx >= 0 && !os.netMap.visibleNodes.Contains(nodeIdx))
                         os.netMap.visibleNodes.Add(nodeIdx);
                     KELog.Info($"[BreakHeart] force-connected to '{NodeID}' for the heartbreak sequence.");
-                }
-
-                // 即使已连接目标机，Display 也可能停在别的 daemon；强制切到心脏 daemon。
-                if (os.display.command != daemon.name)
-                {
-                    os.display.command = daemon.name;
-                    os.display.commandArgs = new[] { "connect", comp.ip };
-                    os.display.typeChanged();
                 }
 
                 ApplyOverrides(daemon);
