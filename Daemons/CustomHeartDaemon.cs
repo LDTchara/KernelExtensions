@@ -30,7 +30,8 @@ namespace KernelExtensions.Daemons
     ///   FadeoutDelay   — 心碎后周围黑幕淡入延迟（秒）。默认 1。
     ///   FadeoutDuration— 周围黑幕淡入时长（秒）。默认 10。
     ///   AlignTime      — 立方体旋转对齐到正位时长（秒）。默认 2.5。
-    ///   HeartDuration  — 心形序列总时长（秒）。默认 30。
+    ///   HeartDuration  — 保留参数：当前播放原版 PortHackCubeSequence 的固定节奏（约 47 秒），
+    ///                     此值暂未生效。默认 30（待后续版本接入自定义节奏）。
     ///   FlashOutTime   — 心形完成后白色淡出时长（秒）。默认 3.8。
     ///   OnComplete     — 序列结束后加载的 Action 文件（相对扩展根，对齐 CompleteAction；
     ///                     NONE/空=不执行）。默认不执行。

@@ -15,6 +15,7 @@ namespace KernelExtensions.Actions.Misc
     ///
     /// 参数：NodeID（必填，目标节点）；其余（Title/Music/FadeoutDelay/FadeoutDuration/
     ///   AlignTime/HeartDuration/FlashOutTime/OnComplete/OnHeartbreak/LockInput）可选覆盖——
+    ///   注：HeartDuration 目前是保留项（原版序列固定节奏，暂未生效）。
     ///   null/未提供 = 不覆盖（用 daemon 自身配置）；字符串项写 NONE/空 = 覆盖为禁用
     ///   （如 Music="NONE" 表示不切歌、OnComplete="NONE" 表示不执行）。
     /// </summary>
