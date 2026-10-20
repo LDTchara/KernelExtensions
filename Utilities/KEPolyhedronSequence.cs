@@ -247,11 +247,11 @@ public class KEPolyhedronSequence : IDisposable
     public bool IdleSpin { get; set; }
 
     /// <summary>
-    /// 多层尾迹层数。1 = 当前单立体（默认，保持 PortHackV2 既有观感）；
-    /// &gt;1 时同一个立体画 N 遍，附加逐层的尺寸/旋转差，并在 spindown 时向内收缩。
+    /// 多层尾迹层数。默认 20（当前满意效果）；1 = 单立体；
+    /// &gt;1 时同一个立体画 N 遍，附加逐层的尺寸/旋转差，并在 spindown 时有限收缩。
     /// 实心（<see cref="KEPolyhedronStyle.Solid"/>）模式暂不参与尾迹（强制按 1 层画，避免多层实心 z-fighting）。
     /// </summary>
-    public int TrailLayers { get; set; } = 1;
+    public int TrailLayers { get; set; } = 20;
 
     /// <summary>
     /// 是否为独立的"轨迹模式"。最终会作为作者唯一可见的开关（具体参数由内部预设控制）；
@@ -259,8 +259,8 @@ public class KEPolyhedronSequence : IDisposable
     /// </summary>
     public bool TrailMode { get; set; }
 
-    /// <summary>每层额外尺寸（相对模型半径）。0 = 所有层同尺寸；默认 0.10（20 层最外层约 2.9×，接近原版 2.6→7.35 的比例）。</summary>
-    public float TrailSizeStep { get; set; } = 0.10f;
+    /// <summary>每层额外尺寸（相对模型半径）。0 = 所有层同尺寸；默认 0.20（20 层最外层约 4.8×，外层会越出视锥，属预期构图）。</summary>
+    public float TrailSizeStep { get; set; } = 0.20f;
 
     /// <summary>每层绕自转轴的额外旋转偏移（弧度）。0 = 所有层同角度；默认 0.10。</summary>
     public float TrailRotationStep { get; set; } = 0.10f;

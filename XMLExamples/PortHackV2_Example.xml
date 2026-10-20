@@ -161,12 +161,12 @@
                       How the solid is drawn. Empty = Wireframe (lines only, matching vanilla).
                       Wireframe / Solid / SolidWire. Case-insensitive; wire / both also accepted.
        ── 多层尾迹（可选） ──
-       TrailLayers  ：多层尾迹层数。留空 = 1（单立体，保持原观感）；20 ≈ 原版 PortHack 20 层尾迹。
+       TrailLayers  ：多层尾迹层数。默认 20（当前效果）；1 = 单立体。调参入口保留，示例中注释给出。
                       5 个立体共用同一套尾迹逻辑；spindown 按原版程度收缩但**保留层间差异（不会合并成一个）**。
-                      Multi-layer trail count. Empty = 1 (single solid); 20 ≈ vanilla 20-layer trail.
+                      Multi-layer trail count. Default 20 (current look); 1 = single solid. Entry kept for tuning, shown commented below.
                       All five solids share the same trail logic; layers contract during spindown.
                       ⚠️ 实心模式（Solid / SolidWire）暂不参与尾迹，仍按 1 层绘制。
-       TrailSizeStep：每层额外尺寸（相对模型半径）。留空 = 0.10（20 层最外层约 2.9×）；0 = 所有层同尺寸。
+       TrailSizeStep：每层额外尺寸（相对模型半径）。默认 0.20（20 层最外层约 4.8×，出框为预期构图）；0 = 所有层同尺寸。
        TrailPulse   ：逐层转速脉冲强度。留空 = 0.05；0 = 所有层同角速度。
        TrailContraction：spindown 时是否收缩尾迹。留空 = true；false = 保持展开形态。
        SpinUpRatio  ：起转时长占总时长的比例。留空 = 0.1（10%）。
@@ -190,10 +190,14 @@
                       Empty/negative = scaled from SpinSpeed (0.5 when SpinSpeed is 3.2). -->
   <Polyhedron>Cube</Polyhedron>
   <PolyhedronStyle>Wireframe</PolyhedronStyle>
-  <TrailLayers>1</TrailLayers>
-  <TrailSizeStep>0.10</TrailSizeStep>
+
+  <!-- ── 轨迹调参入口（默认值已内置，通常不需要写；调参时取消注释覆盖） ──
+       当前默认：TrailLayers=20 / TrailSizeStep=0.20 / TrailPulse=0.05 / TrailContraction=true
+  <TrailLayers>20</TrailLayers>
+  <TrailSizeStep>0.20</TrailSizeStep>
   <TrailPulse>0.05</TrailPulse>
   <TrailContraction>true</TrailContraction>
+  -->
   <SpinUpRatio>0.1</SpinUpRatio>
   <SpinDownTime>1.7</SpinDownTime>
   <SpinSpeed>3.2</SpinSpeed>

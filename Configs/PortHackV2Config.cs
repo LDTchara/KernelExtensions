@@ -295,13 +295,13 @@ public class PortHackV2Config
     [XmlElement("IdleSpinSpeed")] public string IdleSpinSpeedRaw { get; set; }
 
     /// <summary>
-    /// 多层尾迹层数：1（默认）= 单立体，保持既有观感；&gt;1 = 同一个立体画 N 遍，
+    /// 多层尾迹层数：默认 20（当前效果）；1 = 单立体；入口保留，示例中以注释给出；&gt;1 = 同一个立体画 N 遍，
     /// 带层间尺寸/旋转差与 spindown 收缩（对齐原版 20 层立方体的结构，但适用于全部 5 个立体）。
     /// 实心呈现方式（Solid/SolidWire）暂不参与尾迹，仍按单层绘制。
     /// </summary>
     [XmlElement("TrailLayers")] public string TrailLayersRaw { get; set; }
 
-    /// <summary>每层额外尺寸（相对模型半径）。留空 = 0.10；0 = 所有层同尺寸。</summary>
+    /// <summary>每层额外尺寸（相对模型半径）。留空 = 0.20；0 = 所有层同尺寸。入口保留，调参时使用。</summary>
     [XmlElement("TrailSizeStep")] public string TrailSizeStepRaw { get; set; }
 
     /// <summary>逐层转速脉冲强度（对齐原版 num12）。留空 = 0.05；0 = 所有层同角速度。</summary>
@@ -331,10 +331,10 @@ public class PortHackV2Config
     [XmlIgnore] public float IdleSpinSpeed { get; private set; } = -1f;
 
     /// <summary>尾迹层数（解析结果）。默认 1 = 单立体。</summary>
-    [XmlIgnore] public int TrailLayers { get; private set; } = 1;
+    [XmlIgnore] public int TrailLayers { get; private set; } = 20;
 
     /// <summary>每层额外尺寸（解析结果）。</summary>
-    [XmlIgnore] public float TrailSizeStep { get; private set; } = 0.10f;
+    [XmlIgnore] public float TrailSizeStep { get; private set; } = 0.20f;
 
     /// <summary>逐层转速脉冲（解析结果）。</summary>
     [XmlIgnore] public float TrailPulse { get; private set; } = 0.05f;
@@ -582,14 +582,14 @@ public class PortHackV2Config
                 + "expected a finite number >= 0 (or negative for auto); scaling with <SpinSpeed>.");
 
         // 多层尾迹：默认 1 层 = 既有单立体观感；上限 64 防止配置过大拖慢渲染
-        float trailLayers = ConfigValue.ParseInRange(TrailLayersRaw, 1f, 1f, 64f, out bool tlOk);
+        float trailLayers = ConfigValue.ParseInRange(TrailLayersRaw, 20f, 1f, 64f, out bool tlOk);
         if (!tlOk)
-            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailLayers> '{TrailLayersRaw}', expected 1~64; using 1.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailLayers> '{TrailLayersRaw}', expected 1~64; using 20.");
         TrailLayers = (int)Math.Round(trailLayers);
 
-        TrailSizeStep = ConfigValue.ParseInRange(TrailSizeStepRaw, 0.10f, 0f, 1f, out bool tssOk);
+        TrailSizeStep = ConfigValue.ParseInRange(TrailSizeStepRaw, 0.20f, 0f, 1f, out bool tssOk);
         if (!tssOk)
-            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailSizeStep> '{TrailSizeStepRaw}', expected 0~1; using 0.10.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailSizeStep> '{TrailSizeStepRaw}', expected 0~1; using 0.20.");
 
         TrailPulse = ConfigValue.ParseInRange(TrailPulseRaw, 0.05f, 0f, 1f, out bool tpOk);
         if (!tpOk)
