@@ -67,6 +67,11 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) |
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
+| `<TrailLayers>` | **Multi-layer trail count**: 1 (default) = single solid; 20 ≈ the vanilla 20-layer PortHack trail. All five solids share the same trail logic |
+| `<TrailSizeStep>` | Extra size per layer (relative to model radius). Empty = 0.03; 0 = all layers same size |
+| `<TrailRotationStep>` | Per-layer rotation offset around the spin axis (radians). Empty = 0.10; 0 = all layers aligned |
+| `<TrailPulse>` | Per-layer spin-speed pulse. Empty = 0.05; 0 = same speed for all layers |
+| `<TrailContraction>` | Whether the trail contracts during spindown. Empty = true |
 | `<IdleSpinSpeed>` | Speed of the slow background spin during the success sequence. Empty = scaled from `SpinSpeed` |
 | `<AccentColor>` | Colour of the **solid** (shared by wireframe and faces; faces use it as the base and the renderer adds shading) |
 | `<ProgressColor>` | Colour of the bottom progress bar. Empty = follow `AccentColor` |
@@ -171,6 +176,18 @@ Empty or `NONE` means "use the default" (`ProgressColor` / `BackgroundColor` the
 The solid animation renders off-screen and is then composited back (vanilla is inside a single `SpriteBatch.Begin()` and cannot start a second batch mid-frame). It has spin-up, steady and brake phases.
 
 Every Platonic solid spins around **its own rotational symmetry axis**, and that axis is kept vertical.
+
+#### Multi-layer trail (`<TrailLayers>`)
+
+`TrailLayers=1` (default) keeps the original single-solid look; set `20` to draw the same
+solid 20 times, each layer scaled by `TrailSizeStep` and rotated by `TrailRotationStep`,
+forming a spiral trail. During spindown the outer layers contract exponentially and the
+layer rotation offsets fade to zero (matching the vanilla 20-layer cube), collapsing into
+one solid before `IdleSpin`.
+
+- **All five solids share one set of parameters** — Cube / Tetrahedron / Octahedron / Dodecahedron / Icosahedron;
+- Solid modes (`Solid` / `SolidWire`) do not participate in the trail yet (drawn as one layer to avoid z-fighting);
+- More layers = more draw calls (20 layers ≈ 600 lines), still within budget; capped at 64.
 
 #### Presentation (`<PolyhedronStyle>`)
 

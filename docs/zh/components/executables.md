@@ -48,7 +48,7 @@ KernelExtensions 向 Pathfinder 注册了 **6 个**自定义可执行程序，�
 通过 `ProxyKiller_` 开头的 Flag 指定要加载的配置（例如 `ProxyKiller_Default`），
 配置放在 `<扩展根>/ProxyKiller/` 下。
 
-它是**常驻加速器**：加速所有**正在过载**的 Shell，让代理更快瘫痪。
+它是**常驻加速器**：加速所有**正在过载**的 Shell，让代理更快瘫痪。窗口内容区使用 caller-side 不透明黑底（不依赖/不改动 `FlowFieldEffect`）。
 也可以开启 `<SelfOverload>` 让它**自己过载代理** —— 那时不再需要 Shell。
 
 !!! warning "默认不瘫痪任何代理"

@@ -140,9 +140,9 @@ A **configuration diagnostics** tool for tracking down misspelled element/attrib
 
 ---
 
-### KPolyhedron
+### KEPolyhedron
 
-- Path: `KernelExtensions.Utilities.KPolyhedron` (the `KPlatonicShape` / `KPolyhedronStyle` enums live alongside)
+- Path: `KernelExtensions.Utilities.KEPolyhedron` (the `KEPlatonicShape` / `KEPolyhedronStyle` enums live alongside)
 - Purpose: **geometry for the five Platonic solids** — vertices, edges, faces, spin axis, orientation
   matrix. **Pure maths** (only `Vector3` / `Matrix`, no rendering pipeline), so it works without a
   `GraphicsDevice`.
@@ -150,11 +150,11 @@ A **configuration diagnostics** tool for tracking down misspelled element/attrib
 ```csharp
 using KernelExtensions.Utilities;
 
-Vector3[] verts = KPolyhedron.Vertices(KPlatonicShape.Icosahedron);      // 12 vertices
-(int A, int B)[] edges = KPolyhedron.Edges(KPlatonicShape.Icosahedron);   // 30 edges
-int[][] faces = KPolyhedron.Faces(KPlatonicShape.Cube);                   // 6 quad faces
-Vector3 axis = KPolyhedron.SpinAxis(KPlatonicShape.Cube);                 // spin axis
-Matrix orient = KPolyhedron.OrientationMatrix(axis);                      // pose that stands that axis up
+Vector3[] verts = KEPolyhedron.Vertices(KEPlatonicShape.Icosahedron);      // 12 vertices
+(int A, int B)[] edges = KEPolyhedron.Edges(KEPlatonicShape.Icosahedron);   // 30 edges
+int[][] faces = KEPolyhedron.Faces(KEPlatonicShape.Cube);                   // 6 quad faces
+Vector3 axis = KEPolyhedron.SpinAxis(KEPlatonicShape.Cube);                 // spin axis
+Matrix orient = KEPolyhedron.OrientationMatrix(axis);                      // pose that stands that axis up
 ```
 
 | Method | Returns |
@@ -166,7 +166,7 @@ Matrix orient = KPolyhedron.OrientationMatrix(axis);                      // pos
 | `OrientationMatrix(axis)` | a fixed pose matrix that stands `axis` up vertically |
 | `ValidateSelfTest()` | self-check; returns a description of problems (empty when fine) |
 
-`KPlatonicShape` has five values: `Tetrahedron` (4 vertices / 6 edges / 4 faces), `Cube` (8 / 12 / 6),
+`KEPlatonicShape` has five values: `Tetrahedron` (4 vertices / 6 edges / 4 faces), `Cube` (8 / 12 / 6),
 `Octahedron` (6 / 12 / 8), `Dodecahedron` (20 / 30 / 12), `Icosahedron` (12 / 30 / 20).
 
 !!! warning "Face winding: counter-clockwise in model space, **clockwise once projected**"
@@ -177,9 +177,9 @@ Matrix orient = KPolyhedron.OrientationMatrix(axis);                      // pos
     discards front faces** (hit in practice). **Shading is unaffected**: it computes the outward
     normal with a cross product in model space.
 
-### KPolyhedronAnimation
+### KEPolyhedronAnimation
 
-- Path: `KernelExtensions.Utilities.KPolyhedronAnimation`
+- Path: `KernelExtensions.Utilities.KEPolyhedronAnimation`
 - Purpose: the **animation layer's default values**. Both the rendering side and the config side
   reference this, so neither holds the other's defaults.
 
@@ -190,26 +190,26 @@ Matrix orient = KPolyhedron.OrientationMatrix(axis);                      // pos
 | `DefaultSpinUpRatio` | `0.1f` | Spin-up length as a fraction of the total |
 | `DefaultSpinDownSeconds` | `1.7f` | Default brake length in seconds |
 
-### KPolyhedronSequence
+### KEPolyhedronSequence
 
-- Path: `KernelExtensions.Utilities.KPolyhedronSequence`
+- Path: `KernelExtensions.Utilities.KEPolyhedronSequence`
 - Purpose: the **polyhedron show sequence** — wireframe/solid animation of a single solid
-  (spin up → steady → brake → idle). Geometry comes from `KPolyhedron`, default speeds from
-  `KPolyhedronAnimation`; this class only decides *how it moves and draws*.
+  (spin up → steady → brake → idle). Geometry comes from `KEPolyhedron`, default speeds from
+  `KEPolyhedronAnimation`; this class only decides *how it moves and draws*.
 - Two consumers today: the port cracker (PortHackV2) show, and the effects player's preview of all five solids.
 - ⚠️ **Drawing contract** (neither side should overstep): the caller owns the `RenderTarget` and the
   main `SpriteBatch` `Begin`/`End`; `RenderFrame` only draws the solid into its internal
   `RenderTarget` and blits it with the caller's batch to whatever target is currently bound.
 
 ```csharp
-var seq = new KPolyhedronSequence();
-seq.Shape = KPlatonicShape.Icosahedron;
-seq.Mode = KPolyhedronStyle.SolidWire;   // Wireframe / Solid / SolidWire
+var seq = new KEPolyhedronSequence();
+seq.Shape = KEPlatonicShape.Icosahedron;
+seq.Mode = KEPolyhedronStyle.SolidWire;   // Wireframe / Solid / SolidWire
 seq.SpinSpeed = 6.4f;                    // scales the whole speed curve by a fixed ratio
 seq.Update(dt, elapsed, totalSeconds);
 ```
 
-`KPolyhedronStyle`: `Wireframe` (lines, default) / `Solid` (filled faces + per-face shading + back-face
+`KEPolyhedronStyle`: `Wireframe` (lines, default) / `Solid` (filled faces + per-face shading + back-face
 culling) / `SolidWire` (solid plus wireframe, with the lines also culled).
 
 ---

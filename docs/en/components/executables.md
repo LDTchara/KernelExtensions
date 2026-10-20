@@ -52,6 +52,9 @@ For full usage and configuration, see the **[PortHackV2 Cracker](./../systems/po
 A Flag starting with `ProxyKiller_` selects the configuration to load (e.g. `ProxyKiller_Default`),
 with the config placed under `<extensionRoot>/ProxyKiller/`.
 
+Its window content area uses a caller-side opaque black backdrop (drawn by `ProxyKillerExe`, not by
+`FlowFieldEffect`), so the flow particles/lines are layered on black instead of the game UI.
+
 It is a **resident accelerator**: it speeds up every shell that is **currently overloading**, so
 proxies crash sooner. With `<SelfOverload>` enabled it can also **overload the proxy by itself** —
 no shell needed at all.

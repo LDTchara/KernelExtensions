@@ -128,20 +128,20 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 
 ---
 
-### KPolyhedron
+### KEPolyhedron
 
-- 路径：`KernelExtensions.Utilities.KPolyhedron`（枚举 `KPlatonicShape`、`KPolyhedronStyle` 同目录）
+- 路径：`KernelExtensions.Utilities.KEPolyhedron`（枚举 `KEPlatonicShape`、`KEPolyhedronStyle` 同目录）
 - 作用：**五种柏拉图立体的几何数据** —— 顶点、棱、面、旋转对称轴、姿态矩阵。
   **纯数学**（只用 `Vector3` / `Matrix`，不碰渲染管线），所以可以脱离 `GraphicsDevice` 使用。
 
 ```csharp
 using KernelExtensions.Utilities;
 
-Vector3[] verts = KPolyhedron.Vertices(KPlatonicShape.Icosahedron);   // 12 个顶点
-(int A, int B)[] edges = KPolyhedron.Edges(KPlatonicShape.Icosahedron); // 30 条棱
-int[][] faces = KPolyhedron.Faces(KPlatonicShape.Cube);                 // 6 个四边形面
-Vector3 axis = KPolyhedron.SpinAxis(KPlatonicShape.Cube);               // 旋转对称轴
-Matrix orient = KPolyhedron.OrientationMatrix(axis);                    // 把该轴摆竖直的固定姿态
+Vector3[] verts = KEPolyhedron.Vertices(KEPlatonicShape.Icosahedron);   // 12 个顶点
+(int A, int B)[] edges = KEPolyhedron.Edges(KEPlatonicShape.Icosahedron); // 30 条棱
+int[][] faces = KEPolyhedron.Faces(KEPlatonicShape.Cube);                 // 6 个四边形面
+Vector3 axis = KEPolyhedron.SpinAxis(KEPlatonicShape.Cube);               // 旋转对称轴
+Matrix orient = KEPolyhedron.OrientationMatrix(axis);                    // 把该轴摆竖直的固定姿态
 ```
 
 | 方法 | 返回 |
@@ -153,7 +153,7 @@ Matrix orient = KPolyhedron.OrientationMatrix(axis);                    // 把�
 | `OrientationMatrix(axis)` | 把 `axis` 摆到竖直方向的固定姿态矩阵 |
 | `ValidateSelfTest()` | 自检，返回问题描述（正常为空串） |
 
-`KPlatonicShape` 的五个值：`Tetrahedron`（4 顶点 / 6 棱 / 4 面）、`Cube`（8 / 12 / 6）、
+`KEPlatonicShape` 的五个值：`Tetrahedron`（4 顶点 / 6 棱 / 4 面）、`Cube`（8 / 12 / 6）、
 `Octahedron`（6 / 12 / 8）、`Dodecahedron`（20 / 30 / 12）、`Icosahedron`（12 / 30 / 20）。
 
 !!! warning "面环的绕序：模型空间逆时针，**投到屏幕上会翻成顺时针**"
@@ -163,9 +163,9 @@ Matrix orient = KPolyhedron.OrientationMatrix(axis);                    // 把�
     会**保留背面、剔掉正面**（实机踩过）。
     而**明暗**计算不受影响 —— 它在模型空间用叉积求外法线。
 
-### KPolyhedronAnimation
+### KEPolyhedronAnimation
 
-- 路径：`KernelExtensions.Utilities.KPolyhedronAnimation`
+- 路径：`KernelExtensions.Utilities.KEPolyhedronAnimation`
 - 作用：多边体**动画层的默认值**。渲染与配置两边都向下引用这里，避免任何一方持有对方的默认值。
 
 | 常量 | 值 | 说明 |
@@ -175,25 +175,25 @@ Matrix orient = KPolyhedron.OrientationMatrix(axis);                    // 把�
 | `DefaultSpinUpRatio` | `0.1f` | 起转时长占总时长的比例 |
 | `DefaultSpinDownSeconds` | `1.7f` | 急刹默认时长（秒） |
 
-### KPolyhedronSequence
+### KEPolyhedronSequence
 
-- 路径：`KernelExtensions.Utilities.KPolyhedronSequence`
+- 路径：`KernelExtensions.Utilities.KEPolyhedronSequence`
 - 作用：**多边体演出序列** —— 单个立体的线框/实心动画（起转 → 匀速 → 急刹 → 慢转）。
-  几何取自 `KPolyhedron`、默认转速取自 `KPolyhedronAnimation`；本类只管"怎么动、怎么画"。
+  几何取自 `KEPolyhedron`、默认转速取自 `KEPolyhedronAnimation`；本类只管"怎么动、怎么画"。
 - 目前有两个消费者：端口破解程序（PortHackV2）的破解演出、效果播放器对 5 个立体的预览。
 - ⚠️ **绘制分工**（与调用方约定，双方都不要越界）：调用方管理 `RenderTarget` 与主
   `SpriteBatch` 的 `Begin`/`End`；`RenderFrame` 只把立体画进内部 `RenderTarget`，
   再用调用方传入的 batch 贴到当前绑定的目标上。
 
 ```csharp
-var seq = new KPolyhedronSequence();
-seq.Shape = KPlatonicShape.Icosahedron;
-seq.Mode = KPolyhedronStyle.SolidWire;   // Wireframe / Solid / SolidWire
+var seq = new KEPolyhedronSequence();
+seq.Shape = KEPlatonicShape.Icosahedron;
+seq.Mode = KEPolyhedronStyle.SolidWire;   // Wireframe / Solid / SolidWire
 seq.SpinSpeed = 6.4f;                    // 整条转速曲线按固定比例缩放
 seq.Update(dt, elapsed, totalSeconds);
 ```
 
-`KPolyhedronStyle`：`Wireframe`（线框，默认）/ `Solid`（实心面 + 逐面明暗 + 背面剔除）/
+`KEPolyhedronStyle`：`Wireframe`（线框，默认）/ `Solid`（实心面 + 逐面明暗 + 背面剔除）/
 `SolidWire`（实心 + 线框，线也参与剔除）。
 
 ---

@@ -66,6 +66,11 @@ flag 就是"入口牌"：
 | `<Polyhedron>` | 动画用的柏拉图立体：`Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | 立体怎么画：`Wireframe`（线框，**默认**）/ `Solid`（实心面）/ `SolidWire`（实心 + 线框） |
 | `<SpinSpeed>` | 立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒一圈） |
+| `<TrailLayers>` | **多层尾迹层数**：1（默认）= 单立体；20 ≈ 原版 PortHack 20 层尾迹。5 个立体共用同一套尾迹逻辑 |
+| `<TrailSizeStep>` | 每层额外尺寸（相对模型半径）。留空 = 0.03；0 = 所有层同尺寸 |
+| `<TrailRotationStep>` | 每层绕自转轴的旋转偏移（弧度）。留空 = 0.10；0 = 所有层同角度 |
+| `<TrailPulse>` | 逐层转速脉冲强度。留空 = 0.05；0 = 所有层同角速度 |
+| `<TrailContraction>` | spindown 时是否收缩尾迹。留空 = true |
 | `<IdleSpinSpeed>` | 成功演出期间**背景慢转**的速度（弧度/秒）。留空 = 按 `SpinSpeed` 等比缩放 |
 | `<AccentColor>` | **立体**的颜色（线框与实心面共用；实心面上它是基色，明暗由渲染叠加） |
 | `<ProgressColor>` | 底部总进度条颜色。留空 = 跟随 `AccentColor` |
@@ -169,6 +174,17 @@ flag 就是"入口牌"：
 立体动画走离屏渲染后贴回（原版在一个 `SpriteBatch.Begin()` 里，中途不能再起一个批次），包含起转、匀速、急刹三段。
 
 每种柏拉图立体都绕**自己的旋转对称轴**自转，且那根轴保持竖直。
+
+#### 多层尾迹（`<TrailLayers>`）
+
+`TrailLayers=1`（默认）保持原来的单立体效果；写 `20` 时同一个立体画 20 遍：
+每层按 `TrailSizeStep` 放大、按 `TrailRotationStep` 错开旋转角，形成螺旋尾迹；
+spindown 时外层按指数收缩、层间旋转偏移归零（对齐原版 20 层立方体），
+最终收成一个立体再进入 `IdleSpin` 慢转。
+
+- **5 个立体共用一套参数**：Cube / Tetrahedron / Octahedron / Dodecahedron / Icosahedron 都能开尾迹；
+- 实心模式（`Solid` / `SolidWire`）暂不参与尾迹，仍按 1 层绘制（避免多层实心 z-fighting）；
+- 层数越高单帧绘制调用越多（20 层 ≈ 600 条线），但仍在预算内；上限 64。
 
 #### 呈现方式（`<PolyhedronStyle>`）
 
