@@ -252,8 +252,8 @@ public class KEPolyhedronSequence : IDisposable
     /// </summary>
     public int TrailLayers { get; set; } = 1;
 
-    /// <summary>每层额外尺寸（相对模型半径）。0 = 所有层同尺寸；默认 0.03。</summary>
-    public float TrailSizeStep { get; set; } = 0.03f;
+    /// <summary>每层额外尺寸（相对模型半径）。0 = 所有层同尺寸；默认 0.10（20 层最外层约 2.9×，接近原版 2.6→7.35 的比例）。</summary>
+    public float TrailSizeStep { get; set; } = 0.10f;
 
     /// <summary>每层绕自转轴的额外旋转偏移（弧度）。0 = 所有层同角度；默认 0.10。</summary>
     public float TrailRotationStep { get; set; } = 0.10f;
@@ -269,6 +269,16 @@ public class KEPolyhedronSequence : IDisposable
     /// false = 尾迹保持 runtime 的展开形态直到 idle。
     /// </summary>
     public bool TrailContraction { get; set; } = true;
+
+    /// <summary>
+    /// 尾迹模式的相机俯角（度）。单层时仍用原来的 15°；多层时默认 30°，更容易看出层叠纵深。
+    /// </summary>
+    public float TrailCameraPitchDeg { get; set; } = 30f;
+
+    /// <summary>
+    /// 尾迹模式的相机水平角（度）。单层时仍为 0°；多层时默认 15°，让螺旋尾迹有方向感。
+    /// </summary>
+    public float TrailCameraYawDeg { get; set; } = 15f;
 
     /// <summary>
     /// 起转（浮现 + 加速）时长（秒）。<c>&lt; 0</c> = 用 <see cref="SpinUpRatio"/> × 总时长。
@@ -709,6 +719,9 @@ public class KEPolyhedronSequence : IDisposable
     private static float SafeNonNegative(float value)
         => float.IsNaN(value) || float.IsInfinity(value) ? 0f : Math.Max(0f, value);
 
+    private static float SafeFinite(float value, float fallback)
+        => float.IsNaN(value) || float.IsInfinity(value) ? fallback : value;
+
     private void RenderToTexture(GraphicsDevice gd, Rectangle dest)
     {
         RenderTargetBinding[] previousTargets = gd.GetRenderTargets();
@@ -746,7 +759,10 @@ public class KEPolyhedronSequence : IDisposable
             float halfFov = MathHelper.ToRadians(FOV_Y_DEG) * 0.5f;
             if (aspect < 1f) halfFov = (float)Math.Atan(Math.Tan(halfFov) / aspect);
             _effect.Projection = Matrix.CreatePerspectiveFieldOfView(halfFov * 2f, aspect, 0.1f, cameraDistance * 2f);
-            _effect.View = Matrix.CreateLookAt(CameraDirection * cameraDistance, Vector3.Zero, Vector3.Up);
+            float cameraPitch = layers > 1 ? SafeFinite(TrailCameraPitchDeg, 30f) : CAMERA_PITCH_DEG;
+            float cameraYaw = layers > 1 ? SafeFinite(TrailCameraYawDeg, 15f) : CAMERA_YAW_DEG;
+            _effect.View = Matrix.CreateLookAt(
+                BuildCameraDirection(cameraPitch, cameraYaw) * cameraDistance, Vector3.Zero, Vector3.Up);
             for (int layer = 0; layer < layers; layer++)
             {
                 float layerScale = _scale;
@@ -760,8 +776,9 @@ public class KEPolyhedronSequence : IDisposable
                     layerScale = _scale * (1f + i * sizeStep * sizeFactor);
 
                     float pulse = 1f + pulseStrength * _layerSpinFactor * ((n - i) / n);
+                    // 符号与原版一致：外层 i 越大，角度越"落后"（负偏移）→ 内层领先、外层拖尾。
                     layerAngle = _angle * pulse * SPIN_DIRECTION_SIGN
-                        + i * rotStep * _layerTorsionFactor;
+                        - i * rotStep * _layerTorsionFactor;
                 }
 
                 _effect.World = Matrix.CreateScale(layerScale)
@@ -854,9 +871,12 @@ public class KEPolyhedronSequence : IDisposable
     private static float Clamp01(float x) => x <= 0f ? 0f : (x >= 1f ? 1f : x);
 
     private static Vector3 BuildCameraDirection()
+        => BuildCameraDirection(CAMERA_PITCH_DEG, CAMERA_YAW_DEG);
+
+    private static Vector3 BuildCameraDirection(float pitchDeg, float yawDeg)
     {
-        float pitch = MathHelper.ToRadians(CAMERA_PITCH_DEG);
-        float yaw = MathHelper.ToRadians(CAMERA_YAW_DEG);
+        float pitch = MathHelper.ToRadians(pitchDeg);
+        float yaw = MathHelper.ToRadians(yawDeg);
         return new Vector3(
             (float)(Math.Sin(yaw) * Math.Cos(pitch)),
             (float)Math.Sin(pitch),

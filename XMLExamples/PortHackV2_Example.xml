@@ -166,7 +166,7 @@
                       Multi-layer trail count. Empty = 1 (single solid); 20 ≈ vanilla 20-layer trail.
                       All five solids share the same trail logic; layers contract during spindown.
                       ⚠️ 实心模式（Solid / SolidWire）暂不参与尾迹，仍按 1 层绘制。
-       TrailSizeStep：每层额外尺寸（相对模型半径）。留空 = 0.03；0 = 所有层同尺寸。
+       TrailSizeStep：每层额外尺寸（相对模型半径）。留空 = 0.10（20 层最外层约 2.9×）；0 = 所有层同尺寸。
        TrailRotationStep：每层绕自转轴的旋转偏移（弧度）。留空 = 0.10；0 = 所有层同角度。
        TrailPulse   ：逐层转速脉冲强度。留空 = 0.05；0 = 所有层同角速度。
        TrailContraction：spindown 时是否收缩尾迹。留空 = true；false = 保持展开形态。
@@ -192,7 +192,7 @@
   <Polyhedron>Cube</Polyhedron>
   <PolyhedronStyle>Wireframe</PolyhedronStyle>
   <TrailLayers>1</TrailLayers>
-  <TrailSizeStep>0.03</TrailSizeStep>
+  <TrailSizeStep>0.10</TrailSizeStep>
   <TrailRotationStep>0.10</TrailRotationStep>
   <TrailPulse>0.05</TrailPulse>
   <TrailContraction>true</TrailContraction>

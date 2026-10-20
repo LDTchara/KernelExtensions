@@ -301,7 +301,7 @@ public class PortHackV2Config
     /// </summary>
     [XmlElement("TrailLayers")] public string TrailLayersRaw { get; set; }
 
-    /// <summary>每层额外尺寸（相对模型半径）。留空 = 0.03；0 = 所有层同尺寸。</summary>
+    /// <summary>每层额外尺寸（相对模型半径）。留空 = 0.10；0 = 所有层同尺寸。</summary>
     [XmlElement("TrailSizeStep")] public string TrailSizeStepRaw { get; set; }
 
     /// <summary>每层绕自转轴的额外旋转偏移（弧度）。留空 = 0.10；0 = 所有层同角度。</summary>
@@ -337,7 +337,7 @@ public class PortHackV2Config
     [XmlIgnore] public int TrailLayers { get; private set; } = 1;
 
     /// <summary>每层额外尺寸（解析结果）。</summary>
-    [XmlIgnore] public float TrailSizeStep { get; private set; } = 0.03f;
+    [XmlIgnore] public float TrailSizeStep { get; private set; } = 0.10f;
 
     /// <summary>每层旋转偏移（解析结果，弧度）。</summary>
     [XmlIgnore] public float TrailRotationStep { get; private set; } = 0.10f;
@@ -593,9 +593,9 @@ public class PortHackV2Config
             KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailLayers> '{TrailLayersRaw}', expected 1~64; using 1.");
         TrailLayers = (int)Math.Round(trailLayers);
 
-        TrailSizeStep = ConfigValue.ParseInRange(TrailSizeStepRaw, 0.03f, 0f, 1f, out bool tssOk);
+        TrailSizeStep = ConfigValue.ParseInRange(TrailSizeStepRaw, 0.10f, 0f, 1f, out bool tssOk);
         if (!tssOk)
-            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailSizeStep> '{TrailSizeStepRaw}', expected 0~1; using 0.03.");
+            KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <TrailSizeStep> '{TrailSizeStepRaw}', expected 0~1; using 0.10.");
 
         TrailRotationStep = ConfigValue.ParseInRange(TrailRotationStepRaw, 0.10f, 0f, 1f, out bool trsOk);
         if (!trsOk)
