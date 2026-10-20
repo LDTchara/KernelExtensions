@@ -40,7 +40,7 @@ All detailed documentation, configuration guides, and action references have mov
   Configurable crash attacks with multiple recovery modes (file deletion / file verification), forcing players to interact with the file system to recover.
 - **飞机守护进程 (Aircraft Daemon)** – 可配置坠落时长与修复/坠毁动作的飞机系统，带全局高度计覆盖层。  
   An aircraft system with configurable fall duration and repair/crash actions, plus a global altimeter overlay.
-- **心脏守护进程 (PorthackHeart Daemon)** – 原版碎心结局复刻，动画节奏全参数可配，剧情由 Action 无缝衔接。  
+- **心脏守护进程 (Custom Heart Daemon)** – 原版碎心结局复刻，动画节奏全参数可配，剧情由 Action 无缝衔接。  
   A vanilla-faithful heartbreak finale with fully configurable animation timing, handed off to your story via Actions.
 - **定时器 (Clock)** – 按固定间隔**循环执行 Action 序列**的叙事时钟：可配触发次数/时长上限，耗尽时执行 OnComplete，支持多实例与存档持久化。  
   A story clock that **repeatedly executes Action sequences at a fixed interval** — with trigger-count/runtime limits, an exhaustion `OnComplete`, multi-instance support, and save persistence.

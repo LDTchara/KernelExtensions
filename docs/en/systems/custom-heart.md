@@ -1,18 +1,18 @@
-# Porthack Heart (PorthackHeartDaemon)
+# Custom Heart Daemon (CustomHeartDaemon)
 
-**PorthackHeartDaemon (PHD)** recreates the vanilla heart-node sequence — rotating wireframe cube →
+**CustomHeartDaemon** (formerly PorthackHeartDaemon / PHD) recreates the vanilla heart-node sequence — rotating wireframe cube →
 align → heart shape → white fade-out — and opens **every stage** up to configuration: title, music,
 timing, callbacks and input locking.
 
 !!! info "Applies to"
-    This page corresponds to KernelExtensions **0.7**. Related daemon: `PorthackHeartDaemon`;
+    This page corresponds to KernelExtensions **0.7**. Related daemon: `CustomHeartDaemon`;
     related action: `BreakHeart`.
 
 ---
 
 ## Overview
 
-- **Declaration**: write `<PorthackHeartDaemon ... />` inside a computer's XML (every parameter is optional with a default)
+- **Declaration**: write `<CustomHeartDaemon ... />` inside a computer's XML (every parameter is optional with a default)
 - **Idle state**: a rotating 3D wireframe cube with a flickering title
 - **Trigger**: the `<BreakHeart>` Action (explicit, from story) or `AutoOnPorthack` (automatic when porthack progress exceeds 50%, guarded by a one-shot flag)
 - **Ending**: it does **not** fire the vanilla ending — it enters a terminal state (dark screen) plus generic cleanup, then hands control to `OnComplete`
@@ -45,7 +45,7 @@ timing, callbacks and input locking.
 
 ```xml
 <Computer id="heart_node" name="Heart" type="empty">
-    <PorthackHeartDaemon
+    <CustomHeartDaemon
         Title="PortHack.Heart"
         Music="Music/Ambient/AmbientDrone_Clipped"
         FadeoutDelay="1"
@@ -105,7 +105,7 @@ Then `OnComplete` runs. **Ending missions, flags, music and save handling are yo
 
 Two different things, easily confused:
 
-| | PorthackHeartDaemon | [Custom Ending System (StartEnding)](./custom-ending.md) |
+| | CustomHeartDaemon | [Custom Ending System (StartEnding)](./custom-ending.md) |
 |---|---|---|
 | What | the **heartbreak sequence**: cube → heart → white flash | the **ending screen**: credits text + subtitles + music |
 | Trigger | `BreakHeart` / automatic | `StartEnding` |
@@ -121,7 +121,7 @@ Two different things, easily confused:
   that is useless to extensions. What happens after the heartbreak is entirely up to `OnComplete`.
 - **Sounds are not configurable**: the startup and glow sounds use vanilla Content paths
   (`SFX/TraceKill`, `SFX/Ending/PorthackSpindown`) and are skipped silently when missing.
-- ⚠️ **`ResetHeartbreak()` has no XML entry point**: it is a **public method** on `PorthackHeartDaemon`,
+- ⚠️ **`ResetHeartbreak()` has no XML entry point**: it is a **public method** on `CustomHeartDaemon`,
   callable only from code (mod authors). Plain extension authors cannot trigger it from XML — ask if you
   need that.
 - Input is **locked** during the sequence unless `LockInput="false"`; any other value is treated as `true`.
@@ -132,7 +132,7 @@ Two different things, easily confused:
 
 ### `BreakHeart`
 
-Explicitly triggers the PorthackHeartDaemon heartbreak sequence on a node.
+Explicitly triggers the CustomHeartDaemon heartbreak sequence on a node.
 
 | Attribute | Required | Description |
 |-----------|:--------:|-------------|
@@ -149,7 +149,7 @@ Explicitly triggers the PorthackHeartDaemon heartbreak sequence on a node.
 ## See Also
 
 - [Home](./../index.md) – back to the main index
-- [自定义 Porthack 心脏（中文）](./../../zh/systems/porthack-heart.md) – Chinese version
+- [自定义心脏 Daemon（中文）](./../../zh/systems/custom-heart.md) – Chinese version
 - [Custom Ending System (StartEnding)](./custom-ending.md) – for an ending screen after the heartbreak
 - [Custom Daemons](./../components/daemons.md) – the daemon list
 - [Actions](./../components/actions.md) – `BreakHeart` and the rest

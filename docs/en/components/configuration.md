@@ -172,15 +172,15 @@ way **silently does nothing** (the parser ignores unrecognised syntax without an
 | Custom Trial | `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete` / `OnPhaseStart` / `OnFail` | **`file` attribute** | `<OnStart file="Actions/x.xml" />` |
 | Phase Swift | `OnSwitch` | **`file` attribute** | `<OnSwitch file="Actions/x.xml" />` |
 | Clock | `OnComplete` | **attribute of `<Clock>`** | `<Clock ID="x" Interval="5" OnComplete="Clocks/done.xml">` |
-| Porthack Heart (daemon) | `OnComplete` / `OnHeartbreak` | **attribute of `<CustomHeartDaemon>`** | `<CustomHeartDaemon … OnHeartbreak="Actions/x.xml">` |
-| Porthack Heart (Action) | `OnComplete` / `OnHeartbreak` | **attribute of `BreakHeart`** | `<BreakHeart OnComplete="Actions/x.xml" />` |
+| Custom Heart Daemon (`CustomHeartDaemon`) | `OnComplete` / `OnHeartbreak` | **attribute of `<CustomHeartDaemon>`** | `<CustomHeartDaemon … OnHeartbreak="Actions/x.xml">` |
+| Custom Heart Daemon (Action) | `OnComplete` / `OnHeartbreak` | **attribute of `BreakHeart`** | `<BreakHeart OnComplete="Actions/x.xml" />` |
 | Aircraft Daemon | `OnFailed` / `OnSaved` | **attribute of `<FlightDaemon>`** | `<FlightDaemon OnFailed="Actions/Failed" OnSaved="Actions/Saved" />` |
 | Fake Recovery | `ActionOnGuideTextStart` | **element text content** | `<ActionOnGuideTextStart>Actions/x.xml</ActionOnGuideTextStart>` |
 
 !!! note "The two families"
     - **Child elements** (PortHackV2 / Custom Trial / Phase Swift / Fake Recovery) — the action point *is* an
       element, so it **can hold inline actions**.
-    - **Attributes** (Clock / Porthack Heart / Aircraft Daemon) — the action point is an attribute of its
+    - **Attributes** (Clock / Custom Heart Daemon / Aircraft Daemon) — the action point is an attribute of its
       parent element, and **an XML attribute cannot carry child elements**, so these can only take a path.
       Inline support for them is planned (it needs new child-element syntax on the parent).
 

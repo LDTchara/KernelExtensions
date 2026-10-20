@@ -5,7 +5,7 @@ KernelExtensions provides **two** custom daemons — that is the complete set:
 | Daemon | Belongs to | In one line |
 |--------|------------|-------------|
 | `FlightDaemon` | [Aircraft Daemon System](./../systems/aircraft.md) | A complete replacement for vanilla `AircraftDaemon`: configurable crash duration, repair/crash callbacks, and a global altimeter overlay |
-| `PorthackHeartDaemon` | [Porthack Heart (PHD)](./../systems/porthack-heart.md) | Recreates the vanilla heart-node sequence (cube → heart → white flash): title, music, timing, input lock and completion/heartbreak callbacks are all configurable |
+| `CustomHeartDaemon` | [Custom Heart Daemon (PHD)](./../systems/custom-heart.md) | Recreates the vanilla heart-node sequence (cube → heart → white flash): title, music, timing, input lock and completion/heartbreak callbacks are all configurable |
 
 The **usage and full option list** for each live on their own system page; below is a quick overview only.
 
@@ -18,7 +18,7 @@ The **usage and full option list** for each live on their own system page; below
 For detailed configuration options, attack/repair flows, and overlay usage, see the
 **[Aircraft Daemon System](./../systems/aircraft.md)** page.
 
-## PorthackHeartDaemon
+## CustomHeartDaemon
 
 - Extends the vanilla Porthack heart node: customisable title, music, heartbreak timing, and input locking,
   plus action files run on heartbreak/completion.

@@ -37,7 +37,7 @@ Thanks for your interest in contributing to **KernelExtensions**! This guide col
 KernelExtensions/
 ├── Actions/          # Pathfinder Actions (subfolders like Title/)
 ├── Configs/          # Config parsing (UsernameProfiles, etc.)
-├── Daemons/          # Custom daemons (FlightDaemon, PorthackHeartDaemon)
+├── Daemons/          # Custom daemons (FlightDaemon, CustomHeartDaemon)
 ├── Executables/      # Custom executables (CustomTrialExe, PhaseSwiftExe)
 ├── Managers/         # Global services (ClockManager, PhaseSwiftManager, CustomColorManager)
 ├── Modules/          # UI / render modules (CustomEndingModule, etc.)
@@ -134,7 +134,7 @@ Before opening a PR, verify:
 KernelExtensions/
 ├── Actions/          # Pathfinder Action（含 Title/ 等子目录）
 ├── Configs/          # 配置解析（UsernameProfiles 等）
-├── Daemons/          # 自定义 Daemon（FlightDaemon、PorthackHeartDaemon）
+├── Daemons/          # 自定义 Daemon（FlightDaemon、CustomHeartDaemon）
 ├── Executables/      # 自定义可执行程序（CustomTrialExe、PhaseSwiftExe）
 ├── Managers/         # 全局服务（ClockManager、PhaseSwiftManager、CustomColorManager）
 ├── Modules/          # 界面/渲染模块（CustomEndingModule 等）

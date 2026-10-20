@@ -5,7 +5,7 @@
 结局流程：**演讲阶段（Speech）→ 报幕阶段（Credits）→ 结尾提示行 → 完成**（断开连接、恢复控制、存档、可选执行后续 Action）。
 
 !!! info "适用版本"
-    本页对应 KernelExtensions **0.7**。相关 Action：`StartEnding`；相关 Daemon：`PorthackHeartDaemon`。
+    本页对应 KernelExtensions **0.7**。相关 Action：`StartEnding`；相关 Daemon：`CustomHeartDaemon`。
 
 ---
 
@@ -180,11 +180,11 @@ ExtensionRoot/
 - 执行 `AfterAction`（若配置）
 
 !!! note "职责边界"
-    结局模块**只负责结局自身**，**不清理**任何剧情节点（例如 `porthackHeart`）。节点清理由对应系统的拥有者负责——如果你用 `PorthackHeartDaemon`，它会在碎心结束时自行处理该节点。
+    结局模块**只负责结局自身**，**不清理**任何剧情节点（例如 `porthackHeart`）。节点清理由对应系统的拥有者负责——如果你用 `CustomHeartDaemon`，它会在碎心结束时自行处理该节点。
 
 ---
 
-## 与 PorthackHeart Daemon 联动
+## 与 Custom Heart Daemon 联动
 
 两者**互相独立**，联动方式是在 PHD 的 `OnComplete` 指向的动作文件里调用结局：
 
@@ -205,5 +205,5 @@ ExtensionRoot/
 
 - [首页](./../index.md) – 返回主索引
 - [Custom Ending System (English)](./../../en/systems/custom-ending.md) – 英文版
-- [自定义 Daemon](./../components/daemons.md) – PorthackHeart Daemon 等守护进程
+- [自定义 Daemon](./../components/daemons.md) – Custom Heart Daemon 等守护进程
 - [自定义 Action](./../components/actions.md) – 全部自定义 Action 列表

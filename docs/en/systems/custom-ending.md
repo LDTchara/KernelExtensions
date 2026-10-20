@@ -5,7 +5,7 @@ The **Custom Ending** consists of two parts: the `StartEnding` action triggers i
 Flow: **Speech stage → Credits stage → closing line → complete** (disconnect, restore control, save, optional follow-up action).
 
 !!! info "Applies to"
-    This page covers KernelExtensions **0.7**. Related action: `StartEnding`; related daemon: `PorthackHeartDaemon`.
+    This page covers KernelExtensions **0.7**. Related action: `StartEnding`; related daemon: `CustomHeartDaemon`.
 
 ---
 
@@ -180,11 +180,11 @@ Once the ending finishes (credits scrolled through), it automatically:
 - runs `AfterAction` (if configured)
 
 !!! note "Responsibility boundary"
-    The ending module **only handles the ending itself** and does **not** clean up any story node (e.g. `porthackHeart`). Node cleanup belongs to whichever system owns that node — with `PorthackHeartDaemon`, the daemon handles it when the heartbreak finishes.
+    The ending module **only handles the ending itself** and does **not** clean up any story node (e.g. `porthackHeart`). Node cleanup belongs to whichever system owns that node — with `CustomHeartDaemon`, the daemon handles it when the heartbreak finishes.
 
 ---
 
-## Pairing with the PorthackHeart Daemon
+## Pairing with the Custom Heart Daemon
 
 The two are **independent**; pairing them means calling the ending from the action file referenced by the daemon's `OnComplete`:
 
@@ -205,5 +205,5 @@ Order: heartbreak sequence → PHD cleanup (disconnect, handle the heart node) �
 
 - [Home](./../index.md) – back to the main index
 - [自定义结局系统（中文）](./../../zh/systems/custom-ending.md) – Chinese version
-- [Custom Daemons](./../components/daemons.md) – PorthackHeart Daemon and other daemons
+- [Custom Daemons](./../components/daemons.md) – Custom Heart Daemon and other daemons
 - [Custom Actions](./../components/actions.md) – full list of custom actions

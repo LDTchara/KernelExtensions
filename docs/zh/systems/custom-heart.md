@@ -1,16 +1,16 @@
-# 自定义 Porthack 心脏（PorthackHeartDaemon）
+# 自定义心脏 Daemon（CustomHeartDaemon）
 
-**PorthackHeartDaemon（PHD）** 复刻原版的心脏节点序列——旋转线框立方体 → 对齐 → 心形 → 白色淡出——
+**CustomHeartDaemon（旧名 PorthackHeartDaemon / PHD）** 复刻原版的心脏节点序列——旋转线框立方体 → 对齐 → 心形 → 白色淡出——
 并把**每个阶段都开放为可配置项**：标题、音乐、时序、回调、输入锁定。
 
 !!! info "适用版本"
-    本页对应 KernelExtensions **0.7**。相关 Daemon：`PorthackHeartDaemon`；相关 Action：`BreakHeart`。
+    本页对应 KernelExtensions **0.7**。相关 Daemon：`CustomHeartDaemon`；相关 Action：`BreakHeart`。
 
 ---
 
 ## 概览
 
-- **声明**：在计算机 XML 里写 `<PorthackHeartDaemon ... />`（全部参数可选，带默认值）
+- **声明**：在计算机 XML 里写 `<CustomHeartDaemon ... />`（全部参数可选，带默认值）
 - **默认态**：旋转的 3D 线框立方体 + 闪烁标题
 - **触发**：`<BreakHeart>` Action（剧情显式）或 `AutoOnPorthack`（porthack 破解进度 > 50% 自动，一次性标志防重复）
 - **结束**：**不触发原版结局**，而是进入终结态（暗屏）+ 通用清理，然后把控制权交给 `OnComplete`
@@ -42,7 +42,7 @@
 
 ```xml
 <Computer id="heart_node" name="Heart" type="empty">
-    <PorthackHeartDaemon
+    <CustomHeartDaemon
         Title="PortHack.Heart"
         Music="Music/Ambient/AmbientDrone_Clipped"
         FadeoutDelay="1"
@@ -101,7 +101,7 @@ PHD 不替你做这些决定。
 
 这是**两件事**，容易混：
 
-| | PorthackHeartDaemon | [自定义结局系统（StartEnding）](./custom-ending.md) |
+| | CustomHeartDaemon | [自定义结局系统（StartEnding）](./custom-ending.md) |
 |---|---|---|
 | 内容 | **心碎序列**：立方体 → 心形 → 白场 | **结局画面**：报幕文本 + 字幕 + 音乐 |
 | 触发 | `BreakHeart` / 自动 | `StartEnding` |
@@ -117,7 +117,7 @@ PHD 不替你做这些决定。
   心碎后的走向完全由 `OnComplete` 决定。
 - **音效不开放配置**：启动音效与 glow 音效直接使用原版 Content 路径（`SFX/TraceKill`、
   `SFX/Ending/PorthackSpindown`），资源缺失时静默跳过。
-- ⚠️ **`ResetHeartbreak()` 复位重玩没有 XML 入口**：它是 `PorthackHeartDaemon` 的 **public 方法**，
+- ⚠️ **`ResetHeartbreak()` 复位重玩没有 XML 入口**：它是 `CustomHeartDaemon` 的 **public 方法**，
   目前只能由代码（模组作者）调用，纯扩展作者无法用 XML 触发。需要 XML 入口的话请提出需求。
 - 心碎序列期间会**锁定输入**（除非 `LockInput="false"`），`LockInput` 写其他值时按 `true` 处理。
 
@@ -127,7 +127,7 @@ PHD 不替你做这些决定。
 
 ### `BreakHeart`
 
-显式触发目标节点的 PorthackHeartDaemon 心碎序列。
+显式触发目标节点的 CustomHeartDaemon 心碎序列。
 
 | 属性 | 必填 | 说明 |
 |------|:----:|------|
@@ -144,7 +144,7 @@ PHD 不替你做这些决定。
 ## 另请参阅
 
 - [首页](./../index.md) – 返回主索引
-- [PorthackHeartDaemon (English)](./../../en/systems/porthack-heart.md) – 英文版
+- [Custom Heart Daemon (English)](./../../en/systems/custom-heart.md) – 英文版
 - [自定义结局系统（StartEnding）](./custom-ending.md) – 心碎之后想接结局画面
 - [自定义 Daemon](./../components/daemons.md) – Daemon 清单
 - [自定义 Action](./../components/actions.md) – `BreakHeart` 与其余动作
