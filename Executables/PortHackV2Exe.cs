@@ -135,6 +135,11 @@ public class PortHackV2Exe : GameExecutable
     // Button ID（同 exe 内唯一）
     private const int ID_EXIT = 300;
     private const int ID_CANCEL = 301;
+    private const int ID_PAGE_PREV = 302;
+    private const int ID_PAGE_NEXT = 303;
+
+    /// <summary>Listing 当前页（0-based）；行数变化时 clamp，进入 Listing 时重置。</summary>
+    private int _listingPage;
 
     public PortHackV2Exe() : base()
     {
@@ -199,6 +204,7 @@ public class PortHackV2Exe : GameExecutable
         _progressStr = CurrentConfig.ProgressColorRaw;
         _bgStr = CurrentConfig.BackgroundColorRaw;
 
+        _listingPage = 0;
         CurrentState = PortHackV2State.Listing;
     }
 
@@ -941,8 +947,6 @@ public class PortHackV2Exe : GameExecutable
         /// <summary>是否为 RequireOpenPortsBefore 的“协议前置”行；特殊前置行必须排在它们之前。</summary>
         public bool IsProtocol;
 
-        /// <summary>汇总行（「N satisfied」/「+M more unmet」）：不画状态点、用暗底。</summary>
-        public bool Summary;
     }
 
     /// <summary>前置行固定行高（像素）。
@@ -1115,79 +1119,48 @@ public class PortHackV2Exe : GameExecutable
 
         List<ListingRow> rows = BuildListingRows();
 
-        // ── 行布局：**固定行高**，行数超出容量时折叠/汇总，绝不压缩行高、也绝不静默丢弃 ──
+        // ── 行布局：固定行高 + **分页**，不再省略/汇总 ──
         // 容量 = 可用高度 / 固定行高；底部 22px 留给「预计用时」那行。
+        // 行顺序由 BuildListingRows 保证：特殊前置 → 协议前置，分页只是切片，不改变顺序。
         int top = ContentTop + 20;
         int avail = Math.Max(0, ContentBottom - 22 - top);
         int capacity = Math.Max(1, avail / LISTING_ROW_HEIGHT);
+        int pageCount = Math.Max(1, (rows.Count + capacity - 1) / capacity);
 
-        List<ListingRow> drawRows = new();
-        if (rows.Count <= capacity)
-        {
-            // 放得下：保持原顺序，全部显示（行位置稳定，不因满足状态跳来跳去）
-            drawRows.AddRange(rows);
-        }
-        else
-        {
-            // 放不下：保持“未满足优先”，但**分组优先**：
-            // 先所有特殊前置（防火墙/代理/已破解端口），再协议前置；组内先 unmet 再 met。
-            // 这样即使溢出，协议前置也绝不会排到特殊前置前面。
-            var ordered = new List<ListingRow>(rows.Count);
-            foreach (bool protocol in new[] { false, true })
-            {
-                var group = rows.Where(r => r.IsProtocol == protocol).ToList();
-                ordered.AddRange(group.Where(r => !r.Met));
-                ordered.AddRange(group.Where(r => r.Met));
-            }
+        if (_listingPage < 0) _listingPage = 0;
+        if (_listingPage >= pageCount) _listingPage = pageCount - 1;
 
-            int room = Math.Max(1, capacity - 1); // 给汇总行留 1 行
-            drawRows.AddRange(ordered.Take(room));
-            var hidden = ordered.Skip(room).ToList();
-            if (hidden.Count > 0)
-            {
-                int hiddenUnmet = hidden.Count(r => !r.Met);
-                int hiddenMet = hidden.Count(r => r.Met);
-                drawRows.Add(new ListingRow
-                {
-                    Label = hiddenUnmet > 0
-                        ? KELoc.Format("PORT_HACK_V2_ROW_MORE_UNMET_OK", "+{0} more unmet · {1} hidden", hiddenUnmet, hiddenMet)
-                        : KELoc.Format("PORT_HACK_V2_ROW_SATISFIED", "{0} hidden", hiddenMet),
-                    Met = hiddenUnmet == 0,
-                    Summary = true
-                });
-            }
-        }
+        // 翻页控件只在溢出时出现；按钮位于顶部右侧，不占行容量。
+        if (!isExiting && pageCount > 1)
+            DrawListingPager(pageCount);
+
+        // 按钮可能在上面修改过 _listingPage；重新 clamp 后取当前页。
+        if (_listingPage >= pageCount) _listingPage = pageCount - 1;
+        List<ListingRow> drawRows = rows
+            .Skip(_listingPage * capacity)
+            .Take(capacity)
+            .ToList();
 
         int y = top;
         foreach (ListingRow row in drawRows)
         {
-            // 硬边界：绝不让行画进底部「预计用时」区（宁可少画一行）
+            // 硬边界：绝不让行画进底部「预计用时」区
             if (y + LISTING_ROW_HEIGHT > ContentBottom - 22) break;
 
             int rowH = LISTING_ROW_HEIGHT;
             Rectangle bar = new Rectangle(x, y, w, rowH - 4);
 
-            if (row.Summary)
-            {
-                // 汇总行：暗底 + 无状态点（它不是一条具体前置）
-                RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height,
-                    os.darkBackgroundColor * (0.85f * fade));
-            }
-            else
-            {
-                Color bg = row.Met ? os.unlockedColor : os.lockedColor;
-                RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, bg * (0.85f * fade));
+            Color bg = row.Met ? os.unlockedColor : os.lockedColor;
+            RenderedRectangle.doRectangle(bar.X, bar.Y, bar.Width, bar.Height, bg * (0.85f * fade));
 
-                // 左侧状态点：**满足 = 白色**（不跟 AccentColor，避免与动态色混在一起），未满足 = 暗
-                RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, Math.Max(2, bar.Height - 8),
-                    row.Met ? Color.White * fade : os.darkBackgroundColor * fade);
-            }
+            // 左侧状态点：**满足 = 白色**（不跟 AccentColor，避免与动态色混在一起），未满足 = 暗
+            RenderedRectangle.doRectangle(bar.X + 4, bar.Y + 4, 4, Math.Max(2, bar.Height - 8),
+                row.Met ? Color.White * fade : os.darkBackgroundColor * fade);
 
             // 一行只写名字（长名字由 doFontLabelToSize 等比缩小，不截断）
             TextItem.doFontLabelToSize(
                 new Rectangle(bar.X + 16, bar.Y + 1, bar.Width - 22, Math.Max(9, bar.Height - 2)),
-                row.Label, GuiData.smallfont,
-                (row.Summary ? Color.White * 0.72f : Color.White * 0.95f) * fade);
+                row.Label, GuiData.smallfont, Color.White * (0.95f * fade));
 
             y += rowH;
         }
@@ -1201,6 +1174,34 @@ public class PortHackV2Exe : GameExecutable
             TextItem.doFontLabel(new Vector2(x, ContentBottom - 18), est, GuiData.detailfont,
                 Color.White * (0.6f * fade));
         }
+    }
+
+    /// <summary>
+    /// Listing 顶部右侧的翻页控件：&lt; 当前页/总页数 &gt;。
+    /// 只有 pageCount &gt; 1 时调用；按钮点击直接修改 <see cref="_listingPage"/>，下一次切片生效。
+    /// </summary>
+    private void DrawListingPager(int pageCount)
+    {
+        const int navW = 18;
+        const int navH = 16;
+        const int navGap = 2;
+        const int labelW = 36;
+        int total = navW * 2 + navGap * 2 + labelW;
+        int navX = bounds.X + bounds.Width - 2 - total;
+        int navY = ContentTop - 1;
+
+        if (Button.doButton(PID + ID_PAGE_PREV, navX, navY, navW, navH, "<", os.lockedColor)
+            && _listingPage > 0)
+            _listingPage--;
+
+        string pageLabel = (_listingPage + 1) + "/" + pageCount;
+        TextItem.doFontLabel(new Vector2(navX + navW + navGap, navY + 1),
+            pageLabel, GuiData.detailfont, Color.White * (0.8f * fade));
+
+        if (Button.doButton(PID + ID_PAGE_NEXT, navX + navW + navGap + labelW + navGap, navY,
+                navW, navH, ">", os.lockedColor)
+            && _listingPage < pageCount - 1)
+            _listingPage++;
     }
 
     // ---- Cracking ----
