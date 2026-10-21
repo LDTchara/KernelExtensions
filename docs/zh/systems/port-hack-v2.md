@@ -80,7 +80,9 @@ flag 就是"入口牌"：
 | `<SpinUpTime>` | 起转时长的**绝对秒数**（覆盖比例）。**负数 = 用比例** |
 | `<SpinDownTime>` | 急刹时长（秒）。留空 = 1.7（与原版一致） |
 | `<CompleteDelay>` | 成功演出后退出前的停留（秒）。留空 = 5 |
-| `<TakeAdmin>` | 是否把目标机 owner 设为玩家。**只看开关，与协议成败无关**（全部协议失败也夺；目标不可达时只记 Warn）。省略 = `false`（**只开端口，不擅自给管理员权限**） |
+| `<TakeAdmin>` | 旧 bool 入口/兼容映射：未写 `<TakeAdminMode>` 时，`true` → `Always`，`false`/省略 → `False`。目标不可达时只记 Warn |
+| `<TakeAdminMode>` | **夺取 admin 的模式**：`False`（默认/回退，不夺）/ `Always`（不论协议成败都夺）/ `OnAnySuccess`（至少一个协议成功）/ `OnAllSuccess`（所有协议都成功）。写了本项则以本项为准 |
+| `<IgnoreMissingRequiredPorts>` | 是否忽略“协议已注册、但目标机不存在该端口”的 `<RequireOpenPortsBefore>` 前置。默认 `false`（卡住，等待 PortAdd 等补端口）；只忽略“目标机没有”，不忽略“存在但未打开”和“协议未注册” |
 | `<AutoExitOnLeave>` | 玩家离开本程序所在节点时是否自动关闭。默认 `true`（原版行为） |
 | `<RequireCrackedPorts>` | 可选前置：目标机上**已破解端口数量**要求，见下节 |
 | `<RequireOpenPortsBefore>` | 前置：这些端口必须先打开。写成多个 `<string>` 子元素 |
@@ -138,6 +140,13 @@ flag 就是"入口牌"：
 | `<TimeIfSuccess>` | ❌ | 成功分支的时长（秒） |
 | `<TimeIfFail>` | ❌ | 失败分支的时长（秒） |
 | `<OnStart>` / `<OnComplete>` / `<OnFail>` | ❌ | 该协议自己的动作点 |
+
+### 已破解端口数前置与缺失端口
+
+`<RequireCrackedPorts>` 在目标机**一个端口都没有**时仍会阻塞，但对应行**始终显示**（`0/N`）。
+行内不额外加说明文字；需要补端口时请先用 `PortAdd` 等 Action 添加，Listing 会每帧重查。
+`<IgnoreMissingRequiredPorts>` 只影响 `<RequireOpenPortsBefore>` 中“协议已注册但目标机上不存在”的端口，
+不影响已破解端口数前置。
 
 ### 已破解端口数前置
 

@@ -81,7 +81,9 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<SpinUpTime>` | Spin-up length in **absolute seconds** (overrides the ratio). **Negative = use the ratio** |
 | `<SpinDownTime>` | Brake length in seconds. Empty = 1.7 (same as vanilla) |
 | `<CompleteDelay>` | Pause before exiting after the success sequence, in seconds. Empty = 5 |
-| `<TakeAdmin>` | Whether to make the player the target's owner. **The switch alone decides** — independent of per-protocol success/failure (even if all protocols fail); if the target is unreachable only a warning is logged. Omitted = `false` (**only opens ports, never grants admin on its own**) |
+| `<TakeAdmin>` | Legacy bool/compatibility mapping: when `<TakeAdminMode>` is absent, `true` → `Always`, `false`/omitted → `False`. If the target is unreachable only a warning is logged |
+| `<TakeAdminMode>` | **Admin-grant mode**: `False` (default/fallback, never) / `Always` (regardless of protocol results) / `OnAnySuccess` / `OnAllSuccess`. Takes precedence when present |
+| `<IgnoreMissingRequiredPorts>` | Whether to ignore a `<RequireOpenPortsBefore>` entry that is registered but **absent on the target**. Default `false` (block, waiting for PortAdd etc.); only ignores "absent", not "present but closed" or "unregistered protocol" |
 | `<AutoExitOnLeave>` | Whether to close when the player leaves the node. Default `true` (vanilla behaviour) |
 | `<RequireCrackedPorts>` | Optional prerequisite: how many **already-cracked ports** the target needs — see below |
 | `<RequireOpenPortsBefore>` | Prerequisite: these ports must already be open. Written as multiple `<string>` children |
@@ -140,6 +142,13 @@ One-shot effects (anything beyond playing a sound or opening a port) belong in a
 | `<TimeIfSuccess>` | ❌ | Duration of the success branch, in seconds |
 | `<TimeIfFail>` | ❌ | Duration of the failure branch, in seconds |
 | `<OnStart>` / `<OnComplete>` / `<OnFail>` | ❌ | This protocol's own action points |
+
+### Cracked-port and missing-port prerequisites
+
+When the target has **no ports at all**, `<RequireCrackedPorts>` still blocks, but its row is **always shown** (`0/N`).
+No extra inline explanation is added; add ports with `PortAdd`-style actions and the Listing re-checks every frame.
+`<IgnoreMissingRequiredPorts>` only affects `<RequireOpenPortsBefore>` entries that are registered but absent on
+the target; it does not affect the cracked-port prerequisite.
 
 ### Cracked-port prerequisite
 
