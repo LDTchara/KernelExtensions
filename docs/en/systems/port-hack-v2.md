@@ -178,6 +178,7 @@ Empty or `NONE` means "use the default" (`ProgressColor` / `BackgroundColor` the
 - The top title bar shows `IP: <target>` and the program name (vanilla behaviour).
 - **No exit button during Cracking** — you cannot leave mid-crack. It appears in the other states and disappears the instant the program exits.
 - The bottom progress bar colour comes from `<ProgressColor>`.
+- **The Listing paginates when rows exceed the window height** (top-right `< 1/N >`): nothing is omitted and row height is never compressed; non-protocol prerequisites (firewall/proxy/cracked ports) always precede protocol prerequisites.
 
 ### Animation
 
