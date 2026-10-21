@@ -208,10 +208,13 @@
   <IdleSpinSpeed>-1</IdleSpinSpeed>
 
   <!-- ── 结束后行为 / On-finish behaviour ──
-       TakeAdmin：是否像原版 PortHack 一样取得目标机管理员权限（把 owner 设为玩家）。
-       **只看开关**，与协议成败无关（全部协议失败也夺；目标不可达时只记 Warn）。
-                  留空 = false，即只开端口、不给 admin。
-                  Grant admin on the target like vanilla PortHack does. Empty = false.
+       TakeAdmin：旧 bool 入口（兼容映射）。未写 TakeAdminMode 时：
+                  true → Always；false/省略 → False。目标不可达时只记 Warn。
+       TakeAdminMode：夺取 admin 的模式。默认 False（不夺）：
+                  False / Always（不论协议成败都夺）/ OnAnySuccess（至少一个成功）
+                  / OnAllSuccess（所有协议都成功）。写了本项则以本项为准。
+                  Grant-admin mode. Default False (never):
+                  False / Always / OnAnySuccess / OnAllSuccess; takes precedence when present.
        AutoExitOnLeave：玩家离开本程序所在节点时是否自动关闭程序。
                         留空 = true（原版 PortHack 行为）；false = 程序跨节点常驻。
                         Close the program when the player leaves the node it runs on.
@@ -219,6 +222,7 @@
        CompleteDelay：成功演出（乱序字 + 上下白线）结束后、退出前的停留秒数。留空 = 5。
                       Seconds to stay on screen after the success sequence. Empty = 5. -->
   <TakeAdmin>true</TakeAdmin>
+  <!-- <TakeAdminMode>Always</TakeAdminMode> -->
   <AutoExitOnLeave>true</AutoExitOnLeave>
   <CompleteDelay>5</CompleteDelay>
 
@@ -234,6 +238,10 @@
        Unmet rows are drawn in the locked colour; the crack starts automatically once all are met.
        RequireOpenPortsBefore 是端口协议名列表，每个协议一行。
        RequireOpenPortsBefore is a list of port protocol names, one row each.
+       IgnoreMissingRequiredPorts：默认 false。true 时，若协议已注册但目标机上没有该端口，
+       该项视为满足；端口存在但未打开、协议未注册仍然不满足（后者通常靠 PortAdd 注册）。
+       Default false. When true, a registered protocol whose port is absent on the target counts
+       as satisfied; present-but-closed / unregistered protocols still block.
 
        RequireCrackedPorts：要求目标机**已破解的端口数**。三种写法：
                             不写 / 留空 / 0 / 负数 = **不检查**（默认）
@@ -257,6 +265,7 @@
   <RequireSolveFirewall>false</RequireSolveFirewall>
   <RequireProxyOverload>false</RequireProxyOverload>
   <RequireCrackedPorts>0</RequireCrackedPorts>
+  <IgnoreMissingRequiredPorts>false</IgnoreMissingRequiredPorts>
 
   <!-- ── 动作点 / Action hooks（根级 / root level）──
        相对扩展根目录的动作文件路径。路径越界或文件不存在时跳过并记 Warn，不中断流程。
@@ -318,8 +327,10 @@
       <Protocols> 里只放一个 <Protocol> / Put a single <Protocol> inside <Protocols>
 
     [不给管理员权限 —— 只开端口 / No admin, just open the port]
-      省略 <TakeAdmin>（等价于 false）；写 true 则**不论协议成败**都夺 admin
-      Omit <TakeAdmin> (same as false); true always grants admin regardless of protocol results
+      不写 TakeAdmin / TakeAdminMode = 不夺；TakeAdmin=true（未写 Mode）= Always；
+      TakeAdminMode=Always 不论协议成败都夺；OnAnySuccess/OnAllSuccess 按协议结果。
+      Omit both = never; TakeAdmin=true (no Mode) = Always; TakeAdminMode=Always regardless of
+      protocol results; OnAnySuccess/OnAllSuccess follow protocol outcomes.
 
     [程序跨节点常驻 / Keep running across nodes]
       <AutoExitOnLeave>false</AutoExitOnLeave>

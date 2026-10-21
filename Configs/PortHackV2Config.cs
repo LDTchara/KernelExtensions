@@ -31,6 +31,22 @@ public enum PortHackV2BackgroundEffect
 }
 
 /// <summary>
+/// 破解结束时是否夺取目标机 admin 的模式。
+/// 缺省 = <see cref="False"/>（不夺）；不写 &lt;TakeAdminMode&gt; 时回退到旧的 &lt;TakeAdmin&gt; bool 兼容映射。
+/// </summary>
+public enum PortHackV2TakeAdminMode
+{
+    /// <summary>不夺取 admin（默认/回退）。</summary>
+    False = 0,
+    /// <summary>不论协议成败都夺取（当前 bool-only 行为）。</summary>
+    Always,
+    /// <summary>至少一个协议成功才夺取（旧行为）。</summary>
+    OnAnySuccess,
+    /// <summary>所有协议都成功才夺取。</summary>
+    OnAllSuccess
+}
+
+/// <summary>
 /// 单个待破解协议：协议名 + 成功率 + 两条分支各自时长。
 ///
 /// 数值项与根配置同样用 string 承接原值（XmlSerializer 遇非数字会直接抛，详见根类注释）。
@@ -347,9 +363,29 @@ public class PortHackV2Config
 
     /// <summary>
     /// 破解成功后是否把目标机 owner 设为玩家（原版 PortHack 的 takeAdmin 行为）。
-    /// 省略 = false：默认只开端口，不擅自给管理员权限。
+    /// 旧 bool 入口；兼容映射：未写 &lt;TakeAdminMode&gt; 时，true → <see cref="PortHackV2TakeAdminMode.Always"/>，
+    /// false/省略 → <see cref="PortHackV2TakeAdminMode.False"/>。
     /// </summary>
     public bool TakeAdmin { get; set; }
+
+    /// <summary>
+    /// 夺取 admin 的模式字符串：False（默认）/ Always / OnAnySuccess / OnAllSuccess。
+    /// 写本项时以本项为准；不写时按上面的旧 &lt;TakeAdmin&gt; bool 映射。
+    /// </summary>
+    [XmlElement("TakeAdminMode")] public string TakeAdminModeRaw { get; set; }
+
+    /// <summary>解析后的夺取 admin 模式。</summary>
+    [XmlIgnore] public PortHackV2TakeAdminMode TakeAdminMode { get; private set; } = PortHackV2TakeAdminMode.False;
+
+    /// <summary>
+    /// 是否忽略“协议已注册、但目标机上不存在该端口”的 &lt;RequireOpenPortsBefore&gt; 前置。
+    /// 默认 false（保持现状：卡住，等待 PortAdd 等方式补端口）。
+    /// 只忽略“目标机没有”，不忽略“目标机有但没打开”，也不忽略“协议未注册”。
+    /// </summary>
+    [XmlElement("IgnoreMissingRequiredPorts")] public string IgnoreMissingRequiredPortsRaw { get; set; }
+
+    /// <summary>解析后的“忽略目标机缺失前置端口”开关。</summary>
+    [XmlIgnore] public bool IgnoreMissingRequiredPorts { get; private set; }
 
     /// <summary>
     /// 玩家离开本程序所在节点时是否自动关闭程序。
@@ -514,6 +550,9 @@ public class PortHackV2Config
         if (!tOk)
             KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 
+        ResolveTakeAdminMode();
+        IgnoreMissingRequiredPorts = ParseBoolDefaultFalse(IgnoreMissingRequiredPortsRaw, "IgnoreMissingRequiredPorts");
+
         PolyhedronShape = ParsePolyhedron(PolyhedronRaw);
         PolyhedronStyle = ParsePolyhedronStyle(PolyhedronStyleRaw);
 
@@ -648,6 +687,64 @@ public class PortHackV2Config
     /// 否则已有扩展的观感会无声改变。
     /// </para>
     /// </summary>
+    /// <summary>
+    /// 解析 TakeAdmin 模式；缺省走旧 &lt;TakeAdmin&gt; bool 兼容映射：
+    /// true → Always，false/省略 → False。写了 &lt;TakeAdminMode&gt; 时以它为准。
+    /// </summary>
+    private void ResolveTakeAdminMode()
+    {
+        string raw = TakeAdminModeRaw?.Trim();
+        if (string.IsNullOrEmpty(raw))
+        {
+            TakeAdminMode = TakeAdmin ? PortHackV2TakeAdminMode.Always : PortHackV2TakeAdminMode.False;
+            return;
+        }
+
+        if (raw.Equals("false", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("never", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("no", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("off", StringComparison.OrdinalIgnoreCase))
+        {
+            TakeAdminMode = PortHackV2TakeAdminMode.False;
+            return;
+        }
+        if (raw.Equals("true", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("always", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("yes", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("on", StringComparison.OrdinalIgnoreCase))
+        {
+            TakeAdminMode = PortHackV2TakeAdminMode.Always;
+            return;
+        }
+        if (raw.Equals("anysuccess", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("onsuccess", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("on-any-success", StringComparison.OrdinalIgnoreCase))
+        {
+            TakeAdminMode = PortHackV2TakeAdminMode.OnAnySuccess;
+            return;
+        }
+        if (raw.Equals("allsuccess", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("onallsuccess", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("on-all-success", StringComparison.OrdinalIgnoreCase))
+        {
+            TakeAdminMode = PortHackV2TakeAdminMode.OnAllSuccess;
+            return;
+        }
+
+        TakeAdminMode = PortHackV2TakeAdminMode.False;
+        KELog.WarnT($"[PortHackV2] '{SourceName}': unknown <TakeAdminMode> '{raw}'; "
+            + "expected False / Always / OnAnySuccess / OnAllSuccess. Using False.");
+    }
+
+    /// <summary>宽松布尔解析：留空 = false；非法值 Warn 后 false。</summary>
+    private bool ParseBoolDefaultFalse(string raw, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        if (bool.TryParse(raw.Trim(), out bool value)) return value;
+        KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <{fieldName}> '{raw}', expected true/false; using false.");
+        return false;
+    }
+
     private KEPolyhedronStyle ParsePolyhedronStyle(string raw)
     {
         if (ConfigValue.IsNone(raw)) return KEPolyhedronStyle.Wireframe;

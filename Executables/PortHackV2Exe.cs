@@ -339,7 +339,16 @@ public class PortHackV2Exe : GameExecutable
     /// <summary>某个前置开放端口是否已满足。</summary>
     private bool PortRequirementMet(string protocol)
     {
-        try { return Target.isPortOpen(protocol); }
+        try
+        {
+            // IgnoreMissingRequiredPorts：只忽略“协议已注册、但目标机没有该端口”；
+            // 端口存在但未打开、或协议未注册（可能靠 PortAdd 稍后注册）仍然不满足。
+            if (CurrentConfig != null && CurrentConfig.IgnoreMissingRequiredPorts
+                && IsProtocolRegistered(protocol) && !TargetHasPort(protocol))
+                return true;
+
+            return Target.isPortOpen(protocol);
+        }
         catch { return false; }
     }
 
@@ -387,15 +396,37 @@ public class PortHackV2Exe : GameExecutable
         return CurrentConfig.RequireCrackedPorts;
     }
 
-    /// <summary>已破解端口数前置是否需要显示：要求 &gt; 0 且目标机确实有端口可破。</summary>
+    /// <summary>
+    /// 已破解端口数前置是否需要显示：只要要求 &gt; 0 就显示。
+    ///
+    /// <para>
+    /// 目标机一个端口都没有时也必须显示：否则“0/N 永远无法满足、但行不显示”会让玩家
+    /// 只看到 Listing 卡住、完全不知道为什么。行内不额外写说明文字（保持列表紧凑），
+    /// 由作者/剧情自行解释或通过 PortAdd 等 Action 补端口。
+    /// </para>
+    /// </summary>
     private bool CrackedPortsRowVisible()
-    {
-        if (RequiredCrackedPorts() <= 0) return false;
-        return CrackedPortCount() > 0 || Target.GetAllPortStates().Count > 0;
-    }
+        => RequiredCrackedPorts() > 0;
 
     private bool CrackedPortsRequirementMet()
         => CrackedPortCount() >= RequiredCrackedPorts();
+
+    /// <summary>
+    /// 本次收尾是否应该夺取目标机 admin。
+    /// False（默认）= 不夺；Always = 不看协议；OnAnySuccess = 至少一个成功；
+    /// OnAllSuccess = 至少一个协议且全部成功。
+    /// </summary>
+    private bool ShouldTakeAdmin()
+    {
+        if (CurrentConfig == null) return false;
+        return CurrentConfig.TakeAdminMode switch
+        {
+            PortHackV2TakeAdminMode.Always => true,
+            PortHackV2TakeAdminMode.OnAnySuccess => _successCount > 0,
+            PortHackV2TakeAdminMode.OnAllSuccess => _runtimes.Count > 0 && _successCount == _runtimes.Count,
+            _ => false
+        };
+    }
 
     /// <summary>
     /// 所有前置与协议前置端口是否都满足（Listing → Cracking 的判据）。
@@ -621,9 +652,7 @@ public class PortHackV2Exe : GameExecutable
         foreach (ProtocolRuntime rt in _runtimes)
             if (!rt.Finished) CompleteProtocol(rt, forced: true);
 
-        // TakeAdmin 只看开关：根级没有整体失败，作者的开关语义就是"是否给管理员"；
-        // 与协议成败无关（全灭也夺）——否则作者写 true 却因 RNG 全失败而静默不夺，难以排查。
-        if (CurrentConfig.TakeAdmin)
+        if (ShouldTakeAdmin())
         {
             try { os.takeAdmin(_targetIp); }
             catch (Exception ex) { KELog.WarnT($"[PortHackV2] '{source}': takeAdmin failed: {ex.Message}"); }
@@ -909,6 +938,9 @@ public class PortHackV2Exe : GameExecutable
         public bool Met;
         public string Detail;
 
+        /// <summary>是否为 RequireOpenPortsBefore 的“协议前置”行；特殊前置行必须排在它们之前。</summary>
+        public bool IsProtocol;
+
         /// <summary>汇总行（「N satisfied」/「+M more unmet」）：不画状态点、用暗底。</summary>
         public bool Summary;
     }
@@ -924,8 +956,9 @@ public class PortHackV2Exe : GameExecutable
     private const int LISTING_ROW_HEIGHT = 30;
 
     /// <summary>
-    /// 组装 Listing 行：先前置（防火墙 / 代理），再各协议前置端口。
-    /// 前置行仅在「配置开启 **且** 目标机存在对应物」时显示。
+    /// 组装 Listing 行：**所有非协议类特殊前置优先**——
+    /// 防火墙 → 代理 → 已破解端口数 → 再各协议前置端口（RequireOpenPortsBefore）。
+    /// 这是显示优先级的不变式：特殊前置永远排在协议行之前，方便玩家先解决全局条件。
     /// </summary>
     private List<ListingRow> BuildListingRows()
     {
@@ -969,13 +1002,19 @@ public class PortHackV2Exe : GameExecutable
             if (!registered)
                 label += " " + KELoc.Loc("PORT_HACK_V2_TAG_UNKNOWN_PROTOCOL", "(unknown protocol)");
             else if (!present)
-                label += " " + KELoc.Loc("PORT_HACK_V2_TAG_NOT_ON_TARGET", "(not on target)");
+            {
+                bool ignored = CurrentConfig.IgnoreMissingRequiredPorts;
+                label += " " + KELoc.Loc(
+                    ignored ? "PORT_HACK_V2_TAG_NOT_ON_TARGET_IGNORED" : "PORT_HACK_V2_TAG_NOT_ON_TARGET",
+                    ignored ? "(not on target; ignored)" : "(not on target)");
+            }
 
             rows.Add(new ListingRow
             {
                 Label = label,
                 Met = PortRequirementMet(p),
-                Detail = ""
+                Detail = "",
+                IsProtocol = true
             });
         }
 
@@ -1090,34 +1129,30 @@ public class PortHackV2Exe : GameExecutable
         }
         else
         {
-            // 放不下：**未满足优先**（玩家只关心还差什么），满足项折叠成一行
-            List<ListingRow> unmet = rows.Where(r => !r.Met).ToList();
-            List<ListingRow> met = rows.Where(r => r.Met).ToList();
-            // ⚠️ 溢出时**必须**给汇总行留 1 行 —— 之前的写法在 met==0 时把整容量都给了
-            //    未满足行，汇总行被挤到边界外（实测：第 7 行压到「预计用时」上）。
-            int roomForUnmet = Math.Max(0, capacity - 1);
-
-            if (unmet.Count <= roomForUnmet)
+            // 放不下：保持“未满足优先”，但**分组优先**：
+            // 先所有特殊前置（防火墙/代理/已破解端口），再协议前置；组内先 unmet 再 met。
+            // 这样即使溢出，协议前置也绝不会排到特殊前置前面。
+            var ordered = new List<ListingRow>(rows.Count);
+            foreach (bool protocol in new[] { false, true })
             {
-                drawRows.AddRange(unmet);
-                if (met.Count > 0)
-                    drawRows.Add(new ListingRow
-                    {
-                        Label = KELoc.Format("PORT_HACK_V2_ROW_SATISFIED", "{0} satisfied", met.Count),
-                        Met = true,
-                        Summary = true
-                    });
+                var group = rows.Where(r => r.IsProtocol == protocol).ToList();
+                ordered.AddRange(group.Where(r => !r.Met));
+                ordered.AddRange(group.Where(r => r.Met));
             }
-            else
+
+            int room = Math.Max(1, capacity - 1); // 给汇总行留 1 行
+            drawRows.AddRange(ordered.Take(room));
+            var hidden = ordered.Skip(room).ToList();
+            if (hidden.Count > 0)
             {
-                drawRows.AddRange(unmet.Take(roomForUnmet));
-                int hidden = unmet.Count - roomForUnmet;
+                int hiddenUnmet = hidden.Count(r => !r.Met);
+                int hiddenMet = hidden.Count(r => r.Met);
                 drawRows.Add(new ListingRow
                 {
-                    Label = met.Count > 0
-                        ? KELoc.Format("PORT_HACK_V2_ROW_MORE_UNMET_OK", "+{0} more unmet \u00b7 {1} satisfied", hidden, met.Count)
-                        : KELoc.Format("PORT_HACK_V2_ROW_MORE_UNMET", "+{0} more unmet", hidden),
-                    Met = false,
+                    Label = hiddenUnmet > 0
+                        ? KELoc.Format("PORT_HACK_V2_ROW_MORE_UNMET_OK", "+{0} more unmet · {1} hidden", hiddenUnmet, hiddenMet)
+                        : KELoc.Format("PORT_HACK_V2_ROW_SATISFIED", "{0} hidden", hiddenMet),
+                    Met = hiddenUnmet == 0,
                     Summary = true
                 });
             }
