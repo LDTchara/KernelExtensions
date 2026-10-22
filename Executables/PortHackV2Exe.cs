@@ -94,6 +94,9 @@ public class PortHackV2Exe : GameExecutable
         public bool Started => Def != null && DelayElapsed >= Def.StartDelay;
         public bool Finished { get; set; }
 
+        /// <summary>是否已经加入协议状态滚动日志（按启动先后只加一次）。</summary>
+        public bool StatusRowAdded { get; set; }
+
         /// <summary>本协议当前分支的总时长（秒）。</summary>
         public float Duration => Succeeded ? Def.TimeIfSuccess : Def.TimeIfFail;
 
@@ -114,6 +117,10 @@ public class PortHackV2Exe : GameExecutable
 
     // ---------- 运行时状态 ----------
     private readonly List<ProtocolRuntime> _runtimes = new();
+
+    /// <summary>Cracking/Complete 状态日志：按协议实际开始顺序追加，绘制时从下往上排。</summary>
+    private readonly List<ProtocolRuntime> _statusEntries = new();
+
     private float _stateTimer;          // Locked / Failed 的退出倒计时
     private float _crackTime;           // Cracking 已进行时长（根级 Time 的对照量）
     private float _completeElapsed;     // Complete 演出已进行时长（也驱动白线展开）
@@ -459,6 +466,7 @@ public class PortHackV2Exe : GameExecutable
         CurrentState = PortHackV2State.Cracking;
         _crackTime = 0f;
         _runtimes.Clear();
+        _statusEntries.Clear();
         _successCount = 0;
 
         foreach (PortHackV2ProtocolConfig p in CurrentConfig.Protocols)
@@ -572,6 +580,7 @@ public class PortHackV2Exe : GameExecutable
         if (!rt.Initialized && rt.Started)
         {
             rt.Initialized = true;
+            AddStatusEntry(rt);
 
             // 启动瞬间掷一次：分支定下但不暴露（两条分支的演出完全一样，只有时长不同）
             rt.Succeeded = _rng.NextDouble() < rt.Def.SuccessChance;
@@ -607,6 +616,7 @@ public class PortHackV2Exe : GameExecutable
     {
         if (rt.Finished) return;
         rt.Finished = true;
+        AddStatusEntry(rt);   // 兜底：启动路径漏加时，结算时也保证有行
         if (forced) rt.Succeeded = false;
 
         string protoSource = $"{CurrentConfig.SourceName}/{rt.Def.Name}";
@@ -657,6 +667,10 @@ public class PortHackV2Exe : GameExecutable
         // 硬上限：总时长到期了还没结束的协议，收尾记为失败
         foreach (ProtocolRuntime rt in _runtimes)
             if (!rt.Finished) CompleteProtocol(rt, forced: true);
+
+        // 根级 Time 到期仍未启动的协议不会走 UpdateProtocol，在这里补行（状态最终为 Failed）。
+        foreach (ProtocolRuntime rt in _runtimes)
+            AddStatusEntry(rt);
 
         if (ShouldTakeAdmin())
         {
@@ -764,6 +778,11 @@ public class PortHackV2Exe : GameExecutable
     {
         if (_rootHooksFired) return;
         _rootHooksFired = true;
+
+        // 中断时尚未启动/尚未完成的协议也要出现在最终状态日志里；状态由 CurrentState=Failed 派生。
+        foreach (ProtocolRuntime rt in _runtimes)
+            AddStatusEntry(rt);
+
         CurrentState = PortHackV2State.Failed;
         _stateTimer = FAILED_EXIT_SECONDS;
         KELog.Info($"[PortHackV2] '{CurrentConfig.SourceName}': interrupted before finishing.");
@@ -1204,6 +1223,108 @@ public class PortHackV2Exe : GameExecutable
             _listingPage++;
     }
 
+    /// <summary>
+    /// 把协议加入状态日志（按实际开始顺序追加，只加一次）。
+    /// 调用点：协议首次 Initialized；CompleteProtocol 兜底；SettleRoot/EnterInterrupted 补未启动协议。
+    /// </summary>
+    private void AddStatusEntry(ProtocolRuntime rt)
+    {
+        if (rt == null || rt.StatusRowAdded) return;
+        rt.StatusRowAdded = true;
+        _statusEntries.Add(rt);
+    }
+
+    /// <summary>
+    /// 协议状态日志：贴着进度条上方，从下往上堆。
+    /// 行数由窗口高度动态决定；超出顶部的内容裁掉不显示（不压缩行高）。
+    /// </summary>
+    private void DrawProtocolStatusRows()
+    {
+        if (CurrentConfig == null || !CurrentConfig.ShowProtocolStatus || _statusEntries.Count == 0)
+            return;
+
+        const int rowH = 16;
+        const int rowGap = 2;
+        int statusBottom = ProgressBarRect.Y - 2;
+        int topLimit = ContentTop + 2;
+        int maxRows = Math.Max(0, (statusBottom - topLimit) / rowH);
+        if (maxRows <= 0) return;
+
+        int visible = Math.Min(_statusEntries.Count, maxRows);
+        int first = _statusEntries.Count - visible;
+
+        for (int n = 0; n < visible; n++)
+        {
+            ProtocolRuntime rt = _statusEntries[first + n];
+            int y = statusBottom - (visible - n) * rowH;
+            if (y < topLimit) continue;
+
+            bool finished = rt.Finished;
+            bool success = finished && rt.Succeeded;
+            Color bg = finished
+                ? (success ? os.unlockedColor : os.lockedColor)
+                : (CurrentState == PortHackV2State.Failed ? os.lockedColor : Color.Black);
+
+            // 每行固定背景；半透明 0.9，保留其下的立体动画。
+            RenderedRectangle.doRectangle(InnerX, y, InnerW, rowH - rowGap, bg * (0.9f * fade));
+
+            string status = CurrentProtocolStatusText(rt);
+            float statusW = GuiData.UITinyfont.MeasureString(status).X;
+
+            // 协议名最多占窗口宽度一半；同时给右侧状态让位，保证不重叠。
+            float nameMaxW = Math.Max(1f, bounds.Width / 2f - 4f);
+            nameMaxW = Math.Min(nameMaxW, Math.Max(1f, InnerW - statusW - 16f));
+            string name = TruncateToWidth(rt.Def?.Name ?? string.Empty, nameMaxW);
+
+            spriteBatch.DrawString(GuiData.UITinyfont, name,
+                new Vector2(InnerX + 4, y + 2), Color.White * fade);
+
+            Vector2 statusSize = GuiData.UITinyfont.MeasureString(status);
+            spriteBatch.DrawString(GuiData.UITinyfont, status,
+                new Vector2(InnerX + InnerW - 4 - statusSize.X, y + 2), Color.White * fade);
+        }
+    }
+
+    /// <summary>状态文本：完成即 Success/Failed；中断未完成的显示 Failed；其余 Cracking。</summary>
+    private string CurrentProtocolStatusText(ProtocolRuntime rt)
+    {
+        if (rt.Finished)
+            return rt.Succeeded
+                ? KELoc.Loc("PORT_HACK_V2_STATUS_SUCCESS", "Success")
+                : KELoc.Loc("PORT_HACK_V2_STATUS_FAILED", "Failed");
+
+        if (CurrentState == PortHackV2State.Failed)
+            return KELoc.Loc("PORT_HACK_V2_STATUS_FAILED", "Failed");
+
+        return KELoc.Loc("PORT_HACK_V2_STATUS_CRACKING", "Cracking");
+    }
+
+    /// <summary>
+    /// 固定字体下按像素宽度截断协议名（第一版兜底）。
+    /// 保证结果（含 "..."）不超过 maxWidth；没有空间时返回空串。
+    /// </summary>
+    private static string TruncateToWidth(string text, float maxWidth)
+    {
+        if (string.IsNullOrEmpty(text) || maxWidth <= 0f) return string.Empty;
+
+        SpriteFont font = GuiData.UITinyfont;
+        if (font.MeasureString(text).X <= maxWidth) return text;
+
+        const string ellipsis = "...";
+        float ellipsisW = font.MeasureString(ellipsis).X;
+        if (ellipsisW > maxWidth) return string.Empty;
+
+        int lo = 0, hi = text.Length;
+        while (lo < hi)
+        {
+            int mid = (lo + hi + 1) / 2;
+            float w = font.MeasureString(text.Substring(0, mid)).X + ellipsisW;
+            if (w <= maxWidth) lo = mid;
+            else hi = mid - 1;
+        }
+        return text.Substring(0, lo) + ellipsis;
+    }
+
     // ---- Cracking ----
 
     /// <summary>
@@ -1225,6 +1346,7 @@ public class PortHackV2Exe : GameExecutable
         // 动画区铺满内容区（下面只留底部进度条的位置）
         Rectangle anim = new(area.X, area.Y, area.Width, Math.Max(24, area.Height - PROGRESS_BAR_H - 4));
         DrawAnimationArea(anim, opacity: 0.6f);
+        DrawProtocolStatusRows();
 
         float total = CurrentConfig.Time <= 0f ? 1f : MathHelper.Clamp(_crackTime / CurrentConfig.Time, 0f, 1f);
         DrawProgressBar(total, showSeconds: false, showPercent: false);
@@ -1293,6 +1415,7 @@ public class PortHackV2Exe : GameExecutable
         // 本状态**不铺背景**：立体（慢转/已停）就是画面主体
         // 背景：立体继续慢转（成功）/ 已停住（中断）
         DrawAnimationArea(area, opacity: CurrentState == PortHackV2State.Complete ? 0.2f : 0.35f);
+        DrawProtocolStatusRows();
 
         bool win = CurrentState == PortHackV2State.Complete;
         string text = win ? CurrentConfig.CompletionText : KELoc.Loc("PORT_HACK_V2_INTERRUPT_1", "CONNECTION");

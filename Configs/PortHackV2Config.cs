@@ -166,6 +166,15 @@ public class PortHackV2Config
     /// <summary>解析后的开关；默认 true。</summary>
     [XmlIgnore] public bool ShowEstimate { get; private set; } = true;
 
+    /// <summary>
+    /// Cracking / Complete 画面是否显示协议状态滚动日志。默认 false（保持纯动画观感）。
+    /// 日志贴着进度条上方，按协议启动顺序从下往上堆；每行独立背景，协议完成时立即变色。
+    /// </summary>
+    [XmlElement("ShowProtocolStatus")] public string ShowProtocolStatusRaw { get; set; }
+
+    /// <summary>解析后的协议状态日志开关；默认 false。</summary>
+    [XmlIgnore] public bool ShowProtocolStatus { get; private set; }
+
     [XmlElement("Time")] public string TimeRaw { get; set; }
 
     /// <summary>根级时长的解析结果（秒）。</summary>
@@ -547,6 +556,7 @@ public class PortHackV2Config
         // 预计时长是否显示：留空 / 非布尔 = 默认 true
         string showEst = ShowEstimateRaw?.Trim();
         ShowEstimate = string.IsNullOrEmpty(showEst) || !bool.TryParse(showEst, out bool se) || se;
+        ShowProtocolStatus = ParseBoolDefaultFalse(ShowProtocolStatusRaw, "ShowProtocolStatus");
         if (!tOk)
             KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 

@@ -56,6 +56,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="Prerequisites not met" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="CRACKED PORTS {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="Cracking" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="Failed" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="Success" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="Exit" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: configuration could not be loaded." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: no configuration is armed." />
@@ -111,6 +114,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0} 秒" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="前置条件未满足" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="已破解端口 {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="破解中" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="失败" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="成功" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="退出" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller：配置加载失败。" />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller：没有已启用的配置。" />
@@ -164,6 +170,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0} 秒" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="前提条件が未達" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="解析済みポート {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="解析中" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="失敗" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="成功" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="終了" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: 設定を読み込めませんでした。" />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: 有効な設定がありません。" />
@@ -218,6 +227,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}초" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="선행 조건 미충족" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="해독된 포트 {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="해독 중" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="실패" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="성공" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="종료" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: 설정을 불러올 수 없습니다." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: 활성화된 설정이 없습니다." />
@@ -273,6 +285,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0} с" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="Условия не выполнены" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="ВЗЛОМАНО ПОРТОВ {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="ВЗЛОМ" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="НЕУДАЧА" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="УСПЕХ" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="Выход" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: не удалось загрузить конфигурацию." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: конфигурация не активирована." />
@@ -327,6 +342,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="Voraussetzungen nicht erfüllt" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="GEKNACKTE PORTS {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="LÄUFT" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="FEHLER" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="ERFOLG" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="Beenden" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: Konfiguration konnte nicht geladen werden." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: keine Konfiguration aktiviert." />
@@ -382,6 +400,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="Prérequis non remplis" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="PORTS CASSÉS {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="EN COURS" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="ÉCHEC" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="SUCCÈS" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="Quitter" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: la configuration n'a pas pu être chargée." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller : aucune configuration active." />
@@ -437,6 +458,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="Requisitos no cumplidos" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="PUERTOS DESCIFRADOS {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="EN CURSO" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="FALLO" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="ÉXITO" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="Salir" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: no se pudo cargar la configuración." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: no hay configuración activa." />
@@ -492,6 +516,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="Ön koşullar karşılanmadı" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="KIRILAN PORTLAR {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="KIRILIYOR" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="BAŞARISIZ" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="BAŞARILI" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="Çıkış" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: yapılandırma yüklenemedi." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: etkin yapılandırma yok." />
@@ -530,6 +557,9 @@
     <Term Key="PORT_HACK_V2_SECONDS_LEFT" Value="{0}s" />
     <Term Key="PORT_HACK_V2_PREREQ_UNMET" Value="Voorwaarden niet voldaan" />
     <Term Key="PORT_HACK_V2_ROW_CRACKED_PORTS" Value="GEKRAAKTE POORTEN {0}/{1}" />
+    <Term Key="PORT_HACK_V2_STATUS_CRACKING" Value="CRACKEN" />
+    <Term Key="PORT_HACK_V2_STATUS_FAILED" Value="MISLUKT" />
+    <Term Key="PORT_HACK_V2_STATUS_SUCCESS" Value="GESLAAGD" />
     <Term Key="PROXY_KILLER_BTN_EXIT" Value="Afsluiten" />
     <Term Key="PROXY_KILLER_LOAD_FAILED" Value="ProxyKiller: configuratie kon niet worden geladen." />
     <Term Key="PROXY_KILLER_LOCKED" Value="ProxyKiller: geen configuratie actief." />

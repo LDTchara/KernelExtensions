@@ -52,6 +52,14 @@
        Set false to hide it: the duration itself is a spoiler. -->
   <ShowEstimate>true</ShowEstimate>
 
+  <!-- ShowProtocolStatus：Cracking / Complete 的协议状态滚动日志。
+       默认 false（保持纯动画观感）；本示例打开，便于作者查看效果。
+       协议开始时在进度条上方加一行，旧行向上推；每行独立背景，
+       协议完成时立即变 unlockedColor / lockedColor。
+       Protocol status log during Cracking / Complete. Empty = false.
+       This example enables it; rows stack above the progress bar in protocol start order. -->
+  <ShowProtocolStatus>true</ShowProtocolStatus>
+
   <!-- ── 颜色 / Colours ──
        AccentColor：**立体（多边体）线框**的颜色。留空 / NONE = 白色。
                     The colour of the wireframe solid. Empty or NONE = white.
