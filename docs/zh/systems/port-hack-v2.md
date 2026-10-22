@@ -64,7 +64,7 @@ flag 就是"入口牌"：
 | `<Time>` | Cracking 阶段总时长（秒）。留空 = 10。也是 Listing 屏「预计 Ns」显示的值 |
 | `<ShowEstimate>` | Listing 屏是否显示「预计破解时长」。留空 / 非布尔 = `true`。写 `false` 隐藏 —— 时长本身是剧透信息 |
 | `<ShowProtocolStatus>` | Cracking / Complete 是否显示协议状态滚动日志。默认 `false`。开启后协议开始即在进度条上方增加一行，旧行向上推；只有文字覆盖处有背景（协议名/状态各一块），协议完成时立即变 `unlockedColor` / `lockedColor`；Complete/Failed 会再盖一层黑色透明遮罩 |
-| `<UseProtocolShortNames>` | 状态日志是否优先使用协议里的 `<ShortName>`。默认 `false`；关闭时仍按窗口宽度一半截断兜底 |
+| `<UseProtocolShortNames>` | 状态日志是否优先使用协议里的 `<ShortName>`。默认 `false`；关闭时使用与 Listing 相同的显示名（PortManager `DefaultDisplayName`），仍按窗口宽度一半截断兜底；不维护全局缩写表 |
 | `<Polyhedron>` | 动画用的柏拉图立体：`Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | 立体怎么画：`Wireframe`（线框单层，**默认**）/ `Solid`（实心面）/ `SolidWire`（实心 + 线框）/ **`WireframeTrail`（线框 + 多层尾迹，唯一启用尾迹的预设）** |
 | `<SpinSpeed>` | 立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒一圈） |
@@ -137,7 +137,7 @@ flag 就是"入口牌"：
 | 元素 | 必填 | 说明 |
 |------|:----:|------|
 | `<Name>` | ❌ | 协议名（显示用，也用于日志溯源） |
-| `<ShortName>` | ❌ | 可选缩写；仅 `UseProtocolShortNames=true` 时用于状态日志，留空回退截断 |
+| `<ShortName>` | ❌ | 可选缩写；仅 `UseProtocolShortNames=true` 时用于状态日志；留空/关闭时回退 Listing 同款显示名再截断 |
 | `<StartDelay>` | ❌ | 相对 Cracking 开始的启动延迟（秒） |
 | `<Rng>` | ❌ | 该协议的随机数种子 |
 | `<TimeIfSuccess>` | ❌ | 成功分支的时长（秒） |
