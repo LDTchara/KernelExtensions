@@ -63,7 +63,7 @@ flag 就是"入口牌"：
 | `<RamCost>` | 程序占用内存（MB）。留空 = 246（与原版一致） |
 | `<Time>` | Cracking 阶段总时长（秒）。留空 = 10。也是 Listing 屏「预计 Ns」显示的值 |
 | `<ShowEstimate>` | Listing 屏是否显示「预计破解时长」。留空 / 非布尔 = `true`。写 `false` 隐藏 —— 时长本身是剧透信息 |
-| `<ShowProtocolStatus>` | Cracking / Complete 是否显示协议状态滚动日志。默认 `false`。开启后协议开始即在进度条上方增加一行，旧行向上推；每行独立背景，协议完成时立即变 `unlockedColor` / `lockedColor` |
+| `<ShowProtocolStatus>` | Cracking / Complete 是否显示协议状态滚动日志。默认 `false`。开启后协议开始即在进度条上方增加一行，旧行向上推；只有文字覆盖处有背景（协议名/状态各一块），协议完成时立即变 `unlockedColor` / `lockedColor`；Complete/Failed 会再盖一层黑色透明遮罩 |
 | `<Polyhedron>` | 动画用的柏拉图立体：`Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | 立体怎么画：`Wireframe`（线框单层，**默认**）/ `Solid`（实心面）/ `SolidWire`（实心 + 线框）/ **`WireframeTrail`（线框 + 多层尾迹，唯一启用尾迹的预设）** |
 | `<SpinSpeed>` | 立体的**目标转速**（弧度/秒）。留空 = 3.2（约每 2 秒一圈） |
@@ -174,7 +174,7 @@ flag 就是"入口牌"：
 
 - **Locked / Listing** 铺背景——这两个状态没有自己的画面。
 - **Cracking / Complete** **不铺背景**：立体动画本身就是画面主体。
-- 开启 `<ShowProtocolStatus>` 后，Cracking / Complete 的画面底部（进度条上方）会出现协议状态滚动日志；行数按窗口高度动态计算，超出顶部的内容裁掉而不是压缩行高。
+- 开启 `<ShowProtocolStatus>` 后，Cracking / Complete 的画面底部（进度条上方）会出现协议状态滚动日志；行数按窗口高度动态计算，超出顶部的内容裁掉而不是压缩行高。状态行只给文字区域铺背景，Complete/Failed 时整段日志会吃一层黑色透明遮罩。
 - 顶部标题栏显示 `IP: <目标>` 与程序名（原版行为）。
 - **Cracking 阶段不显示退出按钮**——破解中不给退出；退出按钮在其它状态出现，且退出瞬间立即消失。
 - 底部总进度条的颜色由 `<ProgressColor>` 决定。
