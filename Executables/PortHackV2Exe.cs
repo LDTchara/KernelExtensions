@@ -1246,7 +1246,9 @@ public class PortHackV2Exe : GameExecutable
         const int rowH = 16;
         const int rowGap = 2;
         int statusBottom = ProgressBarRect.Y - 2;
-        int topLimit = ContentTop + 2;
+        // 顶部不再额外留 2px：常见高度下正好能多塞一行（否则每行 16px 的
+        // 余量只有 15px，看起来像"上面还有空间却不显示"）。
+        int topLimit = ContentTop;
         int maxRows = Math.Max(0, (statusBottom - topLimit) / rowH);
         if (maxRows <= 0) return;
 
