@@ -65,6 +65,7 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<Time>` | Total length of the Cracking phase in seconds. Empty = 10. Also what the Listing screen's "Estimated Ns" shows |
 | `<ShowEstimate>` | Whether the Listing screen shows the estimated crack time. Empty / non-boolean = `true`. Set `false` to hide it — the duration itself is a spoiler |
 | `<ShowProtocolStatus>` | Whether to show the rolling protocol-status log during Cracking / Complete. Default `false`. When enabled, each protocol start adds a row above the progress bar and pushes older rows up; only the text areas get a background (protocol name and status each have one), and they switch to `unlockedColor` / `lockedColor` as soon as that protocol completes; Complete/Failed adds a translucent black veil over the log |
+| `<UseProtocolShortNames>` | Whether the status log prefers each protocol's `<ShortName>`. Default `false`; when off, names are still truncated to half the window width |
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (single-layer lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) / **`WireframeTrail` (lines + multi-layer trail; the only preset that enables the trail)** |
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
@@ -138,6 +139,7 @@ One-shot effects (anything beyond playing a sound or opening a port) belong in a
 | Element | Required | Description |
 |---------|:--------:|-------------|
 | `<Name>` | ❌ | Protocol name (shown in the UI, also used for log tracing) |
+| `<ShortName>` | ❌ | Optional abbreviation; used in the status log only when `UseProtocolShortNames=true`, otherwise falls back to truncation |
 | `<StartDelay>` | ❌ | Start delay in seconds, relative to the start of Cracking |
 | `<Rng>` | ❌ | Random seed for this protocol |
 | `<TimeIfSuccess>` | ❌ | Duration of the success branch, in seconds |
