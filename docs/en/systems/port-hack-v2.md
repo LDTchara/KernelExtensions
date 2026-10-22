@@ -64,6 +64,7 @@ See `XMLExamples/PortHackV2_Example.xml` for a reference config.
 | `<RamCost>` | RAM cost in MB. Empty = 246 (same as vanilla) |
 | `<Time>` | Total length of the Cracking phase in seconds. Empty = 10. Also what the Listing screen's "Estimated Ns" shows |
 | `<ShowEstimate>` | Whether the Listing screen shows the estimated crack time. Empty / non-boolean = `true`. Set `false` to hide it — the duration itself is a spoiler |
+| `<ShowProtocolStatus>` | Whether to show the rolling protocol-status log during Cracking / Complete. Default `false`. When enabled, each protocol start adds a row above the progress bar and pushes older rows up; every row has its own background and switches to `unlockedColor` / `lockedColor` as soon as that protocol completes |
 | `<Polyhedron>` | Platonic solid used for the animation: `Tetrahedron` / `Cube` / `Octahedron` / `Dodecahedron` / `Icosahedron` |
 | `<PolyhedronStyle>` | How the solid is drawn: `Wireframe` (single-layer lines, **default**) / `Solid` (filled faces) / `SolidWire` (both) / **`WireframeTrail` (lines + multi-layer trail; the only preset that enables the trail)** |
 | `<SpinSpeed>` | **Target spin speed** of the solid, in radians/second. Empty = 3.2 (about one turn per 2s) |
@@ -175,6 +176,7 @@ Empty or `NONE` means "use the default" (`ProgressColor` / `BackgroundColor` the
 
 - **Locked / Listing** paint a background — these two states have no artwork of their own.
 - **Cracking / Complete** do **not** paint a background: the solid animation *is* the main visual.
+- With `<ShowProtocolStatus>` enabled, a rolling protocol-status log appears at the bottom of the Cracking / Complete screen, just above the progress bar; the row count is derived from the window height and overflow at the top is clipped rather than compressing row height.
 - The top title bar shows `IP: <target>` and the program name (vanilla behaviour).
 - **No exit button during Cracking** — you cannot leave mid-crack. It appears in the other states and disappears the instant the program exits.
 - The bottom progress bar colour comes from `<ProgressColor>`.
