@@ -1271,7 +1271,12 @@ public class PortHackV2Exe : GameExecutable
             // 协议名最多占窗口宽度一半；同时给右侧状态让位，保证不重叠。
             float nameMaxW = Math.Max(1f, bounds.Width / 2f - 4f);
             nameMaxW = Math.Min(nameMaxW, Math.Max(1f, InnerW - statusW - 16f));
-            string name = TruncateToWidth(rt.Def?.Name ?? string.Empty, nameMaxW);
+
+            string rawName = rt.Def?.Name ?? string.Empty;
+            if (CurrentConfig.UseProtocolShortNames
+                && !string.IsNullOrWhiteSpace(rt.Def?.ShortName))
+                rawName = rt.Def.ShortName.Trim();
+            string name = TruncateToWidth(rawName, nameMaxW);
             Vector2 nameSize = GuiData.UITinyfont.MeasureString(name);
 
             // 只有文字覆盖的位置才有背景：协议名、状态各自一块，中间留空。

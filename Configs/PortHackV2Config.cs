@@ -57,6 +57,12 @@ public class PortHackV2ProtocolConfig
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// 状态日志里使用的可选缩写；仅当根级 <see cref="PortHackV2Config.UseProtocolShortNames"/> 为 true 时生效。
+    /// 留空则回退到按像素截断的协议名。
+    /// </summary>
+    [XmlElement("ShortName")] public string ShortName { get; set; }
+
+    /// <summary>
     /// 本协议的破解成功概率，**百分比 0~100**。留空 = 100（必定成功）。
     /// 在**进入 Cracking 时**掷一次，决定走成功分支还是失败分支；演出上不提前暴露。
     /// </summary>
@@ -174,6 +180,15 @@ public class PortHackV2Config
 
     /// <summary>解析后的协议状态日志开关；默认 false。</summary>
     [XmlIgnore] public bool ShowProtocolStatus { get; private set; }
+
+    /// <summary>
+    /// 状态日志是否优先使用协议配置里的 &lt;ShortName&gt;。默认 false（关闭缩写）。
+    /// 关闭时仍按窗口宽度一半做截断兜底。
+    /// </summary>
+    [XmlElement("UseProtocolShortNames")] public string UseProtocolShortNamesRaw { get; set; }
+
+    /// <summary>解析后的协议缩写开关；默认 false。</summary>
+    [XmlIgnore] public bool UseProtocolShortNames { get; private set; }
 
     [XmlElement("Time")] public string TimeRaw { get; set; }
 
@@ -557,6 +572,7 @@ public class PortHackV2Config
         string showEst = ShowEstimateRaw?.Trim();
         ShowEstimate = string.IsNullOrEmpty(showEst) || !bool.TryParse(showEst, out bool se) || se;
         ShowProtocolStatus = ParseBoolDefaultFalse(ShowProtocolStatusRaw, "ShowProtocolStatus");
+        UseProtocolShortNames = ParseBoolDefaultFalse(UseProtocolShortNamesRaw, "UseProtocolShortNames");
         if (!tOk)
             KELog.WarnT($"[PortHackV2] '{SourceName}': invalid <Time> '{TimeRaw}', expected 0~36000; using 10.");
 

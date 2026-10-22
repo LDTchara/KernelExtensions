@@ -60,6 +60,12 @@
        This example enables it; rows stack above the progress bar in protocol start order. -->
   <ShowProtocolStatus>true</ShowProtocolStatus>
 
+  <!-- UseProtocolShortNames：状态日志是否优先使用协议里的 <ShortName>。默认 false。
+       关闭时仍会对协议名做按窗口宽度一半的截断兜底。
+       Prefer each protocol's <ShortName> in the status log. Default false;
+       when off, long names are still truncated to half the window width. -->
+  <UseProtocolShortNames>false</UseProtocolShortNames>
+
   <!-- ── 颜色 / Colours ──
        AccentColor：**立体（多边体）线框**的颜色。留空 / NONE = 白色。
                     The colour of the wireframe solid. Empty or NONE = white.
@@ -113,6 +119,9 @@
 
        <Name>          协议名（必填）
                        Protocol name (required).
+       <ShortName>     可选缩写；仅当根级 UseProtocolShortNames=true 时用于状态日志。
+                       Optional short name; used in the status log only when the root
+                       UseProtocolShortNames switch is true.
        <StartDelay>    本协议在 Cracking 开始后等待多久才启动（秒）；留空 = 0。
                        并行时用它错开各协议的进度条。
                        Seconds to wait after Cracking starts before this protocol begins. Empty = 0.
@@ -134,6 +143,7 @@
   <Protocols>
     <Protocol>
       <Name>ssh</Name>
+      <ShortName>SSH</ShortName>
       <StartDelay>0</StartDelay>
       <Rng>60</Rng>
       <TimeIfSuccess>12</TimeIfSuccess>
@@ -144,6 +154,7 @@
     </Protocol>
     <Protocol>
       <Name>ftp</Name>
+      <ShortName>FTP</ShortName>
       <StartDelay>3</StartDelay>
       <Rng>90</Rng>
       <TimeIfSuccess>6</TimeIfSuccess>
