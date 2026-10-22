@@ -54,8 +54,8 @@
 
   <!-- ShowProtocolStatus：Cracking / Complete 的协议状态滚动日志。
        默认 false（保持纯动画观感）；本示例打开，便于作者查看效果。
-       协议开始时在进度条上方加一行，旧行向上推；每行独立背景，
-       协议完成时立即变 unlockedColor / lockedColor。
+       协议开始时在进度条上方加一行，旧行向上推；只有文字覆盖处有背景，
+       协议完成时立即变 unlockedColor / lockedColor；收尾演出会给日志加黑色透明遮盖。
        Protocol status log during Cracking / Complete. Empty = false.
        This example enables it; rows stack above the progress bar in protocol start order. -->
   <ShowProtocolStatus>true</ShowProtocolStatus>

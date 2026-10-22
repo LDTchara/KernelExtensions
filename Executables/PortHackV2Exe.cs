@@ -1265,9 +1265,6 @@ public class PortHackV2Exe : GameExecutable
                 ? (success ? os.unlockedColor : os.lockedColor)
                 : (CurrentState == PortHackV2State.Failed ? os.lockedColor : Color.Black);
 
-            // 每行固定背景；半透明 0.9，保留其下的立体动画。
-            RenderedRectangle.doRectangle(InnerX, y, InnerW, rowH - rowGap, bg * (0.9f * fade));
-
             string status = CurrentProtocolStatusText(rt);
             float statusW = GuiData.UITinyfont.MeasureString(status).X;
 
@@ -1275,13 +1272,35 @@ public class PortHackV2Exe : GameExecutable
             float nameMaxW = Math.Max(1f, bounds.Width / 2f - 4f);
             nameMaxW = Math.Min(nameMaxW, Math.Max(1f, InnerW - statusW - 16f));
             string name = TruncateToWidth(rt.Def?.Name ?? string.Empty, nameMaxW);
+            Vector2 nameSize = GuiData.UITinyfont.MeasureString(name);
+
+            // 只有文字覆盖的位置才有背景：协议名、状态各自一块，中间留空。
+            int bgY = y + 1;
+            int bgH = rowH - rowGap;
+            if (name.Length > 0)
+                RenderedRectangle.doRectangle(InnerX + 2, bgY,
+                    (int)Math.Ceiling(nameSize.X) + 4, bgH, bg * (0.9f * fade));
+
+            float statusX = InnerX + InnerW - 4 - statusW;
+            if (status.Length > 0)
+                RenderedRectangle.doRectangle((int)statusX - 2, bgY,
+                    (int)Math.Ceiling(statusW) + 4, bgH, bg * (0.9f * fade));
 
             spriteBatch.DrawString(GuiData.UITinyfont, name,
                 new Vector2(InnerX + 4, y + 2), Color.White * fade);
-
-            Vector2 statusSize = GuiData.UITinyfont.MeasureString(status);
             spriteBatch.DrawString(GuiData.UITinyfont, status,
-                new Vector2(InnerX + InnerW - 4 - statusSize.X, y + 2), Color.White * fade);
+                new Vector2(statusX, y + 2), Color.White * fade);
+        }
+
+        // 收尾演出（Complete/Failed）给状态日志加同一层黑色透明遮盖；
+        // 中央 Complete 文案在之后绘制，不会被这层盖住。
+        if (CurrentState != PortHackV2State.Cracking && visible > 0)
+        {
+            int rowsTop = Math.Max(topLimit, statusBottom - visible * rowH);
+            int rowsH = statusBottom - rowsTop;
+            if (rowsH > 0)
+                RenderedRectangle.doRectangle(InnerX, rowsTop, InnerW, rowsH,
+                    Color.Black * (0.35f * fade));
         }
     }
 
