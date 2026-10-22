@@ -1272,7 +1272,9 @@ public class PortHackV2Exe : GameExecutable
             float nameMaxW = Math.Max(1f, bounds.Width / 2f - 4f);
             nameMaxW = Math.Min(nameMaxW, Math.Max(1f, InnerW - statusW - 16f));
 
-            string rawName = rt.Def?.Name ?? string.Empty;
+            // 关闭缩写时与 Listing 使用同一显示名（PortManager 的 DefaultDisplayName）；
+            // 开启缩写且协议提供 ShortName 时才覆盖，避免再维护一份全局缩写表。
+            string rawName = ProtocolDisplayName(rt.Def?.Name ?? string.Empty);
             if (CurrentConfig.UseProtocolShortNames
                 && !string.IsNullOrWhiteSpace(rt.Def?.ShortName))
                 rawName = rt.Def.ShortName.Trim();

@@ -61,9 +61,10 @@
   <ShowProtocolStatus>true</ShowProtocolStatus>
 
   <!-- UseProtocolShortNames：状态日志是否优先使用协议里的 <ShortName>。默认 false。
-       关闭时仍会对协议名做按窗口宽度一半的截断兜底。
+       关闭时使用与 Listing 相同的显示名（PortManager DefaultDisplayName），
+       仍按窗口宽度一半截断兜底；不维护全局缩写表。
        Prefer each protocol's <ShortName> in the status log. Default false;
-       when off, long names are still truncated to half the window width. -->
+       when off, the Listing display name is used and truncated to half the window width. -->
   <UseProtocolShortNames>false</UseProtocolShortNames>
 
   <!-- ── 颜色 / Colours ──
@@ -120,8 +121,10 @@
        <Name>          协议名（必填）
                        Protocol name (required).
        <ShortName>     可选缩写；仅当根级 UseProtocolShortNames=true 时用于状态日志。
+                       留空/关闭时回退到 Listing 同款显示名，不维护全局缩写表。
                        Optional short name; used in the status log only when the root
-                       UseProtocolShortNames switch is true.
+                       UseProtocolShortNames switch is true; otherwise the Listing display
+                       name is used (no global abbreviation table).
        <StartDelay>    本协议在 Cracking 开始后等待多久才启动（秒）；留空 = 0。
                        并行时用它错开各协议的进度条。
                        Seconds to wait after Cracking starts before this protocol begins. Empty = 0.
