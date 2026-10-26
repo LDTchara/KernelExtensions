@@ -47,6 +47,8 @@ dotnet build KernelExtensions.csproj --no-restore
 - **一律用 `Configs/ActionHook` 类型**，不要新增 `string` 或 `ActionFileRef` 形态的动作点字段
 - `ActionHook` 同时支持三种写法：**元素文本内容**（路径）/ **`file` 属性**（旧写法兼容）/ **内联元素**（`<Actions>` / `<ConditionalActions>`）；执行顺序是**先文件、后内联**
 - 调用点写 `hook.Execute(os, source, point)`，不要自己调 `ActionHelper`
+- **动作/Daemon 内嵌动作是 KE 扩展约定，不是原版语法**：IntroExtension/原版没有“可执行 action 内嵌 action 子元素”的通用先例，也没有 Daemon 内嵌 action 子元素；`ConditionalActions`/`CustomFaction/Action` 是条件/触发器容器，`CompleteAction` 等是属性路径。
+- **daemon 的 inline 动作必须显式持久化**：`[XMLStorage]` 只写属性/文本内容，不保存子元素；实现 daemon 的同名子元素 hook 时，必须覆盖 `GetSaveElement()`（或把 inline XML 存进可保存字段），否则读档后动作丢失。
 - **属性 vs 元素不是风格选择**：属性适合紧凑记录 / 键值对，元素适合内容 / 容器。
   **动作点天生是容器**（要能塞 `<Actions>`），所以**不能用属性形态** —— 属性在语法上无法承载子元素
 - 解析失败**必须点名到具体元素**：`ActionsLoader.ReadAction` 对未注册名抛 `KeyNotFoundException`、
