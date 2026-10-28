@@ -19,7 +19,13 @@ namespace KernelExtensions.Configs
         [XmlElement("FinishMode")] public string FinishMode = "none";
         /// <summary>Stop 时的拓扑处理：restore（缺省，恢复 PS 启动时备份的原始链接）/ scene_N（原始链接 + 场景 N 的 Topology）/ merge（清除受控节点间链接后合并全部场景拓扑）。</summary>
         [XmlElement("TopologyMode")] public string TopologyMode = "restore";
-        [XmlElement("UseDualTrackMusic")] public bool UseDualTrackMusic = true;
+        /// <summary>
+        /// 首选音乐模式开关：<c>true</c> = DSEI 多轨流式播放，<c>false</c> = MusicManager 单曲模式。
+        /// 未写 = 回退到旧字段 <c>UseDualTrackMusic</c>；两者都未写 = <c>true</c>。
+        /// </summary>
+        [XmlElement("UseMultiTrackMusic")] public bool? UseMultiTrackMusic = null;
+        /// <summary>旧字段，保留兼容；新配置请用 <see cref="UseMultiTrackMusic"/>。</summary>
+        [XmlElement("UseDualTrackMusic")] public bool? UseDualTrackMusic = null;
         [XmlElement("RestoreThemeOnStop")] public bool RestoreThemeOnStop = true;
         [XmlElement("SingleTrack")] public string SingleTrack = null;
 

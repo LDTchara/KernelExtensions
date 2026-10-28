@@ -93,25 +93,27 @@
     <!-- English: Whether changing the theme also changes node layout (default false, color-only) -->
     <ChangeLayout>false</ChangeLayout>
     <!--
-         多轨音乐开关（默认 true；DSEI 每场景一轨同时播放，字段名沿用历史命名）
+         多轨音乐开关（默认 true；DSEI 每场景一轨同时播放）
          true  — DSEI 流式解码 + 交叉淡化 + 自制可视化（需要 MusicPhases）
          false — 用 MusicManager 播放单曲，不使用 DSEI 和交叉淡化。
                  此时 MusicPhases 留空，用 <SingleTrack> 指定音乐即可。
+         旧字段 <UseDualTrackMusic> 仍兼容，但新配置请用 <UseMultiTrackMusic>。
     -->
     <!-- English:
-         Multi-track music toggle (default true; one DSEI track per scene, field name kept from legacy naming)
+         Multi-track music toggle (default true; one DSEI track per scene)
          true  — DSEI streaming decode + crossfade + custom visualization (requires MusicPhases)
          false — Use MusicManager for single-track playback without DSEI or crossfade.
                  Leave MusicPhases empty and use <SingleTrack> to specify the music.
+         Legacy <UseDualTrackMusic> is still accepted; use <UseMultiTrackMusic> in new configs.
     -->
-    <UseDualTrackMusic>true</UseDualTrackMusic>
+    <UseMultiTrackMusic>true</UseMultiTrackMusic>
     <!--
-         单曲模式音乐（UseDualTrackMusic=false 时有效）
+         单曲模式音乐（UseMultiTrackMusic=false 时有效）
          指定内容名或相对路径。不填则回退到 MusicPhases 第一个 Track。
          例: Music/MySong 或 ../Extensions/扩展名/Music/MySong.ogg
     -->
     <!-- English:
-         Single-track music (effective when UseDualTrackMusic=false)
+         Single-track music (effective when UseMultiTrackMusic=false)
          Specify a content name or relative path. Falls back to the first Track in MusicPhases if empty.
          Example: Music/MySong or ../Extensions/ExtensionName/Music/MySong.ogg
     -->

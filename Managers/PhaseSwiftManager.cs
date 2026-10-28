@@ -46,17 +46,22 @@ namespace KernelExtensions.Managers
         private static string _activeConfigName = "PhaseSwift";
         public static int CurrentScene { get; set; }
         public static int CurrentMusicPhase { get; set; }
-        public static bool UseDualTrack { get; private set; } = true;
+        /// <summary>当前是否使用多轨（DSEI）音乐模式。</summary>
+        public static bool UseMultiTrack { get; private set; } = true;
+
+        /// <summary>旧属性名，保留给外部兼容；新代码用 <see cref="UseMultiTrack"/>。</summary>
+        [Obsolete("Use UseMultiTrack.")]
+        public static bool UseDualTrack => UseMultiTrack;
 
         /// <summary>
-        /// PS 是否**正在接管音频输出**（运行中且双轨模式）。
+        /// PS 是否**正在接管音频输出**（运行中且多轨模式）。
         /// <para>
-        /// 可视化相关的外部补丁应以它为准，而不是只看 <see cref="UseDualTrack"/>：
+        /// 可视化相关的外部补丁应以它为准，而不是只看 <see cref="UseMultiTrack"/>：
         /// 后者的**默认值是 true**，PS 从未启动时也成立 —— 那会让注入器接管原生可视化，
         /// 把其它模块（例如 VM 攻击恢复后的原版音乐）的波形换成 PS 的空数据（表现为波形不动）。
         /// </para>
         /// </summary>
-        public static bool IsDrivingAudio => IsRunning && UseDualTrack;
+        public static bool IsDrivingAudio => IsRunning && UseMultiTrack;
         public static Color CachedBackgroundColor { get; set; } = Color.Transparent;
         public static string DefaultTheme { get; set; }
         public static OS CurrentOS { get; private set; }
@@ -66,7 +71,7 @@ namespace KernelExtensions.Managers
         public static DateTime LastBandUpdateTime = DateTime.UtcNow;
         /// <summary>
         /// 可视化滚动缓冲：**按轨各一份**（~500ms mono PCM），按各自采样率算大小。
-        /// 双轨模式下必须分开——两轨都往同一个环形缓冲写时，波形条取“最近 256 样本”
+        /// 多轨模式下必须分开——各轨都往同一个环形缓冲写时，波形条取“最近 256 样本”
         /// 会取到“最后写入那条轨”的数据，于是可能显示的是没在响的那一轨。
         /// </summary>
         private static float[][] _rollingBufs = Array.Empty<float[]>();
@@ -177,7 +182,13 @@ namespace KernelExtensions.Managers
             else
                 DefaultTheme = ThemeManager.LastLoadedCustomThemePath;
 
-            UseDualTrack = Config.UseDualTrackMusic;
+            bool? newMusicMode = Config.UseMultiTrackMusic;
+            bool? legacyMusicMode = Config.UseDualTrackMusic;
+            if (newMusicMode.HasValue && legacyMusicMode.HasValue)
+                KELog.WarnT("[PhaseSwift] both <UseMultiTrackMusic> and legacy <UseDualTrackMusic> are set; using <UseMultiTrackMusic>.");
+            else if (!newMusicMode.HasValue && legacyMusicMode.HasValue)
+                KELog.Info("[PhaseSwift] <UseDualTrackMusic> is deprecated; use <UseMultiTrackMusic>.");
+            UseMultiTrack = newMusicMode ?? legacyMusicMode ?? true;
             IsInitialized = true;
         }
 
@@ -195,14 +206,14 @@ namespace KernelExtensions.Managers
                 return;
             }
 
-            if (UseDualTrack)
+            if (UseMultiTrack)
             {
                 // 停止 MusicManager 的正在播放，避免与 DSEI 叠加。
                 // ⚠️ 不可加 `if (MusicManager.isPlaying)` 守卫：第三方（如 Stuxnet.Audio）用**自己的 DSEI**
                 //    播放时，原版 isPlaying 恒为 false（它的 MediaPlayer.Play 拦截是 return false），
                 //    守卫会让 stop() 根本不被调用，结果是 PS 多轨与第三方音轨**同时输出**
                 //    （2026-09-22 实机证实）。stop() 本身幂等且会置 state=3，无条件调用无副作用。
-                KELog.Debug($"[PS-diag] Start: entering dual-track branch (overrideScene={overrideScene.HasValue}, isPlaying={MusicManager.isPlaying})");
+                KELog.Debug($"[PS-diag] Start: entering multi-track branch (overrideScene={overrideScene.HasValue}, isPlaying={MusicManager.isPlaying})");
                 MusicManager.stop();
                 KELog.Debug($"[PS-diag] Start: MusicManager.stop() returned (isPlaying={MusicManager.isPlaying})");
                 // 第三方（如 SASS）用自有 DSEI 播放时，上面的 stop() 停不到它；
@@ -337,7 +348,7 @@ namespace KernelExtensions.Managers
             Config = null;
             CurrentOS = null;
             ExtensionRoot = null;
-            UseDualTrack = false;
+            UseMultiTrack = false;
             IsRunning = false;
             IsInitialized = false;
         }
@@ -397,7 +408,7 @@ namespace KernelExtensions.Managers
             // 供 IsOnMainThread() 判定（放在早返回之前，未运行时也要能记录）。
             if (_mainThreadId < 0) _mainThreadId = Thread.CurrentThread.ManagedThreadId;
 
-            if (!UseDualTrack) return;
+            if (!UseMultiTrack) return;
             if (!IsRunning) return;
 
             // 诊断：记录本方法所在线程。它挂在 OS.Update（主线程），
@@ -441,7 +452,7 @@ namespace KernelExtensions.Managers
 
         public static void UpdateCrossfade(float dt)
         {
-            if (!UseDualTrack) return;
+            if (!UseMultiTrack) return;
             if (!_isFading) return;
             float volMul = GetPlayerVolume();
             _fadeProgress += dt;
@@ -487,7 +498,7 @@ namespace KernelExtensions.Managers
             SaveCurrentSceneDiscovery();
             DisconnectIfOnControlledNode();
 
-            if (UseDualTrack && _dseInstances.Length > 0)
+            if (UseMultiTrack && _dseInstances.Length > 0)
             {
                 if (immediate)
                 {
@@ -603,7 +614,7 @@ namespace KernelExtensions.Managers
             if (_visSampList == null) _visSampList = new List<float>(new float[256]);
             if (CurrentVisBands.Length != 256) CurrentVisBands = new float[256];
 
-            // 只读“当前能听到那条轨”的缓冲（双轨时两轨各自独立）
+            // 只读“当前能听到那条轨”的缓冲（多轨时各轨独立）
             int track = CurrentScene;
             if (track < 0 || track >= _rollingBufs.Length) track = 0;
             if (track < 0 || track >= _rollingBufs.Length) return;

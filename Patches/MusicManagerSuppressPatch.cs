@@ -6,7 +6,9 @@ namespace KernelExtensions.Patches
 {
     /// <summary>
     /// MusicManager 压制 Patch。
-    /// PS 运行时吞掉 MM 的播放入口，防止 MM 复活与原版单曲叠播。
+    /// 仅当 PS **正在接管音频输出**（运行中且多轨模式）时吞掉 MM 的播放入口，
+    /// 防止 MM 与 PS 的 DSEI 叠播。
+    /// 单轨模式下 PS 自己就用 MusicManager 播放，不能压制。
     /// 复活源: TuneswapExe/SequencerExe（玩家可运行，不可控）、
     ///         HackerScript/MissionFunctions（扩展作者可避开）、CrashModule（系统不可控）。
     /// 不拦截 setVolume/setIsMuted —— PS SyncVolume() 乘 getVolume() 需要联动。
@@ -21,8 +23,8 @@ namespace KernelExtensions.Patches
         [HarmonyPatch(typeof(MusicManager), nameof(MusicManager.transitionToSong))]
         static bool Prefix()
         {
-            // PS 运行时吞掉播放请求（同 PhaseSwiftConnectionPatch 的 IsRunning 开关模式）
-            return !PhaseSwiftManager.IsRunning;
+            // 只有多轨模式才拦截；单轨模式必须放行 MusicManager 本身。
+            return !PhaseSwiftManager.IsDrivingAudio;
         }
     }
 }
