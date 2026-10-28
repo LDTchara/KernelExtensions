@@ -131,8 +131,8 @@ ExtensionRoot/
 | `CompleteText` | 空 | 完成时显示的文字（不填回退内置词典） |
 | `FinishMode` | `none` | 结束后的**节点可见性**：`none` 全隐藏 / `full` 全保留 / `scene_N` 只留场景 N |
 | `TopologyMode` | `restore` | 结束后的**拓扑**：`restore` / `scene_N` / `merge`，详见下文 |
-| `UseDualTrackMusic` | `true` | `true` = PS 自己用 DSEI 流式播放多轨；`false` = 走单曲模式 |
-| `SingleTrack` | 空 | 单曲模式的音乐（`UseDualTrackMusic=false` 时有效），不填回退到第一个 Phase 的 Track |
+| `UseMultiTrackMusic` | `true` | `true` = PS 自己用 DSEI 流式播放多轨；`false` = 走单曲模式。旧字段 `UseDualTrackMusic` 仍兼容，但新配置请用本字段 |
+| `SingleTrack` | 空 | 单曲模式的音乐（`UseMultiTrackMusic=false` 时有效），不填回退到第一个 Phase 的 Track |
 | `RestoreThemeOnStop` | `true` | 停止时是否恢复启动前的主题 |
 | `GlobalDiscovery` | `true` | 跨场景发现同步：在场景 A 发现的节点，切到 B 时若 B 的 `VisibleNodes` 也含它则保持可见 |
 | `MusicPhases` | — | 音乐组列表，见下 |

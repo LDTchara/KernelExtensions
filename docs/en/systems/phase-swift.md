@@ -130,8 +130,8 @@ Location: `PhaseSwift/<name>.xml`. All paths are relative to the **extension roo
 | `CompleteText` | empty | Text shown on completion (falls back to the built-in dictionary if empty) |
 | `FinishMode` | `none` | **Node visibility** after stopping: `none` hide all / `full` keep all / `scene_N` keep scene N only |
 | `TopologyMode` | `restore` | **Topology** after stopping: `restore` / `scene_N` / `merge` — see below |
-| `UseDualTrackMusic` | `true` | `true` = PS streams multiple tracks itself via DSEI; `false` = single-track mode |
-| `SingleTrack` | empty | Music for single-track mode (effective when `UseDualTrackMusic=false`); falls back to the first phase's first track |
+| `UseMultiTrackMusic` | `true` | `true` = PS streams multiple tracks itself via DSEI; `false` = single-track mode. Legacy `UseDualTrackMusic` is still accepted, but use this field in new configs |
+| `SingleTrack` | empty | Music for single-track mode (effective when `UseMultiTrackMusic=false`); falls back to the first phase's first track |
 | `RestoreThemeOnStop` | `true` | Whether to restore the pre-start theme on stop |
 | `GlobalDiscovery` | `true` | Cross-scene discovery: nodes found in scene A stay visible in scene B if B's `VisibleNodes` also contain them |
 | `MusicPhases` | — | Music phase list, see below |

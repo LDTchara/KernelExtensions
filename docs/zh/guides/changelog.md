@@ -23,6 +23,7 @@
 
 ### 改进与优化
 
+- **PhaseSwift 音乐配置正名**：`UseDualTrackMusic` 已不准确，新增首选字段 `UseMultiTrackMusic`（旧字段仍兼容）；同时修复单轨模式下 MusicManager 仍被拦截的问题。
 - **颜色字符串解析统一**：命名色、`#RGB` / `#RRGGBB` / `#AARRGGBB`（Alpha 在首位）、`R,G,B[,A]` 与 CustomColor 预设名、动态色（`LDTchara` / `RGB` / `Gradient:…`）走同一条解析链；此前散落各处、在 FNA 下静默失效的 `ColorConverter` 兜底已移除。详见[自定义动态色系统](./../systems/custom-color.md)。
 - **PortHackV2 `<TakeAdmin>` 语义明确**：只看开关，与各协议成败无关（全部协议失败也夺 admin）；此前隐含"至少一个协议成功才夺"，与"根级无整体失败"的设计不一致。
 - **配置约定统一**：字符串配置项用 `NONE`（大小写不敏感）或留空表示禁用；数值配置项**负数 = 使用默认 / 继承 / 无限**（`NaN` / `Infinity` 同样回退默认）。

@@ -23,6 +23,7 @@
 
 ### Improvements & Optimisations
 
+- **PhaseSwift music config naming**: `UseDualTrackMusic` is no longer accurate; the preferred field is now `UseMultiTrackMusic` (the legacy field remains accepted). Also fixed MusicManager still being suppressed in single-track mode.
 - **Unified colour string parsing**: named colours, `#RGB` / `#RRGGBB` / `#AARRGGBB` (alpha first), `R,G,B[,A]`, CustomColor preset names and dynamic colours (`LDTchara` / `RGB` / `Gradient:…`) all go through one parsing chain; the scattered `ColorConverter` fallbacks that silently failed under FNA have been removed. See the [Custom Color System](./../systems/custom-color.md).
 - **PortHackV2 `<TakeAdmin>` clarified**: the switch alone decides, independent of per-protocol results (admin is granted even if every protocol fails); previously it implicitly required at least one success, which contradicted the "no root-level failure" design.
 - **Unified configuration conventions**: string options use `NONE` (case-insensitive) or empty for "disabled"; numeric options treat **negative as "use the default / inherit / unlimited"** (`NaN` / `Infinity` likewise fall back to the default).
