@@ -91,6 +91,7 @@ namespace KernelExtensions.Managers
         private static float _fadeProgress, _targetFadeDuration;
         private static float[] _startVolumes = Array.Empty<float>();
         private static float[] _targetVolumes = Array.Empty<float>();
+        private static readonly HashSet<int> _warnedMissingTrackScenes = new();
 
         /// <summary>
         /// 播放队列维持的块数。一块 = 1/24 秒 ≈ 41.7ms，
@@ -189,7 +190,40 @@ namespace KernelExtensions.Managers
             else if (!newMusicMode.HasValue && legacyMusicMode.HasValue)
                 KELog.Info("[PhaseSwift] <UseDualTrackMusic> is deprecated; use <UseMultiTrackMusic>.");
             UseMultiTrack = newMusicMode ?? legacyMusicMode ?? true;
+            if (UseMultiTrack)
+                ValidateMusicMapping();
             IsInitialized = true;
+        }
+
+        /// <summary>
+        /// 多轨模式下每个 MusicPhase 的 Track 数应与场景数一致：
+        /// 多余轨道会被忽略；少于场景数时，缺失场景保持静音（切换时 Warn 一次）。
+        /// 不强制锁定/回退单曲，避免破坏已有配置。
+        /// </summary>
+        private static void ValidateMusicMapping()
+        {
+            if (Config == null) return;
+            if (Config.MusicPhases.Count == 0)
+            {
+                KELog.WarnT("[PhaseSwift] multi-track music is enabled but MusicPhases is empty; no music will play.");
+                return;
+            }
+
+            int sceneCount = Config.Scenes.Count;
+            foreach (var phase in Config.MusicPhases)
+            {
+                if (phase.Tracks.Count == 0)
+                {
+                    KELog.WarnT($"[PhaseSwift] MusicPhase {phase.Id} has no tracks; its scenes will be silent.");
+                }
+                else if (phase.Tracks.Count != sceneCount)
+                {
+                    if (phase.Tracks.Count > sceneCount)
+                        KELog.WarnT($"[PhaseSwift] MusicPhase {phase.Id} has {phase.Tracks.Count} tracks but only {sceneCount} scenes; extra tracks are ignored.");
+                    else
+                        KELog.WarnT($"[PhaseSwift] MusicPhase {phase.Id} has {phase.Tracks.Count} tracks but {sceneCount} scenes; scenes without a track will be silent.");
+                }
+            }
         }
 
         private static int _conflictWatchFrames;   // 第三方音频冲突的观察窗口（见 UpdateAudioBuffers）
@@ -498,6 +532,13 @@ namespace KernelExtensions.Managers
             SaveCurrentSceneDiscovery();
             DisconnectIfOnControlledNode();
 
+            if (UseMultiTrack && _dseInstances.Length > 0 && targetScene >= _dseInstances.Length
+                && _warnedMissingTrackScenes.Add(targetScene))
+            {
+                KELog.WarnT($"[PhaseSwift] scene {targetScene} has no music track in the current phase "
+                    + $"(tracks={_dseInstances.Length}, scenes={Config.Scenes.Count}); fading to silence.");
+            }
+
             if (UseMultiTrack && _dseInstances.Length > 0)
             {
                 if (immediate)
@@ -616,8 +657,12 @@ namespace KernelExtensions.Managers
 
             // 只读“当前能听到那条轨”的缓冲（多轨时各轨独立）
             int track = CurrentScene;
-            if (track < 0 || track >= _rollingBufs.Length) track = 0;
-            if (track < 0 || track >= _rollingBufs.Length) return;
+            if (track < 0 || track >= _rollingBufs.Length)
+            {
+                // 当前场景没有对应轨道（Tracks < Scenes）：保持空可视化，不借用第 0 轨。
+                Array.Clear(CurrentVisBands, 0, CurrentVisBands.Length);
+                return;
+            }
             float[] buf = _rollingBufs[track];
             if (buf == null) return;
             int bufSize = buf.Length;
@@ -687,7 +732,10 @@ namespace KernelExtensions.Managers
 
             _stopped = true;
             string root = ExtensionRoot ?? "";
-            int trackCount = Math.Max(1, phase.Tracks.Count);
+            // 多轨索引固定按场景号映射：多余轨道忽略，避免无意义的 DSEI 解码。
+            int sceneCount = Math.Max(1, Config?.Scenes.Count ?? phase.Tracks.Count);
+            int trackCount = Math.Min(Math.Max(1, phase.Tracks.Count), sceneCount);
+            _warnedMissingTrackScenes.Clear();
             _dseInstances = new DynamicSoundEffectInstance[trackCount];
             _trackStreams = new FileStream[trackCount];
             _trackReaders = new VorbisReader[trackCount];
