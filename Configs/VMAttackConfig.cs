@@ -57,6 +57,12 @@ namespace KernelExtensions.Configs
         /// </summary>
         [XmlElement("ActionOnGuideTextStart")] public ActionHook ActionOnGuideTextStart;
 
+        /// <summary>
+        /// 恢复完成后执行的动作点（清除感染 flag、删除假文件、恢复 UI 之后）。
+        /// 支持元素文本路径 / file 属性 / 内联 Actions、ConditionalActions。
+        /// </summary>
+        [XmlElement("OnRecovered")] public ActionHook OnRecovered;
+
         // 再进入恢复界面时若已读过一遍引导文本则是否跳过0.2秒输出
         [XmlElement("EnableGuideReadFlag")] public bool EnableGuideReadFlag = false;
 

@@ -125,6 +125,19 @@
     -->
 	<ActionOnGuideTextStart></ActionOnGuideTextStart>
 
+    <!-- ============================================================
+    9B. 恢复完成时的动作 / Action on Recovered
+    ============================================================ -->
+    <!--
+    恢复流程完成后执行一次（清感染 flag、删假文件、恢复界面交互之后）。
+    支持动作文件路径、file 属性，或直接内联 <Actions> / <ConditionalActions>。
+    留空 = 不执行。
+    Executed once after recovery completes (infection flags cleared, fake files removed, UI restored).
+    Accepts a file path, the file attribute, or inline <Actions> / <ConditionalActions>.
+    Leave empty to do nothing.
+    -->
+    <OnRecovered></OnRecovered>
+
 	<!-- ============================================================
     10. 引导文本 / Guide Text
     ============================================================ -->

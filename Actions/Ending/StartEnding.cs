@@ -46,16 +46,15 @@ namespace KernelExtensions.Actions.Ending
             }
 
             // ---- 构造结束回调（先构建，再赋值给 sequence）----
-            string afterActionPath = cfg.AfterAction;
+            ActionHook afterAction = cfg.AfterAction;
             OnCompleteCallback = () =>
             {
-                if (ConfigValue.IsNone(afterActionPath))
+                if (afterAction == null || !afterAction.HasContent)
                 {
                     KELog.Info("[StartEnding] No AfterAction specified.");
                     return;
                 }
-                try { RunnableConditionalActions.LoadIntoOS(afterActionPath, os); }
-                catch (Exception ex) { KELog.WarnT($"[StartEnding] LoadIntoOS failed: {ex.Message}"); }
+                afterAction.Execute(os, File, "AfterAction");
             };
 
             // ---- 创建并挂载结局 Module —— 直接设置 os.endingSequence ----

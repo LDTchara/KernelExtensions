@@ -18,6 +18,9 @@ namespace KernelExtensions.Managers
         /// <summary>恢复模块实例（由 OSDraw 补丁使用）。</summary>
         public static FakeRecoveryModule RecoveryModule;
 
+        /// <summary>OnRecovered 是否已触发（防止 Recover 被重复调用时重复执行）。</summary>
+        private static bool _onRecoveredFired;
+
         /// <summary>感染 flag 前缀。</summary>
         public const string InfectionFlagPrefix = "Kernel_VMInfected_";
 
@@ -169,6 +172,7 @@ namespace KernelExtensions.Managers
         /// </summary>
         public static void ActivateRecovery(OS os, VMAttackConfig config)
         {
+            _onRecoveredFired = false;
             ShowRecovery = true;
             RecoveryModule = new FakeRecoveryModule(
                 new Microsoft.Xna.Framework.Rectangle(0, 0, os.fullscreen.Width, os.fullscreen.Height),
@@ -191,6 +195,17 @@ namespace KernelExtensions.Managers
 
             // 注入模块，使其自动更新和绘制
             os.modules.Add(RecoveryModule);
+        }
+
+        /// <summary>
+        /// 恢复完成通知：三种恢复模式共用，保证 OnRecovered 每轮只执行一次。
+        /// 供 Recover()（Password 界面内）和 OSLoaded 的条件检测路径（FileDeletion/FileExists）调用。
+        /// </summary>
+        public static void NotifyRecovered(OS os)
+        {
+            if (_onRecoveredFired) return;
+            _onRecoveredFired = true;
+            CurrentConfig?.OnRecovered?.Execute(os, "VM/" + ConfigId(CurrentConfig), "OnRecovered");
         }
 
         /// <summary>
@@ -255,6 +270,9 @@ namespace KernelExtensions.Managers
             os.inputEnabled = true;
 
             ShowRecovery = false;
+
+            // 恢复完成后再触发作者动作；CurrentConfig 保留供重启后播放音乐。
+            NotifyRecovered(os);
             // CurrentConfig 予以保留，供重启后播放音乐
         }
     }

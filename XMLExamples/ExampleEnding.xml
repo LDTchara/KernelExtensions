@@ -58,8 +58,18 @@
          另：非空时才会启用报幕末尾的两段式淡出，见下方 CreditsFadeOutTime -->
     <AfterMusic></AfterMusic>
 
-    <!-- 报幕完成后执行的动作文件（可选，NONE/空 = 不执行） -->
+    <!-- 报幕完成后执行的动作（可选，NONE/空 = 不执行）
+         支持三种写法：file 属性、元素文本路径、内联 Actions/ConditionalActions。
+         Action after credits (optional; NONE/empty = skip).
+         Supports file attribute, element text path, and inline Actions/ConditionalActions. -->
     <AfterAction file="Actions/AfterCredits.xml" />
+    <!-- 内联示例 / Inline example:
+    <AfterAction>
+        <Actions>
+            <TerminalWrite Text="ending complete" />
+        </Actions>
+    </AfterAction>
+    -->
 
     <!-- 演讲计时（可选，默认 -1：见上方 SpeechTime 语义） -->
     <SpeechTime>-1</SpeechTime>

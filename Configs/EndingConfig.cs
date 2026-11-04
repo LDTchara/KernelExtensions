@@ -1,5 +1,6 @@
 using Hacknet.Extensions;
 using KernelExtensions.Utilities;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace KernelExtensions.Configs
@@ -21,7 +22,7 @@ namespace KernelExtensions.Configs
     ///   &lt;EndingConfig&gt;
     ///     &lt;Title&gt;THE END&lt;/Title&gt;
     ///     &lt;SpeechTime&gt;-1&lt;/SpeechTime&gt;
-    ///     &lt;AfterAction file="Actions/AfterCredits.xml" /&gt;   （动作引用支持 file 属性，兼容元素内容）
+    ///     &lt;AfterAction file="Actions/AfterCredits.xml" /&gt;   （动作引用支持 file 属性、元素文本，也支持内联 &lt;Actions&gt;/&lt;ConditionalActions&gt;）
     ///     &lt;SpeechFile&gt;Voice/ending.ogg&lt;/SpeechFile&gt;
     ///     ...
     ///   &lt;/EndingConfig&gt;
@@ -43,7 +44,8 @@ namespace KernelExtensions.Configs
         public float CreditsFadeOutTime = 5f;
 
         // ===== 收尾 =====
-        public string AfterAction = ""; // NONE/空 = 不执行
+        // 支持文本路径 / file 属性 / 内联 Actions、ConditionalActions；null = 不执行。
+        public ActionHook AfterAction = null;
 
         // ===== 资源路径（相对扩展根；NONE/空 = 默认 Docs/ 下）=====
         public string SpeechFile = "Docs/EndingSpeech.wav";
@@ -108,7 +110,7 @@ namespace KernelExtensions.Configs
                 cfg.EndingText = GetString(root, "EndingText", cfg.EndingText);
                 cfg.OnCreditMusic = GetString(root, "OnCreditMusic", cfg.OnCreditMusic);
                 cfg.AfterMusic = GetString(root, "AfterMusic", cfg.AfterMusic);
-                cfg.AfterAction = GetActionFile(root, "AfterAction", cfg.AfterAction);
+                cfg.AfterAction = ParseActionHook(root.Element("AfterAction"));
                 cfg.SpeechFile = ResolvePath(root, "SpeechFile", DefaultSpeechFile);
                 cfg.SpeechTextFile = ResolvePath(root, "SpeechTextFile", DefaultSpeechTextFile);
                 cfg.CreditsFile = ResolvePath(root, "CreditsFile", DefaultCreditsFile);
@@ -139,13 +141,32 @@ namespace KernelExtensions.Configs
             return ConfigValue.IsNone(v) ? fallback : v.Trim();
         }
 
-        /// <summary>动作引用子元素：优先 file 属性（Trial 风格），兼容元素内容。</summary>
-        private static string GetActionFile(XElement root, string elem, string fallback)
+        /// <summary>动作引用子元素：支持 file 属性 / 元素文本 / 内联动作；NONE 或空 = null。</summary>
+        private static ActionHook ParseActionHook(XElement el)
         {
-            var el = root.Element(elem);
-            if (el == null) return fallback;
-            var v = (string)el.Attribute("file") ?? el.Value;
-            return ConfigValue.IsNone(v) ? fallback : v.Trim();
+            if (el == null) return null;
+
+            var hook = new ActionHook();
+            string fileAttr = (string)el.Attribute("file");
+            if (!ConfigValue.IsNone(fileAttr)) hook.FileAttribute = fileAttr.Trim();
+
+            string text = string.Concat(el.Nodes().OfType<XText>().Select(t => t.Value)).Trim();
+            if (!ConfigValue.IsNone(text)) hook.FilePath = text;
+
+            var inline = new List<XmlElement>();
+            if (el.Elements().Any())
+            {
+                var doc = new XmlDocument();
+                foreach (var child in el.Elements())
+                {
+                    using var reader = child.CreateReader();
+                    if (doc.ReadNode(reader) is XmlElement node)
+                        inline.Add(node);
+                }
+            }
+            if (inline.Count > 0) hook.InlineActions = inline.ToArray();
+
+            return hook.HasContent ? hook : null;
         }
 
         /// <summary>资源路径子元素；NONE/空 = 默认路径。</summary>

@@ -590,6 +590,7 @@ namespace KernelExtensions
                     if (os.Flags.HasFlag(guideActionDoneFlag))
                         os.Flags.RemoveFlag(guideActionDoneFlag);
                     os.Flags.RemoveFlag(flag);          // 移除感染 Flag
+                    VMInfectionManager.NotifyRecovered(os);
                     os.rebootThisComputer();           // 然后虚拟重启
                     return;
                 }
@@ -638,6 +639,7 @@ namespace KernelExtensions
                         if (os.Flags.HasFlag(guideActionDoneFlag))
                             os.Flags.RemoveFlag(guideActionDoneFlag);
                         os.Flags.RemoveFlag(flag);
+                        VMInfectionManager.NotifyRecovered(os);
                         os.rebootThisComputer();
                         return;
                     }

@@ -19,6 +19,8 @@
 | `ExampleEnding.xml` | 自定义结局 Custom Ending | 结局流程配置（`<EndingConfig>`） |
 | `CustomColor_Example.xml` | 动态颜色 CustomColor | 渐变色预设文件（`<ColorPreset>`） |
 | `PortHackV2_Example.xml` | 端口破解器 PortHackV2 | 端口破解配置（`<PortHackV2Config>`） |
+| `PortHackV2Actions_Example.xml` | 端口破解器 PortHackV2 | 根级/协议级动作点示例 |
+| `ProxyKiller_Example.xml` | 代理加速器 ProxyKiller | 代理过载加速配置（`<ProxyKillerConfig>`） |
 | `Speech.txt` / `CreditsData.txt` | 自定义结局 | Ending 演讲文本 / 报幕名单示例资源 |
 | `EndingSpeech.wav` | 自定义结局 | Ending 语音短样本（181 KB） |
 | `CustomIRCLogs_Example.txt` | — | 自定义 IRC 语录文件格式示例 |
@@ -39,7 +41,6 @@
 ## 三、通用约定 / Common Conventions
 
 以下约定是所有配置 XML 的共同规则（出处见各示例注释）。
-
 ### 1. 编码与声明 / Encoding & Declaration
 
 - XML 一律 UTF-8、带声明：`<?xml version="1.0" encoding="utf-8"?>`
@@ -57,7 +58,7 @@
 | 模块 / Module | 放置位置 / Placement | 加载方式 / Loading |
 |---|---|---|
 | 自定义试炼 Trial | `扩展根/Trial/<名字>.xml`（**约定目录**） | 添加 Flag `CustomTrial_<文件名不含扩展名>` |
-| 虚拟机攻击 VM Attack | `扩展根/VMATK/<ConfigName>.xml`（**约定目录**） | `<LaunchVMAttack ConfigName="<ConfigName>" />`；`<ConfigName>` 必须与文件名一致 |
+| 虚拟机攻击 VM Attack | `扩展根/VMATK/<文件名>.xml`（**约定目录**） | `<LaunchVMAttack ConfigPath="VMATK/<文件名>.xml" />` |
 | 定时器 Clock | 扩展根任意位置（惯例 `Clocks/`） | `<ClockStart Filepath="..." />`；`<ClockStop ClockID="..." />` 或按 Filepath |
 | 自定义结局 Ending | 扩展根任意位置（无强制目录） | `<StartEnding File="..." />` |
 | 动态颜色 CustomColor | `扩展根/CustomColor/`（自动加载目录） | 扩展启动时自动加载，主题/配置中按预设名引用 |
@@ -71,22 +72,22 @@
 
 ### 5. 动作点写法 / Action Point Syntax
 
-⚠️ **各系统写法尚未统一，写错会静默不执行。动手前先查下表。**
+动作点统一支持三种写法（可同时使用）：
 
-| 系统 | 写法 | 例子 |
-|------|------|------|
-| 自定义试炼 / 相位穿梭 | **`file` 属性** | `<OnStart file="Actions/OnStart.xml" />` |
-| 定时器 / 破碎之心 / VM 攻击 / 假恢复模块 | **元素文本内容** | `<OnComplete>Clocks/done.xml</OnComplete>` |
-| PortHackV2 | **元素文本内容**，**也支持内联动作** | `<OnStart>Actions/x.xml</OnStart>`<br>`<OnStart><Actions><TerminalWrite Text="hi" /></Actions></OnStart>` |
+| 写法 | 例子 |
+|------|------|
+| `file` 属性（旧写法兼容） | `<OnStart file="Actions/OnStart.xml" />` |
+| 元素文本内容 = 路径 | `<OnComplete>Actions/x.xml</OnComplete>` |
+| 内联动作 | `<OnStart><Actions><TerminalWrite Text="hi" /></Actions></OnStart>` |
 
 - 省略该元素 = 不执行任何动作。
   Omit the element = no action runs.
-- **内联动作**（目前仅 PortHackV2）：动作点里直接写 `<Actions>` / `<ConditionalActions>`；
+- **内联动作**：动作点里直接写 `<Actions>` / `<ConditionalActions>`；
   也可与路径同时写 → **先执行文件、再执行内联**。
-  **Inline actions** (PortHackV2 only for now): put `<Actions>` / `<ConditionalActions>` straight into
-  the action point; combining both runs the file first, then the inline part.
-- 详细规则与逐系统表见文档站《配置文件 · 动作点写法速查》。
-  See the documentation site's *Configuration Files → Action Point Syntax Cheat Sheet*.
+  **Inline actions**: put `<Actions>` / `<ConditionalActions>` straight into the action point;
+  combining both runs the file first, then the inline part.
+- **Clock / Daemon / 原版 Action 仍只支持路径属性，不支持内联**；详见文档站《配置文件 · 动作点写法速查》。
+  **Clock / Daemons / vanilla Actions remain path-only**; see the documentation site's *Configuration Files → Action Point Syntax Cheat Sheet*.
 
 ### 6. 可选字段：省略 / NONE / 空 / 默认 / Optional Fields: omit vs NONE vs empty vs default
 
