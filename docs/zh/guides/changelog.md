@@ -11,7 +11,7 @@
 - **PortHackV2 破解程序（`#PORTHACKV2#`）**
   - 原版 `PortHack` 的可配置重制版：破解流程、时长、外观、前置条件与收尾动作全部由 XML 配置驱动。
   - 多协议**并行**推进，各自按 `StartDelay` 错开启动；每个协议独立掷成败，但两条分支的演出完全一样（只有时长不同）。
-  - 根级与协议级两层动作点（`OnStart` / `OnComplete` / `OnFail`），一次性效果一律走动作文件。
+  - 根级与协议级两层动作点（`OnStart` / `OnComplete` / `OnFail`），一次性效果走动作点（动作文件或内联）。
   - 可选前置：防火墙、代理瘫痪、指定端口、以及**目标机已破解端口数量**（`auto` 对齐节点自身要求）。
   - 5 种柏拉图立体线框动画，走离屏渲染；每种立体绕自己的旋转对称轴自转且轴保持竖直。
   - 详见 [PortHackV2 破解程序](./../systems/port-hack-v2.md)。
@@ -23,6 +23,7 @@
 
 ### 改进与优化
 
+- **动作点写法统一（收尾）**：`EndingConfig` 的 `AfterAction` 与 VM 攻击新增的 `OnRecovered` 都支持三种写法（元素文本路径 / `file` 属性 / 内联 `<Actions>`·`<ConditionalActions>`，路径 + 内联时先文件后内联）；至此独立配置文件系统的动作点全部统一为同一套写法，定时器 / Daemon / 原版 Action 仍保持路径-only。
 - **PhaseSwift 音乐配置正名**：`UseDualTrackMusic` 已不准确，新增首选字段 `UseMultiTrackMusic`（旧字段仍兼容）；同时修复单轨模式下 MusicManager 仍被拦截的问题。
 - **PhaseSwift 多轨数量校验**：每个 MusicPhase 的轨道数不足场景数时，缺失场景淡出到静音并 Warn；多余轨道不再创建/播放。
 - **颜色字符串解析统一**：命名色、`#RGB` / `#RRGGBB` / `#AARRGGBB`（Alpha 在首位）、`R,G,B[,A]` 与 CustomColor 预设名、动态色（`LDTchara` / `RGB` / `Gradient:…`）走同一条解析链；此前散落各处、在 FNA 下静默失效的 `ColorConverter` 兜底已移除。详见[自定义动态色系统](./../systems/custom-color.md)。

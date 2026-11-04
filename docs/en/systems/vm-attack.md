@@ -57,7 +57,8 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 | `SystemLogFiles` | `null` | Multiple text file paths; each is echoed line‑by‑line in monospace font on the recovery screen. |
 | `SystemLogPauseBetween` | `2.0` | Pause in seconds between two system log files. |
 | `GuideText` | `null` | List of guide text lines; each line is automatically prefixed with `> `. |
-| `ActionOnGuideTextStart` | `null` | Action file executed when the guide text starts displaying. |
+| `ActionOnGuideTextStart` | `null` | **Action point** executed when the guide text starts displaying (three forms — see "Action Points" below). |
+| `OnRecovered` | `null` | **Action point executed once** after the recovery flow completes (same three forms; `NONE` / empty = not run). Trigger timing — see "When `OnRecovered` fires" below. |
 | `EnableGuideReadFlag` | `false` | If true, after the first complete read the guide text is shown in full instantly on subsequent entries. |
 | `ButtonText` | `"Proceed"` | Text displayed on the interaction button. |
 | `HelpFile` | `null` | Path to a help file; when the button is clicked it is copied to the save directory and opened. |
@@ -184,6 +185,46 @@ When the attack is lifted:
 - All fake files are deleted.
 - Success music plays (if configured).
 - A black‑screen reboot restores normality.
+
+---
+
+## Action Points: `ActionOnGuideTextStart` and `OnRecovered`
+
+A VM Attack config has two **action points**, using the same syntax as other standalone config-file systems (the three forms may be mixed):
+
+| Action point | When it fires |
+|--------------|---------------|
+| `ActionOnGuideTextStart` | When the guide text starts displaying |
+| `OnRecovered` | **Once**, after the recovery flow completes |
+
+### Three forms
+
+```xml
+<!-- 1) Reference an action file (file attribute; the old form stays supported) -->
+<OnRecovered file="Actions/Recovered.xml" />
+
+<!-- 2) Element text content = action file path -->
+<OnRecovered>Actions/Recovered.xml</OnRecovered>
+
+<!-- 3) Inline actions (no separate file needed) -->
+<OnRecovered>
+    <Actions>
+        <TerminalWrite Text="system restored" />
+    </Actions>
+</OnRecovered>
+```
+
+- Actions inside `<Actions>` run **immediately**, one by one; `<ConditionalActions>` runs once its condition is met
+- When forms 1 and 2 both give a path, the **`file` attribute** wins (with a warning); a path plus inline actions → **file first, then inline**
+- `NONE` / empty = not run (a valid config, not an error)
+- Inline content goes through the same loader as action files; see [Actions](./../components/actions.md) for the action list
+
+### When `OnRecovered` fires
+
+When the **recovery flow completes** — all three recovery modes fire it: after the infection Flag has been removed, the read/guide-action markers cleared, the fake files deleted, and the recovery screen plus input restored — **and before the black-screen reboot**. It fires once per recovery round (a later re-infection and recovery will fire it again).
+
+- `Password`: fires during `Recover()` after the password is verified in the UI.
+- `FileDeletion` / `FileExists`: fires on the next launch's OSLoaded check, after the condition is satisfied and the Flag is cleared, before the reboot.
 
 ---
 

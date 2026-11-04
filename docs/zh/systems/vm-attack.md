@@ -57,7 +57,8 @@
 | `SystemLogFiles` | `null` | 多个文本文件路径，在恢复界面以等宽字体快速逐行显示。 |
 | `SystemLogPauseBetween` | `2.0` | 两个系统日志文件之间的停顿秒数。 |
 | `GuideText` | `null` | 引导文本行列表，每行自动添加 `> ` 前缀。 |
-| `ActionOnGuideTextStart` | `null` | 引导文本开始显示时执行的动作文件。 |
+| `ActionOnGuideTextStart` | `null` | 引导文本开始显示时执行的**动作点**（三种写法见下方「动作点」一节）。 |
+| `OnRecovered` | `null` | 恢复流程完成后**执行一次**的动作点（三种写法同上；`NONE` / 空 = 不执行）。触发时机见下方「`OnRecovered` 的触发时机」。 |
 | `EnableGuideReadFlag` | `false` | 若为 true，首次阅读完毕后，下次直接显示全文（跳过逐字动画）。 |
 | `ButtonText` | `"Proceed"` | 交互按钮上显示的文本。 |
 | `HelpFile` | `null` | 帮助文件路径，点击按钮时复制到存档目录并打开。 |
@@ -179,6 +180,46 @@
 - 删除所有虚假文件
 - 播放成功音乐（若配置）
 - 执行一次黑屏重启
+
+---
+
+## 动作点：`ActionOnGuideTextStart` 与 `OnRecovered`
+
+VM 攻击配置里有两个**动作点**，写法与其它独立配置文件系统相同 —— 三种形态可混用：
+
+| 动作点 | 触发时机 |
+|--------|----------|
+| `ActionOnGuideTextStart` | 引导文本开始显示时 |
+| `OnRecovered` | 恢复流程完成后**执行一次** |
+
+### 三种写法
+
+```xml
+<!-- ① 引用动作文件（file 属性；旧写法继续兼容） -->
+<OnRecovered file="Actions/Recovered.xml" />
+
+<!-- ② 元素文本内容 = 动作文件路径 -->
+<OnRecovered>Actions/Recovered.xml</OnRecovered>
+
+<!-- ③ 内联动作（不用单独建文件） -->
+<OnRecovered>
+    <Actions>
+        <TerminalWrite Text="system restored" />
+    </Actions>
+</OnRecovered>
+```
+
+- `<Actions>` 里的动作**立即**逐个执行；`<ConditionalActions>` 等条件满足后再执行
+- ① 与 ② 同时给出路径时以 **`file` 属性**为准（并记一条 Warn）；路径与内联同时写 → **先执行文件、再执行内联**
+- `NONE` / 空 = 不执行（正常配置，不报错）
+- 内联内容与动作文件走同一套装载逻辑，条件写法与原版一致；动作清单见[自定义 Action](./../components/actions.md)
+
+### `OnRecovered` 的触发时机
+
+在**恢复流程完成**时触发，三种恢复模式都会触发：感染 Flag 已移除、已读/引导动作完成标记已清除、假文件已删除、恢复界面与输入已恢复正常之后，**黑屏重启之前**。同一轮恢复只触发一次（重新感染后再恢复会再次触发）。
+
+- `Password`：密码在界面内校验通过、`Recover()` 收尾时触发。
+- `FileDeletion` / `FileExists`：玩家删除/创建文件后重启，OSLoaded 检测条件满足、清理 Flag 后、重启前触发。
 
 ---
 

@@ -11,7 +11,7 @@
 - **PortHackV2 Cracker (`#PORTHACKV2#`)**
   - A configurable remake of vanilla `PortHack`: cracking flow, durations, appearance, prerequisites and finishing actions are all driven by XML.
   - Protocols run **in parallel**, each staggered by its own `StartDelay`; every protocol rolls its own outcome, but both branches look identical (only the duration differs).
-  - Two levels of action points — root and per-protocol (`OnStart` / `OnComplete` / `OnFail`); one-shot effects always go through action files.
+  - Two levels of action points — root and per-protocol (`OnStart` / `OnComplete` / `OnFail`); one-shot effects go through action points (action file or inline).
   - Optional prerequisites: firewall, proxy overload, specific ports, and the number of **already-cracked ports** on the target (`auto` aligns with the node's own requirement).
   - Five Platonic solid wireframe animations rendered off-screen; every solid spins around its own rotational symmetry axis, and that axis is kept vertical.
   - See [PortHackV2 Cracker](./../systems/port-hack-v2.md).
@@ -23,6 +23,7 @@
 
 ### Improvements & Optimisations
 
+- **Action point syntax unified (final step)**: `EndingConfig`'s `AfterAction` and the new `OnRecovered` in VM Attack both accept the three forms (element text path / `file` attribute / inline `<Actions>`·`<ConditionalActions>`, file before inline); every standalone config-file system now shares one syntax, while Clock / Daemons / vanilla Actions remain path-only.
 - **PhaseSwift music config naming**: `UseDualTrackMusic` is no longer accurate; the preferred field is now `UseMultiTrackMusic` (the legacy field remains accepted). Also fixed MusicManager still being suppressed in single-track mode.
 - **PhaseSwift multi-track count validation**: if a music phase has fewer tracks than scenes, missing scenes fade to silence with a warning; extra tracks are no longer created or played.
 - **Unified colour string parsing**: named colours, `#RGB` / `#RRGGBB` / `#AARRGGBB` (alpha first), `R,G,B[,A]`, CustomColor preset names and dynamic colours (`LDTchara` / `RGB` / `Gradient:…`) all go through one parsing chain; the scattered `ColorConverter` fallbacks that silently failed under FNA have been removed. See the [Custom Color System](./../systems/custom-color.md).

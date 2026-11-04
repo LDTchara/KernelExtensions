@@ -162,55 +162,46 @@ answers "where does it go".
 ## 4. Action Point Syntax Cheat Sheet
 
 An **action point** is any config field meaning "run something at this moment" (`OnStart` / `OnComplete` /
-`OnFail` / `OnSwitch` …). Its syntax is **not yet consistent across systems**, and writing it the wrong
-way **silently does nothing** (the parser ignores unrecognised syntax without an error).
-**Check the table before writing one.**
+`OnFail` / `OnSwitch` …). Standalone config-file systems (Trial / Phase Swift / VM Attack / PortHackV2 /
+Custom Ending) now share **one** syntax (three forms, mixable); a few action points are **parent-element
+attributes** and accept a path only. Using the wrong form **silently does nothing**, so check the tables first.
 
-| System | Action points | Syntax | Example |
-|--------|---------------|--------|---------|
-| PortHackV2 | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` | **element text content**; **inline actions also supported** | `<OnStart>Actions/x.xml</OnStart>`<br>`<OnStart><Actions><TerminalWrite Text="hi" /></Actions></OnStart>` |
-| Custom Trial | `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete` / `OnPhaseStart` / `OnFail` | **`file` attribute** | `<OnStart file="Actions/x.xml" />` |
-| Phase Swift | `OnSwitch` | **`file` attribute** | `<OnSwitch file="Actions/x.xml" />` |
-| Clock | `OnComplete` | **attribute of `<Clock>`** | `<Clock ID="x" Interval="5" OnComplete="Clocks/done.xml">` |
-| Custom Heart Daemon (`CustomHeartDaemon`) | `OnComplete` / `OnHeartbreak` | **attribute of `<CustomHeartDaemon>`** | `<CustomHeartDaemon … OnHeartbreak="Actions/x.xml">` |
-| Custom Heart Daemon (Action) | `OnComplete` / `OnHeartbreak` | **attribute of `BreakHeart`** | `<BreakHeart OnComplete="Actions/x.xml" />` |
-| Aircraft Daemon | `OnFailed` / `OnSaved` | **attribute of `<FlightDaemon>`** | `<FlightDaemon OnFailed="Actions/Failed" OnSaved="Actions/Saved" />` |
-| Fake Recovery | `ActionOnGuideTextStart` | **element text content** | `<ActionOnGuideTextStart>Actions/x.xml</ActionOnGuideTextStart>` |
+### The three forms (standalone config-file systems)
 
-!!! note "The two families"
-    - **Child elements** (PortHackV2 / Custom Trial / Phase Swift / Fake Recovery) — the action point *is* an
-      element, so it **can hold inline actions**.
-    - **Attributes** (Clock / Custom Heart Daemon / Aircraft Daemon) — the action point is an attribute of its
-      parent element, and **an XML attribute cannot carry child elements**, so these can only take a path.
-      Inline support for them is planned (it needs new child-element syntax on the parent).
+| Form | Looks like | Notes |
+|------|-----------|-------|
+| Element text path | `<OnComplete>Actions/x.xml</OnComplete>` | The value is the action file path (most common) |
+| `file` attribute | `<OnComplete file="Actions/x.xml" />` | Old form, still supported; when both path carriers are given the **attribute wins** (with a warning) |
+| Inline actions | `<OnComplete><Actions>…</Actions></OnComplete>` | `<Actions>` runs immediately; `<ConditionalActions>` runs once its condition is met |
 
-### Inline actions (PortHackV2 only, for now)
+- A path and inline actions **can be combined** → **file first, then inline**
+- `NONE` / empty = not run (a valid config, not an error)
+- Inline content goes through the same loader as action files and supports the same conditions; see [Actions](./actions.md)
 
-PortHackV2's action points can hold Actions directly, so you do not need a file for one or two of them:
+### Which action points use which form
 
-```xml
-<OnStart>
-    <Actions>
-        <TerminalWrite Text="bypassing firewall..." />
-    </Actions>
-</OnStart>
-```
+| System | Action points | Form |
+|--------|---------------|------|
+| PortHackV2 | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` | all three |
+| Custom Trial | root `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`; per-phase `OnPhaseStart` / `OnComplete` / `OnFail` | all three |
+| Phase Swift | a scene's `OnSwitch` | all three |
+| VM Attack | `ActionOnGuideTextStart` / `OnRecovered` | all three |
+| Custom Ending | `AfterAction` | all three |
+| Clock | `OnComplete` (parent attribute) | **path only** |
+| Custom Heart (`CustomHeartDaemon` / `BreakHeart`) | `OnComplete` / `OnHeartbreak` (parent attribute) | **path only** |
+| Aircraft Daemon (`FlightDaemon`) | `OnFailed` / `OnSaved` (parent attribute) | **path only** |
+| Full-screen alert (`StartScreenBleedEffectWCC`) | `CompleteAction` (parent attribute) | **path only** |
 
-- Actions inside `<Actions>` run **immediately**, in order; `<ConditionalActions>` waits for its
-  condition (conditions work exactly as in vanilla — see the vanilla Hacknet wiki).
-- You can also write **both**: put a file path as the value *and* add child elements → the **file runs
-  first, then the inline part**.
-- Conditions and available Actions: see [Actions](./actions.md).
+!!! note "Why some action points can only take a path"
+    **An XML attribute cannot carry child elements** — the action points of Clock / Custom Heart / Aircraft Daemon
+    are attributes of their parent element, so they can only take a path. Daemons are declared inside node XML;
+    the `<OnComplete><Actions>…</Actions></OnComplete>` inline convention **only applies to standalone config
+    files** — do not use it on Daemons or vanilla Actions.
 
 !!! warning "A wrong action point will not crash — but it will not run either"
     A missing file, an out-of-bounds path, or an unrecognised element name only **logs a message and
     skips** — it never interrupts the crack / scene / trial. **So "no error" does not mean "it worked" —
     check the log when something seems not to happen.**
-
-!!! info "Unification in progress"
-    The differences between systems are **historical**. The plan is to unify them so **every action point
-    supports both inline actions and a path**. The unification keeps `file` attribute compatibility, so
-    **existing configs will not need changes**.
 
 ---
 

@@ -157,49 +157,43 @@ IRC 日志会出现在**文件浏览器**里（也就是原版 `BashLogs.txt` �
 ## 四、动作点写法速查
 
 **"动作点"**指配置里"某个时机要执行什么动作"的字段（如 `OnStart` / `OnComplete` / `OnFail` / `OnSwitch`）。
-它的写法**目前各系统还不一致**，写错会**静默不执行**（解析器忽略不认识的写法、不报错）。
-**动手前先查下表。**
+独立配置文件系统（试炼 / 相位穿梭 / VM 攻击 / PortHackV2 / 自定义结局）的动作点**已统一**为同一套写法（三种形态，可混用）；
+少数动作点是**父元素属性**，只能填路径。写错形态会**静默不执行**，动手前先查下表。
 
-| 系统 | 动作点 | 写法 | 例子 |
-|------|--------|------|------|
-| PortHackV2 | 根级 `OnStart` / `OnComplete`；协议级 `OnStart` / `OnComplete` / `OnFail` | **元素文本内容**；**也支持内联动作** | `<OnStart>Actions/x.xml</OnStart>`<br>`<OnStart><Actions><TerminalWrite Text="hi" /></Actions></OnStart>` |
-| 自定义试炼 | `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete` / `OnPhaseStart` / `OnFail` | **`file` 属性** | `<OnStart file="Actions/x.xml" />` |
-| 相位穿梭 | `OnSwitch` | **`file` 属性** | `<OnSwitch file="Actions/x.xml" />` |
-| 定时器 | `OnComplete` | **`<Clock>` 的属性** | `<Clock ID="x" Interval="5" OnComplete="Clocks/done.xml">` |
-| 破碎之心（守护进程） | `OnComplete` / `OnHeartbreak` | **`<CustomHeartDaemon>` 的属性** | `<CustomHeartDaemon … OnHeartbreak="Actions/x.xml">` |
-| 破碎之心（Action） | `OnComplete` / `OnHeartbreak` | **`BreakHeart` 的属性** | `<BreakHeart OnComplete="Actions/x.xml" />` |
-| 飞机 Daemon | `OnFailed` / `OnSaved` | **`<FlightDaemon>` 的属性** | `<FlightDaemon OnFailed="Actions/Failed" OnSaved="Actions/Saved" />` |
-| 假恢复模块 | `ActionOnGuideTextStart` | **元素文本内容** | `<ActionOnGuideTextStart>Actions/x.xml</ActionOnGuideTextStart>` |
+### 三种写法（独立配置文件系统通用）
 
-!!! note "两类写法的区别"
-    - **子元素**（PortHackV2 / 自定义试炼 / 相位穿梭 / 假恢复模块）—— 动作点自己是一个元素，**可以内联**。
-    - **属性**（定时器 / 破碎之心 / 飞机 Daemon）—— 动作点是父元素的属性，**属性在语法上无法承载子元素**，所以这两类只能填路径。
-      它们的内联写法在计划中（需要为父元素新增子元素语法）。
+| 写法 | 长什么样 | 说明 |
+|------|----------|------|
+| 元素文本路径 | `<OnComplete>Actions/x.xml</OnComplete>` | 值就是动作文件路径（最常用） |
+| `file` 属性 | `<OnComplete file="Actions/x.xml" />` | 旧写法，继续兼容；与元素文本同时给出路径时**属性优先**并记 Warn |
+| 内联动作 | `<OnComplete><Actions>…</Actions></OnComplete>` | `<Actions>` 立即执行；`<ConditionalActions>` 等条件满足后执行 |
 
-### 内联动作（目前仅 PortHackV2）
+- 路径与内联**可以同时写** → **先执行文件、再执行内联**
+- `NONE` / 空 = 不执行（正常配置，不报错）
+- 内联内容与动作文件走同一套装载逻辑，条件写法与原版一致；动作清单见[自定义 Action](./actions.md)
 
-PortHackV2 的动作点可以直接写动作，不必为一两行动作单独建文件：
+### 哪些动作点用哪种写法
 
-```xml
-<OnStart>
-    <Actions>
-        <TerminalWrite Text="bypassing firewall..." />
-    </Actions>
-</OnStart>
-```
+| 系统 | 动作点 | 写法 |
+|------|--------|------|
+| PortHackV2 | 根级 `OnStart` / `OnComplete`；协议级 `OnStart` / `OnComplete` / `OnFail` | 三形态 |
+| 自定义试炼 | 根级 `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`；阶段 `OnPhaseStart` / `OnComplete` / `OnFail` | 三形态 |
+| 相位穿梭 | 场景的 `OnSwitch` | 三形态 |
+| VM 攻击 | `ActionOnGuideTextStart` / `OnRecovered` | 三形态 |
+| 自定义结局 | `AfterAction` | 三形态 |
+| 定时器（Clock） | `OnComplete`（父元素属性） | **仅路径** |
+| 破碎之心（`CustomHeartDaemon` / `BreakHeart`） | `OnComplete` / `OnHeartbreak`（父元素属性） | **仅路径** |
+| 飞机 Daemon（`FlightDaemon`） | `OnFailed` / `OnSaved`（父元素属性） | **仅路径** |
+| 全屏警告（`StartScreenBleedEffectWCC`） | `CompleteAction`（父元素属性） | **仅路径** |
 
-- `<Actions>` 里的动作**立即**逐个执行；`<ConditionalActions>` 则等条件满足后执行
-  （条件写法与原版一致，见原版 Wiki）。
-- 也能**两者一起写**：值填文件路径、同时带子元素 → **先执行文件、再执行内联**。
-- 动作条件与可用动作见[自定义 Action](./actions.md)。
+!!! note "为什么有的动作点只能填路径"
+    **XML 属性在语法上无法承载子元素** —— 定时器 / 破碎之心 / 飞机 Daemon 的动作点是父元素的属性，
+    因此只能填路径。Daemon 声明在节点 XML 里；`<OnComplete><Actions>…</Actions></OnComplete>` 这种内联约定
+    **只适用于独立配置文件**，不要用在 Daemon 或原版 Action 上。
 
 !!! warning "写错不会崩，但也不会生效"
     动作点里写了不存在的文件、越界路径、或无法识别的元素名，**只会记一条日志并跳过** ——
     不会让整个破解 / 场景 / 试炼中断。**所以"没报错"不等于"生效了"，出问题时先看日志。**
-
-!!! info "正在统一"
-    各系统的写法差异**属于历史遗留**，计划统一为"所有动作点都支持内联 + 路径"。
-    统一时会保留 `file` 属性的兼容，**已有配置不需要改**。
 
 ---
 

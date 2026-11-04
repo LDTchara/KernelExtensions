@@ -71,9 +71,15 @@ Flag 以 `CustomTrial_` 开头，后面跟配置文件名（不含 `.xml`）。
 ## 四、动作点：内联还是引文件
 
 Action 本身的机制、可用的动作与条件，**原版 Wiki 已经讲全了**，这里不重复；
-本节只讲 KE 系统在配置里挂动作时**多出来的那一种写法**。
+本节只讲 KE 系统在配置里挂动作时的**三种写法与适用范围**。
 
-KE 的动作点（`OnStart` / `OnComplete` / `OnFail` 等）有两种写法，**可以同时用**：
+KE 的动作点（`OnStart` / `OnComplete` / `OnFail` 等）有三种写法，**可以混用**：
+
+- **元素文本路径**：值就是动作文件路径（最常用）
+- **`file` 属性**：旧写法，继续兼容
+- **内联动作**：直接把 `<Actions>` / `<ConditionalActions>` 写进动作点
+
+两种路径写法同时给出时以 **`file` 属性**为准（并记一条 Warn）；路径与内联同时写 → **先执行文件、再执行内联**。
 
 ### 引用动作文件
 
@@ -81,6 +87,12 @@ KE 的动作点（`OnStart` / `OnComplete` / `OnFail` 等）有两种写法，**
 
 ```xml
 <OnComplete>Actions/crackSuccess.xml</OnComplete>
+```
+
+旧写法用 `file` 属性，效果相同：
+
+```xml
+<OnComplete file="Actions/crackSuccess.xml" />
 ```
 
 ```xml
@@ -120,16 +132,27 @@ KE 的动作点（`OnStart` / `OnComplete` / `OnFail` 等）有两种写法，**
 
 ### 哪些系统有动作点
 
-| 系统 | 动作点 |
-|------|--------|
-| [PortHackV2 破解程序](./../systems/port-hack-v2.md) | 根级 `OnStart` / `OnComplete`；协议级 `OnStart` / `OnComplete` / `OnFail` |
-| [自定义定时器（Clock）](./../systems/clock.md) | `OnComplete` |
-| [相位穿梭（PhaseSwift）](./../systems/phase-swift.md) | 场景级动作点 |
-| [自定义结局（StartEnding）](./../systems/custom-ending.md) | 结局动作点 |
-| [自定义试炼](./../systems/custom-trial.md) | 阶段动作点 |
+| 系统 | 动作点 | 支持的写法 |
+|------|--------|------------|
+| [PortHackV2 破解程序](./../systems/port-hack-v2.md) | 根级 `OnStart` / `OnComplete`；协议级 `OnStart` / `OnComplete` / `OnFail` | 三形态 |
+| [自定义试炼](./../systems/custom-trial.md) | 根级 `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`；阶段 `OnPhaseStart` / `OnComplete` / `OnFail` | 三形态 |
+| [相位穿梭（PhaseSwift）](./../systems/phase-swift.md) | `<Scene>` 的 `OnSwitch` | 三形态 |
+| [VM 攻击](./../systems/vm-attack.md) | `ActionOnGuideTextStart` / `OnRecovered` | 三形态 |
+| [自定义结局（StartEnding）](./../systems/custom-ending.md) | `AfterAction` | 三形态 |
+| [自定义定时器（Clock）](./../systems/clock.md) | `OnComplete` | **仅路径**（父元素属性） |
+| 破碎之心（`CustomHeartDaemon` / `BreakHeart`） | `OnComplete` / `OnHeartbreak` | **仅路径**（父元素属性） |
+| [飞机 Daemon](./../systems/aircraft.md) | `OnFailed` / `OnSaved` | **仅路径**（父元素属性） |
+| 全屏警告（`StartScreenBleedEffectWCC`） | `CompleteAction` | **仅路径**（父元素属性） |
+
+!!! note "内联动作只适用于独立配置文件系统"
+    内联语法只在**独立配置文件**（上表标「三形态」的 5 个系统）里生效。
+    - **Daemon**（写进节点 XML 的 `<FlightDaemon>` / `<CustomHeartDaemon>`）与原版 Action 的动作点
+      **仍然是路径-only**：不要写 `<OnComplete><Actions>…</Actions></OnComplete>`，写了不会生效。
+    - **定时器 `<Clock>`** 的 `OnComplete` 是父元素属性，XML 属性放不下子元素 → 仍只填路径。
 
 ### 约定与注意事项
 
+- **写法**：路径（元素文本或 `file` 属性）与内联可以同时给，**先文件后内联**；两种路径载体同时给时 `file` 属性优先
 - **路径**：一律相对于**扩展根目录**，且必须落在扩展目录内
   （`..` 穿越、绝对路径、盘符都会被**拒绝**并记日志）
 - **`NONE` / 留空**：表示"这个动作点不执行"，是**正常配置**，不会报错

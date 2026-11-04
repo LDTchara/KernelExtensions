@@ -56,7 +56,7 @@ ExtensionRoot/
 | `EndingText` | `Thanks For Playing` | Closing line at the end of the credits |
 | `OnCreditMusic` | empty → vanilla `Music\Bit(Ending)` | Music played during the credits stage |
 | `AfterMusic` | empty / `NONE` → **no switch** | Music played after the ending, back in the game (leave empty to keep the credits track playing) |
-| `AfterAction` | empty = not executed | Action file loaded after the credits finish (write `<AfterAction file="..." />`; element content also accepted) |
+| `AfterAction` | empty / `NONE` = not run | **Action point** run after the credits finish: `file` attribute, element text path, or inline `<Actions>` / `<ConditionalActions>` (see the three forms below) |
 | `SpeechTime` | `-1` | Speech stage timing, see below |
 | `SpeechFile` | `Docs/EndingSpeech.wav` | Speech voice path (`.wav` or `.ogg`, optional) |
 | `SpeechTextFile` | `Docs/Speech.txt` | Speech text path |
@@ -68,6 +68,32 @@ ExtensionRoot/
 | `ScrollAccelTime` | `8` | Seconds to accelerate from rest to full speed (`0` = instant) |
 
 **Path rules**: all of the above are **relative to the extension root** and may live in any subfolder. `NONE` or an empty value = use the default path; omitting the element = use the default value.
+
+---
+
+### The three forms of `AfterAction`
+
+`AfterAction` is an **action point** and shares the same syntax as action points in other systems (the three forms may be mixed):
+
+```xml
+<!-- 1) Reference an action file (file attribute; the old form stays supported) -->
+<AfterAction file="Actions/AfterCredits.xml" />
+
+<!-- 2) Element text content = action file path -->
+<AfterAction>Actions/AfterCredits.xml</AfterAction>
+
+<!-- 3) Inline actions (no separate file needed) -->
+<AfterAction>
+    <Actions>
+        <TerminalWrite Text="ending complete" />
+    </Actions>
+</AfterAction>
+```
+
+- Actions inside `<Actions>` run **immediately**, one by one; `<ConditionalActions>` is handed to the condition system and runs once its condition is met
+- When forms 1 and 2 both give a path, the **`file` attribute** wins (with a warning); a path plus inline actions → **file first, then inline**
+- `NONE` / empty = not run (a valid config, not an error)
+- Inline content goes through the same loader as action files and supports the same conditions; see [Actions](./../components/actions.md) for the action list
 
 ---
 
@@ -177,7 +203,7 @@ Once the ending finishes (credits scrolled through), it automatically:
 - restores `os.canRunContent`
 - saves the game
 - switches the music back (`AfterMusic`; empty / `NONE` = no switch, credits track continues)
-- runs `AfterAction` (if configured)
+- runs the `AfterAction` action point (if configured; file path or inline actions — see "The three forms of `AfterAction`" above)
 
 !!! note "Responsibility boundary"
     The ending module **only handles the ending itself** and does **not** clean up any story node (e.g. `porthackHeart`). Node cleanup belongs to whichever system owns that node — with `CustomHeartDaemon`, the daemon handles it when the heartbreak finishes.

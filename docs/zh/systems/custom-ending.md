@@ -56,7 +56,7 @@ ExtensionRoot/
 | `EndingText` | `Thanks For Playing` | 报幕末尾的提示行 |
 | `OnCreditMusic` | 空 → 原版 `Music\Bit(Ending)` | 报幕阶段播放的音乐 |
 | `AfterMusic` | 空 / `NONE` → **不切换** | 结局完成、回到游戏后播放的音乐（留空则保持报幕曲继续） |
-| `AfterAction` | 空 = 不执行 | 报幕完成后加载执行的动作文件（写作 `<AfterAction file="..." />`，也兼容元素内容） |
+| `AfterAction` | 空 / `NONE` = 不执行 | 报幕完成后执行的**动作点**：`file` 属性、元素文本路径、或内联 `<Actions>` / `<ConditionalActions>`（三种写法见下） |
 | `SpeechTime` | `-1` | 演讲阶段计时方式，见下 |
 | `SpeechFile` | `Docs/EndingSpeech.wav` | 演讲语音路径（`.wav` 或 `.ogg`，可选） |
 | `SpeechTextFile` | `Docs/Speech.txt` | 演讲文本路径 |
@@ -68,6 +68,32 @@ ExtensionRoot/
 | `ScrollAccelTime` | `8` | 从静止加速到满速所需秒数（`0` = 立即满速） |
 
 **路径规则**：以上路径均**相对扩展根目录**，可放在任意子目录。写 `NONE` 或留空 = 用默认路径；不写该子元素 = 用默认值。
+
+---
+
+### `AfterAction` 的三种写法
+
+`AfterAction` 是一个**动作点**，与其它系统的动作点共用同一套写法（三种形态可混用）：
+
+```xml
+<!-- ① 引用动作文件（file 属性；旧写法继续兼容） -->
+<AfterAction file="Actions/AfterCredits.xml" />
+
+<!-- ② 元素文本内容 = 动作文件路径 -->
+<AfterAction>Actions/AfterCredits.xml</AfterAction>
+
+<!-- ③ 内联动作（不用单独建文件） -->
+<AfterAction>
+    <Actions>
+        <TerminalWrite Text="ending complete" />
+    </Actions>
+</AfterAction>
+```
+
+- `<Actions>` 里的动作**立即**逐个执行；`<ConditionalActions>` 交给条件系统，等条件满足后再执行
+- ① 与 ② 同时给出路径时以 **`file` 属性**为准（并记一条 Warn）；路径与内联同时写 → **先执行文件、再执行内联**
+- `NONE` / 空 = 不执行（正常配置，不报错）
+- 内联内容与动作文件走同一套装载逻辑，条件写法与原版一致；动作清单见[自定义 Action](./../components/actions.md)
 
 ---
 
@@ -177,7 +203,7 @@ ExtensionRoot/
 - 恢复 `os.canRunContent`
 - 保存游戏
 - 切回音乐（`AfterMusic`；留空 / `NONE` = 不切换，报幕曲继续）
-- 执行 `AfterAction`（若配置）
+- 执行 `AfterAction` 动作点（若配置；支持文件路径与内联动作，见上文「`AfterAction` 的三种写法」）
 
 !!! note "职责边界"
     结局模块**只负责结局自身**，**不清理**任何剧情节点（例如 `porthackHeart`）。节点清理由对应系统的拥有者负责——如果你用 `CustomHeartDaemon`，它会在碎心结束时自行处理该节点。

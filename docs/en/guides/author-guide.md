@@ -74,9 +74,15 @@ No extra Flags are required. Just add `<FlightDaemon>` to the target computer's 
 
 The mechanism of Actions themselves, and the available Actions and conditions, are **already fully
 covered by the vanilla Hacknet wiki** — this page does not repeat them. This section covers only the
-**extra form KE systems add** when a config attaches Actions.
+**three syntaxes and their scope** when a KE config attaches Actions.
 
-KE action points (`OnStart` / `OnComplete` / `OnFail`, etc.) come in two forms, and **you can use both**:
+KE action points (`OnStart` / `OnComplete` / `OnFail`, etc.) come in three forms, **which you can mix**:
+
+- **Element text path** — the value is the action file path (most common)
+- **`file` attribute** — the old form, still supported
+- **Inline actions** — write `<Actions>` / `<ConditionalActions>` straight into the action point
+
+When both path carriers are given, the **`file` attribute** wins (with a warning); a path plus inline actions → **file first, then inline**.
 
 ### Reference an action file
 
@@ -84,6 +90,12 @@ The value is a path relative to the **extension root** (see the previous section
 
 ```xml
 <OnComplete>Actions/crackSuccess.xml</OnComplete>
+```
+
+The old form uses the `file` attribute and behaves identically:
+
+```xml
+<OnComplete file="Actions/crackSuccess.xml" />
 ```
 
 ```xml
@@ -123,16 +135,27 @@ You can also write both — **the file runs first, then the inline part**:
 
 ### Which systems expose action points
 
-| System | Action points |
-|--------|---------------|
-| [PortHackV2 Cracker](./../systems/port-hack-v2.md) | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` |
-| [Custom Timer (Clock)](./../systems/clock.md) | `OnComplete` |
-| [Phase Swift](./../systems/phase-swift.md) | per-scene action points |
-| [Custom Ending (StartEnding)](./../systems/custom-ending.md) | ending action points |
-| [Custom Trial](./../systems/custom-trial.md) | per-phase action points |
+| System | Action points | Supported forms |
+|--------|---------------|-----------------|
+| [PortHackV2 Cracker](./../systems/port-hack-v2.md) | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` | all three |
+| [Custom Trial](./../systems/custom-trial.md) | root `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`; per-phase `OnPhaseStart` / `OnComplete` / `OnFail` | all three |
+| [Phase Swift](./../systems/phase-swift.md) | `OnSwitch` on a `<Scene>` | all three |
+| [VM Attack](./../systems/vm-attack.md) | `ActionOnGuideTextStart` / `OnRecovered` | all three |
+| [Custom Ending (StartEnding)](./../systems/custom-ending.md) | `AfterAction` | all three |
+| [Custom Timer (Clock)](./../systems/clock.md) | `OnComplete` | **path only** (parent attribute) |
+| Custom Heart (`CustomHeartDaemon` / `BreakHeart`) | `OnComplete` / `OnHeartbreak` | **path only** (parent attribute) |
+| [Aircraft Daemon](./../systems/aircraft.md) | `OnFailed` / `OnSaved` | **path only** (parent attribute) |
+| Full-screen alert (`StartScreenBleedEffectWCC`) | `CompleteAction` | **path only** (parent attribute) |
+
+!!! note "Inline actions apply to standalone config-file systems only"
+    Inline syntax only works in **standalone config files** (the five systems marked "all three" above).
+    - **Daemons** (`<FlightDaemon>` / `<CustomHeartDaemon>` declared in node XML) and vanilla Action action points
+      remain **path-only**: do not write `<OnComplete><Actions>…</Actions></OnComplete>` — it will not take effect.
+    - The **`<Clock>`** `OnComplete` is a parent attribute, and an XML attribute cannot carry child elements → still a path only.
 
 ### Conventions and caveats
 
+- **Syntax**: a path (element text or `file` attribute) and inline actions can coexist — **file first, then inline**; when both path carriers are given the `file` attribute wins
 - **Paths** are always relative to the **extension root** and must stay inside it
   (`..` traversal, absolute paths and drive letters are **rejected** and logged)
 - **`NONE` / empty** means "this action point does not run" — a **valid config**, not an error
