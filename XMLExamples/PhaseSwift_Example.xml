@@ -134,6 +134,9 @@
          音乐组 (MusicPhases)
          每个 Phase 定义一组音乐文件，数量应与场景数一致。
          索引 i 的 Track 对应 Scenes 中索引 i 的场景。
+         Track 路径先找扩展内文件，再回退原版/DLC：
+           <Track>Music/Bit(Ending)</Track>
+           <Track>DLC/Music/World_Chase</Track>
          不同 Phase 可在游戏过程中通过 PhaseSwitchMusicPhase Action 切换。
          强烈建议扩展作者使同 Phase 内所有音乐长度完全一致，
          否则切换时进度会逐渐错位。
@@ -142,6 +145,9 @@
          Music Phases
          Each Phase defines a set of music files; the count should match the number of scenes.
          Track at index i corresponds to the scene at index i in Scenes.
+         Tracks resolve inside the extension first, then fall back to vanilla/DLC content:
+           <Track>Music/Bit(Ending)</Track>
+           <Track>DLC/Music/World_Chase</Track>
          Different Phases can be switched during gameplay via the PhaseSwitchMusicPhase Action.
          It is strongly recommended that all tracks within the same Phase have identical lengths,
          otherwise playback progress will drift on switch.

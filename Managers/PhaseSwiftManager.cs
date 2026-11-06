@@ -1,5 +1,6 @@
 using Hacknet;
 using Hacknet.Extensions;
+using BepInEx;
 using KernelExtensions.Configs;
 using KernelExtensions.Patches;
 using KernelExtensions.Saving;
@@ -725,6 +726,52 @@ namespace KernelExtensions.Managers
             return true;
         }
 
+        /// <summary>
+        /// 解析一个多轨 Track 的实际文件：扩展根 → 扩展/Music → 原版/DLC Content。
+        /// 原版/DLC 走 MusicPathResolver，再映射到 Content 下的 .ogg；绝对路径不参与，
+        /// 避免绕过扩展根约束。
+        /// </summary>
+        private static string ResolveTrackFilePath(string relPath, string extensionRoot)
+        {
+            if (string.IsNullOrWhiteSpace(relPath)) return null;
+
+            string local = KEPath.ResolveInside(relPath, extensionRoot);
+            if (local != null && File.Exists(local)) return local;
+
+            string fileName = Path.GetFileName(relPath);
+            local = KEPath.ResolveInside("Music/" + fileName, extensionRoot);
+            if (local != null && File.Exists(local)) return local;
+
+            string resolved;
+            try { resolved = MusicPathResolver.ResolveMusicPath(relPath, extensionRoot); }
+            catch (Exception ex)
+            {
+                KELog.WarnT($"[PhaseSwift] track path resolve failed: {relPath} ({ex.Message})");
+                return null;
+            }
+            if (string.IsNullOrWhiteSpace(resolved) || Path.IsPathRooted(resolved)) return null;
+
+            // MusicPathResolver 对扩展内文件返回 "../Extensions/<扩展名>/<路径>"。
+            if (resolved.StartsWith("../Extensions/"))
+            {
+                string physical = Path.Combine(Paths.GameRootPath,
+                    resolved.Substring(3).Replace('/', Path.DirectorySeparatorChar));
+                return ExistsWithOgg(physical);
+            }
+
+            // "Music/..." / "DLC/Music/..." 是以 Content 为根的歌曲路径。
+            string content = Path.Combine(Paths.GameRootPath, "Content",
+                resolved.Replace('/', Path.DirectorySeparatorChar));
+            return ExistsWithOgg(content);
+        }
+
+        private static string ExistsWithOgg(string path)
+        {
+            if (File.Exists(path)) return path;
+            if (!Path.HasExtension(path) && File.Exists(path + ".ogg")) return path + ".ogg";
+            return null;
+        }
+
         private static void LoadMusicPhase(PhaseSwiftMusicPhase phase)
         {
             CleanupAudio();
@@ -757,23 +804,15 @@ namespace KernelExtensions.Managers
             {
                 try
                 {
-                    // 解析文件路径：先按配置中的相对路径，再回退到文件名在 Music/ 下查找
-                    // （两步均在扩展目录内，越界一律不予考虑）
+                    // 解析文件路径：扩展内优先，其次扩展根/Music，最后原版/DLC 内容目录。
                     var meta = phase.Tracks[i];
                     string relPath = (meta.Path ?? "").Replace('\\', '/');
-                    string filePath = KEPath.ResolveInside(relPath, root);
-                    if (filePath == null || !File.Exists(filePath))
+                    string filePath = ResolveTrackFilePath(relPath, root);
+                    if (filePath == null)
                     {
-                        // 回退：只取文件名，在 root/Music 下搜索
-                        string fileName = Path.GetFileName(relPath);
-                        string altPath = KEPath.ResolveInside("Music/" + fileName, root);
-                        if (altPath != null && File.Exists(altPath))
-                            filePath = altPath;
-                        else
-                        {
-                            KELog.WarnT($"[PhaseSwift] track {i} not found: {relPath} (also tried Music/{fileName})");
-                            continue;
-                        }
+                        KELog.WarnT($"[PhaseSwift] track {i} not found: {relPath} "
+                            + "(also tried extension Music/, Content/Music and Content/DLC/Music)");
+                        continue;
                     }
                     _trackStreams[i] = File.OpenRead(filePath);
                     _trackReaders[i] = new VorbisReader(_trackStreams[i], false);
