@@ -160,7 +160,10 @@ ExtensionRoot/
 - `<Phase id>` 就是 `PhaseSwiftMusic Phase=` 传入的值
 - 条数应与场景数一致（1 个场景 1 条轨）
 - 不匹配时不会崩：多余轨道被忽略；缺少轨道的场景切过去会淡出到静音，并在日志里 Warn 一次
-- 路径先按扩展根解析，找不到再回退到 `Music/<文件名>`
+- 路径解析顺序：扩展根 → 扩展 `Music/<文件名>` → 原版/DLC 内容目录：
+  - `Music/Bit(Ending)` → `Content/Music/Bit(Ending).ogg`
+  - `DLC/Music/World_Chase` → `Content/DLC/Music/World_Chase.ogg`
+  - 未写扩展名时自动尝试补 `.ogg`
 - **格式为 OGG**（NVorbis 流式解码 + `DynamicSoundEffectInstance`），切场景时交叉淡化
 - 音量跟随游戏音乐音量设置
 

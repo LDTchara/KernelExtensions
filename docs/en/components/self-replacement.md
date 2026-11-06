@@ -11,7 +11,7 @@ placeholders KE adds.
 
 ## 1. Custom program placeholders (registered by KE)
 
-KE registers 4 executables with Pathfinder, each bound to one placeholder. **Write them in file
+KE registers 6 executables with Pathfinder, each bound to one placeholder. **Write them in file
 contents** and they are replaced with the actual program data when the save is generated:
 
 | Program | Placeholder | Belongs to |

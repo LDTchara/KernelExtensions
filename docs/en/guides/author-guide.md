@@ -17,6 +17,11 @@ KernelExtensions currently provides the following configurable systems, most tri
 - **Node Icons (SetNodeIcon)**: statically declare or switch any node's icon at runtime.
 - **Custom Ending (StartEnding)**: a configurable ending flow (titles, speech, credits).
 - **Title Banner & ScreenBleed (ShowTitle / ScreenBleedWCC)**: full-screen story prompts and system alerts.
+- **PortHackV2 Cracker (`#PORTHACKV2#`)**: a configurable port-cracking flow (parallel protocols, prerequisites, action points).
+- **Custom Heart Daemon (`CustomHeartDaemon`)**: recreates the vanilla heart-node sequence (cube → heart → white-out) with configurable title / music / timing / callbacks.
+- **ProxyKiller (`#PROXYKILLER#`)**: accelerates every shell that is currently overloading so proxies crash sooner.
+
+Component-level entries such as RAM display / temporary theme colours / target-machine atomic Actions / self-replacement placeholders are listed in the [component index](./../index.md) and [Actions](./../components/actions.md).
 
 All systems **must** run as part of an extension; global plugin mode is not supported. All paths for configuration files, action files, etc. are relative to the **extension root**.
 

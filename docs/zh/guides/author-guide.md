@@ -17,6 +17,11 @@ KernelExtensions 目前提供以下可配置系统，多数通过 Flag 或自定
 - **节点图标（SetNodeIcon）**：静态声明或运行时切换任意节点的图标。
 - **自定义结局（StartEnding）**：报幕 / 演讲 / 制作人员名单的可配置结局流程。
 - **标题横幅与全屏警告（ShowTitle / ScreenBleedWCC）**：剧情提示与系统告警的全屏表现。
+- **PortHackV2 破解程序（`#PORTHACKV2#`）**：可配置的端口破解流程（多协议并行、前置条件、动作点）。
+- **自定义心脏 Daemon（CustomHeartDaemon）**：复刻原版心脏节点序列（立方体 → 心形 → 白场），标题 / 音乐 / 时序 / 回调可配。
+- **代理加速器（ProxyKiller，`#PROXYKILLER#`）**：加速所有正在过载的 Shell，让代理更快瘫痪。
+
+RAM 显示 / 临时主题色 / 目标机原子动作 / 自替换符等**组件类入口**见[组件种类索引](./../index.md)与[自定义 Action](./../components/actions.md)。
 
 所有系统**必须**作为扩展的一部分运行，不支持全局插件模式。配置文件、动作文件等所有路径均相对于**扩展根目录**。
 

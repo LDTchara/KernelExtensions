@@ -128,9 +128,12 @@ IRC 日志会出现在**文件浏览器**里（也就是原版 `BashLogs.txt` �
 |------|----------|--------|------|
 | 自定义试炼 | `Trial/<名称>.xml` | `<TrialConfig>` | [自定义试炼系统](./../systems/custom-trial.md) |
 | VM 攻击 | `VMATK/<名称>.xml` | `<VMAttackConfig>` | [VM攻击系统](./../systems/vm-attack.md) |
+| PortHackV2 破解程序 | `PortHackV2/<名称>.xml` | `<PortHackV2Config>` | [PortHackV2 破解程序](./../systems/port-hack-v2.md)（入口：存档 flag `PortHackV2_<名称>` → 终端运行 `#PORTHACKV2#`） |
+| 代理加速器 ProxyKiller | `ProxyKiller/<名称>.xml` | `<ProxyKillerConfig>` | [可执行程序](./executables.md)（入口：存档 flag `ProxyKiller_<名称>` → 终端运行 `#PROXYKILLER#`） |
 | 相位穿梭 | 见系统页 | — | [相位穿梭系统](./../systems/phase-swift.md) |
 | 自定义结局 | 见系统页 | — | [自定义结局系统](./../systems/custom-ending.md) |
 | 飞机 Daemon | 直接写进目标计算机的 XML | — | [飞机Daemon系统](./../systems/aircraft.md) |
+| 自定义心脏 Daemon（CustomHeartDaemon） | 直接写进目标计算机的 XML（`<CustomHeartDaemon … />`） | — | [自定义心脏 Daemon](./../systems/custom-heart.md)（入口：`<BreakHeart>` Action，或 `AutoOnPorthack` 自动触发） |
 | 自定义动态色预设 | `CustomColor/<预设名>.xml` | `<ColorPreset>` | [自定义动态色系统](./../systems/custom-color.md) |
 | 节点图标 | `KE-Config.xml` 的 `<CustomImages>` | — | [自定义节点图标系统](./../systems/node-icon.md) |
 | 定时器 / 横幅 / 全屏警告 | 由 Action 参数直接指定，无独立配置文件 | — | [自定义 Action](./actions.md) |

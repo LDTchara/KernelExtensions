@@ -7,9 +7,9 @@ three parts:
 - **2. General Actions (not covered by a system)** — full parameters and examples
 - **3. Target-computer atomic Actions** — ports / firewall / proxy primitives, full parameters and examples
 
-!!! note "It is 44 when SROS is installed"
+!!! note "It is 45 when SROS is installed"
     When the **SROS** plugin is detected, `ShowTitle` and `StartEnding` are **not registered**
-    (their features overlap, so KE steps aside to avoid a conflict) — such setups have 44 Actions.
+    (their features overlap, so KE steps aside to avoid a conflict) — such setups have 45 Actions.
 
 All paths are relative to the extension root.
 

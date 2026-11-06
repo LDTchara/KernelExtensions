@@ -159,7 +159,10 @@ Each `<Phase>` defines a set of tracks, and **the track at index i corresponds t
 - `<Phase id>` is the value you pass to `PhaseSwiftMusic Phase=`
 - The number of tracks should match the number of scenes (one track per scene)
 - A mismatch does not crash: extra tracks are ignored, and scenes without a track fade to silence with a one-time warning in the log
-- Paths resolve against the extension root first, then fall back to `Music/<filename>`
+- Resolution order: extension root → extension `Music/<filename>` → vanilla/DLC content:
+  - `Music/Bit(Ending)` → `Content/Music/Bit(Ending).ogg`
+  - `DLC/Music/World_Chase` → `Content/DLC/Music/World_Chase.ogg`
+  - if no extension is given, `.ogg` is appended automatically
 - **OGG only** (NVorbis streaming into a `DynamicSoundEffectInstance`); scene switches crossfade
 - Volume follows the game's music volume setting
 
