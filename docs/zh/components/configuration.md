@@ -182,7 +182,7 @@ IRC 日志会出现在**文件浏览器**里（也就是原版 `BashLogs.txt` �
 | PortHackV2 | 根级 `OnStart` / `OnComplete`；协议级 `OnStart` / `OnComplete` / `OnFail` | 三形态 |
 | 自定义试炼 | 根级 `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`；阶段 `OnPhaseStart` / `OnComplete` / `OnFail` | 三形态 |
 | 相位穿梭 | 场景的 `OnSwitch` | 三形态 |
-| VM 攻击 | `ActionOnGuideTextStart` / `OnRecovered` | 三形态 |
+| VM 攻击 | `ActionOnGuideTextStart` / `OnRecovered` / `OnRecoveredPostBoot` | 三形态 |
 | 自定义结局 | `AfterAction` | 三形态 |
 | 定时器（Clock） | `OnComplete`（父元素属性） | **仅路径** |
 | 破碎之心（`CustomHeartDaemon` / `BreakHeart`） | `OnComplete` / `OnHeartbreak`（父元素属性） | **仅路径** |

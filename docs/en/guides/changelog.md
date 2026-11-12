@@ -23,6 +23,7 @@
 
 ### Improvements & Optimisations
 
+- **VM Attack adds `OnRecoveredPostBoot`**: fires once after the successful recovery reboot, when the success music has started; use it for actions that need the virtual system to be ready. `OnRecovered` keeps its original "before reboot" semantics.
 - **Action point syntax unified (final step)**: `EndingConfig`'s `AfterAction` and the new `OnRecovered` in VM Attack both accept the three forms (element text path / `file` attribute / inline `<Actions>`·`<ConditionalActions>`, file before inline); every standalone config-file system now shares one syntax, while Clock / Daemons / vanilla Actions remain path-only.
 - **PhaseSwift music config naming**: `UseDualTrackMusic` is no longer accurate; the preferred field is now `UseMultiTrackMusic` (the legacy field remains accepted). Also fixed MusicManager still being suppressed in single-track mode.
 - **PhaseSwift multi-track count validation**: if a music phase has fewer tracks than scenes, missing scenes fade to silence with a warning; extra tracks are no longer created or played.

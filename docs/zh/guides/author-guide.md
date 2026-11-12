@@ -142,7 +142,7 @@ KE 的动作点（`OnStart` / `OnComplete` / `OnFail` 等）有三种写法，**
 | [PortHackV2 破解程序](./../systems/port-hack-v2.md) | 根级 `OnStart` / `OnComplete`；协议级 `OnStart` / `OnComplete` / `OnFail` | 三形态 |
 | [自定义试炼](./../systems/custom-trial.md) | 根级 `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`；阶段 `OnPhaseStart` / `OnComplete` / `OnFail` | 三形态 |
 | [相位穿梭（PhaseSwift）](./../systems/phase-swift.md) | `<Scene>` 的 `OnSwitch` | 三形态 |
-| [VM 攻击](./../systems/vm-attack.md) | `ActionOnGuideTextStart` / `OnRecovered` | 三形态 |
+| [VM 攻击](./../systems/vm-attack.md) | `ActionOnGuideTextStart` / `OnRecovered` / `OnRecoveredPostBoot` | 三形态 |
 | [自定义结局（StartEnding）](./../systems/custom-ending.md) | `AfterAction` | 三形态 |
 | [自定义定时器（Clock）](./../systems/clock.md) | `OnComplete` | **仅路径**（父元素属性） |
 | 破碎之心（`CustomHeartDaemon` / `BreakHeart`） | `OnComplete` / `OnHeartbreak` | **仅路径**（父元素属性） |

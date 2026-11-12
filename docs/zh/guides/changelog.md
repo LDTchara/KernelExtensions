@@ -23,6 +23,7 @@
 
 ### 改进与优化
 
+- **VM 攻击新增 `OnRecoveredPostBoot`**：恢复成功并完成黑屏重启后、成功音乐开始播放后执行一次；用于需要“进入系统后”执行的动作。`OnRecovered` 保持原有的“重启前”语义。
 - **动作点写法统一（收尾）**：`EndingConfig` 的 `AfterAction` 与 VM 攻击新增的 `OnRecovered` 都支持三种写法（元素文本路径 / `file` 属性 / 内联 `<Actions>`·`<ConditionalActions>`，路径 + 内联时先文件后内联）；至此独立配置文件系统的动作点全部统一为同一套写法，定时器 / Daemon / 原版 Action 仍保持路径-only。
 - **PhaseSwift 音乐配置正名**：`UseDualTrackMusic` 已不准确，新增首选字段 `UseMultiTrackMusic`（旧字段仍兼容）；同时修复单轨模式下 MusicManager 仍被拦截的问题。
 - **PhaseSwift 多轨数量校验**：每个 MusicPhase 的轨道数不足场景数时，缺失场景淡出到静音并 Warn；多余轨道不再创建/播放。

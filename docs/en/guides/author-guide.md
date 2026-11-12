@@ -145,7 +145,7 @@ You can also write both — **the file runs first, then the inline part**:
 | [PortHackV2 Cracker](./../systems/port-hack-v2.md) | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` | all three |
 | [Custom Trial](./../systems/custom-trial.md) | root `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`; per-phase `OnPhaseStart` / `OnComplete` / `OnFail` | all three |
 | [Phase Swift](./../systems/phase-swift.md) | `OnSwitch` on a `<Scene>` | all three |
-| [VM Attack](./../systems/vm-attack.md) | `ActionOnGuideTextStart` / `OnRecovered` | all three |
+| [VM Attack](./../systems/vm-attack.md) | `ActionOnGuideTextStart` / `OnRecovered` / `OnRecoveredPostBoot` | all three |
 | [Custom Ending (StartEnding)](./../systems/custom-ending.md) | `AfterAction` | all three |
 | [Custom Timer (Clock)](./../systems/clock.md) | `OnComplete` | **path only** (parent attribute) |
 | Custom Heart (`CustomHeartDaemon` / `BreakHeart`) | `OnComplete` / `OnHeartbreak` | **path only** (parent attribute) |

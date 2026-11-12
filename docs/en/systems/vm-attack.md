@@ -58,7 +58,8 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 | `SystemLogPauseBetween` | `2.0` | Pause in seconds between two system log files. |
 | `GuideText` | `null` | List of guide text lines; each line is automatically prefixed with `> `. |
 | `ActionOnGuideTextStart` | `null` | **Action point** executed when the guide text starts displaying (three forms — see "Action Points" below). |
-| `OnRecovered` | `null` | **Action point executed once** after the recovery flow completes (same three forms; `NONE` / empty = not run). Trigger timing — see "When `OnRecovered` fires" below. |
+| `OnRecovered` | `null` | **Action point executed once** after the recovery flow completes, **before the black-screen reboot** (same three forms; `NONE` / empty = not run). Trigger timing — see "When `OnRecovered` fires" below. |
+| `OnRecoveredPostBoot` | `null` | **Action point executed once** after the reboot completes and the success music has started (same three forms; `NONE` / empty = not run). Use it for actions that need the virtual system to be ready. |
 | `EnableGuideReadFlag` | `false` | If true, after the first complete read the guide text is shown in full instantly on subsequent entries. |
 | `ButtonText` | `"Proceed"` | Text displayed on the interaction button. |
 | `HelpFile` | `null` | Path to a help file; when the button is clicked it is copied to the save directory and opened. |
@@ -188,14 +189,15 @@ When the attack is lifted:
 
 ---
 
-## Action Points: `ActionOnGuideTextStart` and `OnRecovered`
+## Action Points: `ActionOnGuideTextStart`, `OnRecovered`, and `OnRecoveredPostBoot`
 
-A VM Attack config has two **action points**, using the same syntax as other standalone config-file systems (the three forms may be mixed):
+A VM Attack config has three **action points**, using the same syntax as other standalone config-file systems (the three forms may be mixed):
 
 | Action point | When it fires |
 |--------------|---------------|
 | `ActionOnGuideTextStart` | When the guide text starts displaying |
-| `OnRecovered` | **Once**, after the recovery flow completes |
+| `OnRecovered` | **Once**, after the recovery flow completes, before the reboot |
+| `OnRecoveredPostBoot` | **Once**, after the reboot completes and the success music starts |
 
 ### Three forms
 
@@ -225,6 +227,16 @@ When the **recovery flow completes** — all three recovery modes fire it: after
 
 - `Password`: fires during `Recover()` after the password is verified in the UI.
 - `FileDeletion` / `FileExists`: fires on the next launch's OSLoaded check, after the condition is satisfied and the Flag is cleared, before the reboot.
+
+### When `OnRecoveredPostBoot` fires
+
+After the **reboot has actually completed**: `CrashModule.completeReboot()` has finished, the black screen and recovery UI are gone, and `MusicManager.playSong()` has started the success music. Use it for actions that need the virtual system to be interactive or the success music to be playing.
+
+- Difference from `OnRecovered`: `OnRecovered` runs **before** the reboot (cleanup/preparation); `OnRecoveredPostBoot` runs **after** it (inside the restored system).
+- It is only scheduled when recovery succeeds; an ordinary reboot does not trigger it.
+- It fires once per recovery round; a later re-infection and recovery will fire it again.
+- If both points are configured: `OnRecovered` runs first, then `OnRecoveredPostBoot` after the reboot.
+- Actions that need persistence still need an explicit `<SaveGame />`; this point does not save automatically.
 
 ---
 

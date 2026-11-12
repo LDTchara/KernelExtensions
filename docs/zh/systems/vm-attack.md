@@ -58,7 +58,8 @@
 | `SystemLogPauseBetween` | `2.0` | 两个系统日志文件之间的停顿秒数。 |
 | `GuideText` | `null` | 引导文本行列表，每行自动添加 `> ` 前缀。 |
 | `ActionOnGuideTextStart` | `null` | 引导文本开始显示时执行的**动作点**（三种写法见下方「动作点」一节）。 |
-| `OnRecovered` | `null` | 恢复流程完成后**执行一次**的动作点（三种写法同上；`NONE` / 空 = 不执行）。触发时机见下方「`OnRecovered` 的触发时机」。 |
+| `OnRecovered` | `null` | 恢复流程完成后、**黑屏重启之前**执行一次的动作点（三种写法同上；`NONE` / 空 = 不执行）。触发时机见下方「`OnRecovered` 的触发时机」。 |
+| `OnRecoveredPostBoot` | `null` | 重启完成、成功音乐已开始播放后执行一次的动作点（三种写法同上；`NONE` / 空 = 不执行）。适合需要“进入系统后”执行的动作。 |
 | `EnableGuideReadFlag` | `false` | 若为 true，首次阅读完毕后，下次直接显示全文（跳过逐字动画）。 |
 | `ButtonText` | `"Proceed"` | 交互按钮上显示的文本。 |
 | `HelpFile` | `null` | 帮助文件路径，点击按钮时复制到存档目录并打开。 |
@@ -183,14 +184,15 @@
 
 ---
 
-## 动作点：`ActionOnGuideTextStart` 与 `OnRecovered`
+## 动作点：`ActionOnGuideTextStart`、`OnRecovered` 与 `OnRecoveredPostBoot`
 
-VM 攻击配置里有两个**动作点**，写法与其它独立配置文件系统相同 —— 三种形态可混用：
+VM 攻击配置里有三个**动作点**，写法与其它独立配置文件系统相同 —— 三种形态可混用：
 
 | 动作点 | 触发时机 |
 |--------|----------|
 | `ActionOnGuideTextStart` | 引导文本开始显示时 |
-| `OnRecovered` | 恢复流程完成后**执行一次** |
+| `OnRecovered` | 恢复流程完成后、黑屏重启之前**执行一次** |
+| `OnRecoveredPostBoot` | 重启完成、成功音乐开始播放后**执行一次** |
 
 ### 三种写法
 
@@ -220,6 +222,16 @@ VM 攻击配置里有两个**动作点**，写法与其它独立配置文件系�
 
 - `Password`：密码在界面内校验通过、`Recover()` 收尾时触发。
 - `FileDeletion` / `FileExists`：玩家删除/创建文件后重启，OSLoaded 检测条件满足、清理 Flag 后、重启前触发。
+
+### `OnRecoveredPostBoot` 的触发时机
+
+在**重启真正完成之后**触发：`CrashModule.completeReboot()` 已经执行完，`MusicManager.playSong()` 已让成功音乐开始播放，恢复界面和黑屏都已结束。它适合需要“进入虚拟系统后”执行的动作，例如依赖系统已可交互、成功音乐已起播的剧情或 UI 动作。
+
+- 与 `OnRecovered` 的区别：`OnRecovered` 是**重启前**（清理/准备状态）；`OnRecoveredPostBoot` 是**重启后**（进入系统后）。
+- 只有恢复成功时才会挂起并执行；普通重启不会触发。
+- 同一轮恢复只执行一次；重新感染并再次恢复会再次触发。
+- 如果两个动作点同时配置：先执行 `OnRecovered`，重启完成后执行 `OnRecoveredPostBoot`。
+- `OnRecoveredPostBoot` 里的动作如果需要持久化，仍需显式 `<SaveGame />`；该时点不会自动再存档。
 
 ---
 

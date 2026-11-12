@@ -188,7 +188,7 @@ attributes** and accept a path only. Using the wrong form **silently does nothin
 | PortHackV2 | root `OnStart` / `OnComplete`; per-protocol `OnStart` / `OnComplete` / `OnFail` | all three |
 | Custom Trial | root `OnStart` / `OnAnimationComplete` / `OnGlobalFail` / `OnComplete`; per-phase `OnPhaseStart` / `OnComplete` / `OnFail` | all three |
 | Phase Swift | a scene's `OnSwitch` | all three |
-| VM Attack | `ActionOnGuideTextStart` / `OnRecovered` | all three |
+| VM Attack | `ActionOnGuideTextStart` / `OnRecovered` / `OnRecoveredPostBoot` | all three |
 | Custom Ending | `AfterAction` | all three |
 | Clock | `OnComplete` (parent attribute) | **path only** |
 | Custom Heart (`CustomHeartDaemon` / `BreakHeart`) | `OnComplete` / `OnHeartbreak` (parent attribute) | **path only** |
