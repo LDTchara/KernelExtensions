@@ -133,6 +133,22 @@ namespace KernelExtensions.Patches
             }
         }
 
+        /// <summary>
+        /// 重启完成后的 postboot 动作点。
+        /// 此时 <c>CrashModule.completeReboot()</c> 已经执行完，成功音乐已由
+        /// <c>MusicManager.playSong()</c> 起播，适合执行需要“进入系统后”的动作。
+        /// 普通重启不会命中：只有恢复成功时 <see cref="VMInfectionManager.NotifyRecovered"/>
+        /// 才会挂起 OnRecoveredPostBoot。
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(CrashModule.completeReboot))]
+        public static void CompleteRebootPostfix(CrashModule __instance)
+        {
+            OS os = GetOS(__instance);
+            if (os != null)
+                VMInfectionManager.NotifyRecoveredPostBoot(os);
+        }
+
         public static string GetErrorMessage()
         {
             if (VMInfectionManager.CurrentConfig != null)

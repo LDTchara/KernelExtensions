@@ -21,6 +21,10 @@ namespace KernelExtensions.Managers
         /// <summary>OnRecovered 是否已触发（防止 Recover 被重复调用时重复执行）。</summary>
         private static bool _onRecoveredFired;
 
+        /// <summary>恢复成功后等待重启完成的 postboot 动作；由 completeReboot 后置消费。</summary>
+        private static ActionHook _pendingPostBootHook;
+        private static string _pendingPostBootSource;
+
         /// <summary>感染 flag 前缀。</summary>
         public const string InfectionFlagPrefix = "Kernel_VMInfected_";
 
@@ -173,6 +177,8 @@ namespace KernelExtensions.Managers
         public static void ActivateRecovery(OS os, VMAttackConfig config)
         {
             _onRecoveredFired = false;
+            _pendingPostBootHook = null;
+            _pendingPostBootSource = null;
             ShowRecovery = true;
             RecoveryModule = new FakeRecoveryModule(
                 new Microsoft.Xna.Framework.Rectangle(0, 0, os.fullscreen.Width, os.fullscreen.Height),
@@ -205,7 +211,33 @@ namespace KernelExtensions.Managers
         {
             if (_onRecoveredFired) return;
             _onRecoveredFired = true;
-            CurrentConfig?.OnRecovered?.Execute(os, "VM/" + ConfigId(CurrentConfig), "OnRecovered");
+
+            var config = CurrentConfig;
+
+            // 先挂起 postboot 动作，再执行 OnRecovered：即使 OnRecovered 内部动作失败，
+            // 重启后的 postboot 也不会因此丢失。
+            if (config?.OnRecoveredPostBoot != null)
+            {
+                _pendingPostBootHook = config.OnRecoveredPostBoot;
+                _pendingPostBootSource = "VM/" + ConfigId(config);
+            }
+
+            config?.OnRecovered?.Execute(os, "VM/" + ConfigId(config), "OnRecovered");
+        }
+
+        /// <summary>
+        /// 由 <c>CrashModule.completeReboot()</c> 后置调用：执行 OnRecoveredPostBoot。
+        /// 只消费恢复成功时挂起的动作，普通重启不会触发。
+        /// </summary>
+        public static void NotifyRecoveredPostBoot(OS os)
+        {
+            var hook = _pendingPostBootHook;
+            var source = _pendingPostBootSource;
+            _pendingPostBootHook = null;
+            _pendingPostBootSource = null;
+
+            if (hook == null) return;
+            hook.Execute(os, source, "OnRecoveredPostBoot");
         }
 
         /// <summary>

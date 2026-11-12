@@ -138,6 +138,14 @@
     -->
     <OnRecovered></OnRecovered>
 
+    <!--
+    重启完成、成功音乐开始播放后执行一次（适合需要“进入系统后”的动作）。
+    支持与 OnRecovered 相同的三种写法；留空 = 不执行。
+    Runs once after the reboot completes and the success music has started.
+    Same three forms as OnRecovered; leave empty to do nothing.
+    -->
+    <OnRecoveredPostBoot></OnRecoveredPostBoot>
+
 	<!-- ============================================================
     10. 引导文本 / Guide Text
     ============================================================ -->

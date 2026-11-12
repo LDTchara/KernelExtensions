@@ -63,6 +63,14 @@ namespace KernelExtensions.Configs
         /// </summary>
         [XmlElement("OnRecovered")] public ActionHook OnRecovered;
 
+        /// <summary>
+        /// 重启完成、成功音乐开始播放后执行的动作点。
+        /// 与 <see cref="OnRecovered"/> 不同：它等待当前 OS 的 crash/reboot 流程真正结束
+        /// （<c>CrashModule.completeReboot</c> 之后），适合需要“进入系统后”执行的动作。
+        /// 支持元素文本路径 / file 属性 / 内联 Actions、ConditionalActions。
+        /// </summary>
+        [XmlElement("OnRecoveredPostBoot")] public ActionHook OnRecoveredPostBoot;
+
         // 再进入恢复界面时若已读过一遍引导文本则是否跳过0.2秒输出
         [XmlElement("EnableGuideReadFlag")] public bool EnableGuideReadFlag = false;
 
