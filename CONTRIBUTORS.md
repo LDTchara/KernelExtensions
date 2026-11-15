@@ -1,6 +1,9 @@
 # KernelExtensions Contributors
 
 ## 版权持有人 / Copyright Holders
+- Team KernelExtensions
+
+## 核心维护者 / Core Maintainers
 - LDTchara
 - April_Crystal
 

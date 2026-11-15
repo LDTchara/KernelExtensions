@@ -12,9 +12,9 @@
     <PlatformTarget>x86</PlatformTarget>
     <AssemblyTitle>KernelExtensions</AssemblyTitle>
     <Description>A mod that adds some useful things for Hacknet via Pathfinder API.</Description>
-    <Company>LDTchara</Company>
+    <Company>Team KernelExtensions</Company>
     <Product>KernelExtensions</Product>
-    <Copyright>Copyright © 2026 LDTchara</Copyright>
+    <Copyright>Copyright © 2026 Team KernelExtensions</Copyright>
     <Version>0.7.0</Version>
     <FileVersion>0.7.0</FileVersion>
     <AssemblyVersion>0.7.0</AssemblyVersion>

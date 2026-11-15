@@ -102,4 +102,4 @@ a term of the license.
 The full licence text is **not** embedded in `KernelExtensions.dll` — MIT-0 does not require the
 binary to carry the notice, so nothing is bundled into it.
 
-Copyright (c) 2026 LDTchara and KernelExtensions Contributors — see `CONTRIBUTORS.md`.
+Copyright (c) 2026 Team KernelExtensions — see `CONTRIBUTORS.md`.
