@@ -71,6 +71,13 @@ Below is a short example. See [MyAttack_Example.xml](https://github.com/LDTchara
 !!! note "NONE convention"
     String config fields follow the `NONE` convention: `NONE` or an empty value = disabled / default fallback; omitting the element = use the default value.
 
+!!! note "FakeFiles generation limits"
+    `Size` applies only to **generated** files: at most **64 MB per file** and **200 MB in total**;
+    entries over the limit are **skipped with a Warn**, and negative sizes are treated as 0.
+    `Source` uses `File.Copy` and is **not subject to these limits** (the source already lives in the
+    extension folder and no large one-off allocation is made); if no valid source file resolves, it
+    falls back to generating `Size` bytes.
+
 ---
 
 ## Paths and Naming

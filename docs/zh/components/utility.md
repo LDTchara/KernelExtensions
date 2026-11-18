@@ -1,13 +1,13 @@
 # 工具类
 
-KernelExtensions 提供了一组静态工具类，供**模组作者**在代码中调用。
+KernelExtensions 提供了一组静态工具类，以及一个可复用的配置类型，供**模组作者**在代码中调用。
 
 !!! info "本页写给谁看"
     这些是 **C# 代码级 API**——面向的是写插件/模组的人。
     **纯扩展作者通常用不到本页**：扩展侧的一切都通过 XML 完成（动作、配置、文件布局），
     不需要写代码。只有当扩展作者自己做了私有插件时，才会同时扮起模组作者的角色。
 
-全部类位于命名空间 **`KernelExtensions.Utilities`**。
+除特别注明外，类位于命名空间 **`KernelExtensions.Utilities`**。
 
 ---
 
@@ -18,6 +18,13 @@ KernelExtensions 提供了一组静态工具类，供**模组作者**在代码�
 - 路径：`KernelExtensions.Utilities.ConfigValue`
 - 作用：配置值语义工具，实现 **NONE 约定** —— 字符串配置项写 `NONE`（大小写不敏感，兼容原版 `none`）
   或留空 = **显式禁用**；不写该属性 = 使用默认值。
+
+### ActionHook
+
+- 路径：`KernelExtensions.Configs.ActionHook`（注意：不在 `Utilities` 命名空间）
+- 作用：表示一个**动作点**，支持三种写法：`file` 属性、元素文本路径、内联 `<Actions>` / `<ConditionalActions>`（可混用）；
+  供写私有插件的模组作者在自己的配置类中复用。
+- 执行：`hook.Execute(os, source, point)`；`source` / `point` 仅用于日志定位。
 
 ### ActionHelper
 
@@ -211,6 +218,9 @@ seq.Update(dt, elapsed, totalSeconds);
   | `Info` | 扩展作者排错（动作级结果，一次触发一条） |
   | `Warn` | 可恢复 / 降级 / 需要注意 |
   | `Error` | 不该发生 / 功能失败 |
+
+  > `KELog.EnableErrorLogging`（`public static bool`，默认 `true`）是仅在代码内使用的总开关：
+  > 置 `false` 时 `KELog.Error` 静默，其余级别不受影响；它不接入 `KE-Config.xml`。
 
   > 面向玩家的终端反馈请用 `os.write`，而不是日志。
 

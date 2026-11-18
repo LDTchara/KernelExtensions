@@ -22,8 +22,8 @@ For detailed configuration options, attack/repair flows, and overlay usage, see 
 
 - Extends the vanilla Porthack heart node: customisable title, music, heartbreak timing, and input locking,
   plus action files run on heartbreak/completion.
-- Configurable fields: `Title`, `Music`, `FadeoutDelay`, `FadeoutDuration`, `AlignTime`, `HeartDuration`,
-  `FlashOutTime`, `OnComplete`, `OnHeartbreak`, `LockInput`.
+- Configurable fields (11): `Title`, `Music`, `FadeoutDelay`, `FadeoutDuration`, `AlignTime`, `HeartDuration`,
+  `FlashOutTime`, `OnComplete`, `OnHeartbreak`, `LockInput`, `AutoOnPorthack`.
 - The sequence can also be triggered explicitly with `<BreakHeart NodeID="heart" OnComplete="Actions/HeartBroken" />`;
   every Action parameter is an **override** — omit it to use the daemon's own config, write `NONE` or leave
   it empty to disable.

@@ -71,12 +71,12 @@ KernelExtensions 内置的**文本本地化**：扩展根目录下的 `KE-Locale
 KE 自身的 key 用**全大写下划线**、按系统分组。**扩展作者覆盖时只需照抄这些 key**，
 不需要理解命名规则：
 
-下表是**当前实际存在的全部前缀**（从内嵌语言表逐条统计）：
+下表是**当前实际存在的全部前缀**（共 **55 条**，从内嵌语言表逐条统计）：
 
 | 前缀 | 条数 | 用途 |
 |------|:----:|------|
-| `FLIGHT_*` | 18 | 飞机 Daemon 全部界面文案（`FLIGHT_ALTITUDE_*` 高度计 9 条、`FLIGHT_PILOT_*` 警报、`FLIGHT_DISCONNECT`、`FLIGHT_IN_PROGRESS` 等） |
-| `PORT_HACK_V2_*` | 11 | 端口破解器 PortHackV2（前置行、倒计时、`LOCKED_TITLE` 等） |
+| `FLIGHT_*` | 19 | 飞机 Daemon 全部界面文案（`FLIGHT_ALTITUDE_*` 高度计 9 条、`FLIGHT_PILOT_*` 警报、`FLIGHT_DISCONNECT`、`FLIGHT_IN_PROGRESS` 等） |
+| `PORT_HACK_V2_*` | 14 | 端口破解器 PortHackV2（前置行、倒计时、`LOCKED_TITLE`、`STATUS_CRACKING/FAILED/SUCCESS` 等） |
 | `PROXY_KILLER_*` | 7 | 代理瘫痪加速器 ProxyKiller |
 | `CUSTOM_TRIAL_*` | 6 | 自定义试炼 |
 | `FAKE_RECOVERY_*` | 5 | VM 攻击恢复界面（按钮、密码提示等） |

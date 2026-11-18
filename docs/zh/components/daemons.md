@@ -19,7 +19,7 @@ KernelExtensions 提供 **2 个**自定义守护进程 —— 这就是全部：
 ## CustomHeartDaemon
 
 - 自定义心脏 Daemon（`CustomHeartDaemon`）扩展原版心脏节点的行为：可自定义标题、音乐、心碎时序与输入锁定，并在心碎/完成时执行指定动作文件。
-- 可配置项：`Title`、`Music`、`FadeoutDelay`、`FadeoutDuration`、`AlignTime`、`HeartDuration`、`FlashOutTime`、`OnComplete`、`OnHeartbreak`、`LockInput`。
+- 可配置项（11 项）：`Title`、`Music`、`FadeoutDelay`、`FadeoutDuration`、`AlignTime`、`HeartDuration`、`FlashOutTime`、`OnComplete`、`OnHeartbreak`、`LockInput`、`AutoOnPorthack`。
 - 也可由 `<BreakHeart NodeID="heart" OnComplete="Actions/HeartBroken" />` 显式触发心碎序列；
   Action 参数均为**覆盖项**——不写 = 用 daemon 自身配置，写 `NONE` 或留空 = 显式禁用。
 

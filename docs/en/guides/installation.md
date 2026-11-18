@@ -17,6 +17,10 @@
    - `Trial/` – for trial configuration XMLs  
    - `VMATK/` – for VM attack configuration XMLs  
    - `PhaseSwift/` – for Phase Swift configuration XMLs  
+   - `PortHackV2/` – for PortHackV2 cracker configuration XMLs
+   - `ProxyKiller/` – for ProxyKiller accelerator configuration XMLs
+   - `Clocks/` – for Clock timer XMLs (a convention only; Clocks may live anywhere in the extension)
+   - `CustomColor/` – for custom dynamic colour presets (scanned once and cached when the extension loads)
    - `Actions/` – for action files  
    - `KE-Config.xml` – KE's own global switches; **created automatically** if missing, no manual setup needed (see [Configuration Files](./../components/configuration.md))
 4. Launch Hacknet and load your extension. If you see a green `[KernelExtensions] All is well ** SUCCESS!!` in the console, the installation was successful.

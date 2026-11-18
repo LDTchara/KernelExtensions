@@ -17,6 +17,10 @@
    - `Trial/`：存放试炼配置 XML  
    - `VMATK/`：存放虚拟机攻击配置 XML  
    - `PhaseSwift/`：存放相位穿梭配置 XML  
+   - `PortHackV2/`：存放 PortHackV2 破解配置 XML
+   - `ProxyKiller/`：存放 ProxyKiller 加速器配置 XML
+   - `Clocks/`：存放 Clock 定时器 XML（只是惯例，Clock 也可以放在扩展内任意位置）
+   - `CustomColor/`：存放自定义动态色预设 XML（扩展加载时扫描一次并缓存）
    - `Actions/`：存放动作文件  
    - `KE-Config.xml`：KE 自身的全局开关，**不存在时自动创建**，无需手动准备（见[配置文件](./../components/configuration.md)）
 4. 启动 Hacknet 并加载你的扩展。如果控制台出现绿色的 `[KernelExtensions] All is well ** SUCCESS!!` 即表示安装成功。

@@ -75,10 +75,13 @@ default rather than showing up blank.
 KE's keys use **ALL_CAPS_WITH_UNDERSCORES**, grouped by system. When overriding, **just copy these keys** —
 you don't need to understand the convention:
 
+The table below lists **all prefixes that currently exist** (55 terms in total, counted entry by entry from
+the embedded locale table):
+
 | Prefix | Count | Purpose |
 |--------|:-----:|---------|
-| `FLIGHT_*` | 18 | All aircraft-daemon UI text (`FLIGHT_ALTITUDE_*` altimeter ×9, `FLIGHT_PILOT_*` alerts, `FLIGHT_DISCONNECT`, `FLIGHT_IN_PROGRESS`, …) |
-| `PORT_HACK_V2_*` | 11 | The PortHackV2 cracker (prerequisite rows, countdown, `LOCKED_TITLE`, …) |
+| `FLIGHT_*` | 19 | All aircraft-daemon UI text (`FLIGHT_ALTITUDE_*` altimeter ×9, `FLIGHT_PILOT_*` alerts, `FLIGHT_DISCONNECT`, `FLIGHT_IN_PROGRESS`, …) |
+| `PORT_HACK_V2_*` | 14 | The PortHackV2 cracker (prerequisite rows, countdown, `LOCKED_TITLE`, `STATUS_CRACKING/FAILED/SUCCESS`, …) |
 | `PROXY_KILLER_*` | 7 | ProxyKiller |
 | `CUSTOM_TRIAL_*` | 6 | Custom Trial |
 | `FAKE_RECOVERY_*` | 5 | VM-attack recovery screen (buttons, password prompts, …) |

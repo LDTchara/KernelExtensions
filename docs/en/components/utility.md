@@ -1,6 +1,7 @@
 # Utility Classes
 
-KernelExtensions ships a set of static utility classes for **mod authors** to call from code.
+KernelExtensions ships a set of static utility classes plus one reusable configuration type, for
+**mod authors** to call from code.
 
 !!! info "Who this page is for"
     These are **C#-level APIs** — they are for people writing plugins/mods.
@@ -8,7 +9,7 @@ KernelExtensions ships a set of static utility classes for **mod authors** to ca
     through XML (actions, configuration, file layout) with no code. Only an extension author who also
     writes their own private plugin takes on the mod-author role as well.
 
-Every class lives in the namespace **`KernelExtensions.Utilities`**.
+Except where noted, every class lives in the namespace **`KernelExtensions.Utilities`**.
 
 ---
 
@@ -20,6 +21,14 @@ Every class lives in the namespace **`KernelExtensions.Utilities`**.
 - Purpose: value-semantics helper implementing the **NONE convention** — a string option set to `NONE`
   (case-insensitive, vanilla `none` accepted) or left blank means **explicitly disabled**; omitting the
   attribute entirely means "use the default".
+
+### ActionHook
+
+- Path: `KernelExtensions.Configs.ActionHook` (note: it is **not** in the `Utilities` namespace)
+- Purpose: represents an **action point** with three forms — the `file` attribute, an element text
+  path, and inline `<Actions>` / `<ConditionalActions>` (they can be combined) — so mod authors writing
+  private plugins can reuse it in their own configuration classes.
+- Execute: `hook.Execute(os, source, point)`; `source` / `point` are used only for logging context.
 
 ### ActionHelper
 
@@ -227,6 +236,10 @@ culling) / `SolidWire` (solid plus wireframe, with the lines also culled).
   | `Info` | Extension authors diagnosing behaviour (one line per action-level result) |
   | `Warn` | Recoverable / degraded / worth noting |
   | `Error` | Should not happen / feature failed |
+
+  > `KELog.EnableErrorLogging` (`public static bool`, defaults to `true`) is a code-only master switch:
+  > setting it to `false` silences `KELog.Error` while leaving the other levels untouched. It is not
+  > exposed through `KE-Config.xml`.
 
   > For player-facing terminal feedback use `os.write`, not the logger.
 
