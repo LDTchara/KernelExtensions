@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Hacknet;
 using Hacknet.Effects;
 using KernelExtensions.Configs;

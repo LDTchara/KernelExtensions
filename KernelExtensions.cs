@@ -7,11 +7,13 @@ using KernelExtensions.Actions;
 using KernelExtensions.Actions.Aircraft;
 using KernelExtensions.Actions.Aircraft.Debug;
 using KernelExtensions.Actions.Clock;
+using KernelExtensions.Actions.CustomEnding;
+using KernelExtensions.Actions.CustomHeart;
 using KernelExtensions.Actions.CustomTrial;
-using KernelExtensions.Actions.Ending;
 using KernelExtensions.Actions.Misc;
-using KernelExtensions.Actions.Node;
+using KernelExtensions.Actions.NodeIcon;
 using KernelExtensions.Actions.PhaseSwift;
+using KernelExtensions.Actions.PortHackV2;
 using KernelExtensions.Actions.VMAttack;
 using KernelExtensions.Compat.Stuxnet;
 using KernelExtensions.Configs;
@@ -209,22 +211,22 @@ namespace KernelExtensions
             // 临时主题色：只改当前 OS 的颜色字段，不切换主题（切主题后自然撤销）
             RegisterActionWithFallback<ChangeThemeColorAction>("ChangeThemeColor");
 
-            // 2.10 端口 / PortHackV2
+            // 2.10 通用端口操作
             // 端口增删（原 PortControl 拆分：一个 Action 干一件事）
             RegisterActionWithFallback<PortAddAction>("PortAdd");
             RegisterActionWithFallback<PortRemoveAction>("PortRemove");
-
-            // 目标机原子动作：一个动作干一件事（端口 / 防火墙 / 代理分别独立），
-            // 供 PortHackV2 的动作点或任何其它系统复用。
             RegisterActionWithFallback<PortOpenAction>("PortOpen");
             RegisterActionWithFallback<PortCloseAction>("PortClose");
-            RegisterActionWithFallback<PortFirewallAddAction>("PortFirewallAdd");
-            RegisterActionWithFallback<PortFirewallSolveAction>("PortFirewallSolve");
-            RegisterActionWithFallback<PortFirewallRerollAction>("PortFirewallReroll");
-            RegisterActionWithFallback<PortFirewallConfigureAction>("PortFirewallConfigure");
-            RegisterActionWithFallback<PortProxyAddAction>("PortProxyAdd");
-            RegisterActionWithFallback<PortProxySolveAction>("PortProxySolve");
-            RegisterActionWithFallback<PortProxyResetAction>("PortProxyReset");
+
+            // 2.11 PortHackV2 目标机原子动作：一个动作干一件事（防火墙 / 代理分别独立），
+            // 供 PortHackV2 的动作点或任何其它系统复用。
+            RegisterActionWithFallback<FirewallAddAction>("FirewallAdd");
+            RegisterActionWithFallback<FirewallSolveAction>("FirewallSolve");
+            RegisterActionWithFallback<FirewallRerollAction>("FirewallReroll");
+            RegisterActionWithFallback<FirewallConfigureAction>("FirewallConfigure");
+            RegisterActionWithFallback<ProxyAddAction>("ProxyAdd");
+            RegisterActionWithFallback<ProxySolveAction>("ProxySolve");
+            RegisterActionWithFallback<ProxyResetAction>("ProxyReset");
 
             // ============================================================
             //  3. 事件处理器

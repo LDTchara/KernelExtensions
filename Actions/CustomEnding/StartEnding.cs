@@ -1,11 +1,11 @@
-using Hacknet;
+﻿using Hacknet;
 using KernelExtensions.Configs;
 using KernelExtensions.Modules;
 using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions.Ending
+namespace KernelExtensions.Actions.CustomEnding
 {
     /// <summary>
     /// 触发自定义结局序列（EndingConfig 文件模式）。

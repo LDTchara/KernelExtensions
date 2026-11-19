@@ -1,10 +1,10 @@
-using Hacknet;
+﻿using Hacknet;
 using KernelExtensions.Utilities;
 using Pathfinder.Action;
 using Pathfinder.Util;
 using CustomHeartDaemon = KernelExtensions.Daemons.CustomHeartDaemon;
 
-namespace KernelExtensions.Actions.Misc
+namespace KernelExtensions.Actions.CustomHeart
 {
     /// <summary>
     /// 显式触发目标节点的 CustomHeartDaemon 心碎序列（剧情触发入口）。

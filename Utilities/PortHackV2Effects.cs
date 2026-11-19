@@ -121,7 +121,7 @@ public class PortHackV2Effects
         // 判它会让这个分支**恒不可达**（实测确认：写 Solution="@random" Length="12"
         // 时防火墙的解真的变成字面量 "@random"，Length 也没生效）。
         // 「随机解 + 按 Length 截断」这套语义一直是设计意图（示例文件、Action 的 XML 注释、
-        // PortFirewallConfigure 的默认值三处都这么写），只是守卫条件判错了对象。
+        // FirewallConfigure 的默认值三处都这么写），只是守卫条件判错了对象。
         if ((solve ?? "").ToLowerInvariant() == "@random")
         {
             // ⚠️ 顺序很重要：generateRandomSolution() 生成的是**恰好 solutionLength 个**字符

@@ -2,13 +2,13 @@ using Hacknet;
 using KernelExtensions.Utilities;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions.Misc
+namespace KernelExtensions.Actions.PortHackV2
 {
     /// <summary>
     /// **调整现有防火墙的配置**：解的长度、额外延迟、解的内容，可选重置已解状态。
     ///
     /// XML 用法：
-    ///   &lt;PortFirewallConfigureAction Length="20" AdditionalDelay="0.2" Solution="@random" Reset="true" /&gt;
+    ///   &lt;FirewallConfigure Length="20" AdditionalDelay="0.2" Solution="@random" Reset="true" /&gt;
     ///
     /// Length          ：解的长度；留空 = 保持原值。
     /// AdditionalDelay ：解出后额外延迟（秒）；留空 = 保持原值。
@@ -18,7 +18,7 @@ namespace KernelExtensions.Actions.Misc
     ///
     /// 目标机**没有**防火墙时按"添加一份"处理（对齐底层实现的既有语义）。
     /// </summary>
-    public class PortFirewallConfigureAction : KEAction
+    public class FirewallConfigureAction : KEAction
     {
         [XMLStorage] public string Length;
         [XMLStorage] public string AdditionalDelay;
@@ -28,25 +28,25 @@ namespace KernelExtensions.Actions.Misc
 
         public override void Trigger(OS os)
         {
-            if (!TargetActionHelper.TryResolve(os, TargetComp, nameof(PortFirewallConfigureAction), out Computer target)) return;
+            if (!TargetActionHelper.TryResolve(os, TargetComp, nameof(FirewallConfigureAction), out Computer target)) return;
 
             // Length 留空 = 保持原值：用现有防火墙的解长度打底
             float fallbackLen = target.firewall?.solutionLength ?? 0;
             float len = ConfigValue.ParseInRange(Length, fallbackLen, 0f, float.MaxValue, out bool lenOk);
             if (!lenOk)
-                KELog.WarnT($"[{nameof(PortFirewallConfigureAction)}] invalid <Length> '{Length}'; keeping the current length.");
+                KELog.WarnT($"[{nameof(FirewallConfigureAction)}] invalid <Length> '{Length}'; keeping the current length.");
 
             float fallbackDelay = target.firewall?.additionalDelay ?? 0f;
             float delay = ConfigValue.ParseInRange(AdditionalDelay, fallbackDelay, 0f, float.MaxValue, out bool dOk);
             if (!dOk)
-                KELog.WarnT($"[{nameof(PortFirewallConfigureAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; keeping the current delay.");
+                KELog.WarnT($"[{nameof(FirewallConfigureAction)}] invalid <AdditionalDelay> '{AdditionalDelay}'; keeping the current delay.");
 
             // Solution 留空 = 保持原值
             string solution = ConfigValue.IsNone(Solution) ? (target.firewall?.solution ?? "@random") : Solution.Trim();
             bool reset = TargetActionHelper.ParseBool(Reset, false);
 
             PortHackV2Effects.SetFirewallConfig(os, target.idName, (int)len, delay, solution, reset);
-            TargetActionHelper.LogDone(nameof(PortFirewallConfigureAction),
+            TargetActionHelper.LogDone(nameof(FirewallConfigureAction),
                 $"firewall configured (length {(int)len}, reset={reset})", target);
         }
     }

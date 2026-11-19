@@ -1,4 +1,4 @@
-using Hacknet;
+﻿using Hacknet;
 using KernelExtensions.Patches;
 using Pathfinder.Action;
 using Pathfinder.Util;

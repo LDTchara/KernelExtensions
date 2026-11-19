@@ -1,8 +1,7 @@
 using Hacknet;
-using KernelExtensions.Utilities;
 using Pathfinder.Util;
 
-namespace KernelExtensions.Actions.Misc
+namespace KernelExtensions.Utilities
 {
     /// <summary>
     /// 目标机原子动作共用的解析与日志。

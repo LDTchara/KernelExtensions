@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Hacknet;
 using Microsoft.Xna.Framework.Graphics;
 using Pathfinder.Action;
@@ -7,7 +7,7 @@ using KernelExtensions.Storage;
 using KernelExtensions.Patches;
 using KernelExtensions.Utilities;
 
-namespace KernelExtensions.Actions.Node
+namespace KernelExtensions.Actions.NodeIcon
 {
     public class SetNodeIconAction : KEAction
     {

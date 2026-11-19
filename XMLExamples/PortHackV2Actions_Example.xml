@@ -36,46 +36,46 @@
   <PortClose Ports="smtp" TargetComp="targetNode" />
 
   <!-- ── 防火墙 / Firewall ──
-       PortFirewallAdd       ：放一份新防火墙（写完 solved=false）
+       FirewallAdd       ：放一份新防火墙（写完 solved=false）
                                Place a new firewall (leaves solved = false).
-       PortFirewallSolve     ：解开防火墙
+       FirewallSolve     ：解开防火墙
                                Solve the firewall.
-       PortFirewallReroll    ：换掉解法（防火墙还在，解法变了）
+       FirewallReroll    ：换掉解法（防火墙还在，解法变了）
                                Reroll the solution (the firewall stays, its answer changes).
-       PortFirewallConfigure ：调整现有防火墙的参数
+       FirewallConfigure ：调整现有防火墙的参数
                                Adjust the parameters of the existing firewall.
      -->
-  <PortFirewallAdd Solution="@random" Length="12" AdditionalDelay="0.1" />
-  <PortFirewallSolve />
-  <PortFirewallReroll Length="12" AdditionalDelay="0.3" Reset="true" />
-  <PortFirewallConfigure Length="20" AdditionalDelay="0.2" Solution="@random" Reset="true" />
+  <FirewallAdd Solution="@random" Length="12" AdditionalDelay="0.1" />
+  <FirewallSolve />
+  <FirewallReroll Length="12" AdditionalDelay="0.3" Reset="true" />
+  <FirewallConfigure Length="20" AdditionalDelay="0.2" Solution="@random" Reset="true" />
 
   <!-- ── 代理 / Proxy ──
-       PortProxyAdd   ：给目标机加代理（proxyActive = true）
+       ProxyAdd   ：给目标机加代理（proxyActive = true）
                        Add a proxy to the target (proxyActive = true).
-       PortProxySolve ：解除代理（proxyActive = false，正在跑的破解进程随之结束）
+       ProxySolve ：解除代理（proxyActive = false，正在跑的破解进程随之结束）
                        Solve the proxy (proxyActive = false; a running crack process ends too).
-       PortProxyReset ：过载进度归零、代理仍生效（"对手把进度打回去了"）
+       ProxyReset ：过载进度归零、代理仍生效（"对手把进度打回去了"）
                        Reset overload progress while the proxy stays active (the opponent
                        pushed your progress back).
      -->
-  <PortProxyAdd Time="10" />
-  <PortProxySolve />
-  <PortProxyReset />
+  <ProxyAdd Time="10" />
+  <ProxySolve />
+  <ProxyReset />
 
   <!-- ── 延迟执行 / Delayed execution ──
        Delay 是基类属性，任何动作都能用。
        Delay comes from the base class and works on every action.
        例：破解成功 12 秒后，对手反应过来补一道防火墙。
        Example: 12 seconds after the crack succeeds, the target reacts and adds a firewall. -->
-  <PortFirewallAdd Solution="@random" Length="16" Delay="12" />
+  <FirewallAdd Solution="@random" Length="16" Delay="12" />
 
   <!-- ── 一个完整的"反制"序列 / A full counter-play sequence ──
        目标机在玩家破解成功后：关掉 ftp、补一道随机防火墙、把代理进度清零。
        After the player cracks in: close ftp, add a random firewall, reset the proxy progress. -->
   <PortClose Ports="ftp" />
-  <PortFirewallAdd Solution="@random" Length="16" AdditionalDelay="0.3" />
-  <PortProxyReset />
+  <FirewallAdd Solution="@random" Length="16" AdditionalDelay="0.3" />
+  <ProxyReset />
 
 </Actions>
 
