@@ -2,7 +2,7 @@
 
 KernelExtensions 共注册 **47 个**自定义 Action，可在任何动作文件中调用。本页分三部分：
 
-- **一、与各系统相关的动作** —— 只给速查与去向，完整参数在各自的系统页
+- **一、系统专属动作** —— 只给速查与去向，完整参数在各自的系统页
 - **二、通用动作（系统未涵盖）** —— 完整参数与示例
 - **三、目标机原子动作** —— 端口 / 防火墙 / 代理的原子操作，完整参数与示例
 
@@ -14,7 +14,7 @@ KernelExtensions 共注册 **47 个**自定义 Action，可在任何动作文件
 
 ---
 
-## 一、与各系统相关的动作
+## 一、系统专属动作
 
 | 系统 | 动作 | 用途 | 详情 |
 |------|------|------|------|
@@ -22,26 +22,11 @@ KernelExtensions 共注册 **47 个**自定义 Action，可在任何动作文件
 | 相位穿梭 | `PhaseSwiftInit` · `PhaseSwiftScene` · `PhaseSwiftMusic` · `PhaseSwiftStop` · `PhaseSwiftFadeOut` · `BlockNode` · `UnblockNode` | 启停、切场景、切音乐组、运行时黑名单节点 | [相位穿梭系统](./../systems/phase-swift.md) |
 | VM 攻击 | `LaunchVMAttack` | 启动指定 VM 攻击 | [VM攻击系统](./../systems/vm-attack.md) |
 | 飞机 Daemon | `AttackAircraft` · `UploadAircraftSysFile` · `ShowAircraftOverlay` · `HideAircraftOverlay` | 攻击 · 修复 · 高度计覆盖层 | [飞机Daemon系统](./../systems/aircraft.md) |
-| 节点连接控制 | `LinkControlReset` · `LinkControlAdd` · `LinkControlRemove` | 运行时增删链接、恢复组织基线 | 见下方小节 |
 | 定时器 | `ClockStart` · `ClockStop` | 启停自定义定时器 | [自定义定时器系统](./../systems/clock.md) |
 | 节点图标 | `SetNodeIcon` | 设置节点图标 | [自定义节点图标系统](./../systems/node-icon.md) |
-| 自定义结局 | `StartEnding` · `BreakHeart` | 触发结局 / 心碎序列 | [自定义结局系统](./../systems/custom-ending.md) |
-| 目标机操作 | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure` · `ProxyAdd` · `ProxySolve` · `ProxyReset` · `ListPorts` | 目标机端口 / 防火墙 / 代理的原子操作 · 端口协议名诊断 | [PortHackV2 破解程序](./../systems/port-hack-v2.md) · 见第三部分 |
-
-### 节点连接控制（属性速查）
-
-三者共享 **org 基线**：**开局时**对电脑现有链接做一次快照（内容 XML 的 `<dlink>` 即由此进入基线），
-随存档落盘为 `<OrgLinks>`；`Add` / `Remove` 只改运行时 links，可用 `Reset` 还原。
-
-| 动作 | 示例 |
-|------|------|
-| `LinkControlReset` | `<LinkControlReset SourceComp="playerComp" />` |
-| `LinkControlAdd` | `<LinkControlAdd SourceComp="playerComp" TargetComp="jmail" />` |
-| `LinkControlRemove` | `<LinkControlRemove SourceComp="playerComp" TargetComp="jmail" />` |
-
-- 属性名**大小写不敏感**（`KEAction` 基类统一处理；仍推荐按 PascalCase 书写）
-- 节点不存在、缺 `TargetComp` 等情况会输出错误日志并跳过，不会崩溃
-- `<OrgLinks>` 只出现在存档里；内容侧声明初始链接请用原版 `<dlink>`
+| 自定义结局 | `StartEnding` | 触发结局 | [自定义结局系统](./../systems/custom-ending.md) |
+| 自定义心脏 | `BreakHeart` | 触发心碎序列 | [自定义心脏 Daemon](./../systems/custom-heart.md) |
+| PortHackV2 | `FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure` · `ProxyAdd` · `ProxySolve` · `ProxyReset` | 目标机防火墙 / 代理的原子操作 | [PortHackV2 破解程序](./../systems/port-hack-v2.md) |
 
 ---
 
@@ -61,6 +46,23 @@ KernelExtensions 共注册 **47 个**自定义 Action，可在任何动作文件
   `ExpandAmount`（边框向外扩散的最大像素，默认 `200`）
 - `BorderDuration` / `FadeInDuration` **负数 / `NaN` / `Infinity` / 不写 = 用 `Duration`**；
   两者短于 `Duration` 时，动画结束后边框消失、全屏遮罩仍保留到 `Duration` 结束
+
+### 节点连接控制（属性速查）
+
+> LinkControl 没有独立系统页，因此不单独建分类，属于通用动作。
+
+三者共享 **org 基线**：**开局时**对电脑现有链接做一次快照（内容 XML 的 `<dlink>` 即由此进入基线），
+随存档落盘为 `<OrgLinks>`；`Add` / `Remove` 只改运行时 links，可用 `Reset` 还原。
+
+| 动作 | 示例 |
+|------|------|
+| `LinkControlReset` | `<LinkControlReset SourceComp="playerComp" />` |
+| `LinkControlAdd` | `<LinkControlAdd SourceComp="playerComp" TargetComp="jmail" />` |
+| `LinkControlRemove` | `<LinkControlRemove SourceComp="playerComp" TargetComp="jmail" />` |
+
+- 属性名**大小写不敏感**（`KEAction` 基类统一处理；仍推荐按 PascalCase 书写）
+- 节点不存在、缺 `TargetComp` 等情况会输出错误日志并跳过，不会崩溃
+- `<OrgLinks>` 只出现在存档里；内容侧声明初始链接请用原版 `<dlink>`
 
 ### 画面与音效
 
@@ -648,3 +650,4 @@ Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件�
 - [自定义节点图标系统](./../systems/node-icon.md)
 - [自定义结局系统（StartEnding）](./../systems/custom-ending.md)
 - [PortHackV2 破解程序](./../systems/port-hack-v2.md) – 目标机破解流程与其动作点
+- [ProxyKiller 加速器](./../systems/proxy-killer.md) – 常驻代理加速器

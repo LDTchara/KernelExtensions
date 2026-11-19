@@ -19,7 +19,7 @@ KernelExtensions 目前提供以下可配置系统，多数通过 Flag 或自定
 - **标题横幅与全屏警告（ShowTitle / ScreenBleedWCC）**：剧情提示与系统告警的全屏表现。
 - **PortHackV2 破解程序（`#PORTHACKV2#`）**：可配置的端口破解流程（多协议并行、前置条件、动作点）。
 - **自定义心脏 Daemon（CustomHeartDaemon）**：复刻原版心脏节点序列（立方体 → 心形 → 白场），标题 / 音乐 / 时序 / 回调可配。
-- **代理加速器（ProxyKiller，`#PROXYKILLER#`）**：加速所有正在过载的 Shell，让代理更快瘫痪。
+- **[代理加速器（ProxyKiller，`#PROXYKILLER#`）](./../systems/proxy-killer.md)**：加速所有正在过载的 Shell，让代理更快瘫痪。
 
 RAM 显示 / 临时主题色 / 目标机原子动作 / 自替换符等**组件类入口**见[组件种类索引](./../index.md)与[自定义 Action](./../components/actions.md)。
 

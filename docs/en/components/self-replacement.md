@@ -21,7 +21,7 @@ contents** and they are replaced with the actual program data when the save is g
 | `EffectsPlayer` | `#EFFECTS#` | Effect playback (the basis for wallpaper / video) |
 | `WPTEST` | `#WPTEST#` | Dynamic wallpaper (test program) |
 | `PortHackV2` | `#PORTHACKV2#` | Port cracker |
-| `ProxyKiller` | `#PROXYKILLER#` | Resident proxy accelerator |
+| `ProxyKiller` | `#PROXYKILLER#` | Resident proxy accelerator ([system page](./../systems/proxy-killer.md)) |
 
 Typical use (put the program into the player node's `bin/`):
 

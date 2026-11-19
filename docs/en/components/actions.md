@@ -3,7 +3,7 @@
 KernelExtensions registers **47** custom Actions that can be invoked in any action file. This page has
 three parts:
 
-- **1. System-related Actions** — a quick reference with pointers; full parameters live on each system page
+- **1. System-Specific Actions** — a quick reference with pointers; full parameters live on each system page
 - **2. General Actions (not covered by a system)** — full parameters and examples
 - **3. Target-computer atomic Actions** — ports / firewall / proxy primitives, full parameters and examples
 
@@ -15,7 +15,7 @@ All paths are relative to the extension root.
 
 ---
 
-## 1. System-Related Actions
+## 1. System-Specific Actions
 
 | System | Actions | Purpose | Details |
 |--------|---------|---------|---------|
@@ -23,27 +23,11 @@ All paths are relative to the extension root.
 | Phase Swift | `PhaseSwiftInit` · `PhaseSwiftScene` · `PhaseSwiftMusic` · `PhaseSwiftStop` · `PhaseSwiftFadeOut` · `BlockNode` · `UnblockNode` | Start/stop, scene switching, music-phase switching, runtime blocklist nodes | [Phase Swift System](./../systems/phase-swift.md) |
 | VM Attack | `LaunchVMAttack` | Trigger a VM attack | [VM Attack System](./../systems/vm-attack.md) |
 | Aircraft Daemon | `AttackAircraft` · `UploadAircraftSysFile` · `ShowAircraftOverlay` · `HideAircraftOverlay` | Attack · repair · altimeter overlay | [Aircraft Daemon System](./../systems/aircraft.md) |
-| Node Link Control | `LinkControlReset` · `LinkControlAdd` · `LinkControlRemove` | Runtime link add/remove, restore org baseline | see the section below |
 | Timer | `ClockStart` · `ClockStop` | Start/stop a custom timer | [Custom Timer System (Clock)](./../systems/clock.md) |
 | Node Icons | `SetNodeIcon` | Set a node's icon | [Custom Node Icon System](./../systems/node-icon.md) |
-| Custom Ending | `StartEnding` · `BreakHeart` | Trigger an ending / the heartbreak sequence | [Custom Ending System](./../systems/custom-ending.md) |
-| Target-computer ops | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure` · `ProxyAdd` · `ProxySolve` · `ProxyReset` · `ListPorts` | Target-side port / firewall / proxy primitives · protocol-name lookup | [PortHackV2 Cracker](./../systems/port-hack-v2.md) · see part 3 |
-
-### Node Link Control (attribute quick reference)
-
-All three share the **org baseline**: a snapshot of the computer's links taken **at game start**
-(content XML `<dlink>` enters the baseline this way), persisted to the save as `<OrgLinks>`.
-`Add` / `Remove` only change runtime links and can be undone with `Reset`.
-
-| Action | Example |
-|--------|---------|
-| `LinkControlReset` | `<LinkControlReset SourceComp="playerComp" />` |
-| `LinkControlAdd` | `<LinkControlAdd SourceComp="playerComp" TargetComp="jmail" />` |
-| `LinkControlRemove` | `<LinkControlRemove SourceComp="playerComp" TargetComp="jmail" />` |
-
-- Attribute names are **case-insensitive** (handled by the `KEAction` base class; PascalCase is still recommended)
-- Missing nodes or a missing `TargetComp` are logged as errors and skipped — never a crash
-- `<OrgLinks>` only ever appears in saves; to declare initial links in content XML, use vanilla `<dlink>`
+| Custom Ending | `StartEnding` | Trigger an ending | [Custom Ending System](./../systems/custom-ending.md) |
+| Custom Heart | `BreakHeart` | Trigger the heartbreak sequence | [Custom Heart Daemon](./../systems/custom-heart.md) |
+| PortHackV2 | `FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure` · `ProxyAdd` · `ProxySolve` · `ProxyReset` | Target-side firewall / proxy primitives | [PortHackV2 Cracker](./../systems/port-hack-v2.md) |
 
 ---
 
@@ -64,6 +48,24 @@ All three share the **org baseline**: a snapshot of the computer's links taken *
   opacity `0~1`, default `0.8`) and `ExpandAmount` (maximum outward expansion in pixels, default `200`)
 - `BorderDuration` / `FadeInDuration` **negative / `NaN` / `Infinity` / omitted = use `Duration`**; when either
   is shorter than `Duration` the border disappears after its animation while the shade stays until `Duration` ends
+
+### Node Link Control (attribute quick reference)
+
+> LinkControl has no standalone system page, so it is classified as a general Action.
+
+All three share the **org baseline**: a snapshot of the computer's links taken **at game start**
+(content XML `<dlink>` enters the baseline this way), persisted to the save as `<OrgLinks>`.
+`Add` / `Remove` only change runtime links and can be undone with `Reset`.
+
+| Action | Example |
+|--------|---------|
+| `LinkControlReset` | `<LinkControlReset SourceComp="playerComp" />` |
+| `LinkControlAdd` | `<LinkControlAdd SourceComp="playerComp" TargetComp="jmail" />` |
+| `LinkControlRemove` | `<LinkControlRemove SourceComp="playerComp" TargetComp="jmail" />` |
+
+- Attribute names are **case-insensitive** (handled by the `KEAction` base class; PascalCase is still recommended)
+- Missing nodes or a missing `TargetComp` are logged as errors and skipped — never a crash
+- `<OrgLinks>` only ever appears in saves; to declare initial links in content XML, use vanilla `<dlink>`
 
 ### Visuals and Sound
 
@@ -686,4 +688,6 @@ If `Delay` is 0 or negative, the action runs immediately.
 - [Custom Timer System (Clock)](./../systems/clock.md)
 - [Custom Node Icon System](./../systems/node-icon.md)
 - [Custom Ending System (StartEnding)](./../systems/custom-ending.md)
+- [PortHackV2 Cracker](./../systems/port-hack-v2.md) – the target-computer crack flow and its action points
+- [ProxyKiller Accelerator](./../systems/proxy-killer.md) – the resident proxy accelerator
 - [PortHackV2 Cracker](./../systems/port-hack-v2.md) – the target-cracking flow and its action hooks

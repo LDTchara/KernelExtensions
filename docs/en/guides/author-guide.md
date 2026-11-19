@@ -19,7 +19,7 @@ KernelExtensions currently provides the following configurable systems, most tri
 - **Title Banner & ScreenBleed (ShowTitle / ScreenBleedWCC)**: full-screen story prompts and system alerts.
 - **PortHackV2 Cracker (`#PORTHACKV2#`)**: a configurable port-cracking flow (parallel protocols, prerequisites, action points).
 - **Custom Heart Daemon (`CustomHeartDaemon`)**: recreates the vanilla heart-node sequence (cube → heart → white-out) with configurable title / music / timing / callbacks.
-- **ProxyKiller (`#PROXYKILLER#`)**: accelerates every shell that is currently overloading so proxies crash sooner.
+- **[ProxyKiller (`#PROXYKILLER#`)](./../systems/proxy-killer.md)**: accelerates every shell that is currently overloading so proxies crash sooner.
 
 Component-level entries such as RAM display / temporary theme colours / target-machine atomic Actions / self-replacement placeholders are listed in the [component index](./../index.md) and [Actions](./../components/actions.md).
 

@@ -18,7 +18,7 @@
    - `VMATK/` – for VM attack configuration XMLs  
    - `PhaseSwift/` – for Phase Swift configuration XMLs  
    - `PortHackV2/` – for PortHackV2 cracker configuration XMLs
-   - `ProxyKiller/` – for ProxyKiller accelerator configuration XMLs
+   - `ProxyKiller/` – for ProxyKiller accelerator configuration XMLs ([system page](./../systems/proxy-killer.md))
    - `Clocks/` – for Clock timer XMLs (a convention only; Clocks may live anywhere in the extension)
    - `CustomColor/` – for custom dynamic colour presets (scanned once and cached when the extension loads)
    - `Actions/` – for action files  

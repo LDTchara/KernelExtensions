@@ -134,7 +134,7 @@ answers "where does it go".
 | Custom Trial | `Trial/<name>.xml` | `<TrialConfig>` | [Custom Trial System](./../systems/custom-trial.md) |
 | VM Attack | `VMATK/<name>.xml` | `<VMAttackConfig>` | [VM Attack System](./../systems/vm-attack.md) |
 | PortHackV2 Cracker | `PortHackV2/<name>.xml` | `<PortHackV2Config>` | [PortHackV2 Cracker](./../systems/port-hack-v2.md) (entry: save flag `PortHackV2_<name>` → run `#PORTHACKV2#` in the terminal) |
-| ProxyKiller | `ProxyKiller/<name>.xml` | `<ProxyKillerConfig>` | [Executables](./executables.md) (entry: save flag `ProxyKiller_<name>` → run `#PROXYKILLER#` in the terminal) |
+| ProxyKiller | `ProxyKiller/<name>.xml` | `<ProxyKillerConfig>` | [ProxyKiller Accelerator](./../systems/proxy-killer.md) (entry: save flag `ProxyKiller_<name>` → run `#PROXYKILLER#` in the terminal) |
 | Phase Swift | see the system page | — | [Phase Swift System](./../systems/phase-swift.md) |
 | Custom Ending | see the system page | — | [Custom Ending System](./../systems/custom-ending.md) |
 | Aircraft Daemon | written directly into the target computer's XML | — | [Aircraft Daemon System](./../systems/aircraft.md) |

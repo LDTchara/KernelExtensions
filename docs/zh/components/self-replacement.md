@@ -20,7 +20,7 @@ KE 向 Pathfinder 注册了 6 个可执行程序，每个绑定一个自替换�
 | `EffectsPlayer` | `#EFFECTS#` | 特效播放（动态壁纸 / 视频播放的底层能力） |
 | `WPTEST` | `#WPTEST#` | 动态壁纸（测试程序） |
 | `PortHackV2` | `#PORTHACKV2#` | 端口破解程序 |
-| `ProxyKiller` | `#PROXYKILLER#` | 常驻代理加速器 |
+| `ProxyKiller` | `#PROXYKILLER#` | 常驻代理加速器（[系统页](./../systems/proxy-killer.md)） |
 
 典型用法（把程序放到玩家节点的 `bin/` 下）：
 

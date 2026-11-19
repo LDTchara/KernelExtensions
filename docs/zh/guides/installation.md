@@ -18,7 +18,7 @@
    - `VMATK/`：存放虚拟机攻击配置 XML  
    - `PhaseSwift/`：存放相位穿梭配置 XML  
    - `PortHackV2/`：存放 PortHackV2 破解配置 XML
-   - `ProxyKiller/`：存放 ProxyKiller 加速器配置 XML
+   - `ProxyKiller/`：存放 ProxyKiller 加速器配置 XML（[系统页](./../systems/proxy-killer.md)）
    - `Clocks/`：存放 Clock 定时器 XML（只是惯例，Clock 也可以放在扩展内任意位置）
    - `CustomColor/`：存放自定义动态色预设 XML（扩展加载时扫描一次并缓存）
    - `Actions/`：存放动作文件  

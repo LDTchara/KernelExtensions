@@ -82,7 +82,7 @@ the embedded locale table):
 |--------|:-----:|---------|
 | `FLIGHT_*` | 19 | All aircraft-daemon UI text (`FLIGHT_ALTITUDE_*` altimeter ×9, `FLIGHT_PILOT_*` alerts, `FLIGHT_DISCONNECT`, `FLIGHT_IN_PROGRESS`, …) |
 | `PORT_HACK_V2_*` | 14 | The PortHackV2 cracker (prerequisite rows, countdown, `LOCKED_TITLE`, `STATUS_CRACKING/FAILED/SUCCESS`, …) |
-| `PROXY_KILLER_*` | 7 | ProxyKiller |
+| `PROXY_KILLER_*` | 7 | [ProxyKiller](./../systems/proxy-killer.md) |
 | `CUSTOM_TRIAL_*` | 6 | Custom Trial |
 | `FAKE_RECOVERY_*` | 5 | VM-attack recovery screen (buttons, password prompts, …) |
 | `PHASE_SWIFT_*` | 2 | PhaseSwift (`LOCKED` / `COMPLETE`) |
