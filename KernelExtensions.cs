@@ -41,6 +41,8 @@ using System.Xml.Serialization;
 namespace KernelExtensions
 {
     [BepInPlugin(ModGUID, ModName, ModVer)]
+    // 软依赖：只用于保证 ZDTK 先加载，使主菜单水印宽度判断可靠；未安装 ZDTK 时不影响 KE。
+    [BepInDependency("kr.o_r.prodzpod.zerodaytoolkit", BepInDependency.DependencyFlags.SoftDependency)]
     public class KernelExtensions : HacknetPlugin
     {
         public const string ModGUID = "com.LDTchara.KernelExtensions";

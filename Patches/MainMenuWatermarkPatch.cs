@@ -1,3 +1,4 @@
+using BepInEx.Hacknet;
 using Hacknet;
 using HarmonyLib;
 using KernelExtensions.Configs;
@@ -12,7 +13,9 @@ namespace KernelExtensions.Patches
     {
         // 流动速度（越大越快）
         private const float FlowSpeed = 0.8f;
-        // 缓存 ZDTK 最大宽度 + 间距，避免每帧重复测量
+        private const string ZdtkGuid = "kr.o_r.prodzpod.zerodaytoolkit";
+        // ZDTK 存在时只需解析/测量一次；不存在时继续按帧查找，等它加载后再让位
+        private static bool _zdtkResolved;
         private static float _offset = -1f;
         // 足够大的模数（约 11.5 天），确保在游戏会话中永不循环，同时 float 精度足够
         private const long TicksMod = 10_000_000_000_000L;
@@ -22,15 +25,9 @@ namespace KernelExtensions.Patches
             if (!ConfigLoader.Watermark) return;
             if (GuiData.smallfont == null) return;
 
-            // 计算偏移：只在第一次测量
-            if (_offset < 0)
-            {
-                string zdtkMax = "+ ZeroDayToolKit 9.9.9";
-                _offset = GuiData.smallfont.MeasureString(zdtkMax).X + 8f;
-            }
-
             float baseX = __instance.State == MainMenu.MainMenuState.Normal ? 634f : 496f;
-            float x = baseX + _offset;
+            // ZDTK 存在时排到它右侧；不存在时占用它原来的位置
+            float x = baseX + GetZdtkOffset();
             float y = 200f;   // 与 ZDTK 同一行
 
             string text = "+ KernelExtensions " + KernelExtensions.ModVer;
@@ -56,6 +53,40 @@ namespace KernelExtensions.Patches
                 sb.DrawString(font, character, new Vector2(currentX, y + bob), color);
                 currentX += charWidth;
             }
+        }
+
+        /// <summary>
+        /// 读取 ZDTK 实际绘制的水印文字。软依赖只声明加载关系；即使 ZDTK 尚未加载，
+        /// 这里也会在后续帧继续查找，未安装时返回 false，KE 水印直接使用原版位置。
+        /// </summary>
+        private static bool TryGetZdtkWatermark(out string text)
+        {
+            text = null;
+            var plugins = HacknetChainloader.Instance?.Plugins;
+            if (plugins == null || !plugins.TryGetValue(ZdtkGuid, out var info))
+                return false;
+
+            // BepInEx.Core 的 PluginInfo.Metadata.Version 来自 SemanticVersioning；
+            // KE 不直接引用该程序集，这里用反射取字符串，避免新增运行时依赖。
+            var metadata = info?.Metadata;
+            string version = metadata?.GetType().GetProperty("Version")?.GetValue(metadata)?.ToString();
+            if (string.IsNullOrEmpty(version))
+                return false;
+
+            text = "+ ZeroDayToolKit " + version;
+            return true;
+        }
+
+        private static float GetZdtkOffset()
+        {
+            if (_zdtkResolved)
+                return _offset;
+            if (!TryGetZdtkWatermark(out string text))
+                return 0f;
+
+            _offset = GuiData.smallfont.MeasureString(text).X + 8f;
+            _zdtkResolved = true;
+            return _offset;
         }
     }
 }
