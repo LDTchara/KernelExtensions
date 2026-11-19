@@ -27,7 +27,7 @@ All paths are relative to the extension root.
 | Timer | `ClockStart` · `ClockStop` | Start/stop a custom timer | [Custom Timer System (Clock)](./../systems/clock.md) |
 | Node Icons | `SetNodeIcon` | Set a node's icon | [Custom Node Icon System](./../systems/node-icon.md) |
 | Custom Ending | `StartEnding` · `BreakHeart` | Trigger an ending / the heartbreak sequence | [Custom Ending System](./../systems/custom-ending.md) |
-| Target-computer ops | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure` · `PortProxyAdd` · `PortProxySolve` · `PortProxyReset` · `ListPorts` | Target-side port / firewall / proxy primitives · protocol-name lookup | [PortHackV2 Cracker](./../systems/port-hack-v2.md) · see part 3 |
+| Target-computer ops | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure` · `ProxyAdd` · `ProxySolve` · `ProxyReset` · `ListPorts` | Target-side port / firewall / proxy primitives · protocol-name lookup | [PortHackV2 Cracker](./../systems/port-hack-v2.md) · see part 3 |
 
 ### Node Link Control (attribute quick reference)
 
@@ -251,9 +251,15 @@ Every action in this group works on a **target computer** and **does exactly one
 close a port, add a firewall, reroll a solution…). Combine them freely into sequences — they work from
 a PortHackV2 action hook as well as from any other system's action file.
 
+> **0.7 naming change**: the seven firewall / proxy actions dropped their `Port` prefix
+> (`PortFirewallAdd` → `FirewallAdd`, `PortFirewallSolve` → `FirewallSolve`,
+> `PortFirewallReroll` → `FirewallReroll`, `PortFirewallConfigure` → `FirewallConfigure`,
+> `PortProxyAdd` → `ProxyAdd`, `PortProxySolve` → `ProxySolve`, `PortProxyReset` → `ProxyReset`).
+> **The old names are no longer registered**; existing extensions must switch to the new names.
+
 - **Ports**: `PortOpen` · `PortClose` (open/close) · `PortAdd` / `PortRemove` (add/remove)
-- **Firewall**: `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure`
-- **Proxy**: `PortProxyAdd` · `PortProxySolve` · `PortProxyReset`
+- **Firewall**: `FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure`
+- **Proxy**: `ProxyAdd` · `ProxySolve` · `ProxyReset`
 - **Diagnostics**: `ListPorts` (lists every registered port protocol — use it to look up protocol names)
 
 **Common conventions**
@@ -362,10 +368,10 @@ Removes a port from the **target** machine only (it does **not** unregister the 
 
 ### Firewall
 
-The solution lives on the **target computer**: `PortFirewallAdd` places one, `PortFirewallSolve` solves it,
-`PortFirewallReroll` replaces the answer and `PortFirewallConfigure` tunes its parameters.
+The solution lives on the **target computer**: `FirewallAdd` places one, `FirewallSolve` solves it,
+`FirewallReroll` replaces the answer and `FirewallConfigure` tunes its parameters.
 
-#### `PortFirewallAdd` — place a new firewall
+#### `FirewallAdd` — place a new firewall
 
 Places a **new firewall** on the target (replacing any existing one) and leaves it **unsolved**.
 
@@ -379,24 +385,24 @@ Places a **new firewall** on the target (replacing any existing one) and leaves 
 
 ```xml
 <!-- A 12-character random solution the player has to work out -->
-<PortFirewallAdd Solution="@random" Length="12" AdditionalDelay="0.3" />
+<FirewallAdd Solution="@random" Length="12" AdditionalDelay="0.3" />
 
 <!-- Solution fixed to ABCD: the player types ABCD to get through -->
-<PortFirewallAdd Solution="ABCD" TargetComp="targetNode" />
+<FirewallAdd Solution="ABCD" TargetComp="targetNode" />
 ```
 
 - It **replaces** the target's existing firewall rather than stacking, and always leaves it **unsolved**
 - The displayed length matches the solution: the write syncs `solutionLength` to the **final** solution, so
   you never get “type N characters” with an M-character answer (an unsolvable firewall)
-- For “keep the firewall, only change the answer” use `PortFirewallReroll`; for “tune the existing firewall”
-  use `PortFirewallConfigure`; to solve it outright use `PortFirewallSolve`
+- For “keep the firewall, only change the answer” use `FirewallReroll`; for “tune the existing firewall”
+  use `FirewallConfigure`; to solve it outright use `FirewallSolve`
 
 !!! tip "`Length` only affects random solutions"
     With `Solution="@random"` the random solution is generated at `Length` characters; with a literal
     `Solution` the answer is exactly the string you wrote and `Length` plays no part. Either way the displayed
     length is synced to the real solution, so the firewall is always solvable.
 
-#### `PortFirewallSolve` — solve the firewall
+#### `FirewallSolve` — solve the firewall
 
 Marks the target's firewall as **solved**, optionally after a delay.
 
@@ -406,19 +412,19 @@ Marks the target's firewall as **solved**, optionally after a delay.
 | `Delay` / `DelayHost` | ❌ | — | Seconds to wait **before** solving; empty = immediately |
 
 ```xml
-<PortFirewallSolve />
+<FirewallSolve />
 
 <!-- 12 seconds after the crack the opponent "notices" the firewall is broken -->
-<PortFirewallSolve Delay="12" />
+<FirewallSolve Delay="12" />
 ```
 
 - A target **without a firewall** → logs a warning and skips; it never invents one
 - It only marks the firewall **solved** and **does not clear analysis progress**; to reset that too use
-  `PortFirewallReroll` / `PortFirewallConfigure Reset="true"`
+  `FirewallReroll` / `FirewallConfigure Reset="true"`
 - The delay comes from the base `Delay`; this action has **no** `AdditionalDelay` (that is “how much longer
   each analysis line takes for the player”)
 
-#### `PortFirewallReroll` — replace the solution
+#### `FirewallReroll` — replace the solution
 
 **The firewall stays, its answer changes** (typically the opponent countering).
 
@@ -432,16 +438,16 @@ Marks the target's firewall as **solved**, optionally after a delay.
 
 ```xml
 <!-- Reroll to a new 12-character random solution and clear the "solved" state -->
-<PortFirewallReroll Length="12" AdditionalDelay="0.3" />
+<FirewallReroll Length="12" AdditionalDelay="0.3" />
 ```
 
-- Difference from `PortFirewallAdd`: that one **places a new firewall**; this one **replaces the answer of the
+- Difference from `FirewallAdd`: that one **places a new firewall**; this one **replaces the answer of the
   existing firewall**
 - A target **without a firewall** → logs a warning and skips
 - Rerolling **creates a fresh firewall**, so the result is always “unsolved + analysis progress back to zero”;
   `Reset="false"` cannot bring the solved state back
 
-#### `PortFirewallConfigure` — tune the existing firewall
+#### `FirewallConfigure` — tune the existing firewall
 
 Adjusts the **existing** firewall's solution length, analysis delay and solution content, optionally resetting
 the solved state and analysis progress.
@@ -457,15 +463,15 @@ the solved state and analysis progress.
 
 ```xml
 <!-- Only make each analysis line slower, keep everything else as it is -->
-<PortFirewallConfigure AdditionalDelay="0.5" />
+<FirewallConfigure AdditionalDelay="0.5" />
 
 <!-- Swap in a 12-character random solution and reset the progress -->
-<PortFirewallConfigure Length="12" Solution="@random" Reset="true" />
+<FirewallConfigure Length="12" Solution="@random" Reset="true" />
 ```
 
 - Omitted attributes **keep their current value** and are never pushed back to a default — leave one out to
   leave it alone
-- A target **without** a firewall is handled as “add one” (same rules as `PortFirewallAdd`)
+- A target **without** a firewall is handled as “add one” (same rules as `FirewallAdd`)
 - ⚠️ `Length` versus a **literal solution**: only random solutions are generated at `Length` characters; when
   `Solution` is a specific string, give a `Length` of the **same size** (leaving it out keeps the current
   length, and a mismatch produces an **unsolvable** firewall: “type N characters” with an M-character answer).
@@ -473,10 +479,10 @@ the solved state and analysis progress.
 
 ### Proxy
 
-While a proxy is active the player must **overload** it before continuing; `PortProxyAdd` adds one,
-`PortProxySolve` removes it, and `PortProxyReset` only pushes the overload progress back.
+While a proxy is active the player must **overload** it before continuing; `ProxyAdd` adds one,
+`ProxySolve` removes it, and `ProxyReset` only pushes the overload progress back.
 
-#### `PortProxyAdd` — add a proxy
+#### `ProxyAdd` — add a proxy
 
 | Attribute | Required | Default | Description |
 |-----------|:--------:|---------|-------------|
@@ -485,14 +491,14 @@ While a proxy is active the player must **overload** it before continuing; `Port
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
 
 ```xml
-<PortProxyAdd Time="10" />
-<PortProxyAdd Time="30" TargetComp="targetNode" />
+<ProxyAdd Time="10" />
+<ProxyAdd Time="30" TargetComp="targetNode" />
 ```
 
 - The proxy ends up **active** (`proxyActive = true`): the player has to overload it first
 - If the target already has a proxy, the time and state are overwritten — never stacked into two
 
-#### `PortProxySolve` — remove the proxy
+#### `ProxySolve` — remove the proxy
 
 | Attribute | Required | Default | Description |
 |-----------|:--------:|---------|-------------|
@@ -500,16 +506,16 @@ While a proxy is active the player must **overload** it before continuing; `Port
 | `Delay` / `DelayHost` | ❌ | — | Seconds to wait **before** removing it; empty = immediately |
 
 ```xml
-<PortProxySolve />
-<PortProxySolve Delay="11" />
+<ProxySolve />
+<ProxySolve Delay="11" />
 ```
 
 - Removal also marks a running `PortHackExe` for termination (matching vanilla: the proxy is gone, so the
   crack process ends with it)
 - A target **without a proxy** → logs a warning and skips
-- To only zero the overload progress while the proxy **stays active**, use `PortProxyReset`
+- To only zero the overload progress while the proxy **stays active**, use `ProxyReset`
 
-#### `PortProxyReset` — zero the overload progress
+#### `ProxyReset` — zero the overload progress
 
 Pushes the player's **overload progress** back to the start while the **proxy stays active** (in the story:
 “the opponent shoved your progress back”).
@@ -520,10 +526,10 @@ Pushes the player's **overload progress** back to the start while the **proxy st
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder delayed execution |
 
 ```xml
-<PortProxyReset />
+<ProxyReset />
 ```
 
-- Difference from `PortProxySolve`: that one is “the proxy is removed” (`proxyActive = false`), while this
+- Difference from `ProxySolve`: that one is “the proxy is removed” (`proxyActive = false`), while this
   action **keeps the proxy**
 - A target **without a proxy** → logs a warning and skips
 
@@ -567,8 +573,8 @@ Registered ports: 12 (3 from mods, 9 built-in)
 
 ```xml
 <PortClose Ports="ftp" />
-<PortFirewallReroll Length="12" AdditionalDelay="0.3" />
-<PortProxyReset />
+<FirewallReroll Length="12" AdditionalDelay="0.3" />
+<ProxyReset />
 ```
 
 These actions **perform no permission checks**, so *when* they take effect is entirely up to the hook you hang
@@ -625,13 +631,13 @@ Pathfinder's `RegisterAction` throws on a duplicate name and **aborts the whole 
 | `PortRemove` | `KEPortRemove` |
 | `PortOpen` | `KEPortOpen` |
 | `PortClose` | `KEPortClose` |
-| `PortFirewallAdd` | `KEPortFirewallAdd` |
-| `PortFirewallSolve` | `KEPortFirewallSolve` |
-| `PortFirewallReroll` | `KEPortFirewallReroll` |
-| `PortFirewallConfigure` | `KEPortFirewallConfigure` |
-| `PortProxyAdd` | `KEPortProxyAdd` |
-| `PortProxySolve` | `KEPortProxySolve` |
-| `PortProxyReset` | `KEPortProxyReset` |
+| `FirewallAdd` | `KEFirewallAdd` |
+| `FirewallSolve` | `KEFirewallSolve` |
+| `FirewallReroll` | `KEFirewallReroll` |
+| `FirewallConfigure` | `KEFirewallConfigure` |
+| `ProxyAdd` | `KEProxyAdd` |
+| `ProxySolve` | `KEProxySolve` |
+| `ProxyReset` | `KEProxyReset` |
 
 **Rules**:
 

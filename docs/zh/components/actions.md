@@ -26,7 +26,7 @@ KernelExtensions 共注册 **47 个**自定义 Action，可在任何动作文件
 | 定时器 | `ClockStart` · `ClockStop` | 启停自定义定时器 | [自定义定时器系统](./../systems/clock.md) |
 | 节点图标 | `SetNodeIcon` | 设置节点图标 | [自定义节点图标系统](./../systems/node-icon.md) |
 | 自定义结局 | `StartEnding` · `BreakHeart` | 触发结局 / 心碎序列 | [自定义结局系统](./../systems/custom-ending.md) |
-| 目标机操作 | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure` · `PortProxyAdd` · `PortProxySolve` · `PortProxyReset` · `ListPorts` | 目标机端口 / 防火墙 / 代理的原子操作 · 端口协议名诊断 | [PortHackV2 破解程序](./../systems/port-hack-v2.md) · 见第三部分 |
+| 目标机操作 | `PortOpen` · `PortClose` · `PortAdd` · `PortRemove` · `FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure` · `ProxyAdd` · `ProxySolve` · `ProxyReset` · `ListPorts` | 目标机端口 / 防火墙 / 代理的原子操作 · 端口协议名诊断 | [PortHackV2 破解程序](./../systems/port-hack-v2.md) · 见第三部分 |
 
 ### 节点连接控制（属性速查）
 
@@ -235,9 +235,15 @@ RAM 条的长度仍按真实占用比例绘制。
 这一组动作都作用在**目标机**上，**每个只做一件事**（开端口、关端口、加防火墙、换解……），
 由作者自由组合成动作序列——既能在 PortHackV2 的动作点里用，也能在任何其它系统的动作文件里用。
 
+> **0.7 命名变更**：本组的 7 个防火墙 / 代理动作已去掉 `Port` 前缀
+> （`PortFirewallAdd` → `FirewallAdd`、`PortFirewallSolve` → `FirewallSolve`、
+> `PortFirewallReroll` → `FirewallReroll`、`PortFirewallConfigure` → `FirewallConfigure`、
+> `PortProxyAdd` → `ProxyAdd`、`PortProxySolve` → `ProxySolve`、`PortProxyReset` → `ProxyReset`）。
+> **旧名不再注册**，已有扩展需按新名替换。
+
 - **端口**：`PortOpen` · `PortClose`（开关端口）· `PortAdd` / `PortRemove`（增删端口）
-- **防火墙**：`PortFirewallAdd` · `PortFirewallSolve` · `PortFirewallReroll` · `PortFirewallConfigure`
-- **代理**：`PortProxyAdd` · `PortProxySolve` · `PortProxyReset`
+- **防火墙**：`FirewallAdd` · `FirewallSolve` · `FirewallReroll` · `FirewallConfigure`
+- **代理**：`ProxyAdd` · `ProxySolve` · `ProxyReset`
 - **诊断**：`ListPorts`（列出全部已注册的端口协议，写配置时用来查协议名）
 
 **共同约定**
@@ -342,10 +348,10 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 
 ### 防火墙
 
-防火墙的解由**目标机自己**持有：`PortFirewallAdd` 放一份、`PortFirewallSolve` 解开、
-`PortFirewallReroll` 换掉解法、`PortFirewallConfigure` 调参数。
+防火墙的解由**目标机自己**持有：`FirewallAdd` 放一份、`FirewallSolve` 解开、
+`FirewallReroll` 换掉解法、`FirewallConfigure` 调参数。
 
-#### `PortFirewallAdd` —— 放一份新防火墙
+#### `FirewallAdd` —— 放一份新防火墙
 
 给目标机**放一份新的防火墙**（会替换掉已有的那一份），放完处于**未解**状态。
 
@@ -359,22 +365,22 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 
 ```xml
 <!-- 12 位随机解：玩家得推出来 -->
-<PortFirewallAdd Solution="@random" Length="12" AdditionalDelay="0.3" />
+<FirewallAdd Solution="@random" Length="12" AdditionalDelay="0.3" />
 
 <!-- 解固定为 ABCD：玩家输 ABCD 就通过 -->
-<PortFirewallAdd Solution="ABCD" TargetComp="targetNode" />
+<FirewallAdd Solution="ABCD" TargetComp="targetNode" />
 ```
 
 - 会**替换**目标机已有的防火墙，不是叠加；放完一定是**未解**状态
 - 解的长度与界面一致：写入时按**最终解**同步 `solutionLength`，不会出现「要输 N 位、解只有 M 位」的无解情形
-- 要「防火墙还在、只换解法」用 `PortFirewallReroll`；要「改现有防火墙的参数」用 `PortFirewallConfigure`；
-  要「直接解开」用 `PortFirewallSolve`
+- 要「防火墙还在、只换解法」用 `FirewallReroll`；要「改现有防火墙的参数」用 `FirewallConfigure`；
+  要「直接解开」用 `FirewallSolve`
 
 !!! tip "`Length` 只管随机解"
     `Solution="@random"` 时按 `Length` 生成随机解；`Solution` 写具体字符串时，解就是你写的那串，
     `Length` 不参与——两种情况都会把显示长度同步成解的实际长度，所以防火墙始终可解。
 
-#### `PortFirewallSolve` —— 解开防火墙
+#### `FirewallSolve` —— 解开防火墙
 
 把目标机的防火墙**直接标记为已解**，可选延迟。
 
@@ -384,17 +390,17 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 | `Delay` / `DelayHost` | ❌ | — | 延迟多少秒**之后**才解开；留空 = 立即 |
 
 ```xml
-<PortFirewallSolve />
+<FirewallSolve />
 
 <!-- 破解成功 12 秒后对手"才反应过来"防火墙被破了 -->
-<PortFirewallSolve Delay="12" />
+<FirewallSolve Delay="12" />
 ```
 
 - 目标机**没有防火墙** → Warn 跳过，不会凭空造一份
-- 只把防火墙标记为**已解**，**不清分析进度**；要连进度一起复位用 `PortFirewallReroll` / `PortFirewallConfigure Reset="true"`
+- 只把防火墙标记为**已解**，**不清分析进度**；要连进度一起复位用 `FirewallReroll` / `FirewallConfigure Reset="true"`
 - 延迟走基类 `Delay`；本动作**没有** `AdditionalDelay`（那个是「玩家分析时每行多停多久」）
 
-#### `PortFirewallReroll` —— 换掉解法
+#### `FirewallReroll` —— 换掉解法
 
 **防火墙还在，解法被换掉**（剧情上常见于对手反制）。
 
@@ -408,14 +414,14 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 
 ```xml
 <!-- 换成一份新的 12 位随机解，并把"已解"状态清掉 -->
-<PortFirewallReroll Length="12" AdditionalDelay="0.3" />
+<FirewallReroll Length="12" AdditionalDelay="0.3" />
 ```
 
-- 与 `PortFirewallAdd` 的区别：那个是**放一份新的**防火墙，这个是**把现有防火墙的解法换掉**
+- 与 `FirewallAdd` 的区别：那个是**放一份新的**防火墙，这个是**把现有防火墙的解法换掉**
 - 目标机**没有防火墙** → Warn 跳过
 - 换解会**新建一份防火墙**，所以结果一定是「未解 + 分析进度归零」；`Reset="false"` 也拿不回已解状态
 
-#### `PortFirewallConfigure` —— 改现有防火墙的参数
+#### `FirewallConfigure` —— 改现有防火墙的参数
 
 调整目标机**现有**防火墙的解长度 / 分析延迟 / 解的内容，可选把已解状态与分析进度复位。
 
@@ -430,24 +436,24 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 
 ```xml
 <!-- 只把分析每行的延迟调大，其余参数保持原样 -->
-<PortFirewallConfigure AdditionalDelay="0.5" />
+<FirewallConfigure AdditionalDelay="0.5" />
 
 <!-- 换成 12 位随机解，并把进度清零 -->
-<PortFirewallConfigure Length="12" Solution="@random" Reset="true" />
+<FirewallConfigure Length="12" Solution="@random" Reset="true" />
 ```
 
 - 留空的项**保持原值**，不会被打回默认——想复位就别写它
-- 目标机**没有**防火墙 → 按「添加一份」处理（规则同 `PortFirewallAdd`）
+- 目标机**没有**防火墙 → 按「添加一份」处理（规则同 `FirewallAdd`）
 - ⚠️ `Length` 与**写死的解**：只有随机解会按 `Length` 生成；`Solution` 写具体字符串时请同时给出**同长度**的
   `Length`（留空会沿用现有长度，长度不一致就会造出「要输 N 位、解只有 M 位」的**无解**防火墙）。
   只想调难度（分析延迟）就别写 `Length`
 
 ### 代理
 
-代理生效时玩家要先把它**过载掉**才能继续；`PortProxyAdd` 加、`PortProxySolve` 解、
-`PortProxyReset` 只把过载进度打回。
+代理生效时玩家要先把它**过载掉**才能继续；`ProxyAdd` 加、`ProxySolve` 解、
+`ProxyReset` 只把过载进度打回。
 
-#### `PortProxyAdd` —— 给目标机加代理
+#### `ProxyAdd` —— 给目标机加代理
 
 | 属性 | 必填 | 默认值 | 说明 |
 |------|:----:|--------|------|
@@ -456,14 +462,14 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
 
 ```xml
-<PortProxyAdd Time="10" />
-<PortProxyAdd Time="30" TargetComp="targetNode" />
+<ProxyAdd Time="10" />
+<ProxyAdd Time="30" TargetComp="targetNode" />
 ```
 
 - 加完代理是**生效**状态（`proxyActive = true`）：玩家得先过载掉它
 - 目标机本来就有代理 → 直接覆盖时间与状态，不会叠加成两道
 
-#### `PortProxySolve` —— 解除代理
+#### `ProxySolve` —— 解除代理
 
 | 属性 | 必填 | 默认值 | 说明 |
 |------|:----:|--------|------|
@@ -471,15 +477,15 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 | `Delay` / `DelayHost` | ❌ | — | 延迟多少秒**之后**才解除；留空 = 立即 |
 
 ```xml
-<PortProxySolve />
-<PortProxySolve Delay="11" />
+<ProxySolve />
+<ProxySolve Delay="11" />
 ```
 
 - 解除的同时把正在跑的 `PortHackExe` 标记为结束（对齐原版「代理没了、破解进程随之结束」）
 - 目标机**没有代理** → Warn 跳过
-- 只想过载进度清零、代理**仍然生效** → 用 `PortProxyReset`
+- 只想过载进度清零、代理**仍然生效** → 用 `ProxyReset`
 
-#### `PortProxyReset` —— 过载进度归零
+#### `ProxyReset` —— 过载进度归零
 
 把玩家已经推掉的**过载进度**打回起点，**代理仍然生效**（剧情上「对手把进度打回去了」）。
 
@@ -489,10 +495,10 @@ Pathfinder 下每个端口有两件事：**在不在机器上**、**开没开**�
 | `Delay` / `DelayHost` | ❌ | — | Pathfinder 延迟动作 |
 
 ```xml
-<PortProxyReset />
+<ProxyReset />
 ```
 
-- 与 `PortProxySolve` 的区别：后者是「代理被解掉」（`proxyActive = false`），本动作**保留代理**
+- 与 `ProxySolve` 的区别：后者是「代理被解掉」（`proxyActive = false`），本动作**保留代理**
 - 目标机**没有代理** → Warn 跳过
 
 ### 诊断 `ListPorts`
@@ -532,8 +538,8 @@ Registered ports: 12 (3 from mods, 9 built-in)
 
 ```xml
 <PortClose Ports="ftp" />
-<PortFirewallReroll Length="12" AdditionalDelay="0.3" />
-<PortProxyReset />
+<FirewallReroll Length="12" AdditionalDelay="0.3" />
+<ProxyReset />
 ```
 
 这些动作**不做权限检查**，所以"什么时候生效"完全由你挂的动作点决定——挂在破解成功的动作点上，
@@ -589,13 +595,13 @@ Pathfinder 的 `RegisterAction` 在重名时会抛异常并**中断整个插件�
 | `PortRemove` | `KEPortRemove` |
 | `PortOpen` | `KEPortOpen` |
 | `PortClose` | `KEPortClose` |
-| `PortFirewallAdd` | `KEPortFirewallAdd` |
-| `PortFirewallSolve` | `KEPortFirewallSolve` |
-| `PortFirewallReroll` | `KEPortFirewallReroll` |
-| `PortFirewallConfigure` | `KEPortFirewallConfigure` |
-| `PortProxyAdd` | `KEPortProxyAdd` |
-| `PortProxySolve` | `KEPortProxySolve` |
-| `PortProxyReset` | `KEPortProxyReset` |
+| `FirewallAdd` | `KEFirewallAdd` |
+| `FirewallSolve` | `KEFirewallSolve` |
+| `FirewallReroll` | `KEFirewallReroll` |
+| `FirewallConfigure` | `KEFirewallConfigure` |
+| `ProxyAdd` | `KEProxyAdd` |
+| `ProxySolve` | `KEProxySolve` |
+| `ProxyReset` | `KEProxyReset` |
 
 **规则**：
 
