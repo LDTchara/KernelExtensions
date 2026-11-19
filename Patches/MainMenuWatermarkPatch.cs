@@ -1,6 +1,6 @@
-using BepInEx.Hacknet;
 using Hacknet;
 using HarmonyLib;
+using KernelExtensions.Compat;
 using KernelExtensions.Configs;
 using KernelExtensions.Utilities;
 using Microsoft.Xna.Framework;
@@ -13,8 +13,8 @@ namespace KernelExtensions.Patches
     {
         // 流动速度（越大越快）
         private const float FlowSpeed = 0.8f;
-        private const string ZdtkGuid = "kr.o_r.prodzpod.zerodaytoolkit";
-        // ZDTK 存在时只需解析/测量一次；不存在时继续按帧查找，等它加载后再让位
+        // 主菜单绘制时插件已全部加载完成，因此 ZDTK 检测只做一次。
+        // 未安装时永久占用原版位置，不再逐帧重试（也不会出现“后来才加载”的情况）。
         private static bool _zdtkResolved;
         private static float _offset = -1f;
         // 足够大的模数（约 11.5 天），确保在游戏会话中永不循环，同时 float 精度足够
@@ -55,37 +55,20 @@ namespace KernelExtensions.Patches
             }
         }
 
-        /// <summary>
-        /// 读取 ZDTK 实际绘制的水印文字。软依赖只声明加载关系；即使 ZDTK 尚未加载，
-        /// 这里也会在后续帧继续查找，未安装时返回 false，KE 水印直接使用原版位置。
-        /// </summary>
-        private static bool TryGetZdtkWatermark(out string text)
-        {
-            text = null;
-            var plugins = HacknetChainloader.Instance?.Plugins;
-            if (plugins == null || !plugins.TryGetValue(ZdtkGuid, out var info))
-                return false;
-
-            // BepInEx.Core 的 PluginInfo.Metadata.Version 来自 SemanticVersioning；
-            // KE 不直接引用该程序集，这里用反射取字符串，避免新增运行时依赖。
-            var metadata = info?.Metadata;
-            string version = metadata?.GetType().GetProperty("Version")?.GetValue(metadata)?.ToString();
-            if (string.IsNullOrEmpty(version))
-                return false;
-
-            text = "+ ZeroDayToolKit " + version;
-            return true;
-        }
-
         private static float GetZdtkOffset()
         {
             if (_zdtkResolved)
                 return _offset;
-            if (!TryGetZdtkWatermark(out string text))
-                return 0f;
 
-            _offset = GuiData.smallfont.MeasureString(text).X + 8f;
             _zdtkResolved = true;
+            if (!ModCompats.TryGetZdtkWatermark(out string text))
+            {
+                _offset = 0f;   // 未安装 ZDTK：占用它原本的位置
+                return _offset;
+            }
+
+            // ZDTK 已加载：按其实际版本文字宽度右移，避免两段文字重叠。
+            _offset = GuiData.smallfont.MeasureString(text).X + 8f;
             return _offset;
         }
     }

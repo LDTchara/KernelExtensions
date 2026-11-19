@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KernelExtensions.Compat.ZeroDayToolKit;
 using KernelExtensions.Utilities;
 
 namespace KernelExtensions.Compat
@@ -24,6 +25,13 @@ namespace KernelExtensions.Compat
             if (IsConflictingAudioPlaying())
                 Stuxnet.StuxnetAudioCompat.Stop();
         }
+
+        /// <summary>
+        /// 读取 ZDTK 主菜单水印的实际文字（用于 KE 水印位置避让）。
+        /// 这是显示层兼容，不属于音频管线冲突。
+        /// </summary>
+        internal static bool TryGetZdtkWatermark(out string text)
+            => ZdtkWatermarkCompat.TryGetWatermark(out text);
 
         /// <summary>已探测到的兼容模组汇总，供启动日志/诊断使用。</summary>
         internal static string DescribeDetected()
