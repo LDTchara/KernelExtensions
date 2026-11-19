@@ -31,6 +31,7 @@
 - **PortHackV2 `<TakeAdmin>` clarified**: the switch alone decides, independent of per-protocol results (admin is granted even if every protocol fails); previously it implicitly required at least one success, which contradicted the "no root-level failure" design.
 - **Unified configuration conventions**: string options use `NONE` (case-insensitive) or empty for "disabled"; numeric options treat **negative as "use the default / inherit / unlimited"** (`NaN` / `Infinity` likewise fall back to the default).
 - **Unified log levels**: Debug (source-level troubleshooting, off by default) / Info (action-level results) / Warn (recoverable) / Error (should not happen); log text is plain ASCII English while player-facing terminal output is localised.
+- **Self-adapting main-menu watermark position**: when ZeroDayToolKit is present the watermark is measured from its actual version text and placed to its right; when ZDTK is absent it takes ZDTK's original slot instead of floating to the right.
 
 ### Still under test
 

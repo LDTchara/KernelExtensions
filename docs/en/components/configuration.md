@@ -82,7 +82,8 @@ xt`) |
 When enabled (the default), **`+ KernelExtensions <version>`** appears to the right of the Hacknet main-menu
 title:
 
-- It sits on the **same line, to the right of** the ZeroDayToolKit watermark, without overlapping other mods' watermarks
+- When ZeroDayToolKit (ZDTK) is present, it sits on the **same line, to the right of** the ZDTK watermark, measured from the actual ZDTK version text so the two never overlap
+- When ZDTK is absent, it takes ZDTK's original slot (`x=634` in the normal menu state, `x=496` otherwise) instead of shifting right into empty space
 - Its colour **flows smoothly over time** (rainbow) with a slight per-character bob
 - The `+` prefix follows the community convention for mod watermarks
 - The version string follows the mod version automatically — nothing to maintain
